@@ -36,14 +36,17 @@ The project intends to maintain a substantially delta-balanced portfolio rather 
 
 Both bullish and bearish option structures may be held simultaneously.
 
+Current tastylive material explicitly uses **SPY beta-weighted Delta** as a standardized measure of portfolio directional exposure. citeturn0search1turn0search3
+
+The project should therefore use SPY beta-weighted Delta as the primary directional-exposure metric, while recognizing that beta-weighted Delta is not a complete tail-risk measure.
+
 Before coding, define:
 
-- whether delta is measured raw or beta-weighted;
-- the benchmark for beta weighting, if used;
-- the permitted aggregate-delta band;
-- whether individual positions have delta limits;
-- how correlation between underlyings is handled; and
-- how the system behaves when neutrality cannot be restored without violating position-size or buying-power limits.
+- the permitted aggregate beta-weighted-Delta band;
+- individual-position delta limits;
+- how correlation between underlyings is handled;
+- how neutrality is restored without violating other risk constraints; and
+- how the system handles conditions where beta-weighted Delta understates stress exposure.
 
 The bot must not assume exact zero delta is always achievable.
 
@@ -61,13 +64,25 @@ The final specification must define whether the percentage is measured against n
 
 ## 6. Volatility and VIX allocation
 
-The project's core hypothesis is that higher implied volatility can provide richer option premiums and can therefore justify allocating more risk budget to systematic premium selling, while recognizing that high volatility can also increase losses and buying-power requirements.
+The project now has direct source evidence for a historical tastytrade Trade Talk VIX allocation table:
 
-A current authoritative numerical VIX-to-buying-power schedule has **not yet been established**.
+| VIX | Maximum account allocation |
+|---|---:|
+| 10–15 | 25% |
+| 15–20 | 30% |
+| 20–30 | 35% |
+| 30–40 | 40% |
+| >40 | 50% |
 
-> No numerical VIX allocation table is authoritative at this stage.
+The screenshot evidence is preserved in the user's Library as **Screenshot_20210413-175727.png**. fileciteturn2file0
 
-Any schedule used during research or backtesting must be explicitly labeled a project hypothesis and tested rather than presented as a tastytrade rule.
+This is now classified as **documented historical tastytrade/tastylive guidance**, not an unsupported hypothesis. However, it is not yet classified as a universally current 2026 requirement.
+
+The table defines a **maximum aggregate allocation**, not a requirement to deploy that amount. It must remain subordinate to all other hard risk constraints.
+
+Official tastylive material also states that its historical portfolio-allocation framework allocated 75% of buying power to undefined-risk strategies and 25% to defined-risk strategies, with separate per-trade limits. citeturn0search0
+
+The project therefore needs to reconcile the VIX ceiling with strategy-type allocation, per-position BPR, portfolio directional exposure, correlation, and tail-risk constraints before freezing the final rule set.
 
 ## 7. Entry framework — provisional
 
@@ -130,6 +145,17 @@ The execution architecture is:
 
 The risk engine has absolute authority over maximum position size, aggregate buying-power allocation, portfolio exposure, delta limits, concentration, prohibited trades, expiration/assignment safeguards, and account-level loss controls.
 
+The risk engine must track more than beta-weighted Delta. tastylive research on leveraged options portfolios found that **unit/notional risk can be a more conservative measure of outlier risk than day-to-day volatility or beta-weighted Delta**, with higher-allocation SPY strangle portfolios experiencing substantially worse drawdowns during the 2008 crash. citeturn1search0
+
+Accordingly, the project risk engine will separately track:
+
+- aggregate BPR;
+- unit/notional exposure;
+- beta-weighted Delta;
+- correlation/concentration;
+- volatility-sensitive BPR expansion;
+- and defined-risk maximum loss where applicable.
+
 AI cannot bypass these controls.
 
 ## 12. Backtesting requirements
@@ -173,7 +199,8 @@ No third-party rule becomes authoritative merely because it is widely repeated.
 
 ## 14. Open questions before implementation
 
-- Exact current VIX-to-buying-power allocation schedule, if tastytrade publishes one.
+- Whether the historical VIX allocation schedule remains appropriate as a current production rule.
+- How the historical VIX allocation schedule interacts with the 75% undefined-risk / 25% defined-risk framework.
 - Exact definition of portfolio delta neutrality.
 - Underlying universe.
 - Naked versus defined-risk option structures.
