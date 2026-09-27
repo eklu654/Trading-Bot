@@ -1,26 +1,50 @@
 # Options Portfolio Allocation Methodology Research
 
-**Status:** Research reconciliation — not frozen  
+**Status:** Research reconciliation — historical framework reconstructed; production rules not yet frozen  
 **Last reviewed:** 2026-09-27
 
 ## Purpose
 
-This document reconciles the separate tastytrade/tastylive evidence now available for:
+This document reconciles the tastytrade/tastylive evidence for:
 
 - VIX-based aggregate allocation;
 - undefined-risk vs. defined-risk allocation;
-- per-trade buying-power limits;
+- individual trade sizing;
+- per-underlying concentration;
 - beta-weighted Delta;
 - diversification/correlation;
 - and reserve capital.
 
-The goal is to determine which historical guidance can become a deterministic rule in this project and which must remain an experimental parameter.
+The key question is no longer whether the historical VIX table exists. The primary-source presentation has now been recovered, and it shows the surrounding portfolio-construction rules on adjacent slides.
 
-## 1. VIX-based aggregate allocation
+## 1. Recovered primary-source presentation
 
-The project has direct screenshot evidence from a Trade Talk presentation showing:
+A primary-source tastytrade presentation titled **From Strategy to Practice — India 2020**, presented by Tom Sosnoff, contains the relevant slides.
 
-| VIX | Maximum account allocation |
+The presentation explicitly states:
+
+- market volatility determines the percentage of capital used;
+- individual trade sizing is expressed as a percentage of **net liquidation value**;
+- no more than **15% of net liq in any single underlying**;
+- undefined-risk trade sizing: **3–7%**;
+- defined-risk trade sizing: **1–3%**;
+- VIX-based maximum allocation of buying power;
+- 75% allocation to undefined-risk strategies;
+- 25% allocation to defined-risk strategies.
+
+Primary-source PDF:
+https://s3.amazonaws.com/tastytradepublicmedia/website/cms/tastytrade_TomSosnoff_India2020.pdf/original/tastytrade_TomSosnoff_India2020.pdf
+
+tastylive also identifies *How to Build a Portfolio Using Complex Options Strategies* as a major Tom Sosnoff portfolio-building presentation:
+https://www.tastylive.com/news-insights/watch-these-top-10-youtube-videos-to-master-options-trading
+
+The user's screenshot independently preserves the same VIX table. **Screenshot_20210413-175727.png**. fileciteturn2file0
+
+## 2. VIX-based aggregate allocation
+
+The recovered presentation gives:
+
+| VIX | Maximum allocation of BP |
 |---|---:|
 | 10–15 | 25% |
 | 15–20 | 30% |
@@ -28,104 +52,71 @@ The project has direct screenshot evidence from a Trade Talk presentation showin
 | 30–40 | 40% |
 | >40 | 50% |
 
-This screenshot is preserved in the user's Library as **Screenshot_20210413-175727.png**. fileciteturn2file0
+This resolves the earlier ambiguity around the exact historical table. The official presentation says **VIX greater than 40 → 50% maximum allocation of BP**.
 
-tastylive identifies the underlying *How to Build a Portfolio Using Complex Options Strategies* presentation as part of its educational video catalog. citeturn3search0
+The table is historical documented guidance. It is not automatically a current universal 2026 tastytrade requirement.
 
-The project records this as **historical documented guidance**, not automatically as a current universal 2026 requirement.
+### Critical metric distinction
 
-## 2. Undefined-risk vs. defined-risk allocation
+The presentation uses **maximum allocation of BP** for the VIX table, while it separately describes individual trade sizing as a percentage of **net liq**.
 
-A 2019 tastylive Reserve Capital episode states that its portfolio-allocation framework allocated:
+The bot must therefore not treat these as the same metric.
 
-- 75% of buying power to undefined-risk strategies;
-- 25% to defined-risk strategies.
+## 3. Nested portfolio structure
 
-That same source states per-trade limits of:
+The slide sequence now provides strong evidence for a nested model:
 
-- 3%–5% for undefined-risk trades;
-- 0.5%–2% for defined-risk trades.
+**VIX → maximum total options buying-power allocation → strategy-type allocation → individual trade sizing → underlying concentration**
 
-It also explicitly says that more buying power should be allocated to products when VIX is higher. citeturn5search0
+The presentation first states that market volatility determines the percentage of capital used and then gives the VIX maximum-BP table. The following slide allocates the resulting options portfolio:
 
-These figures are useful evidence of a historical framework, but they should not be assumed to be unchanged current policy.
+- **75% undefined-risk strategies**
+- **25% defined-risk strategies**
 
-## 3. Newer capital-allocation guidance
+This is materially stronger evidence than our previous inference that the 75/25 split might be independent of the VIX ceiling.
 
-A 2024 tastylive portfolio-risk article describes a prudent capital-allocation range of 25%–50%, with a 75% maximum cap, and warns that BPR can expand under market pressure. citeturn5search4
+### Project interpretation
 
-This is important because it overlaps with, but does not exactly reproduce, the older VIX table.
+For the historical framework reconstruction, model the 75/25 split **inside the VIX-derived aggregate options allocation** unless a later primary source contradicts it.
 
-The project therefore needs to treat the historical sources as a sequence of documented frameworks rather than pretending they are one timeless rule.
+Example at VIX 20–30:
 
-## 4. Proposed reconciliation model
+- maximum options BP allocation = 35% of account BP;
+- of that allocated options sleeve, target composition = 75% undefined / 25% defined;
+- individual trades remain subject to their own sizing and concentration limits.
 
-The implementation should represent capital allocation as a hierarchy of constraints.
+This is a reconstruction of the historical framework, not yet a frozen production rule.
 
-### Layer 1 — Aggregate allocation ceiling
+## 4. Individual trade sizing
 
-Determine the maximum options-portfolio allocation from the selected VIX schedule.
+The recovered presentation gives:
 
-Historical candidate:
+| Structure | Historical individual trade size |
+|---|---:|
+| Undefined risk | 3–7% of net liq |
+| Defined risk | 1–3% of net liq |
 
-- 10–15 → 25%
-- 15–20 → 30%
-- 20–30 → 35%
-- 30–40 → 40%
-- >40 → 50%
+The same slide states:
 
-### Layer 2 — Strategy-type budget
+**No more than 15% of net liq in any single underlying.**
 
-Within the aggregate ceiling, maintain separate budgets for:
+This is important because our previous project draft incorrectly framed 5–7% as merely a project-specific small-account exception.
 
-- undefined-risk positions;
-- defined-risk positions.
+### Corrected interpretation
 
-The historical 75/25 split should be tested rather than hard-coded as current doctrine.
+The **3–7% undefined-risk** and **1–3% defined-risk** ranges are directly documented historical presentation guidance.
 
-### Layer 3 — Individual position limit
+However, they remain historical methodology inputs rather than automatically current production limits.
 
-Each candidate position must satisfy its own BPR/risk budget.
+The project's $2,000 account still requires contract-granularity testing.
 
-The historical 2019 guidance gives 3%–5% for undefined-risk and 0.5%–2% for defined-risk trades. These are research inputs, not yet frozen project rules. citeturn5search0
+## 5. $2,000 account translation
 
-### Layer 4 — Portfolio directional exposure
+For a $2,000 account:
 
-Use beta-weighted Delta with SPY as the benchmark for aggregate directional exposure. Current tastylive material explicitly describes beta-weighted Delta using SPY as a portfolio-risk measure. citeturn5search4
+### VIX allocation ceiling
 
-The project still needs to define the numerical neutrality band.
-
-### Layer 5 — Correlation/concentration
-
-Do not treat different tickers as automatically diversified.
-
-Current tastylive guidance explicitly identifies correlation risk as a separate portfolio risk and discusses monitoring correlation between positions. citeturn5search4
-
-### Layer 6 — Dynamic BPR stress
-
-The system must continuously re-evaluate actual BPR rather than only the BPR at entry.
-
-Current tastylive small-account research documents substantial BPR expansion after adverse price movement and increased implied volatility. citeturn0search2
-
-## 5. Critical distinction: allocation is permission, not deployment
-
-A VIX allocation ceiling does not mean:
-
-> "At VIX 25, deploy exactly 35%."
-
-It means:
-
-> "Under this framework, the options portfolio may use up to 35% of account capital, subject to all other risk constraints."
-
-This distinction is mandatory for the bot.
-
-The strategy must be allowed to remain below the ceiling when suitable trades are unavailable or other constraints prevent deployment.
-
-## 6. $2,000 account implications
-
-The historical VIX schedule produces:
-
-| VIX | Maximum allocation | $2,000 account |
+| VIX | Max BP allocation | Dollar equivalent |
 |---|---:|---:|
 | 10–15 | 25% | $500 |
 | 15–20 | 30% | $600 |
@@ -133,128 +124,160 @@ The historical VIX schedule produces:
 | 30–40 | 40% | $800 |
 | >40 | 50% | $1,000 |
 
-The historical per-trade limits produce much smaller nominal amounts:
+### Historical individual trade ranges
 
-### Undefined risk
+| Structure | Percentage of net liq | $2,000 equivalent |
+|---|---:|---:|
+| Undefined risk | 3–7% | $60–$140 |
+| Defined risk | 1–3% | $20–$60 |
 
-- 3% = $60
-- 5% = $100
+### Underlying concentration
 
-### Defined risk
+15% of $2,000 = **$300 maximum net-liq sizing per underlying** under the historical presentation framework.
 
-- 0.5% = $10
-- 2% = $40
+These dollar figures are translations of the historical percentages, not recommendations to deploy those amounts.
 
-This creates an immediate implementation problem: one option contract can consume more BPR than these percentages permit.
+## 6. Allocation is a ceiling, not a deployment target
 
-Therefore the project cannot simply copy the historical percentages and assume they are executable in a $2,000 account.
+A VIX allocation ceiling does not mean:
 
-## 7. Small-account exception must be explicit
+> At VIX 25, deploy exactly 35%.
 
-The project's previously discussed 5%–7% small-account allowance is **not** an official tastytrade rule.
+It means:
 
-It is a project-specific candidate designed to address whole-contract granularity.
+> Under the historical framework, total options BP allocation may be as high as 35%, subject to the other portfolio constraints.
 
-It must be tested against:
+The bot must be able to remain below the ceiling because:
 
-- actual BPR;
-- maximum loss;
-- BPR expansion;
-- portfolio Delta;
-- correlation;
-- assignment risk;
-- account drawdown.
+- no eligible trade exists;
+- a trade would violate the 75/25 sleeve budget;
+- a trade would breach the per-trade limit;
+- an underlying would exceed the 15% concentration cap;
+- portfolio Delta would become excessive;
+- correlation would become excessive;
+- BPR stress would become unacceptable; or
+- another hard account safeguard would block the trade.
 
-The bot must never increase a position merely because the desired percentage is otherwise impossible.
+## 7. Risk metrics are not interchangeable
 
-## 8. Research questions to resolve
+The research now clearly separates:
 
-### A. Does the VIX table apply to all option strategies?
+### Buying Power / BPR
 
-The available evidence does not establish this conclusively.
+Measures capital required by the broker to support the position. This is the metric used by the historical VIX allocation table.
 
-### B. Does the 75/25 undefined/defined-risk split sit inside the VIX allocation?
+### Net Liquidation Value
 
-This is the most important structural question.
+The denominator explicitly used by the presentation for individual trade sizing and the 15% single-underlying limit.
 
-### C. Is the 75/25 split a target, maximum, or illustrative portfolio composition?
+### Beta-weighted Delta
 
-The source wording needs further reconstruction from the original presentation/context.
+Measures standardized directional exposure, with SPY as the benchmark in tastylive methodology. It is useful for portfolio neutrality but is not a complete tail-risk metric.
 
-### D. What exact BPR definition should the bot use?
+### Unit / notional exposure
 
-The execution broker's buying-power calculation may differ by account type and position structure.
+Measures the scale of underlying exposure. tastylive research has shown that notional exposure can be more conservative for outlier-risk assessment than beta-weighted Delta alone.
 
-### E. What beta-weighted Delta band constitutes "neutral"?
+### Correlation / concentration
 
-The benchmark should initially be SPY, but the numerical band remains unresolved.
+Measures whether apparently separate positions are actually exposed to the same underlying risk factors.
 
-### F. How should correlation be measured?
+The risk engine must keep these metrics separate.
 
-Candidate methods:
+## 8. Relationship to older 2019 guidance
 
-- rolling Pearson correlation;
-- beta/factor exposure;
-- sector concentration;
-- stress correlation.
+A 2019 tastylive Reserve Capital episode described:
 
-### G. How should existing positions behave after VIX allocation changes?
+- 75% BP to undefined-risk strategies;
+- 25% BP to defined-risk strategies;
+- 3–5% per undefined-risk trade;
+- 0.5–2% per defined-risk trade;
+- increased allocation as VIX rises.
 
-Project decision already established:
+The recovered 2020 presentation updates the individual sizing ranges to **3–7% undefined** and **1–3% defined**, while retaining the 75/25 framework and VIX scaling.
 
-**Regime changes do not automatically liquidate existing options positions.**
+For this project, the 2020 primary-source presentation is the stronger historical reference for the reconstructed framework because it contains all of these rules together.
 
-The allocation ceiling governs new risk unless an independent hard-risk rule requires action.
+We should not mix the 2019 per-trade ranges with the 2020 ranges unless explicitly testing historical variants.
 
-## 9. Preliminary risk-engine hierarchy
+## 9. Current/recent risk-management context
 
-The research now supports this conceptual hierarchy:
+Newer tastylive material does not simply reproduce the 2020 table as a timeless rule. A 2024 portfolio-risk article discusses prudent capital allocation in a 25%–50% range with a 75% maximum cap and warns that BPR can expand under market stress.
+
+That newer material should be treated as a risk-control overlay when designing the modern bot rather than silently replacing the historical methodology.
+
+## 10. Preliminary deterministic hierarchy
+
+For the reconstructed historical model:
 
 1. Account-level emergency/loss controls
 2. Assignment/expiration safeguards
-3. Aggregate BPR hard ceiling
-4. VIX-derived allocation ceiling
-5. Strategy-type allocation budget
-6. Individual position BPR/risk ceiling
+3. VIX-derived aggregate BP ceiling
+4. 75/25 undefined/defined portfolio sleeve budget
+5. Individual trade net-liq sizing limit
+6. 15% per-underlying concentration limit
 7. Portfolio beta-weighted Delta limits
-8. Correlation/concentration limits
-9. Entry-quality rules
+8. Correlation/concentration stress limits
+9. Entry-quality/liquidity rules
 10. AI opportunity ranking
 
-AI remains below every hard risk constraint.
+The exact numerical Delta, correlation, and stress thresholds remain unresolved.
 
-## 10. Next experiments
+## 11. $2,000 account problem
 
-The first backtesting matrix should compare:
+The historical framework was not designed specifically around a $2,000 account.
 
-### Allocation model
+At this account size:
 
-- historical VIX 25/30/35/40/50 schedule;
-- fixed 25%;
-- fixed 35%;
-- fixed 50%;
-- 2024-style 25%–50% with 75% hard cap.
+- a single contract can exceed the intended percentage range;
+- undefined-risk positions can consume disproportionate BPR;
+- defined-risk spreads can have minimum risk increments that are too large;
+- exact 75/25 allocation may be impossible;
+- exact Delta neutrality may be impossible;
+- diversification may be severely constrained.
 
-### Strategy mix
+Therefore the bot must report **constraint infeasibility** rather than silently relaxing the methodology.
 
-- undefined-risk only;
-- defined-risk only;
-- historical 75/25 mix;
-- project-specific alternatives.
+The small-account question becomes an explicit experiment:
 
-### Position sizing
+> What is the smallest account size at which the historical framework can be executed without systematically violating its own sizing and diversification constraints?
 
-- historical 3%–5% undefined-risk range;
-- historical 0.5%–2% defined-risk range;
-- project 5%–7% small-account exception;
-- contract-granularity-aware sizing.
+## 12. Research experiments
 
-All variants must use identical market data and execution assumptions.
+The next backtesting matrix should include:
 
-## Current decision
+### Historical framework
 
-The project now has enough evidence to stop treating VIX allocation as an unsupported idea.
+- VIX 25/30/35/40/50 BP ceiling;
+- nested 75/25 strategy allocation;
+- 3–7% undefined-risk trade size;
+- 1–3% defined-risk trade size;
+- 15% maximum net-liq concentration per underlying.
 
-However, we do **not** yet have enough evidence to freeze the complete options portfolio methodology.
+### Historical variants
 
-The next step is to reconstruct the original Trade Talk presentation's surrounding rules and reconcile them with newer tastylive risk-management material before implementation.
+- 2019 per-trade ranges: 3–5% undefined / 0.5–2% defined;
+- 2020 ranges: 3–7% undefined / 1–3% defined.
+
+### Modern risk overlays
+
+- aggregate BPR stress;
+- beta-weighted Delta;
+- correlation;
+- notional/unit exposure;
+- drawdown;
+- volatility regime.
+
+### Small-account tests
+
+Test $2,000, $5,000, $10,000, and larger accounts to determine where contract granularity stops dominating the framework.
+
+## Current conclusion
+
+We have now reconstructed the most important missing relationship:
+
+**The historical VIX schedule, 75/25 strategy mix, individual trade sizing, and 15% underlying concentration limit appear together in the same primary-source portfolio presentation.**
+
+That substantially reduces the ambiguity in the portfolio architecture.
+
+What remains unresolved is not the historical framework itself, but whether and how that historical framework should be adapted for the bot's $2,000 paper account and current market/broker mechanics.
