@@ -1,104 +1,184 @@
 # VIX and Buying-Power Allocation Research
 
-**Status:** Unresolved — no authoritative numerical schedule frozen  
+**Status:** Documented historical tastytrade/tastylive framework; current production status still requires validation  
 **Last reviewed:** 2026-09-27
 
-## Finding
+## Important correction
 
-The project previously considered a numerical table mapping VIX ranges to percentages of buying power allocated to options. Current primary-source research does **not** justify treating that table as an official universal tastytrade/tastylive rule.
+The project now has direct screenshot evidence from the **Trade Talk by tastytrade** presentation *How to Build a Portfolio Using Complex Options Strategies* showing the following VIX/account-allocation table:
 
-The table must therefore **not** be encoded as "the tastytrade method."
+| VIX | Maximum account allocation |
+|---|---:|
+| 10–15 | 25% |
+| 15–20 | 30% |
+| 20–30 | 35% |
+| 30–40 | 40% |
+| Greater than 40 | 50% |
 
-## What the primary sources do establish
+The screenshot is preserved in the user's Library as **Screenshot_20210413-175727.png**. fileciteturn2file0
 
-The current tastytrade backtesting API supports VIX as an explicit entry and exit condition. Its documented example can require VIX to be between a minimum and maximum at entry and can also use a VIX condition at exit.
+This supersedes our previous conclusion that there was no evidence for a numerical schedule.
 
-This establishes that volatility-regime filtering is a supported research dimension. It does not establish a specific production allocation curve.
+tastylive identifies *How to Build a Portfolio Using Complex Options Strategies* as a Trade Talk presentation by Tom Sosnoff and describes it as a detailed portfolio-building presentation. citeturn3search0 A contemporaneous community discussion independently identifies the same video and reports the same 25/30/35/40/50 progression, although it reports the highest band as VIX >50 rather than the >40 shown in the screenshot. citeturn3reddit16
 
-The official backtesting API also supports maximum active trials. This gives the project a second, independent way to constrain concurrent option risk.
+For this project, the **screenshot controls the exact table we record**, so the research specification uses **VIX >40 → 50%**.
 
-## Project interpretation
+## What this evidence means
 
-VIX should initially be treated as a **risk-budget input**, not as a direct instruction such as "VIX X means allocate Y%."
+The table is now classified as:
 
-The research engine should be able to test several classes of allocation model:
+**Documented historical tastytrade/tastylive portfolio-allocation guidance.**
 
-### Model A — Fixed risk budget
+It should **not yet** be classified as a universally current 2026 tastytrade rule.
 
-Use a constant maximum aggregate options buying-power budget regardless of VIX.
+That distinction matters because the presentation is from 2020, while newer tastylive material uses different framing. A 2024 tastylive portfolio-risk article describes prudent capital allocation as a **25%–50% range with a 75% maximum cap**, rather than reproducing this exact VIX table. citeturn0search1
 
-Purpose: establish a control group.
+Therefore we preserve the historical table rather than silently treating it as today's universal requirement.
 
-### Model B — Piecewise VIX budget
+## Working project baseline
 
-Define discrete VIX bands and assign each band a maximum buying-power budget.
+The exact historical table is now a first-class research candidate:
 
-Purpose: test the user's hypothesis that elevated implied volatility may justify greater premium-selling capacity while preserving explicit risk limits.
+- VIX 10–15 → maximum 25% account allocation
+- VIX 15–20 → maximum 30%
+- VIX 20–30 → maximum 35%
+- VIX 30–40 → maximum 40%
+- VIX >40 → maximum 50%
 
-### Model C — Continuous VIX function
+The table controls the **maximum aggregate account allocation to the options portfolio**, not the size of an individual position.
 
-Map normalized VIX or IV-rank information to a continuous risk budget.
+It does not mean the bot must automatically deploy the maximum.
 
-Purpose: avoid abrupt changes at arbitrary VIX boundaries.
+## Interaction with position sizing
 
-### Model D — VIX plus portfolio stress
+At our $2,000 test account, the allocation ceiling and individual position sizing are separate constraints.
 
-Use VIX together with realized volatility, drawdown, beta-weighted Delta and current buying-power usage.
+The bot must enforce:
 
-Purpose: test whether VIX alone is an inadequate proxy for portfolio risk.
+1. VIX-derived aggregate allocation ceiling.
+2. Per-position sizing ceiling.
+3. Portfolio beta-weighted Delta constraint.
+4. Concentration/correlation constraints.
+5. Remaining liquidity buffer.
+6. Assignment/expiration safeguards.
+7. Account-level loss controls.
 
-## Important distinction
+The most restrictive applicable rule wins.
 
-Higher implied volatility can increase option premium, but higher volatility can also increase mark-to-market losses, buying-power requirements and tail risk. Therefore:
+## Small-account implications
 
-**higher VIX ≠ automatically safer option selling**
+At $2,000:
 
-Any allocation increase at higher VIX must be validated against drawdown, buying-power expansion and adverse price-gap scenarios.
+- 25% = $500
+- 30% = $600
+- 35% = $700
+- 40% = $800
+- 50% = $1,000
 
-## Small-account constraint
+These are portfolio-level maximums, not required deployment.
 
-The initial account size is $2,000. Whole-contract granularity means percentage-based allocation rules can become discontinuous. A nominal 1–3% position-sizing preference can be impossible to implement precisely when one contract represents substantially more than that percentage.
+Whole-contract option sizing can make the 1–3% preferred per-position target impossible to satisfy precisely. The system must calculate actual contract-level BPR and reject trades that violate hard constraints rather than forcing percentage compliance.
 
-The system should therefore calculate:
+Current tastylive small-account research specifically warns that naked-option BPR can expand substantially after adverse price moves and IV increases. citeturn0search2
 
-1. desired risk budget,
-2. contract-level buying-power impact,
-3. post-trade aggregate buying-power usage,
-4. post-trade beta-weighted Delta,
-5. worst-case or defined-risk loss where available,
-6. remaining liquidity buffer.
+## What remains unresolved
 
-If a candidate trade cannot fit the hard risk constraints, it is rejected rather than forced into the portfolio.
+1. Whether this historical table should be used unchanged for the project's $2,000 account.
+2. Whether "account allocation" maps directly to the BPR definition supplied by our execution broker.
+3. Whether the table applies specifically to undefined-risk strategies, all options strategies, or a broader portfolio framework.
+4. Whether current tastylive guidance has replaced or refined the historical table.
+5. How the ceiling interacts with defined-risk spreads whose BPR behaves differently.
+6. Whether the regime-switching layer should use the VIX ceiling directly or as one input among several.
+7. Whether a 50% maximum is appropriate after realistic BPR-expansion and stress testing.
+
+## Additional primary-source context
+
+An earlier tastylive piece on reserve capital states that its primary portfolio-allocation rule was to allocate more buying power when VIX is higher. It also distinguishes undefined-risk and defined-risk allocation, discussing 75% of buying power for undefined-risk strategies and 25% for defined-risk strategies, alongside separate per-trade limits. citeturn0search0
+
+This suggests the VIX table may be part of a broader capital-allocation framework rather than a standalone rule.
+
+We therefore need to reconcile:
+
+- VIX allocation,
+- undefined vs. defined risk,
+- per-trade BPR,
+- portfolio Delta,
+- diversification/correlation,
+- and reserve capital
+
+before freezing the options strategy.
 
 ## Research matrix
 
-The backtester should compare VIX allocation models over identical historical periods and identical fills/transaction-cost assumptions.
+Compare:
+
+### Historical VIX schedule
+
+10–15: 25%  
+15–20: 30%  
+20–30: 35%  
+30–40: 40%  
+>40: 50%
+
+### Fixed controls
+
+- 25% fixed maximum
+- 35% fixed maximum
+- 50% fixed maximum
+
+### Stress-aware alternatives
+
+VIX schedule plus:
+
+- portfolio drawdown
+- realized volatility
+- beta-weighted Delta
+- current BPR utilization
+- correlation concentration
+- BPR expansion stress
 
 Required outputs:
 
-- CAGR / annualized return
+- annualized return
 - maximum drawdown
 - volatility
-- Sharpe and Sortino
+- Sharpe / Sortino
 - worst daily loss
 - worst trade
-- buying-power utilization
-- frequency of buying-power spikes
-- frequency of rejected entries
-- time spent without eligible trades
+- BPR utilization
+- BPR expansion frequency
+- rejected-entry frequency
+- time without eligible trades
 - turnover
 - exposure by VIX regime
 - tail-loss behavior
 
-The project should prefer robustness across periods over the strongest result in one historical window.
-
 ## Current decision
 
-No numerical VIX-to-buying-power table is authoritative.
+The historical 25/30/35/40/50 VIX allocation schedule is now **documented evidence and a first-class research candidate**.
 
-A project-specific schedule may be created later, but it must be explicitly labeled **experimental** and compared against fixed-budget controls.
+It is no longer correct to describe the schedule as unsupported.
+
+It is also premature to describe it as a universally current 2026 tastytrade requirement.
+
+### Next research task
+
+Reconstruct the **full portfolio methodology surrounding this table**, especially:
+
+- undefined-risk vs. defined-risk allocation,
+- per-trade BPR,
+- aggregate BPR,
+- reserve capital,
+- beta-weighted Delta,
+- diversification/correlation,
+- and how these constraints interact.
+
+Only after that reconciliation should we freeze the options strategy specification.
 
 ## References
 
-- tastytrade Developer Docs — Create a backtest: https://developer.tastytrade.com/reference/backtesting/postBacktests/
-- tastytrade Developer Docs — Run a backtest: https://developer.tastytrade.com/docs/guides/backtesting/
+- tastylive — *Watch These Top 10 YouTube Videos to Master Options Trading*: https://www.tastylive.com/news-insights/watch-these-top-10-youtube-videos-to-master-options-trading
+- tastylive — *Reserve Capital*: https://www.tastylive.com/shows/best-practices/episodes/reserve-capital-06-03-2019
+- tastylive — *How to Manage the 5 Biggest Risks to Your Portfolio*: https://www.tastylive.com/news-insights/most-important-risks-portfolio-management
+- tastylive — *How to Manage Buying Power Risk in Small Option Accounts*: https://www.tastylive.com/news-insights/how-manage-buying-power-risk-small-option-accounts
+- User Library evidence: **Screenshot_20210413-175727.png**. fileciteturn2file0
