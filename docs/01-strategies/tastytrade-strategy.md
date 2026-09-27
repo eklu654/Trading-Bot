@@ -1,13 +1,13 @@
 # Options-Selling Strategy Specification
 
-**Status:** Research draft — not yet frozen for implementation  
+**Status:** Research draft — historical portfolio framework reconstructed; production rules not yet frozen  
 **Last reviewed:** 2026-09-27
 
 ## 1. Purpose
 
 This document defines the rules for the options-selling strategy used by the project.
 
-The strategy is intended to model a disciplined, rules-based short-premium approach informed by current tastytrade/tastylive educational material. It separates:
+The strategy is intended to model a disciplined, rules-based short-premium approach informed by tastytrade/tastylive educational material. It separates:
 
 1. **Verified methodology** — supported by primary tastytrade/tastylive documentation.
 2. **Project interpretation** — how source material is translated into system behavior.
@@ -18,55 +18,33 @@ A project rule must never be presented as an official tastytrade rule unless the
 
 ## 2. Portfolio objective
 
-The strategy seeks to systematically sell option premium while controlling buying-power usage, directional exposure, concentration, volatility-driven margin expansion, tail risk, time-to-expiration risk, and execution risk.
+The strategy seeks to systematically sell option premium while controlling buying-power usage, directional exposure, concentration, volatility-driven BPR expansion, tail risk, time-to-expiration risk, and execution risk.
 
-The strategy is intended to be managed mechanically. AI may help identify eligible opportunities, but it cannot override hard entry, sizing, risk, or exit rules.
+AI may help identify eligible opportunities, but it cannot override hard entry, sizing, risk, or exit rules.
 
-## 3. Verified methodology — current research baseline
+## 3. Historical portfolio framework — now verified
 
-Current tastytrade/tastylive materials and the official tastytrade backtester document mechanics including option selection by delta, defined DTE ranges, entry conditions, VIX-based entry filters, take-profit conditions, stop-loss conditions, maximum days in trade, DTE-based exits, and strategy legs.
+A primary-source tastytrade presentation, **From Strategy to Practice — India 2020**, provides a coherent portfolio framework:
 
-Research examples commonly use approximately **45 DTE** entries, relatively low short-strike deltas such as **16 delta**, and management around **50% of maximum profit** and/or approximately **21 DTE**. These values are treated here as a research baseline, not as an assertion that every tastytrade strategy universally uses identical parameters.
+- market volatility determines the percentage of capital used;
+- individual trade sizing is measured as a percentage of **net liquidation value**;
+- no more than **15% of net liq in any single underlying**;
+- undefined-risk trades: **3–7%**;
+- defined-risk trades: **1–3%**;
+- VIX-based maximum allocation of buying power;
+- 75% allocated to undefined-risk strategies;
+- 25% allocated to defined-risk strategies.
 
-Each parameter must be verified against the specific current source before the strategy is frozen.
+Primary-source presentation:
+https://s3.amazonaws.com/tastytradepublicmedia/website/cms/tastytrade_TomSosnoff_India2020.pdf/original/tastytrade_TomSosnoff_India2020.pdf
 
-## 4. Portfolio-level directional exposure
+The user's screenshot also preserves the VIX table. **Screenshot_20210413-175727.png**. fileciteturn2file0
 
-The project intends to maintain a substantially delta-balanced portfolio rather than making an uncontrolled directional bet.
+This is now treated as **verified historical methodology**, not as a universally current 2026 requirement.
 
-Both bullish and bearish option structures may be held simultaneously.
+## 4. Historical VIX allocation
 
-Current tastylive material explicitly uses **SPY beta-weighted Delta** as a standardized measure of portfolio directional exposure. citeturn0search1turn0search3
-
-The project should therefore use SPY beta-weighted Delta as the primary directional-exposure metric, while recognizing that beta-weighted Delta is not a complete tail-risk measure.
-
-Before coding, define:
-
-- the permitted aggregate beta-weighted-Delta band;
-- individual-position delta limits;
-- how correlation between underlyings is handled;
-- how neutrality is restored without violating other risk constraints; and
-- how the system handles conditions where beta-weighted Delta understates stress exposure.
-
-The bot must not assume exact zero delta is always achievable.
-
-## 5. Position sizing
-
-### Project requirement
-
-The preferred position size is approximately **1–3% of account buying power** per position.
-
-For accounts below $10,000, the project permits a controlled exception because whole option contracts create granularity. The current working proposal is that a position may exceed the preferred range, with an approximate **5–7% upper working range**.
-
-This is a **project-specific rule**, not currently claimed as an official universal tastytrade position-size rule.
-
-The final specification must define whether the percentage is measured against net liquidation value, available buying power, total buying power, or a strategy-specific risk budget.
-
-## 6. Volatility and VIX allocation
-
-The project now has direct source evidence for a historical tastytrade Trade Talk VIX allocation table:
-
-| VIX | Maximum account allocation |
+| VIX | Maximum allocation of buying power |
 |---|---:|
 | 10–15 | 25% |
 | 15–20 | 30% |
@@ -74,68 +52,118 @@ The project now has direct source evidence for a historical tastytrade Trade Tal
 | 30–40 | 40% |
 | >40 | 50% |
 
-The screenshot evidence is preserved in the user's Library as **Screenshot_20210413-175727.png**. fileciteturn2file0
+The important metric distinction is:
 
-This is now classified as **documented historical tastytrade/tastylive guidance**, not an unsupported hypothesis. However, it is not yet classified as a universally current 2026 requirement.
+- **VIX table:** maximum aggregate allocation of **buying power**;
+- **individual trade sizing:** percentage of **net liquidation value**.
 
-The table defines a **maximum aggregate allocation**, not a requirement to deploy that amount. It must remain subordinate to all other hard risk constraints.
+These are not interchangeable.
 
-Official tastylive material also states that its historical portfolio-allocation framework allocated 75% of buying power to undefined-risk strategies and 25% to defined-risk strategies, with separate per-trade limits. citeturn0search0
+The VIX figure is a ceiling, not a required deployment amount.
 
-The project therefore needs to reconcile the VIX ceiling with strategy-type allocation, per-position BPR, portfolio directional exposure, correlation, and tail-risk constraints before freezing the final rule set.
+## 5. Historical strategy-type allocation
 
-## 7. Entry framework — provisional
+The recovered presentation places the following strategy mix immediately after the VIX allocation framework:
 
-The working research baseline is:
+- **75% of the allocated options portfolio → undefined-risk strategies**
+- **25% → defined-risk strategies**
 
-- prefer liquid underlyings;
-- prefer approximately 45 DTE for core positions;
-- consider approximately 16-delta short strikes for low-delta premium structures;
-- require sufficient implied-volatility opportunity;
-- respect portfolio-level delta constraints;
-- respect buying-power allocation;
-- reject trades that create excessive concentration or correlated exposure.
+Historical examples include:
 
-These are provisional until source research is reconciled into a final strategy specification.
+### Undefined risk
+- Straddles in higher IV Rank environments
+- Strangles in lower IV Rank environments
 
-## 8. Exit framework — provisional
+### Defined risk
+- Iron condors
+- Debit spreads
+- Credit spreads
 
-The strategy will use deterministic exits.
+For this project's historical-framework reconstruction, the 75/25 split is modeled **inside the VIX-derived aggregate options allocation**.
 
-The current research baseline includes:
+This nesting is a project interpretation of the presentation's slide sequence and wording; it is not being represented as a current universal tastytrade rule.
 
-- profit-taking around 50% of maximum profit;
-- management/exit around 21 DTE where applicable;
-- additional strategy-specific exits where required;
-- no AI discretionary override.
+## 6. Individual trade sizing
 
-The exact interaction between profit target, DTE, stop loss, expiration, assignment, and portfolio-risk exits must be defined before implementation.
+The primary-source presentation states:
 
-## 9. Existing positions during regime changes
+| Position type | Historical sizing |
+|---|---:|
+| Undefined risk | 3–7% of net liq |
+| Defined risk | 1–3% of net liq |
 
-A regime change does **not** automatically liquidate existing options positions.
+It also states:
 
-When the regime switcher determines that the options strategy is no longer eligible for new entries:
+**No more than 15% of net liq in any single underlying.**
 
-- existing positions remain under the options strategy;
-- the options strategy's own exit rules continue to govern them;
-- no AI-generated regime signal may forcibly close them merely because the preferred regime changed.
+This supersedes the previous draft's treatment of 5–7% as merely a project-specific small-account exception.
 
-Hard portfolio-wide risk controls remain authoritative.
+The project may still need a small-account execution policy, but the historical 3–7% undefined-risk range is directly documented.
 
-## 10. Small-account constraints
+## 7. Project-specific $2,000 account
 
 Initial paper testing uses a $2,000 account per strategy instance.
 
-This creates important implementation constraints:
+At $2,000, the historical ranges translate to:
 
-- whole-contract sizing;
-- potentially large percentage exposure from a single contract;
-- limited ability to maintain perfect delta neutrality;
-- substantial buying-power impact from some naked options;
-- possible inability to diversify normally.
+- undefined-risk trade: $60–$140 net-liq equivalent;
+- defined-risk trade: $20–$60 net-liq equivalent;
+- maximum single-underlying sizing: $300 net-liq equivalent;
+- VIX allocation ceiling: $500–$1,000 depending on VIX.
 
-The backtester must report when an ideal trade cannot be executed because of account-size constraints rather than silently relaxing the rules.
+These are mathematical translations of the historical framework, not instructions to deploy those amounts.
+
+The bot must reject or flag trades when contract granularity makes the historical framework infeasible. It must not silently increase size merely to make a trade possible.
+
+## 8. Entry framework — provisional
+
+The current research baseline is:
+
+- prefer liquid underlyings;
+- prefer approximately **45 DTE** for core short-premium positions;
+- consider approximately **16-delta** short strikes for low-delta premium structures;
+- require sufficient implied-volatility opportunity;
+- respect portfolio-level Delta constraints;
+- respect VIX/BP allocation;
+- respect 75/25 strategy-type allocation;
+- respect individual net-liq sizing;
+- respect 15% underlying concentration;
+- reject excessive correlation or tail exposure.
+
+The 45-DTE/16-delta values are research baselines rather than universal rules for every strategy.
+
+## 9. Exit framework — provisional
+
+The strategy uses deterministic exits.
+
+Research evidence supports:
+
+- management around **50% of maximum profit** for several short-premium structures;
+- management around **21 DTE** for several 45-DTE short-premium studies and strategy guides.
+
+For example, tastylive's 2020 strategy-mechanics material describes short strangles, iron condors, and credit spreads as managed at 50% of credit received or 21 DTE, whichever comes first. A 2024 tastylive study also found 21-DTE management materially reduced volatility and downside losses in the tested SPY setups.
+
+These remain strategy-specific research baselines until the exact trade universe is frozen.
+
+## 10. Portfolio directional exposure
+
+The project intends to maintain a substantially delta-balanced portfolio rather than making an uncontrolled directional bet.
+
+Both bullish and bearish option structures may be held simultaneously.
+
+SPY beta-weighted Delta is the primary standardized directional-exposure metric.
+
+However, beta-weighted Delta is not a complete tail-risk measure. The risk engine must also monitor unit/notional exposure, BPR, correlation, and maximum loss.
+
+Before implementation, define:
+
+- aggregate beta-weighted-Delta band;
+- individual position delta limits;
+- correlation handling;
+- stress behavior;
+- neutrality restoration rules.
+
+Exact zero Delta is not required if achieving it would violate a more important risk constraint.
 
 ## 11. Hard risk hierarchy
 
@@ -143,71 +171,87 @@ The execution architecture is:
 
 **Research / AI layer → Quantitative regime and opportunity signals → Strategy eligibility → Risk engine → Execution engine**
 
-The risk engine has absolute authority over maximum position size, aggregate buying-power allocation, portfolio exposure, delta limits, concentration, prohibited trades, expiration/assignment safeguards, and account-level loss controls.
+The risk engine has absolute authority over:
 
-The risk engine must track more than beta-weighted Delta. tastylive research on leveraged options portfolios found that **unit/notional risk can be a more conservative measure of outlier risk than day-to-day volatility or beta-weighted Delta**, with higher-allocation SPY strangle portfolios experiencing substantially worse drawdowns during the 2008 crash. citeturn1search0
-
-Accordingly, the project risk engine will separately track:
-
-- aggregate BPR;
-- unit/notional exposure;
+- aggregate BP allocation;
+- strategy-type allocation;
+- individual sizing;
+- per-underlying concentration;
 - beta-weighted Delta;
-- correlation/concentration;
-- volatility-sensitive BPR expansion;
-- and defined-risk maximum loss where applicable.
+- unit/notional exposure;
+- correlation;
+- BPR expansion;
+- defined-risk maximum loss;
+- assignment/expiration safeguards;
+- account-level loss controls.
 
 AI cannot bypass these controls.
 
-## 12. Backtesting requirements
+## 12. Existing positions during regime changes
 
-Before paper trading, this strategy must be tested historically under reproducible assumptions.
+A regime change does **not** automatically liquidate existing options positions.
+
+When the regime switcher makes the options strategy ineligible for new entries:
+
+- existing positions remain under the options strategy;
+- the options strategy's own exit rules continue to govern them;
+- the regime signal cannot forcibly close them merely because the preferred regime changed.
+
+Hard portfolio-wide risk controls remain authoritative.
+
+## 13. Backtesting requirements
+
+Before paper trading, test the strategy historically under reproducible assumptions.
 
 Required metrics include:
 
 - total return;
 - CAGR where meaningful;
 - maximum drawdown;
-- Sharpe ratio;
-- Sortino ratio;
+- Sharpe;
+- Sortino;
 - volatility;
 - time invested;
-- time in cash;
 - trade count;
 - turnover;
 - win rate;
 - average winner/loser;
 - profit factor;
-- buying-power utilization;
-- maximum buying-power expansion;
+- BP utilization;
+- maximum BPR expansion;
 - assignment/expiration events;
 - transaction costs;
-- realistic option fill assumptions; and
-- performance by volatility regime.
+- realistic option fills;
+- performance by VIX/IVR regime;
+- rejected-entry frequency;
+- constraint-infeasibility frequency.
 
-The test must distinguish in-sample development from out-of-sample validation.
+Tests must distinguish in-sample development from out-of-sample validation.
 
-## 13. Source policy
+## 14. Open questions before implementation
+
+- Whether the historical framework should be used unchanged for the $2,000 paper account.
+- Exact broker definition of BPR and how it maps to the historical BP allocation.
+- Exact underlying universe.
+- Naked versus defined-risk structure eligibility.
+- Exact entry frequency.
+- Liquidity thresholds.
+- Exact aggregate beta-weighted-Delta neutrality band.
+- Correlation/stress thresholds.
+- Exact 21-DTE behavior by structure.
+- Stop-loss policy for undefined-risk positions.
+- Assignment and expiration policy.
+- Corporate-action handling.
+- Whether current 2024–2026 material materially modifies the historical framework.
+- Whether the SWITCH-001 regime layer should use VIX allocation directly or combine it with IVR, realized volatility, and market-regime signals.
+
+## 15. Source policy
 
 Primary sources take precedence:
 
 1. official tastytrade documentation;
 2. official tastylive research/education;
 3. official tastytrade API/backtester documentation;
-4. secondary sources only for discovery or contextual comparison.
+4. secondary sources only for discovery/context.
 
 No third-party rule becomes authoritative merely because it is widely repeated.
-
-## 14. Open questions before implementation
-
-- Whether the historical VIX allocation schedule remains appropriate as a current production rule.
-- How the historical VIX allocation schedule interacts with the 75% undefined-risk / 25% defined-risk framework.
-- Exact definition of portfolio delta neutrality.
-- Underlying universe.
-- Naked versus defined-risk option structures.
-- Exact entry frequency.
-- Exact liquidity thresholds.
-- Exact stop-loss policy.
-- Exact 21-DTE behavior by strategy type.
-- Assignment and expiration policy.
-- Treatment of dividends, corporate actions, and early assignment.
-- Exact small-account sizing exception.
