@@ -232,10 +232,11 @@ def candidate_mark_ledger(
     entries: pd.DataFrame,
     quotes: pd.DataFrame,
     args: argparse.Namespace,
+    regime: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Persist the daily strangle debit used to mark each independent candidate."""
+    """Persist daily option debits and underlying closes for account risk marks.""
     if entries.empty or quotes.empty:
-        return pd.DataFrame(columns=["candidate_id", "date", "mark_debit", "mark_model"])
+        return pd.DataFrame(columns=["candidate_id", "date", "mark_debit", "underlying_close", "mark_model"])
 
     rows = []
     for _, row in entries.iterrows():
@@ -263,6 +264,8 @@ def candidate_mark_ledger(
                 "candidate_id": candidate_id,
                 "date": pd.Timestamp(date),
                 "mark_debit": float(call_value + put_value),
+                "underlying_close": float(regime.loc[pd.Timestamp(date), "spy_close"])
+                    if pd.Timestamp(date) in regime.index else float("nan"),
                 "mark_model": field,
             })
     return pd.DataFrame(rows)
@@ -390,7 +393,7 @@ def main() -> None:
     independent_outcomes = candidate_trade_outcomes(
         entries, quotes, regime, args, enforce_one_position=False
     )
-    candidate_marks = candidate_mark_ledger(entries, quotes, args)
+    candidate_marks = candidate_mark_ledger(entries, quotes, args, regime)
     con.close()
 
     # Persist the complete candidate universe separately from completed trades.
