@@ -135,19 +135,27 @@ def replay(
     frame["exit_date"] = pd.to_datetime(frame.get("exit_date"), errors="coerce")
     frame = frame.sort_values(["entry_date", "candidate_id"]).reset_index(drop=True)
 
-    mark_lookup: dict[tuple[str, pd.Timestamp], float] = {}
+    mark_lookup: dict[tuple[str, pd.Timestamp], dict[str, float]] = {}
     if marks is not None:
-        mark_required = {"candidate_id", "date", "mark_debit"}
+        mark_required = {"candidate_id", "date", "mark_debit", "underlying_close"}
         missing_marks = mark_required - set(marks.columns)
         if missing_marks:
             raise ValueError(f"mark input missing required columns: {sorted(missing_marks)}")
-        mark_frame = marks[["candidate_id", "date", "mark_debit"]].copy()
+        mark_frame = marks[["candidate_id", "date", "mark_debit", "underlying_close"]].copy()
         mark_frame["date"] = pd.to_datetime(mark_frame["date"])
         if mark_frame.duplicated(["candidate_id", "date"]).any():
             raise ValueError("mark input contains duplicate candidate_id/date values")
         for mark_row in mark_frame.itertuples(index=False):
-            if _finite(mark_row.mark_debit) and float(mark_row.mark_debit) >= 0:
-                mark_lookup[(str(mark_row.candidate_id), pd.Timestamp(mark_row.date))] = float(mark_row.mark_debit)
+            if (
+                _finite(mark_row.mark_debit)
+                and float(mark_row.mark_debit) >= 0
+                and _finite(mark_row.underlying_close)
+                and float(mark_row.underlying_close) > 0
+            ):
+                mark_lookup[(str(mark_row.candidate_id), pd.Timestamp(mark_row.date))] = {
+                    "mark_debit": float(mark_row.mark_debit),
+                    "underlying_close": float(mark_row.underlying_close),
+                }
 
     cash = float(config.starting_nlv)
     active: list[dict[str, object]] = []
@@ -172,7 +180,20 @@ def replay(
         for position in active:
             key = (str(position["candidate_id"]), timestamp)
             if key in mark_lookup:
-                position["position_value"] = -mark_lookup[key] * config.contract_multiplier
+                mark = mark_lookup[key]
+                position["position_value"] = -mark["mark_debit"] * config.contract_multiplier
+                position["underlying"] = mark["underlying_close"]
+                position["mark_debit"] = mark["mark_debit"]
+                position["bpr"] = estimate_short_strangle_bpr(
+                    mark["underlying_close"], float(position["put_strike"]),
+                    float(position["call_strike"]), mark["mark_debit"],
+                    config.contract_multiplier, config.stress_multiplier,
+                )
+                position["stress_loss"] = max_stress_loss(
+                    mark["underlying_close"], float(position["put_strike"]),
+                    float(position["call_strike"]), mark["mark_debit"],
+                    config.contract_multiplier, config.stress_multiplier,
+                )
                 position["last_mark_date"] = timestamp
             else:
                 missing = True
@@ -272,6 +293,10 @@ def replay(
                 "exit_cash_flow": exit_cash_flow,
                 "row_index": row_index,
                 "last_mark_date": entry,
+                "call_strike": float(row["call_strike"]),
+                "put_strike": float(row["put_strike"]),
+                "underlying": float(underlying),
+                "mark_debit": credit,
             })
 
         nlv_after_entry = cash + open_value()
@@ -294,6 +319,8 @@ def replay(
             "bpr_estimate": bpr,
             "aggregate_bpr_post_entry": active_bpr(),
             "aggregate_stress_loss_post_entry": active_stress_loss(),
+            "aggregate_bpr_pre_trade": active_bpr() - (bpr if accepted else 0.0),
+            "aggregate_stress_loss_pre_trade": active_stress_loss() - (stress_loss if accepted else 0.0),
             "bpr_pct_pre_trade_nlv": bpr / nlv_before if _finite(bpr) and nlv_before else float("nan"),
             "stress_loss": stress_loss,
             "fees": fees,
