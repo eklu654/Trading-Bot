@@ -216,3 +216,23 @@ This does **not** mean “never exit a losing strangle.” It means the current 
 
 The no-stop result also strengthens the case for testing turbulent periods as a legitimate options regime rather than excluding them solely because of the first placeholder-stop result.
 
+
+
+## 14. Defense-method research specification — 2026-09-28
+
+The documented tastylive mechanics support the project's next test direction: short strangles are generally managed at 50% of maximum profit or 21 DTE, while challenged positions may be defended by rolling the untested side, rolling out in time, and/or going inverted. Their current strangle concept page specifically describes rolling the untested side closer to the underlying after the tested side is breached. citeturn0search1turn0search10
+
+A recent tastylive lifecycle example likewise describes rolling the untested put upward after an upside move to reduce directional exposure and collect additional credit, followed by rolling the call downward after a reversal. citeturn0search9
+
+For this project, these concepts become **research proxies**, not claims of a single official mechanical rule:
+
+1. **NO_ADJUSTMENT** — retain the original strikes until 50% profit or 21 DTE.
+2. **ROLL_UNTESTED** — when the underlying EOD close breaches one short strike, replace the opposite untested short leg with a strike closer to the underlying, using the same expiration where possible. Target selection will be deterministic and recorded.
+3. **ROLL_OUT** — move the challenged structure to a later expiration using a deterministic DTE target, recording the net debit/credit.
+4. **INVERT** — roll the untested leg through the tested strike, creating an inverted strangle. Strike choice and inversion width must be explicit; tastylive material notes a tradeoff between inversion width, delta neutralization and profit potential. citeturn1search6turn1search8
+
+The first implementation will test **ROLL_UNTESTED** independently before combining defenses. This avoids optimizing a multi-action state machine before the individual mechanism has measurable historical behavior.
+
+The challenge trigger will be an EOD close beyond the corresponding short strike. Because the source is EOD-only, this is deliberately a daily reconstruction proxy and cannot establish the exact intraday time at which a strike was breached.
+
+Importantly, the no-stop benchmark is consistent with separate tastylive research reporting that tighter loss targets can reduce downside volatility while materially sacrificing success rate and returns. That external result does not validate this project's no-stop strategy; it supports testing management/defense mechanics rather than assuming a fixed loss stop is automatically beneficial. citeturn0search4
