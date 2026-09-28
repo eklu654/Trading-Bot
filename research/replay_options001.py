@@ -342,7 +342,8 @@ def main() -> None:
     result = first_pass_trades(entries, quotes, regime, args)
     con.close()
 
-    out = RESEARCH_DIR / f"options001_replay_{args.candidate.lower()}_{args.fill_model}.csv"
+    loss_tag = "nostop" if args.loss_credit_multiple <= 0 else f"loss{args.loss_credit_multiple:g}x"
+    out = RESEARCH_DIR / f"options001_replay_{args.candidate.lower()}_{args.fill_model}_{loss_tag}.csv"
     result.to_csv(out, index=False)
 
     print("OPTIONS-001 first-pass replay")
