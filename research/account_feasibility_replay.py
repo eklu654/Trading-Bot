@@ -32,6 +32,7 @@ class FeasibilityConfig:
     slippage_credit: float = 0.0
     stress_multiplier: float = 1.00
     fill_model: str = "conservative"
+    pnl_reconciliation_tolerance: float = 0.01
 
     @property
     def max_bpr_dollars(self) -> float:
@@ -153,6 +154,7 @@ def replay(
             exit_debit = float("nan")
 
         rejection: list[str] = []
+        pnl_reconciliation_residual = float("nan")
         if entry <= open_until:
             rejection.append("POSITION_ALREADY_OPEN")
         if credit <= 0:
@@ -163,6 +165,11 @@ def replay(
             rejection.append("UNRESOLVED_LIFECYCLE_DATA")
         elif exit_date <= entry:
             rejection.append("INVALID_LIFECYCLE_DATES")
+        else:
+            pnl_from_quotes = (credit - exit_debit) * config.contract_multiplier
+            pnl_reconciliation_residual = float(row["pnl"]) - pnl_from_quotes
+            if abs(pnl_reconciliation_residual) > config.pnl_reconciliation_tolerance:
+                rejection.append("PNL_RECONCILIATION_MISMATCH")
 
         underlying = row.get("underlying_close", float("nan"))
         if not _finite(underlying):
@@ -229,6 +236,7 @@ def replay(
             "nlv_after_entry": nlv_at_entry,
             "exit_cash_flow": exit_cash_flow,
             "exit_debit": exit_debit,
+            "pnl_reconciliation_residual": pnl_reconciliation_residual,
             "cash_after_exit": cash,
             "open_position_value_after_exit": open_position_value,
             "bpr_estimate": bpr,
