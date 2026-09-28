@@ -7,7 +7,7 @@
 
 OPTIONS-001 cannot be validated from underlying-price and VIX data alone. The next backtest requires historical option-chain observations so that entries, fills, exits, credit received, defensive adjustments, and contract feasibility can be reconstructed.
 
-The first replay source will be the public SPY end-of-day historical options dataset covering 2008–2025.
+The first replay source is the public SPY end-of-day historical options dataset covering 2008–2025. The originally documented aggregate download URL returned HTTP 404 during CI, so the replay now downloads the verified yearly Parquet blobs from the preservation mirror's Git repository.
 
 ## 2. Primary research dataset
 
@@ -156,3 +156,37 @@ OPTIONS-001 historical replay will not be considered validated until:
 - Public historical dataset: anahatsingh-ui/options-dataset-hist
 - Cboe DataShop Option EOD Summary
 - Cboe DataShop Option Quotes
+
+## 12. First-pass replay result — 2026-09-28
+
+The first end-to-end replay completed successfully using the yearly SPY Parquet files from 2010–2025.
+
+Baseline assumptions:
+- BROAD_SIDEWAYS eligibility
+- one SPY position at a time
+- 45 DTE target / 30–60 DTE selection range
+- approximately 16-delta short call and put
+- 50% profit target
+- 21 DTE exit
+- 2× initial-credit loss threshold as a temporary research benchmark
+- conservative bid/ask execution and midpoint sensitivity
+
+Results:
+
+| Fill model | Completed trades | Total P/L | Mean P/L/trade | Win rate |
+|---|---:|---:|---:|---:|
+| Bid/ask conservative | 114 | -$2,206 | -$19.35 | 69.3% |
+| Midpoint sensitivity | 114 | -$551 | -$4.83 | 72.8% |
+
+The regime split is more informative than the aggregate:
+
+| Fill model | Regime | Trades | Mean P/L | Total P/L |
+|---|---|---:|---:|---:|
+| Conservative | SIDEWAYS_CHOPPY | 34 | +$63.91 | +$2,173 |
+| Conservative | TURBULENT_HIGH_VOL | 80 | -$54.74 | -$4,379 |
+| Midpoint | SIDEWAYS_CHOPPY | 35 | +$67.77 | +$2,372 |
+| Midpoint | TURBULENT_HIGH_VOL | 79 | -$37.00 | -$2,923 |
+
+**Interpretation:** this baseline does not support a single combined “sideways/turbulent options regime.” The sideways subset was profitable in this reconstruction, while turbulent/high-volatility entries were the dominant source of losses. This is not yet a production conclusion because the 2×-credit loss rule is only a placeholder and no defensive rolling/inversion mechanics have been implemented.
+
+The next replay must therefore compare the documented defensive methods separately and model the $2,000 account constraint. The regime selector should not be tuned to make turbulent periods look favorable before those tests are completed.
