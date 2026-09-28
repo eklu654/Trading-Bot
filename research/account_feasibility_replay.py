@@ -230,7 +230,7 @@ def replay(
     if missing:
         raise ValueError(f"candidate input missing required columns: {sorted(missing)}")
 
-    frame = candidates.copy()
+    candidates = frame
     frame["entry_date"] = pd.to_datetime(frame["entry_date"])
     if "candidate_id" not in frame.columns:
         frame["candidate_id"] = (
