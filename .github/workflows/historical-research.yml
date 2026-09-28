@@ -56,6 +56,21 @@ jobs:
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --loss-credit-multiple 0
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --loss-credit-multiple 0
 
+      - name: Replay OPTIONS-001 $2,000 account feasibility
+        run: |
+          for fill in conservative mid; do
+            for loss_tag in loss2x nostop; do
+              stem="options001_replay_broad_sideways_${fill}_${loss_tag}"
+              python research/account_feasibility_replay.py \
+                --input "data/research/${stem}_candidates.csv" \
+                --outcomes "data/research/${stem}_candidate_outcomes.csv" \
+                --marks "data/research/${stem}_candidate_marks.csv" \
+                --starting-nlv 2000 \
+                --max-bpr-pct 0.50 \
+                --output "data/research/${stem}_account_2000.csv"
+            done
+          done
+
       - name: Replay OPTIONS-001 defense variants
         run: |
           echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
@@ -83,6 +98,14 @@ jobs:
           cat data/research/regime_candidate_etf_results.csv
           echo "=== REGIME CANDIDATE FREQUENCY ==="
           cat data/research/regime_candidate_frequency.csv
+          echo "=== ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
+          cat data/research/options001_replay_broad_sideways_conservative_loss2x_account_2000_summary.csv
+          echo "=== ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
+          cat data/research/options001_replay_broad_sideways_conservative_nostop_account_2000_summary.csv
+          echo "=== ACCOUNT FEASIBILITY MID LOSS2X ==="
+          cat data/research/options001_replay_broad_sideways_mid_loss2x_account_2000_summary.csv
+          echo "=== ACCOUNT FEASIBILITY MID NO-STOP ==="
+          cat data/research/options001_replay_broad_sideways_mid_nostop_account_2000_summary.csv
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
           cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
           echo "=== DEFENSE CONTROL MID ==="
