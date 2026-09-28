@@ -40,12 +40,7 @@ def load() -> tuple[pd.DataFrame, pd.DataFrame]:
 
 def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
     vix_p = frame["vix_percentile252"]
-    rv20 = frame["spy_rv20"]
-    rv_p = rv20.rolling(252).apply(
-        lambda x: np.nan if len(x) < 252 or np.isnan(x[-1])
-        else float((x[:-1] <= x[-1]).mean()),
-        raw=True,
-    )
+    rv_p = frame["spy_rv20_percentile252"]
 
     if name == "CURRENT":
         turbulent = (
@@ -69,29 +64,17 @@ def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
         )
 
     configs = {
-        "BALANCED": {
-            "vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30,
-            "return20": 0.08, "slope": 0.003,
-        },
-        "STRICT_VOL": {
-            "vix_p": 0.95, "rv_p": 0.90, "adx": 20, "er": 0.30,
-            "return20": 0.08, "slope": 0.003,
-        },
-        "VIX_LEVEL": {
-            "vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30,
-            "return20": 0.08, "slope": 0.003,
-        },
-        "STRICT_SIDEWAYS": {
-            "vix_p": 0.90, "rv_p": 0.90, "adx": 18, "er": 0.25,
-            "return20": 0.06, "slope": 0.003,
-        },
+        "BALANCED": {"vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
+        "STRICT_VOL": {"vix_p": 0.95, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
+        "VIX_LEVEL": {"vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
+        "STRICT_SIDEWAYS": {"vix_p": 0.90, "rv_p": 0.90, "adx": 18, "er": 0.25, "return20": 0.06, "slope": 0.003},
     }
     cfg = configs[name]
 
     if name == "VIX_LEVEL":
         turbulent = (
             (frame["vix"] >= 28)
-            | (vix_p >= cfg["vix_p"] & (rv_p >= 0.75))
+            | ((vix_p >= cfg["vix_p"]) & (rv_p >= 0.75))
             | (rv_p >= cfg["rv_p"])
         )
     else:
