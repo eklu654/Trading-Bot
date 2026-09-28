@@ -160,6 +160,7 @@ def replay(
             row["cash_after_exit"] = cash
             row["open_position_value_after_exit"] = remaining_value
             row["post_exit_nlv"] = cash + remaining_value
+            row["post_trade_nlv"] = row["post_exit_nlv"]
             active.remove(position)
 
     for i, row in frame.iterrows():
