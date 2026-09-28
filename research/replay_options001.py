@@ -338,8 +338,32 @@ def main() -> None:
     result = first_pass_trades(entries, quotes, regime, args)
     con.close()
 
+    # Persist the complete candidate universe separately from completed trades.
+    # Account feasibility must evaluate every generated candidate, not only
+    # candidates that happened to complete a trade.
+    candidate_ledger = entries.copy()
+    candidate_ledger["candidate_id"] = (
+        candidate_ledger["entry_date"].astype(str)
+        + ":"
+        + candidate_ledger["contract_id_call"].astype(str)
+        + ":"
+        + candidate_ledger["contract_id_put"].astype(str)
+    )
+    candidate_ledger["underlying_close"] = candidate_ledger["entry_date"].map(
+        regime["spy_close"]
+    )
+    if args.fill_model == "conservative":
+        candidate_ledger["entry_credit"] = (
+            candidate_ledger["bid_call"] + candidate_ledger["bid_put"]
+        )
+    else:
+        candidate_ledger["entry_credit"] = (
+            candidate_ledger["mark_call"] + candidate_ledger["mark_put"]
+        )
     loss_tag = "nostop" if args.loss_credit_multiple <= 0 else f"loss{args.loss_credit_multiple:g}x"
-    out = RESEARCH_DIR / f"options001_replay_{args.candidate.lower()}_{args.fill_model}_{loss_tag}.csv"
+    stem = f"options001_replay_{args.candidate.lower()}_{args.fill_model}_{loss_tag}"
+    candidate_ledger.to_csv(RESEARCH_DIR / f"{stem}_candidates.csv", index=False)
+    out = RESEARCH_DIR / f"{stem}.csv"
     result.to_csv(out, index=False)
 
     print("OPTIONS-001 first-pass replay")
