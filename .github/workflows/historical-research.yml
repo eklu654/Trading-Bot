@@ -57,6 +57,15 @@ jobs:
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --loss-credit-multiple 0
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --loss-credit-multiple 0
 
+      - name: Replay OPTIONS-001 defense variants
+        run: |
+          echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
+          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
+          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
+          echo "=== ROLL UNTESTED ==="
+          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
+          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
+
       - name: Print research summaries
         run: |
           echo "=== ETF OVERALL ==="
