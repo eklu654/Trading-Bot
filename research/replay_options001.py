@@ -264,6 +264,10 @@ def first_pass_trades(
         first_challenge = None
         challenge_side = None
 
+        max_debit = 0.0
+        first_challenge = None
+        challenge_side = None
+
         for date, quote_row in by_date.iterrows():
             if (close_field, call_id) not in quote_row or (close_field, put_id) not in quote_row:
                 continue
@@ -302,6 +306,10 @@ def first_pass_trades(
                     "entry_credit": credit,
                     "exit_debit": debit,
                     "pnl": (credit - debit) * 100,
+                    "max_debit": max_debit,
+                    "max_loss_pnl": (credit - max_debit) * 100,
+                    "first_challenge_date": first_challenge,
+                    "challenge_side": challenge_side,
                     "max_debit": max_debit,
                     "max_loss_pnl": (credit - max_debit) * 100,
                     "first_challenge_date": first_challenge,
