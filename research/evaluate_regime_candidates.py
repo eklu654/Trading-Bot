@@ -56,6 +56,8 @@ def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
         "STRICT_VOL": {"vix_p": 0.95, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
         "VIX_LEVEL": {"vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
         "STRICT_SIDEWAYS": {"vix_p": 0.90, "rv_p": 0.90, "adx": 18, "er": 0.25, "return20": 0.06, "slope": 0.003},
+        "BROAD_SIDEWAYS": {"vix_p": 0.90, "rv_p": 0.90, "adx": 25, "er": 0.35, "return20": 0.15, "slope": 0.005},
+        "NO_SLOPE_SIDEWAYS": {"vix_p": 0.90, "rv_p": 0.90, "adx": 25, "er": 0.35, "return20": 0.12, "slope": 1.0},
     }
     cfg = configs[name]
 
@@ -102,7 +104,17 @@ def main() -> None:
     regime, etf = load()
     outputs, frequency = [], []
 
-    for name in ["CURRENT", "BALANCED", "STRICT_VOL", "VIX_LEVEL", "STRICT_SIDEWAYS"]:
+    candidates = [
+        "CURRENT",
+        "BALANCED",
+        "STRICT_VOL",
+        "VIX_LEVEL",
+        "STRICT_SIDEWAYS",
+        "BROAD_SIDEWAYS",
+        "NO_SLOPE_SIDEWAYS",
+    ]
+
+    for name in candidates:
         labels = candidate_labels(regime, name).shift(1)
         for split, (start, end) in SPLITS.items():
             label_mask = (labels.index >= start) & (labels.index <= end)
