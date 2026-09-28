@@ -369,7 +369,7 @@ def replay(
             "post_trade_nlv": nlv_after_entry,
         })
 
-    if active:
+    if frame["exit_date"].notna().any():
         final_date = pd.to_datetime(frame["exit_date"].dropna().max())
         process_valuation_dates(final_date)
         settle_positions_through(final_date)
