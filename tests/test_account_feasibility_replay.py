@@ -323,6 +323,9 @@ def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
             "date": "2020-01-02", "cash": 1998.70, "open_position_value": 0.0,
             "nlv": 1998.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
             "aggregate_bpr_pct_nlv": 340.0 / 1998.70,
+            "aggregate_entry_bpr_estimate": 200.0,
+            "aggregate_bpr_expansion_multiple": 1.70,
+            "max_position_bpr_expansion_multiple": 1.70,
             "aggregate_stress_loss_estimate": 100.0,
             "aggregate_stress_loss_pct_nlv": 100.0 / 1998.70,
             "mark_missing_for_open_position": False,
@@ -332,6 +335,9 @@ def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
             "date": "2020-01-05", "cash": 2298.70, "open_position_value": -400.0,
             "nlv": 1898.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
             "aggregate_bpr_pct_nlv": 340.0 / 1898.70,
+            "aggregate_entry_bpr_estimate": 200.0,
+            "aggregate_bpr_expansion_multiple": 1.70,
+            "max_position_bpr_expansion_multiple": 1.70,
             "aggregate_stress_loss_estimate": 500.0,
             "aggregate_stress_loss_pct_nlv": 500.0 / 1898.70,
             "mark_missing_for_open_position": False,
@@ -341,6 +347,9 @@ def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
             "date": "2020-01-06", "cash": 2298.70, "open_position_value": -350.0,
             "nlv": 1948.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
             "aggregate_bpr_pct_nlv": 340.0 / 1948.70,
+            "aggregate_entry_bpr_estimate": 200.0,
+            "aggregate_bpr_expansion_multiple": 1.70,
+            "max_position_bpr_expansion_multiple": 1.70,
             "aggregate_stress_loss_estimate": 400.0,
             "aggregate_stress_loss_pct_nlv": 400.0 / 1948.70,
             "mark_missing_for_open_position": False,
@@ -350,6 +359,9 @@ def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
             "date": "2020-01-10", "cash": 2097.40, "open_position_value": 0.0,
             "nlv": 2097.40, "open_positions": 0, "aggregate_bpr_estimate": 0.0,
             "aggregate_bpr_pct_nlv": 0.0,
+            "aggregate_entry_bpr_estimate": 0.0,
+            "aggregate_bpr_expansion_multiple": 0.0,
+            "max_position_bpr_expansion_multiple": 0.0,
             "aggregate_stress_loss_estimate": 0.0,
             "aggregate_stress_loss_pct_nlv": 0.0,
             "mark_missing_for_open_position": False,
@@ -380,5 +392,13 @@ def test_risk_metrics_have_safe_empty_snapshot_defaults():
     assert metrics["max_drawdown_dollars"] == pytest.approx(0.0)
     assert metrics["max_drawdown_pct"] == pytest.approx(0.0)
     assert metrics["peak_bpr_dollars"] == pytest.approx(0.0)
+    assert metrics["median_bpr_pct_nlv"] == pytest.approx(0.0)
+    assert metrics["peak_aggregate_bpr_expansion_multiple"] == pytest.approx(0.0)
+    assert metrics["max_position_bpr_expansion_multiple"] == pytest.approx(0.0)
     assert metrics["stale_mark_snapshot_count"] == 0
 
+
+
+
+def test_stress_loss_is_never_reported_as_negative():
+    assert max_stress_loss(320, 200, 500, 2.0) == pytest.approx(0.0)
