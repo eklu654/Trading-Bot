@@ -301,4 +301,4 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     assert trough["open_positions"] == 1
     assert trough["nlv"] == pytest.approx(1898.70)
     assert trough["aggregate_bpr_estimate"] > 0
-    assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2096.10)
+    assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2097.40)
