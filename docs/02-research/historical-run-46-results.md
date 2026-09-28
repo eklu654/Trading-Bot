@@ -1,4 +1,33 @@
-# Historical Research Run 46 — Results and Interpretation
+# Historical OPTIONS-001 Replay — Corrected Run 48
+
+**Corrected run:** [GitHub Actions run 48](https://github.com/eklu654/Trading-Bot/actions/runs/36481614364)  
+**Code commit:** `087539ffc4ff4fb24e0d715d5bacdf1e6fa2d0a6`  
+**Status:** Completed successfully
+
+> **Correction:** All OPTIONS-001 results from run 46 are superseded because of an expiration-selection defect. Use the corrected run 48 results below. ETF figures from run 46 are unaffected by that options-specific defect.
+
+## Corrected OPTIONS-001 results (run 48)
+
+The replay now selects one expiration per entry date before selecting option legs. A post-run audit found no call/put expiration inconsistencies in the baseline and 2×-loss-stop ledgers.
+
+| Fill assumption | Defense | Completed trades | Total P/L | Mean P/L/trade | Win rate | Worst trade | Challenged | Adjusted |
+|---|---|---:|---:|---:|---:|---:|---:|---:|
+| Conservative | No adjustment | 96 | $5,885 | $61.30 | 79.17% | -$2,098 | 53 (55.21%) | 0 |
+| Conservative | Roll untested | 96 | $4,108 | $42.79 | 76.04% | -$2,097 | 53 (55.21%) | 22 (22.92%) |
+| Midpoint | No adjustment | 98 | $7,211 | $73.58 | 81.63% | -$2,080 | 53 (54.08%) | 0 |
+| Midpoint | Roll untested | 98 | $6,343 | $64.72 | 82.65% | -$2,081 | 53 (54.08%) | 21 (21.43%) |
+
+### Corrected interpretation
+
+- Rolling the untested leg reduced aggregate P/L by $1,777 under conservative fills and $868 under midpoint fills.
+- Worst-trade outcomes were effectively unchanged; the roll did not materially improve the observed worst trade.
+- The roll's adjustment cash-flow contribution is positive in the summary ($1,907 conservative; $1,828 midpoint). Its sign and relationship to per-trade adjustment P/L, net credit, exit debit and final P/L still require reconciliation; do not label it a net debit yet.
+- These are one-contract SPY mechanics results, not a $2,000 account backtest. They omit full account-level buying-power, NLV, concentration, margin, assignment and portfolio-risk constraints.
+- EOD challenge detection and bid/ask/midpoint assumptions are model limitations. This does not validate future performance or prove that all defense methods fail.
+
+**Research disposition:** do not promote ROLL_UNTESTED on current evidence. Retain it as a comparison only. Audit adjustment accounting and the max-debit proxy before relying on risk statistics.
+
+## ETF-001: DMA versus DMA plus VIX safety filter
 
 **Run:** GitHub Actions `Historical Research` #46  
 **Commit:** `95a2b4c7d0f0509ee34aebcc1ac8d47c04696351`  
@@ -21,27 +50,6 @@ The current results do **not** validate a production strategy. They are explorat
 The VIX overlay as currently coded reduced the reported compounded return and did not improve maximum drawdown in this historical run. This is evidence against treating the current VIX rule as an established safety improvement. It does not prove that every VIX-based filter is ineffective: the threshold, trigger timing, re-entry rule, price basis and interaction with the moving average require controlled sensitivity testing.
 
 The reported total returns are not directly comparable to a simple buy-and-hold investment without matching the cash, rebalance, distribution, fee, slippage and instrument-history assumptions. The ETF history begins when the available leveraged ETF data permits; the three funds do not share identical inception dates, so the portfolio's start date and missing-history handling need continued scrutiny.
-
-## OPTIONS-001: no adjustment versus rolling the untested leg
-
-Candidate: `BROAD_SIDEWAYS`; SPY; one position at a time; nominal 45-DTE selection within 30–60 DTE; approximately 16-delta entry legs; 50% profit target or 21-DTE exit; one roll maximum. Challenge is detected using end-of-day closes at/beyond a short strike.
-
-| Fill assumption | Defense | Completed trades | Total P/L | Mean P/L/trade | Win rate | Worst trade | Challenged trades | Adjusted trades |
-|---|---|---:|---:|---:|---:|---:|---:|---:|
-| Conservative bid/ask | No adjustment | 103 | $4,557 | $44.24 | 72.82% | -$1,537 | 49 (47.57%) | 0 |
-| Conservative bid/ask | Roll untested | 103 | $2,955 | $28.69 | 71.84% | -$2,297 | 49 (47.57%) | 19 (18.45%) |
-| Midpoint | No adjustment | 106 | $5,266 | $49.68 | 75.47% | -$1,466 | 50 (47.17%) | 0 |
-| Midpoint | Roll untested | 106 | $3,768 | $35.55 | 75.47% | -$2,255 | 50 (47.17%) | 19 (17.92%) |
-
-### Interpretation
-
-- In both fill models, rolling the untested leg lowered total and mean P/L versus the no-adjustment control.
-- The roll did not improve the worst trade; the worst observed outcome became more negative in both fill models.
-- Under conservative fills, the roll reduced reported win rate by about one percentage point. Under midpoint fills, win rate was unchanged.
-- The roll's adjustment cash-flow contribution was a net debit of $1,297 under conservative fills and $1,352 under midpoint fills (as reported by the replay summary's adjustment accounting).
-- Turbulent/high-volatility mean P/L was notably lower with the roll: $29.13 to $7.94 under conservative fills; $33.97 to $14.43 at midpoint. Sideways/choppy results also declined modestly.
-
-**Research disposition:** do not promote `ROLL_UNTESTED`. The current deterministic implementation fails the project's initial promotion gate on aggregate results and worst-trade behavior. Keep it as a documented comparison, not an active rule. Do not proceed to roll-out or inversion until the replay's accounting and assumptions are reviewed and a distinct hypothesis justifies further work.
 
 ## Important limitations and audit items
 
