@@ -99,7 +99,7 @@ def select_entries(
             SELECT
                 CAST(o.date AS DATE) AS entry_date,
                 o.contract_id,
-                o.expiration,
+                CAST(o.expiration AS DATE) AS expiration,
                 o.strike,
                 o.type,
                 o.bid,
