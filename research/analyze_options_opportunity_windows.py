@@ -3,9 +3,6 @@
 This is NOT an options P/L backtest. It only answers whether candidate
 eligibility regimes create sufficiently frequent and sufficiently long windows
 for historical option-chain replay.
-
-Run from repository root:
-    python research/analyze_options_opportunity_windows.py
 """
 
 from __future__ import annotations
@@ -21,54 +18,31 @@ DATA_DIR = ROOT / "data" / "research"
 
 
 def load() -> pd.DataFrame:
-    return pd.read_csv(
-        DATA_DIR / "historical_regime_dataset.csv",
-        parse_dates=["Date"],
-    ).set_index("Date").sort_index()
+    return pd.read_csv(DATA_DIR / "historical_regime_dataset.csv", parse_dates=["Date"]).set_index("Date").sort_index()
 
 
 def build_windows(eligible: pd.Series, frame: pd.DataFrame) -> pd.DataFrame:
-    windows = []
-    start = None
-    previous = None
-
+    windows, start, previous = [], None, None
     for date, is_eligible in eligible.items():
         if is_eligible and start is None:
             start = date
         elif not is_eligible and start is not None:
             end = previous
-            windows.append(
-                {
-                    "start": start,
-                    "end": end,
-                    "trading_days": len(frame.loc[start:end].index),
-                    "calendar_days": (end - start).days + 1,
-                }
-            )
+            windows.append({"start": start, "end": end, "trading_days": len(frame.loc[start:end]), "calendar_days": (end - start).days + 1})
             start = None
         previous = date
-
     if start is not None and previous is not None:
-        windows.append(
-            {
-                "start": start,
-                "end": previous,
-                "trading_days": len(frame.loc[start:previous].index),
-                "calendar_days": (previous - start).days + 1,
-            }
-        )
-
+        windows.append({"start": start, "end": previous, "trading_days": len(frame.loc[start:previous]), "calendar_days": (previous - start).days + 1})
     return pd.DataFrame(windows)
 
 
-def summarize(frame: pd.DataFrame, labels: pd.Series, name: str) -> pd.DataFrame:
+def summarize(frame: pd.DataFrame, labels: pd.Series, name: str) -> tuple[pd.DataFrame, pd.DataFrame]:
     labels = labels.shift(1)
     eligible = labels.isin({"SIDEWAYS_CHOPPY", "TURBULENT_HIGH_VOL"})
     windows = build_windows(eligible, frame)
     total = len(frame)
     eligible_days = int(eligible.sum())
-
-    return pd.DataFrame([{
+    summary = pd.DataFrame([{
         "candidate": name,
         "sample_start": frame.index.min(),
         "sample_end": frame.index.max(),
@@ -81,7 +55,8 @@ def summarize(frame: pd.DataFrame, labels: pd.Series, name: str) -> pd.DataFrame
         "windows_at_least_21_sessions": int((windows["trading_days"] >= 21).sum()) if len(windows) else 0,
         "windows_at_least_30_sessions": int((windows["trading_days"] >= 30).sum()) if len(windows) else 0,
         "windows_at_least_45_calendar_days": int((windows["calendar_days"] >= 45).sum()) if len(windows) else 0,
-    }]), windows
+    }])
+    return summary, windows
 
 
 def main() -> None:
@@ -91,19 +66,24 @@ def main() -> None:
         "BALANCED": candidate_labels(frame, "BALANCED"),
         "BROAD_SIDEWAYS": candidate_labels(frame, "BROAD_SIDEWAYS"),
     }
-    candidates["TURBULENT_ONLY"] = pd.Series(
-        "TURBULENT_HIGH_VOL",
-        index=frame.index,
-    ).where(frame["vix_percentile252"] >= 0.90, "TRENDING_NORMAL")
+    candidates["TURBULENT_ONLY"] = pd.Series("TURBULENT_HIGH_VOL", index=frame.index).where(
+        frame["vix_percentile252"] >= 0.90, "TRENDING_NORMAL"
+    )
 
-    summaries = []
-    all_windows = []
+    summaries, all_windows = [], []
     for name, labels in candidates.items():
         summary, windows = summarize(frame, labels, name)
         summaries.append(summary)
         if len(windows):
             windows.insert(0, "candidate", name)
             all_windows.append(windows)
+
+        if name == "CURRENT":
+            summary.drop(columns=["candidate"]).to_csv(DATA_DIR / "options_opportunity_summary.csv", index=False)
+            windows.to_csv(DATA_DIR / "options_opportunity_windows.csv", index=False)
+            counts = labels.shift(1).value_counts(dropna=False).rename_axis("regime").reset_index(name="observations")
+            counts["fraction"] = counts["observations"] / len(labels)
+            counts.to_csv(DATA_DIR / "regime_frequency_summary.csv", index=False)
 
     summary = pd.concat(summaries, ignore_index=True)
     windows = pd.concat(all_windows, ignore_index=True) if all_windows else pd.DataFrame()
