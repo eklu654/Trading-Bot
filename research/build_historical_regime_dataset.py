@@ -13,12 +13,11 @@ Dependencies:
 
 from __future__ import annotations
 
-import io
 from pathlib import Path
-from urllib.request import urlopen
 
 import numpy as np
 import pandas as pd
+import yfinance as yf
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,7 +25,7 @@ DATA_DIR = ROOT / "data" / "research"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 START = "2010-01-01"
-END = "2026-09-25"
+END = "2026-09-27"
 
 # Stooq provides daily OHLCV history for these U.S. symbols.
 PRICE_SYMBOLS = [
@@ -38,37 +37,42 @@ PRICE_SYMBOLS = [
     "SOXX",
 ]
 
-FRED_VIX_URL = (
-    "https://fred.stlouisfed.org/graph/fredgraph.csv"
-    "?id=VIXCLS&cosd=2010-01-01&coed=2026-09-25"
-)
 
-
-def read_stooq(symbol: str) -> pd.DataFrame:
-    url = (
-        "https://stooq.com/q/d/l/"
-        f"?s={symbol.lower()}.us&d1=20100101&d2=20260925&i=d"
+def read_price(symbol: str) -> pd.DataFrame:
+    frame = yf.download(
+        symbol,
+        start=START,
+        end="2026-09-28",
+        auto_adjust=False,
+        progress=False,
+        actions=False,
     )
-    with urlopen(url, timeout=30) as response:
-        raw = response.read()
 
-    frame = pd.read_csv(io.BytesIO(raw))
-    frame["Date"] = pd.to_datetime(frame["Date"])
-    frame = frame.set_index("Date").sort_index()
-    frame.columns = [c.lower() for c in frame.columns]
+    if frame.empty:
+        raise RuntimeError(f"No price history returned for {symbol}")
+
+    if isinstance(frame.columns, pd.MultiIndex):
+        frame.columns = frame.columns.get_level_values(0)
+
+    frame = frame.rename(
+        columns={
+            "Open": "open",
+            "High": "high",
+            "Low": "low",
+            "Close": "close",
+            "Adj Close": "adj_close",
+            "Volume": "volume",
+        }
+    )
+    frame.index = pd.to_datetime(frame.index).tz_localize(None)
+    frame.index.name = "Date"
     frame["symbol"] = symbol
-    return frame
+    return frame.sort_index()
 
 
 def read_vix() -> pd.DataFrame:
-    with urlopen(FRED_VIX_URL, timeout=30) as response:
-        raw = response.read()
-
-    frame = pd.read_csv(io.BytesIO(raw))
-    frame["DATE"] = pd.to_datetime(frame["DATE"])
-    frame = frame.rename(columns={"DATE": "Date", "VIXCLS": "vix"})
-    frame = frame.set_index("Date").sort_index()
-    return frame
+    frame = read_price("^VIX")
+    return frame[["close"]].rename(columns={"close": "vix"})
 
 
 def sma(series: pd.Series, window: int) -> pd.Series:
@@ -275,7 +279,7 @@ def simulate_etf(
 
 
 def main() -> None:
-    prices = {symbol: read_stooq(symbol) for symbol in PRICE_SYMBOLS}
+    prices = {symbol: read_price(symbol) for symbol in PRICE_SYMBOLS}
     vix = read_vix()
 
     for symbol, frame in prices.items():
