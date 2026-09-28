@@ -5,7 +5,6 @@ on:
   push:
     paths:
       - "research/**"
-      - "docs/02-research/**"
       - ".github/workflows/historical-research.yml"
 
 jobs:
