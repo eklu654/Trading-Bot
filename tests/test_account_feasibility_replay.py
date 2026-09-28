@@ -138,3 +138,60 @@ def test_account_replay_uses_independent_lifecycle_and_retains_overlap_rejection
     ].iloc[0]
     assert summary["candidate_count"] == 3
     assert summary["accepted_count"] == 1
+
+
+def test_pnl_mismatch_is_rejected_and_auditable():
+    candidates = pd.DataFrame([{
+        "candidate_id": "MISMATCH",
+        "entry_date": "2020-01-02",
+        "entry_credit": 2.0,
+        "call_strike": 500.0,
+        "put_strike": 200.0,
+        "underlying_close": 320.0,
+    }])
+    outcomes = pd.DataFrame([{
+        "candidate_id": "MISMATCH",
+        "exit_date": "2020-01-10",
+        "exit_debit": 1.00,
+        "pnl": 40.0,
+    }])
+    ledger, summary = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
+        outcomes,
+    )
+    row = ledger.iloc[0]
+    assert not row.accepted
+    assert "PNL_RECONCILIATION_MISMATCH" in row.rejection_codes
+    assert row.pnl_reconciliation_residual == pytest.approx(-60.0)
+    assert summary["ending_nlv"] == pytest.approx(2000.0)
+
+
+def test_overlapping_positions_use_open_position_state_and_settle_later():
+    candidates = pd.DataFrame([
+        {
+            "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "B", "entry_date": "2020-01-03", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+    ])
+    outcomes = pd.DataFrame([
+        {"candidate_id": "A", "exit_date": "2020-01-10", "pnl": 50.0},
+        {"candidate_id": "B", "exit_date": "2020-01-12", "pnl": 50.0},
+    ])
+    ledger, summary = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=4.0, max_concurrent_positions=2),
+        outcomes,
+    )
+    a = ledger.loc[ledger["candidate_id"] == "A"].iloc[0]
+    b = ledger.loc[ledger["candidate_id"] == "B"].iloc[0]
+    assert a.accepted and b.accepted
+    assert b.pre_trade_nlv == pytest.approx(1998.70)
+    assert b.nlv_after_entry == pytest.approx(1997.40)
+    assert a.post_exit_nlv == pytest.approx(2046.10)
+    assert b.post_exit_nlv == pytest.approx(2094.80)
+    assert summary["ending_nlv"] == pytest.approx(2094.80)

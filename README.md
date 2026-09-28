@@ -19,3 +19,6 @@ Research and documentation come before implementation. No trading rule becomes a
 AI may assist with research and regime classification, but it may not override hard risk controls or strategy exit rules.
 
 See `docs/01-strategies/tastytrade-strategy.md` for the current options methodology draft.
+
+
+<!-- CI validation branch: account feasibility replay verification. -->
