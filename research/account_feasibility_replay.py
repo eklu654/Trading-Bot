@@ -316,6 +316,11 @@ def replay(
 
     def record_snapshot(timestamp: pd.Timestamp, mark_missing: bool = False) -> None:
         nlv = cash + open_value()
+        stale_days = [
+            int(p.get("mark_stale_days", 0))
+            for p in active
+            if p.get("mark_stale_days") is not None
+        ]
         snapshots.append({
             "date": timestamp,
             "cash": cash,
