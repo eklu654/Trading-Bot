@@ -95,7 +95,7 @@ def max_stress_loss(
     upper = underlying * (1.0 + 0.20 * stress_multiplier)
     put_loss = max(put_strike - lower, 0.0)
     call_loss = max(upper - call_strike, 0.0)
-    return max(put_loss, call_loss) * multiplier - credit * multiplier
+    return max(0.0, max(put_loss, call_loss) * multiplier - credit * multiplier)
 
 
 def summarize_account_risk(
@@ -113,6 +113,7 @@ def summarize_account_risk(
         "max_drawdown_trough_date": None,
         "peak_bpr_dollars": 0.0,
         "peak_bpr_pct_nlv": 0.0,
+        "median_bpr_pct_nlv": 0.0,
         "peak_stress_loss_dollars": 0.0,
         "peak_stress_loss_pct_nlv": 0.0,
         "near_bpr_limit_snapshot_count": 0,
@@ -121,6 +122,8 @@ def summarize_account_risk(
         "stale_mark_snapshot_count": 0,
         "stale_mark_snapshot_pct": 0.0,
         "max_stale_mark_days": 0.0,
+        "peak_aggregate_bpr_expansion_multiple": 0.0,
+        "max_position_bpr_expansion_multiple": 0.0,
     }
     if not snapshots:
         return empty
@@ -147,6 +150,14 @@ def summarize_account_risk(
     bpr_pct = pd.to_numeric(frame["aggregate_bpr_pct_nlv"], errors="coerce")
     stress = pd.to_numeric(frame["aggregate_stress_loss_estimate"], errors="coerce")
     stress_pct = stress / nlv.where(nlv > 0)
+    aggregate_entry_bpr = pd.to_numeric(
+        frame.get("aggregate_entry_bpr_estimate", pd.Series(0.0, index=frame.index)),
+        errors="coerce",
+    )
+    aggregate_expansion = pd.to_numeric(
+        frame.get("aggregate_bpr_expansion_multiple", pd.Series(0.0, index=frame.index)),
+        errors="coerce",
+    )
 
     near_threshold = config.max_bpr_pct_nlv * 0.90
     near_limit = bpr_pct >= near_threshold
@@ -178,6 +189,7 @@ def summarize_account_risk(
         "max_drawdown_trough_date": frame.loc[trough_idx, "date"].isoformat(),
         "peak_bpr_dollars": float(bpr.max()) if bpr.notna().any() else 0.0,
         "peak_bpr_pct_nlv": float(bpr_pct.max()) if bpr_pct.notna().any() else 0.0,
+        "median_bpr_pct_nlv": float(bpr_pct.median()) if bpr_pct.notna().any() else 0.0,
         "peak_stress_loss_dollars": float(stress.max()) if stress.notna().any() else 0.0,
         "peak_stress_loss_pct_nlv": float(stress_pct.max()) if stress_pct.notna().any() else 0.0,
         "near_bpr_limit_snapshot_count": int(near_limit.sum()),
@@ -186,6 +198,13 @@ def summarize_account_risk(
         "stale_mark_snapshot_count": int(stale_flag.sum()),
         "stale_mark_snapshot_pct": float(stale_flag.mean()),
         "max_stale_mark_days": float(stale_days.max()),
+        "peak_aggregate_bpr_expansion_multiple": float(aggregate_expansion.max()) if aggregate_expansion.notna().any() else 0.0,
+        "max_position_bpr_expansion_multiple": float(
+            pd.to_numeric(
+                frame.get("max_position_bpr_expansion_multiple", pd.Series(0.0, index=frame.index)),
+                errors="coerce",
+            ).max()
+        ) if frame.get("max_position_bpr_expansion_multiple") is not None else 0.0,
     }
 
 def replay(
@@ -293,6 +312,11 @@ def replay(
                     float(position["call_strike"]), mark["mark_debit"],
                     config.contract_multiplier, config.stress_multiplier,
                 )
+                position["peak_bpr"] = max(float(position.get("peak_bpr", 0.0)), float(position["bpr"]))
+                position["bpr_expansion_multiple"] = (
+                    float(position["peak_bpr"]) / float(position["entry_bpr"])
+                    if float(position["entry_bpr"]) > 0 else 0.0
+                )
                 position["last_mark_date"] = mark_date
                 position["mark_stale_days"] = (timestamp - mark_date).days
             else:
@@ -321,14 +345,25 @@ def replay(
             for p in active
             if p.get("mark_stale_days") is not None
         ]
+        aggregate_entry_bpr = float(sum(float(p.get("entry_bpr", 0.0)) for p in active))
+        max_position_expansion = max(
+            (float(p.get("bpr_expansion_multiple", 1.0)) for p in active),
+            default=0.0,
+        )
+        aggregate_current_bpr = active_bpr()
         snapshots.append({
             "date": timestamp,
             "cash": cash,
             "open_position_value": open_value(),
             "nlv": nlv,
             "open_positions": len(active),
-            "aggregate_bpr_estimate": active_bpr(),
-            "aggregate_bpr_pct_nlv": active_bpr() / nlv if nlv > 0 else float("nan"),
+            "aggregate_bpr_estimate": aggregate_current_bpr,
+            "aggregate_bpr_pct_nlv": aggregate_current_bpr / nlv if nlv > 0 else float("nan"),
+            "aggregate_entry_bpr_estimate": aggregate_entry_bpr,
+            "aggregate_bpr_expansion_multiple": (
+                aggregate_current_bpr / aggregate_entry_bpr if aggregate_entry_bpr > 0 else 0.0
+            ),
+            "max_position_bpr_expansion_multiple": max_position_expansion,
             "aggregate_stress_loss_estimate": active_stress_loss(),
             "aggregate_stress_loss_pct_nlv": active_stress_loss() / nlv if nlv > 0 else float("nan"),
             "mark_missing_for_open_position": mark_missing,
@@ -423,6 +458,9 @@ def replay(
                 "exit_date": pd.Timestamp(exit_date),
                 "position_value": entry_position_value,
                 "bpr": bpr,
+                "entry_bpr": bpr,
+                "peak_bpr": bpr,
+                "bpr_expansion_multiple": 1.0,
                 "stress_loss": stress_loss,
                 "exit_cash_flow": exit_cash_flow,
                 "row_index": row_index,
