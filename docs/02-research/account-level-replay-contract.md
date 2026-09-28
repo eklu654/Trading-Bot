@@ -167,3 +167,12 @@ The account-feasibility replay is not ready for use in strategy comparison until
 - a second independent reconciliation confirms cash, positions, and NLV across a sample of dates.
 
 Passing these criteria validates the replay implementation, not the profitability or suitability of the strategy.
+
+
+## Broker-integration constraints audited 2026-09-28
+
+Alpaca's current documentation states that options trading requires an approved options level, and the API performs an `options_buying_power` check when opening option positions. The account configuration exposes `max_options_trading_level`, with Level 3 covering spreads/straddles. The options API also documents explicit rejection for accounts that are not eligible for uncovered option contracts. These broker-side checks must be treated as authoritative at runtime; the research BPR formula must never be used as a substitute for an order-preview or broker acceptance check. https://docs.alpaca.markets/us/docs/options-trading-overview
+
+Alpaca also documents that multi-leg options orders are available, including strangles, and that combining legs into one order reduces partial-fill risk. The implementation should therefore prefer a broker-supported multi-leg representation when the selected strategy and account permissions allow it, rather than creating an unintended naked leg through sequential orders. https://docs.alpaca.markets/us/docs/options-level-3-trading
+
+For live operation, the bot must fail closed when account status, options authorization, buying power, position state, or order state cannot be verified. Paper-replay feasibility remains a modeled research estimate and is not evidence that a live order will be accepted.
