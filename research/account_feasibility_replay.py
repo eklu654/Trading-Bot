@@ -1,5 +1,7 @@
 """Account-level feasibility replay for OPTIONS-001.
 
+The historical research workflow uses this module to produce account-constrained replay artifacts.
+
 This module wraps the existing trade-economics replay with a deterministic
 account ledger. It deliberately treats buying-power and undefined-risk
 requirements as modeled estimates, not broker-observed values.
