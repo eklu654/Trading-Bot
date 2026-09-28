@@ -280,7 +280,9 @@ def replay(
         current_call = call_id
         current_put = put_id
 
-        dates = sorted(set(oq["date"].tolist()) | set(rq["date"].tolist()))
+        roll_dates = rq["date"].tolist() if not rq.empty and "date" in rq.columns else []
+        original_dates = oq["date"].tolist() if not oq.empty and "date" in oq.columns else []
+        dates = sorted(set(original_dates) | set(roll_dates))
         for date in dates:
             date = pd.Timestamp(date)
             day = oq[oq["date"] == date]
