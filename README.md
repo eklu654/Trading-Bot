@@ -18,4 +18,35 @@ Research and documentation come before implementation. No trading rule becomes a
 
 AI may assist with research and regime classification, but it may not override hard risk controls or strategy exit rules.
 
-See `docs/01-strategies/tastytrade-strategy.md` for the current options methodology draft.
+## Current research gate — 2026-09-28
+
+The first corrected $2,000 account-feasibility replay completed successfully.
+
+The current OPTIONS-001 configuration uses one-contract SPY short strangles. Under the current modeled 50%-of-NLV BPR ceiling, **0 of 929 historical candidate entries were feasible in the $2,000 account**. The dominant rejection was buying-power capacity.
+
+This is a strategy/account feasibility result, not an execution failure. The unconstrained options replay remains useful for studying trade economics, but its historical P/L cannot be treated as realizable by the $2,000 account.
+
+The next research stage is therefore to test:
+
+- turbulent-only options eligibility;
+- defined-risk options structures that can actually fit a $2,000 account;
+- capital-feasibility sensitivity;
+- validation of the research BPR model against broker behavior;
+- combined ETF + options regime-switching economics.
+
+ETF-001 currently has a complete historical replay from 2010-03-11 through 2026-09-25. The plain 200-day trend version produced a 19.53% annualized return in that historical model versus 13.05% for the DMA+VIX variant, with maximum drawdowns of approximately 37.5% and 41.4%, respectively. These are backtest results, not forecasts.
+
+## Autonomous-operation requirement
+
+Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
+
+Before unattended paper/live operation, the system must demonstrate both:
+
+1. a sufficiently robust economic edge after realistic fills, fees, account constraints, and held-out validation; and
+2. restart-safe execution, broker reconciliation, duplicate-order protection, deterministic risk controls, and tested failure recovery.
+
+See docs/03-execution/autonomous-operation.md for the execution architecture and deployment gates.
+
+See docs/02-research/account-feasibility-2000.md for the detailed $2,000 feasibility findings.
+
+See docs/01-strategies/tastytrade-strategy.md for the current options methodology draft.
