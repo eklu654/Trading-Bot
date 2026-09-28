@@ -366,7 +366,7 @@ def main() -> None:
         print(f"challenge_rate={challenged.mean():.3f}")
         print(result.loc[challenged, "challenge_side"].value_counts().to_string())
         print(result.groupby("challenge_side", dropna=False)["pnl"].agg(["count", "mean", "sum"]).to_string())
-        print(f"worst_max_loss_pnl={result["max_loss_pnl"].min():.2f}")
+        print(f"worst_max_loss_pnl={result['max_loss_pnl'].min():.2f}")
 
 if __name__ == "__main__":
     main()
