@@ -1,9 +1,9 @@
 """Evaluate candidate SWITCH-001 regime definitions without changing production labels.
 
-This is deliberately a research-only comparison. Candidate thresholds are
-predefined, not selected by maximizing total historical return. Results are
-split chronologically into training (2010-2018), validation (2019-2022),
-and holdout (2023-present).
+Research-only comparison of predefined regime definitions. Results are split
+chronologically into training (2010-2018), validation (2019-2022), and
+holdout (2023-present). Thresholds are not selected by maximizing full-sample
+returns.
 """
 
 from __future__ import annotations
@@ -84,7 +84,6 @@ def stats(etf: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
     for regime, group in joined.groupby("regime"):
         daily = group["portfolio_return"]
         local = (1 + daily).cumprod()
-        dd = (local / local.cummax() - 1).min()
         rows.append({
             "regime": regime,
             "observations": len(group),
@@ -92,7 +91,7 @@ def stats(etf: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
             "mean_daily_return": daily.mean(),
             "annualized_volatility": daily.std(ddof=1) * np.sqrt(252),
             "cumulative_return": (1 + daily).prod() - 1,
-            "max_drawdown_within_regime": dd,
+            "max_drawdown_within_regime": (local / local.cummax() - 1).min(),
             "mean_invested_weight": group["invested_weight"].mean(),
             "worst_day": daily.min(),
         })
@@ -106,8 +105,10 @@ def main() -> None:
     for name in ["CURRENT", "BALANCED", "STRICT_VOL", "VIX_LEVEL", "STRICT_SIDEWAYS"]:
         labels = candidate_labels(regime, name).shift(1)
         for split, (start, end) in SPLITS.items():
-            mask = (labels.index >= start) & (labels.index <= end)
-            split_labels, split_etf = labels.loc[mask], etf.loc[mask]
+            label_mask = (labels.index >= start) & (labels.index <= end)
+            etf_mask = (etf.index >= start) & (etf.index <= end)
+            split_labels = labels.loc[label_mask]
+            split_etf = etf.loc[etf_mask]
             s = stats(split_etf, split_labels)
             s.insert(0, "split", split)
             s.insert(0, "candidate", name)
