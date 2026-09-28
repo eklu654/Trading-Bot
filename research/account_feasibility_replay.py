@@ -215,8 +215,18 @@ def replay(
     outcomes: pd.DataFrame | None = None,
     marks: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, dict[str, object]]:
+    # The option replay persists strike columns as \`strike_call\`/\`strike_put\`,
+    # while the account-ledger contract uses \`call_strike\`/\`put_strike\`.
+    # Normalize the producer schema here so the account replay cannot fail on
+    # a valid replay artifact solely because of this naming difference.
+    frame = candidates.copy()
+    if "call_strike" not in frame.columns and "strike_call" in frame.columns:
+        frame["call_strike"] = frame["strike_call"]
+    if "put_strike" not in frame.columns and "strike_put" in frame.columns:
+        frame["put_strike"] = frame["strike_put"]
+
     required = {"entry_date", "entry_credit", "call_strike", "put_strike"}
-    missing = required - set(candidates.columns)
+    missing = required - set(frame.columns)
     if missing:
         raise ValueError(f"candidate input missing required columns: {sorted(missing)}")
 
