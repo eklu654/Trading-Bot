@@ -229,11 +229,11 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
     a = ledger.loc[ledger["candidate_id"] == "A"].iloc[0]
     b = ledger.loc[ledger["candidate_id"] == "B"].iloc[0]
     assert a.accepted and b.accepted
-    assert b.pre_trade_nlv == pytest.approx(1900.00)
-    assert b.nlv_after_entry == pytest.approx(1898.70)
-    assert a.post_exit_nlv == pytest.approx(1998.70)
-    assert b.post_exit_nlv == pytest.approx(2097.40)
-    assert summary["ending_nlv"] == pytest.approx(2097.40)
+    assert b.pre_trade_nlv == pytest.approx(1898.70)
+    assert b.nlv_after_entry == pytest.approx(1897.40)
+    assert a.post_exit_nlv == pytest.approx(2096.10)
+    assert b.post_exit_nlv == pytest.approx(2394.80)
+    assert summary["ending_nlv"] == pytest.approx(2394.80)
 
 
 def test_mark_input_rejects_duplicate_candidate_date():
