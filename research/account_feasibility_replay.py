@@ -116,7 +116,7 @@ def replay(
         )
 
     if outcomes is not None:
-        outcome_required = {"candidate_id", "exit_date", "pnl"}
+        outcome_required = {"candidate_id", "exit_date", "pnl", "entry_credit", "exit_debit"}
         missing_outcomes = outcome_required - set(outcomes.columns)
         if missing_outcomes:
             raise ValueError(
@@ -135,14 +135,16 @@ def replay(
     frame["exit_date"] = pd.to_datetime(frame.get("exit_date"), errors="coerce")
     frame = frame.sort_values(["entry_date", "candidate_id"]).reset_index(drop=True)
 
-    nlv = float(config.starting_nlv)
+    cash = float(config.starting_nlv)
     open_until = pd.Timestamp.min
+    open_position_value = 0.0
     rows: list[dict[str, object]] = []
 
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
         exit_date = row["exit_date"]
         credit = float(row["entry_credit"])
+        exit_debit = float(row["exit_debit"]) if _finite(row.get("exit_debit")) else float("nan")
 
         rejection: list[str] = []
         if entry <= open_until:
@@ -151,7 +153,7 @@ def replay(
             rejection.append("NONPOSITIVE_CREDIT")
         if not _finite(row.get("call_strike")) or not _finite(row.get("put_strike")):
             rejection.append("MISSING_STRIKES")
-        if pd.isna(exit_date) or not _finite(row.get("pnl")):
+        if pd.isna(exit_date) or not _finite(row.get("pnl")) or not _finite(row.get("exit_debit")):
             rejection.append("UNRESOLVED_LIFECYCLE_DATA")
         elif exit_date <= entry:
             rejection.append("INVALID_LIFECYCLE_DATES")
@@ -178,22 +180,36 @@ def replay(
                 config.contract_multiplier,
                 config.stress_multiplier,
             )
-            if bpr > min(config.max_bpr_dollars, nlv * config.max_bpr_pct_nlv):
+            nlv_before = cash + open_position_value
+            if bpr > min(config.max_bpr_dollars, nlv_before * config.max_bpr_pct_nlv):
                 rejection.append("BUYING_POWER_LIMIT")
-            if stress_loss >= nlv:
+            if stress_loss >= nlv_before:
                 rejection.append("STRESS_LOSS_EXCEEDS_NLV")
 
         accepted = not rejection
-        # Two legs are opened and two legs are closed: four contract-side
-        # transactions for a one-contract strangle.
-        fees = 4.0 * config.fee_per_contract if accepted else 0.0
+        entry_fee = 2.0 * config.fee_per_contract if accepted else 0.0
+        exit_fee = 2.0 * config.fee_per_contract if accepted else 0.0
+        fees = entry_fee + exit_fee
         pnl = float(row["pnl"]) if accepted and _finite(row.get("pnl")) else 0.0
-        net_pnl = pnl - fees if accepted else 0.0
-        nlv_before = nlv
+        nlv_before = cash + open_position_value
+
+        entry_cash_flow = credit * config.contract_multiplier - entry_fee if accepted else 0.0
+        entry_position_value = -credit * config.contract_multiplier if accepted else 0.0
+        exit_cash_flow = -(exit_debit * config.contract_multiplier) - exit_fee if accepted else 0.0
 
         if accepted:
-            nlv += net_pnl
+            cash += entry_cash_flow
+            open_position_value = entry_position_value
+            nlv_at_entry = cash + open_position_value
+            cash += exit_cash_flow
+            open_position_value = 0.0
+            nlv = cash
             open_until = pd.Timestamp(exit_date)
+        else:
+            nlv = nlv_before
+            nlv_at_entry = nlv_before
+
+        net_pnl = pnl - fees
 
         rows.append({
             "candidate_index": i,
@@ -203,6 +219,13 @@ def replay(
             "entry_date": entry,
             "exit_date": exit_date,
             "pre_trade_nlv": nlv_before,
+            "entry_cash_flow": entry_cash_flow,
+            "entry_position_value": entry_position_value,
+            "nlv_after_entry": nlv_at_entry,
+            "exit_cash_flow": exit_cash_flow,
+            "exit_debit": exit_debit,
+            "cash_after_exit": cash,
+            "open_position_value_after_exit": open_position_value,
             "bpr_estimate": bpr,
             "bpr_pct_pre_trade_nlv": bpr / nlv_before if _finite(bpr) and nlv_before else float("nan"),
             "stress_loss": stress_loss,
@@ -217,12 +240,12 @@ def replay(
     ledger = pd.DataFrame(rows)
     summary = {
         "starting_nlv": config.starting_nlv,
-        "ending_nlv": nlv,
+        "ending_nlv": cash,
         "candidate_count": float(len(ledger)),
         "accepted_count": float(ledger["accepted"].sum()) if len(ledger) else 0.0,
         "rejected_count": float((~ledger["accepted"]).sum()) if len(ledger) else 0.0,
         "fees": float(ledger["fees"].sum()) if len(ledger) else 0.0,
-        "net_pnl": nlv - config.starting_nlv,
+        "net_pnl": cash - config.starting_nlv,
     }
     return ledger, summary
 
