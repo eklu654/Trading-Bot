@@ -110,3 +110,21 @@ The replay must test bid/ask-conservative and midpoint-sensitive execution assum
 Cboe DataShop remains the higher-fidelity reference source if the public dataset fails quality or coverage requirements.
 
 See docs/02-research/options-historical-data.md.
+
+## 2026-09-28 — First historical OPTIONS-001 replay
+
+**Decision:** Do not combine SIDEWAYS_CHOPPY and TURBULENT_HIGH_VOL into a single options-entry regime based on the first replay.
+
+The 2010–2025 SPY replay of a 45-DTE, approximately 16-delta short strangle, one position at a time, produced:
+
+- conservative bid/ask: 114 trades, -$2,206 total P/L, 69.3% winners;
+- midpoint sensitivity: 114 trades, -$551 total P/L, 72.8% winners.
+
+The regime split was materially different:
+
+- SIDEWAYS_CHOPPY: +$2,173 conservative / +$2,372 midpoint;
+- TURBULENT_HIGH_VOL: -$4,379 conservative / -$2,923 midpoint.
+
+This is preliminary because the replay currently uses a temporary 2×-credit loss threshold and does not implement the documented defensive roll/untested-side/inversion mechanics.
+
+**Next:** test defense variants and $2,000 account feasibility before modifying SWITCH-001 regime thresholds further.
