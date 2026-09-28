@@ -184,7 +184,7 @@ def test_overlapping_positions_use_open_position_state_and_settle_later():
     ])
     ledger, summary = replay(
         candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0, max_concurrent_positions=2),
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=4.0, max_concurrent_positions=2),
         outcomes,
     )
     a = ledger.loc[ledger["candidate_id"] == "A"].iloc[0]
