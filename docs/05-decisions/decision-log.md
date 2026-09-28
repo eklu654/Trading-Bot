@@ -75,3 +75,12 @@ Beta-weighted Delta will remain a monitored directional metric but will not rece
 Undefined-risk defense methods will be tested comparatively rather than hard-coded from a single educational example.
 
 See docs/02-research/small-account-options-feasibility.md.
+
+
+## 2026-09-28 — Underlying-universe research
+
+The options strategy will begin research with a deliberately small candidate universe: SPY, QQQ, IWM, GLD, TLT and SLV. This is a research universe based on historical tastylive study precedent, liquidity considerations, and the need to avoid prematurely introducing individual-company event risk.
+
+The list is not a permanent production whitelist. Quantitative liquidity, capital-efficiency, event-risk and correlation filters must determine actual eligibility.
+
+See docs/02-research/options-underlying-universe.md.
