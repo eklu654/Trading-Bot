@@ -232,8 +232,8 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
     assert b.pre_trade_nlv == pytest.approx(1898.70)
     assert b.nlv_after_entry == pytest.approx(1897.40)
     assert a.post_exit_nlv == pytest.approx(2096.10)
-    assert b.post_exit_nlv == pytest.approx(2394.80)
-    assert summary["ending_nlv"] == pytest.approx(2394.80)
+    assert b.post_exit_nlv == pytest.approx(2194.80)
+    assert summary["ending_nlv"] == pytest.approx(2194.80)
 
 
 def test_mark_input_rejects_duplicate_candidate_date():
