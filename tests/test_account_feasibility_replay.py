@@ -276,3 +276,29 @@ def test_open_position_bpr_and_stress_recalculate_from_marked_underlying():
     expected_stress = max_stress_loss(350.0, 200.0, 500.0, 3.0)
     assert b.aggregate_bpr_pre_trade == pytest.approx(expected_bpr)
     assert b.aggregate_stress_loss_pre_trade == pytest.approx(expected_stress)
+
+
+def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
+    candidates = pd.DataFrame([{
+        "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
+        "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+    }])
+    outcomes = pd.DataFrame([{
+        "candidate_id": "A", "exit_date": "2020-01-10", "exit_debit": 1.0, "pnl": 100.0,
+    }])
+    marks = pd.DataFrame([
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
+    ])
+    ledger, summary = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
+        outcomes,
+        marks,
+    )
+    snapshots = pd.DataFrame(summary["daily_snapshots"]).set_index("date")
+    trough = snapshots.loc[pd.Timestamp("2020-01-05")]
+    assert trough["open_positions"] == 1
+    assert trough["nlv"] == pytest.approx(1898.70)
+    assert trough["aggregate_bpr_estimate"] > 0
+    assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2097.40)

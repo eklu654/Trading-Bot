@@ -166,6 +166,8 @@ def replay(
     cash = float(config.starting_nlv)
     active: list[dict[str, object]] = []
     rows: list[dict[str, object]] = []
+    snapshots: list[dict[str, object]] = []
+    processed_dates: set[pd.Timestamp] = set()
 
     def open_value() -> float:
         return float(sum(float(p["position_value"]) for p in active))
@@ -222,8 +224,34 @@ def replay(
             row["post_trade_nlv"] = row["post_exit_nlv"]
             active.remove(position)
 
+    def record_snapshot(timestamp: pd.Timestamp, mark_missing: bool = False) -> None:
+        nlv = cash + open_value()
+        snapshots.append({
+            "date": timestamp,
+            "cash": cash,
+            "open_position_value": open_value(),
+            "nlv": nlv,
+            "open_positions": len(active),
+            "aggregate_bpr_estimate": active_bpr(),
+            "aggregate_bpr_pct_nlv": active_bpr() / nlv if nlv > 0 else float("nan"),
+            "aggregate_stress_loss_estimate": active_stress_loss(),
+            "mark_missing_for_open_position": mark_missing,
+        })
+
+    marks_by_date = set(mark_date for _, mark_date in mark_lookup)
+
+    def process_valuation_dates(through: pd.Timestamp) -> None:
+        dates = set(marks_by_date)
+        dates.update(pd.Timestamp(p["exit_date"]) for p in active)
+        for valuation_date in sorted(d for d in dates if d <= through and d not in processed_dates):
+            settle_positions_through(valuation_date)
+            missing_mark = bool(active) and marks is not None and mark_positions(valuation_date)
+            record_snapshot(valuation_date, missing_mark)
+            processed_dates.add(valuation_date)
+
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
+        process_valuation_dates(entry)
         settle_positions_through(entry)
         active_mark_missing = bool(active) and marks is not None and mark_positions(entry)
         nlv_before = cash + open_value()
@@ -308,6 +336,7 @@ def replay(
             })
 
         nlv_after_entry = cash + open_value()
+        record_snapshot(entry, active_mark_missing)
         rows.append({
             "candidate_index": i,
             "candidate_id": row["candidate_id"],
@@ -340,8 +369,13 @@ def replay(
             "post_trade_nlv": nlv_after_entry,
         })
 
-    if active:
-        settle_positions_through(pd.to_datetime(frame["exit_date"].dropna().max()))
+    if frame["exit_date"].notna().any():
+        final_date = pd.to_datetime(frame["exit_date"].dropna().max())
+        process_valuation_dates(final_date)
+        settle_positions_through(final_date)
+        if final_date not in processed_dates:
+            record_snapshot(final_date, False)
+            processed_dates.add(final_date)
     ending_nlv = cash
     ledger = pd.DataFrame(rows)
     summary = {
@@ -352,6 +386,7 @@ def replay(
         "rejected_count": float((~ledger["accepted"]).sum()) if len(ledger) else 0.0,
         "fees": float(ledger["fees"].sum()) if len(ledger) else 0.0,
         "net_pnl": ending_nlv - config.starting_nlv,
+        "daily_snapshots": snapshots,
     }
     return ledger, summary
 
@@ -401,8 +436,12 @@ def main() -> None:
         source.stem + f"_account_{int(args.starting_nlv)}.csv"
     )
     ledger.to_csv(output, index=False)
+    snapshots = pd.DataFrame(summary.pop("daily_snapshots"))
+    snapshot_output = output.with_name(output.stem + "_daily.csv")
+    snapshots.to_csv(snapshot_output, index=False)
 
     print("OPTIONS-001 account feasibility replay")
+    print(f"daily_snapshots={snapshot_output}")
     for key, value in summary.items():
         print(f"{key}={value}")
     print("rejections:")
