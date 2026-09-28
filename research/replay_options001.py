@@ -373,6 +373,18 @@ def candidate_trade_outcomes(
     return pd.DataFrame(trades)
 
 
+def first_pass_trades(
+    entries: pd.DataFrame,
+    quotes: pd.DataFrame,
+    regime: pd.DataFrame,
+    args: argparse.Namespace,
+) -> pd.DataFrame:
+    """Baseline non-overlapping trade-economics replay."""
+    return candidate_trade_outcomes(
+        entries, quotes, regime, args, enforce_one_position=True
+    )
+
+
 def main() -> None:
     args = parse_args()
     validate_local_source(args.options_source)
