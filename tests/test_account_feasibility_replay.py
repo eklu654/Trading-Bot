@@ -15,8 +15,8 @@ def candidate(**overrides):
         "exit_date": "2020-01-10",
         "entry_credit": 2.00,
         "pnl": 50.00,
-        "call_strike": 340.0,
-        "put_strike": 300.0,
+        "call_strike": 500.0,
+        "put_strike": 200.0,
         "underlying_close": 320.0,
     }
     row.update(overrides)
@@ -24,7 +24,7 @@ def candidate(**overrides):
 
 
 def test_cash_flow_signs_and_nlv_reconcile():
-    ledger, summary = replay(candidate(), FeasibilityConfig(starting_nlv=2000))
+    ledger, summary = replay(candidate(), FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0))
     row = ledger.iloc[0]
     assert row.accepted
     assert row.net_pnl == pytest.approx(48.70)
@@ -33,7 +33,7 @@ def test_cash_flow_signs_and_nlv_reconcile():
 
 
 def test_quantity_is_implicitly_one_integer_contract():
-    ledger, _ = replay(candidate(), FeasibilityConfig(starting_nlv=2000))
+    ledger, _ = replay(candidate(), FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0))
     assert len(ledger) == 1
     assert ledger.iloc[0].accepted
 
