@@ -398,6 +398,58 @@ def main() -> None:
     out = RESEARCH_DIR / f"options001_defense_{args.candidate.lower()}_{args.fill_model}_{tag}.csv"
     result.to_csv(out, index=False)
 
+    # Persist a machine-readable summary alongside the trade ledger so the
+    # historical workflow can compare variants without scraping console logs.
+    summary = {
+        "candidate": args.candidate,
+        "defense": args.defense,
+        "fill_model": args.fill_model,
+        "selected_entry_dates": int(len(entries)),
+        "completed_trades": int(len(result)),
+    }
+    if result.empty:
+        summary.update({
+            "total_pnl": 0.0,
+            "mean_pnl": 0.0,
+            "median_pnl": 0.0,
+            "win_rate": 0.0,
+            "worst_trade": 0.0,
+            "p10_pnl": 0.0,
+            "p25_pnl": 0.0,
+            "max_observed_open_debit_proxy": 0.0,
+            "challenged_trades": 0,
+            "challenge_rate": 0.0,
+            "adjusted_trades": 0,
+            "adjustment_rate": 0.0,
+            "adjustment_cashflow_contribution": 0.0,
+        })
+    else:
+        challenged = result["challenge_date"].notna()
+        adjusted = result["adjusted"]
+        summary.update({
+            "total_pnl": float(result["pnl"].sum()),
+            "mean_pnl": float(result["pnl"].mean()),
+            "median_pnl": float(result["pnl"].median()),
+            "win_rate": float((result["pnl"] > 0).mean()),
+            "worst_trade": float(result["pnl"].min()),
+            "p10_pnl": float(result["pnl"].quantile(0.10)),
+            "p25_pnl": float(result["pnl"].quantile(0.25)),
+            "max_observed_open_debit_proxy": float(result["exit_debit"].max()),
+            "challenged_trades": int(challenged.sum()),
+            "challenge_rate": float(challenged.mean()),
+            "adjusted_trades": int(adjusted.sum()),
+            "adjustment_rate": float(adjusted.mean()),
+            "adjustment_cashflow_contribution": float(result.loc[adjusted, "adjustment_pnl"].sum()),
+        })
+        for regime_name, group in result.groupby("regime"):
+            prefix = str(regime_name).lower()
+            summary[f"{prefix}_trades"] = int(len(group))
+            summary[f"{prefix}_total_pnl"] = float(group["pnl"].sum())
+            summary[f"{prefix}_mean_pnl"] = float(group["pnl"].mean())
+
+    summary_out = RESEARCH_DIR / f"options001_defense_summary_{args.candidate.lower()}_{args.fill_model}_{tag}.csv"
+    pd.DataFrame([summary]).to_csv(summary_out, index=False)
+
     print("OPTIONS-001 defense replay")
     print(f"candidate={args.candidate} defense={args.defense} fill_model={args.fill_model}")
     print(f"selected_entry_dates={len(entries)} completed_trades={len(result)}")
