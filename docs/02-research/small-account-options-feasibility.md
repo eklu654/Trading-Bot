@@ -135,3 +135,93 @@ It is:
 > "At what account size and under what structure constraints does the documented methodology become executable without silently violating its own risk controls?"
 
 That distinction is now part of the research specification.
+
+
+## 9. Feasibility-ledger specification
+
+The feasibility experiment must use a portfolio ledger, not a trade-by-trade pass/fail calculation in isolation. A candidate can pass its entry checks while causing the aggregate portfolio to violate a limit.
+
+For every candidate opportunity, record the following before/after values:
+
+- timestamp and source-data version;
+- account NLV, cash, available buying power and open positions;
+- VIX allocation band and resulting aggregate BP ceiling;
+- available undefined-risk and defined-risk sleeve capacity;
+- requested structure, legs, quantity, expiration and underlying;
+- theoretical per-trade sizing amount and integer contract quantity;
+- broker-reported or explicitly modeled BPR;
+- current and projected portfolio BPR;
+- defined-risk maximum loss, where applicable;
+- underlying concentration before and after the trade;
+- beta-weighted Delta, gamma and notional exposure before and after;
+- event, expiration and assignment checks;
+- liquidity and estimated transaction costs;
+- final acceptance/rejection and every reason code.
+
+The ledger must retain rejected candidates. Otherwise a strategy that rarely finds a feasible trade could appear deceptively clean because its rejected opportunities disappear from the sample.
+
+### 9.1 Sequential hard-gate evaluation
+
+Apply hard gates in a deterministic order and preserve all failure reasons, not only the first one:
+
+1. Account state valid; no emergency halt.
+2. Position and order state reconciled; no duplicate or conflicting order.
+3. Expiration, exercise, assignment and event restrictions pass.
+4. Aggregate BP ceiling and applicable sleeve allocation pass.
+5. NLV trade-size cap passes at integer contract quantity.
+6. Single-underlying concentration cap passes.
+7. Broker BPR and available buying power pass.
+8. Defined-risk max-loss or undefined-risk stress constraints pass.
+9. Portfolio directional, gamma, notional and correlation limits pass.
+10. Quotes and estimated fills pass liquidity/cost checks.
+
+AI opportunity ranking occurs only after hard gates. A high score cannot rescue a rejected trade.
+
+### 9.2 Integer contract sizing
+
+For each structure, calculate the maximum theoretical risk budget first, then determine whether any integer contract quantity satisfies every hard limit. Never round a fractional contract quantity up.
+
+For a defined-risk spread, calculate maximum expiration loss from the actual legs and multiplier; do not use entry credit or BPR as a substitute. For a multi-leg structure, account for all legs and fees. For undefined-risk positions, the historical percentage sizing amount is not a maximum-loss bound; apply BPR and stress constraints separately.
+
+A candidate with zero feasible contracts is a rejected opportunity, not a reason to widen the spread, increase the allocation, or substitute a different risk definition.
+
+### 9.3 Required account-size outputs
+
+For each tested account size, report:
+
+- eligible opportunities and completed trades;
+- accepted and rejected candidate counts;
+- rejection counts by reason (including multiple reasons per candidate);
+- fraction of eligible opportunities that could actually be entered;
+- mean/median and percentile BPR as % of NLV;
+- peak BPR and BPR expansion;
+- number of concurrent positions;
+- realized and unrealized P/L, fees, and ending NLV;
+- drawdown and worst trade;
+- defined-risk maximum-loss exposure;
+- stress loss under named scenarios;
+- time spent at or above each allocation/concentration boundary.
+
+Show both the raw strategy result and the result after applying feasibility gates. Do not compare a one-contract unconstrained replay with a constrained account as if they were the same experiment.
+
+### 9.4 Broker-data distinction
+
+Keep three values separate in the data model:
+
+1. **Research estimate:** locally calculated BPR or stress proxy, with formula and version.
+2. **Broker preview:** buying-power effect returned for a specific proposed order, if the broker API supports it.
+3. **Broker account state:** actual buying power and margin values reported for the paper account.
+
+A locally calculated proxy must never be labeled as broker BPR. If historical broker previews are unavailable, disclose that the backtest is an approximation and run conservative sensitivity bands rather than claiming exact historical feasibility.
+
+### 9.5 No-trade is a valid outcome
+
+A strategy that cannot satisfy its documented constraints at $2,000 may produce few or no trades. That is a valid experimental result. The feasibility report must distinguish:
+
+- strategy has no signal;
+- signal exists but no listed contract meets the sizing limit;
+- contract exists but BPR/capital prevents entry;
+- risk limits reject the trade;
+- market data or quote quality is insufficient.
+
+This distinction is necessary to diagnose whether an account-size limitation is structural, data-related, or caused by the strategy's entry rules.
