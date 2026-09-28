@@ -577,9 +577,12 @@ def main() -> None:
     snapshots = pd.DataFrame(summary.pop("daily_snapshots"))
     snapshot_output = output.with_name(output.stem + "_daily.csv")
     snapshots.to_csv(snapshot_output, index=False)
+    summary_output = output.with_name(output.stem + "_summary.csv")
+    pd.DataFrame([summary]).to_csv(summary_output, index=False)
 
     print("OPTIONS-001 account feasibility replay")
     print(f"daily_snapshots={snapshot_output}")
+    print(f"summary={summary_output}")
     for key, value in summary.items():
         print(f"{key}={value}")
     print("rejections:")
