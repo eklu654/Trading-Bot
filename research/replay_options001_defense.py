@@ -451,6 +451,8 @@ def main() -> None:
             summary[f"{prefix}_trades"] = int(len(group))
             summary[f"{prefix}_total_pnl"] = float(group["pnl"].sum())
             summary[f"{prefix}_mean_pnl"] = float(group["pnl"].mean())
+        for exit_reason, group in result.groupby("exit_reason"):
+            summary[f"exit_{str(exit_reason).lower()}_trades"] = int(len(group))
 
     summary_out = RESEARCH_DIR / f"options001_defense_summary_{args.candidate.lower()}_{args.fill_model}_{tag}.csv"
     pd.DataFrame([summary]).to_csv(summary_out, index=False)
