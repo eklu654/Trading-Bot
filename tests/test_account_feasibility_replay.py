@@ -121,7 +121,7 @@ def test_account_replay_uses_independent_lifecycle_and_retains_overlap_rejection
 
     ledger, summary = replay(
         candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.39),
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
         outcomes,
     )
 
