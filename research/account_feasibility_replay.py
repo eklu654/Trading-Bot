@@ -98,6 +98,96 @@ def max_stress_loss(
     return max(put_loss, call_loss) * multiplier - credit * multiplier
 
 
+def summarize_account_risk(
+    snapshots: list[dict[str, object]],
+    config: FeasibilityConfig,
+) -> dict[str, float | int | str | None]:
+    """Derive drawdown, capital-risk, and quote-staleness metrics from snapshots."""
+    empty: dict[str, float | int | str | None] = {
+        "snapshot_count": 0,
+        "peak_nlv": config.starting_nlv,
+        "trough_nlv": config.starting_nlv,
+        "max_drawdown_dollars": 0.0,
+        "max_drawdown_pct": 0.0,
+        "max_drawdown_peak_date": None,
+        "max_drawdown_trough_date": None,
+        "peak_bpr_dollars": 0.0,
+        "peak_bpr_pct_nlv": 0.0,
+        "peak_stress_loss_dollars": 0.0,
+        "peak_stress_loss_pct_nlv": 0.0,
+        "near_bpr_limit_snapshot_count": 0,
+        "near_bpr_limit_threshold_pct_nlv": config.max_bpr_pct_nlv * 0.90,
+        "max_near_bpr_limit_duration_days": 0.0,
+        "stale_mark_snapshot_count": 0,
+        "stale_mark_snapshot_pct": 0.0,
+        "max_stale_mark_days": 0.0,
+    }
+    if not snapshots:
+        return empty
+
+    frame = pd.DataFrame(snapshots).copy()
+    frame["date"] = pd.to_datetime(frame["date"])
+    frame = frame.sort_values("date").drop_duplicates("date", keep="last").reset_index(drop=True)
+
+    nlv = pd.to_numeric(frame["nlv"], errors="coerce")
+    running_peak = nlv.cummax()
+    observed_drawdown = running_peak - nlv
+    baseline_drawdown = config.starting_nlv - nlv
+    drawdown = pd.concat([baseline_drawdown, observed_drawdown], axis=1).max(axis=1)
+    observed_dd_pct = observed_drawdown / running_peak.where(running_peak > 0)
+    baseline_dd_pct = baseline_drawdown / config.starting_nlv if config.starting_nlv > 0 else pd.Series(float("nan"), index=frame.index)
+    drawdown_pct = pd.concat([baseline_dd_pct, observed_dd_pct], axis=1).max(axis=1)
+
+    trough_idx = int(drawdown.fillna(-float("inf")).idxmax())
+    observed_peak_idx = int(nlv.iloc[:trough_idx + 1].idxmax())
+    observed_peak_nlv = float(nlv.iloc[observed_peak_idx])
+    peak_idx = observed_peak_idx if observed_peak_nlv >= config.starting_nlv else -1
+
+    bpr = pd.to_numeric(frame["aggregate_bpr_estimate"], errors="coerce")
+    bpr_pct = pd.to_numeric(frame["aggregate_bpr_pct_nlv"], errors="coerce")
+    stress = pd.to_numeric(frame["aggregate_stress_loss_estimate"], errors="coerce")
+    stress_pct = stress / nlv.where(nlv > 0)
+
+    near_threshold = config.max_bpr_pct_nlv * 0.90
+    near_limit = bpr_pct >= near_threshold
+    near_dates = frame.loc[near_limit, "date"].tolist()
+    max_near_duration = 0.0
+    if near_dates:
+        start = previous = near_dates[0]
+        for current in near_dates[1:]:
+            if (current - previous).days <= 1:
+                previous = current
+            else:
+                max_near_duration = max(max_near_duration, float((previous - start).days))
+                start = previous = current
+        max_near_duration = max(max_near_duration, float((previous - start).days))
+
+    stale_flag = frame["stale_mark_for_open_position"].fillna(False).astype(bool)
+    stale_days = pd.to_numeric(
+        frame.get("max_mark_stale_days", pd.Series(0.0, index=frame.index)),
+        errors="coerce",
+    ).fillna(0.0)
+
+    return {
+        "snapshot_count": int(len(frame)),
+        "peak_nlv": max(config.starting_nlv, float(running_peak.max())),
+        "trough_nlv": float(nlv.min()),
+        "max_drawdown_dollars": max(0.0, float(drawdown.max())),
+        "max_drawdown_pct": max(0.0, float(drawdown_pct.max())),
+        "max_drawdown_peak_date": frame.loc[peak_idx, "date"].isoformat() if peak_idx >= 0 else "start",
+        "max_drawdown_trough_date": frame.loc[trough_idx, "date"].isoformat(),
+        "peak_bpr_dollars": float(bpr.max()) if bpr.notna().any() else 0.0,
+        "peak_bpr_pct_nlv": float(bpr_pct.max()) if bpr_pct.notna().any() else 0.0,
+        "peak_stress_loss_dollars": float(stress.max()) if stress.notna().any() else 0.0,
+        "peak_stress_loss_pct_nlv": float(stress_pct.max()) if stress_pct.notna().any() else 0.0,
+        "near_bpr_limit_snapshot_count": int(near_limit.sum()),
+        "near_bpr_limit_threshold_pct_nlv": near_threshold,
+        "max_near_bpr_limit_duration_days": max_near_duration,
+        "stale_mark_snapshot_count": int(stale_flag.sum()),
+        "stale_mark_snapshot_pct": float(stale_flag.mean()),
+        "max_stale_mark_days": float(stale_days.max()),
+    }
+
 def replay(
     candidates: pd.DataFrame,
     config: FeasibilityConfig,
@@ -235,7 +325,10 @@ def replay(
             "aggregate_bpr_estimate": active_bpr(),
             "aggregate_bpr_pct_nlv": active_bpr() / nlv if nlv > 0 else float("nan"),
             "aggregate_stress_loss_estimate": active_stress_loss(),
+            "aggregate_stress_loss_pct_nlv": active_stress_loss() / nlv if nlv > 0 else float("nan"),
             "mark_missing_for_open_position": mark_missing,
+            "stale_mark_for_open_position": bool(mark_missing or any(days > 0 for days in stale_days)),
+            "max_mark_stale_days": max(stale_days, default=0),
         })
 
     marks_by_date = set(mark_date for _, mark_date in mark_lookup)
@@ -388,6 +481,7 @@ def replay(
         "net_pnl": ending_nlv - config.starting_nlv,
         "daily_snapshots": snapshots,
         "risk_metrics_version": "1",
+        **summarize_account_risk(snapshots, config),
     }
     return ledger, summary
 
