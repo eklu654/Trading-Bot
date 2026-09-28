@@ -387,6 +387,7 @@ def replay(
         "fees": float(ledger["fees"].sum()) if len(ledger) else 0.0,
         "net_pnl": ending_nlv - config.starting_nlv,
         "daily_snapshots": snapshots,
+        "risk_metrics_version": "1",
     }
     return ledger, summary
 
