@@ -132,18 +132,32 @@ The current research baseline is:
 
 The 45-DTE/16-delta values are research baselines rather than universal rules for every strategy.
 
-## 9. Exit framework — provisional
+## 9. Exit framework — structure-specific research baseline
 
-The strategy uses deterministic exits.
+The research now supports treating exit mechanics as **strategy-specific**, rather than applying a single 50%/21-DTE rule to every options structure.
 
-Research evidence supports:
+An official tastylive mechanics guide documents:
 
-- management around **50% of maximum profit** for several short-premium structures;
-- management around **21 DTE** for several 45-DTE short-premium studies and strategy guides.
+| Structure | Winner management | Loss management |
+|---|---|---|
+| Short strangle | 50% of credit received **or 21 DTE** | May defend by rolling the untested side, rolling out, and/or inverting |
+| Iron condor | 50% of credit received **or 21 DTE** | No loss management required because risk is defined |
+| Credit spread | 50% of credit received **or 21 DTE** | No loss management required because risk is defined |
+| Ratio spread | 30% of max profit | Roll out in time if it moves against the position |
+| Broken-wing butterfly | 25% of max profit | No loss management due to defined risk |
+| Diagonal | 25% of max profit | Roll near-month option forward if needed |
 
-For example, tastylive's 2020 strategy-mechanics material describes short strangles, iron condors, and credit spreads as managed at 50% of credit received or 21 DTE, whichever comes first. A 2024 tastylive study also found 21-DTE management materially reduced volatility and downside losses in the tested SPY setups.
+The same source describes these as mechanics for commonly used strategies, not as a universal rule for all options.
 
-These remain strategy-specific research baselines until the exact trade universe is frozen.
+Separate official research supports the 45-DTE/21-DTE pairing for SPY short-premium studies. A 2024 study also found that adjusting DTE with IV can preserve similar daily P/L: 60 DTE in low IVR, 45 DTE generally, and 30 DTE in higher IVR, with 21-DTE exits reducing P/L volatility across tested durations.
+
+For the project, therefore:
+
+- **50% / 21 DTE is not one universal exit rule.**
+- The exact exit rule belongs to the structure definition.
+- Undefined-risk loss management must be explicitly specified; it cannot be inferred from the defined-risk rules.
+- Exit rules must be deterministic and must not be overridden by the AI layer.
+- The backtester must test structure-specific management rather than applying one generic exit to all trades.
 
 ## 10. Portfolio directional exposure
 
