@@ -2,7 +2,7 @@
 
 ## 2026-09-27 — Repository established
 
-**Decision:** Use \`eklu654/Trading-Bot\` as the authoritative project repository.
+**Decision:** Use the Trading-Bot repository as the authoritative project repository.
 
 ## 2026-09-27 — Three isolated strategy instances
 
@@ -26,7 +26,7 @@ The regime switcher controls eligibility for new positions rather than acting as
 
 ## 2026-09-27 — Historical VIX/portfolio framework reconstructed
 
-**Decision:** Treat the following as verified historical tastytrade methodology for research purposes, based on the primary-source **From Strategy to Practice — India 2020** presentation:
+**Decision:** Treat the following as verified historical tastytrade methodology for research purposes, based on the primary-source From Strategy to Practice — India 2020 presentation:
 
 - VIX 10–15 → 25% maximum BP allocation
 - VIX 15–20 → 30%
@@ -42,7 +42,7 @@ The regime switcher controls eligibility for new positions rather than acting as
 Primary-source presentation:
 https://s3.amazonaws.com/tastytradepublicmedia/website/cms/tastytrade_TomSosnoff_India2020.pdf/original/tastytrade_TomSosnoff_India2020.pdf
 
-The user's screenshot is preserved as **Screenshot_20210413-175727.png**. fileciteturn2file0
+The user's screenshot is preserved as Screenshot_20210413-175727.png.
 
 **Important:** These are classified as historical documented methodology, not as a claim that tastytrade currently requires these exact figures in 2026.
 
@@ -63,7 +63,6 @@ Before implementation, test:
 
 The historical framework becomes the baseline research model against which modern adaptations are compared.
 
-
 ## 2026-09-28 — Small-account feasibility and risk-model refinement
 
 The options research now treats account size as an explicit feasibility variable rather than assuming the historical portfolio framework scales linearly to $2,000.
@@ -76,7 +75,6 @@ Undefined-risk defense methods will be tested comparatively rather than hard-cod
 
 See docs/02-research/small-account-options-feasibility.md.
 
-
 ## 2026-09-28 — Underlying-universe research
 
 The options strategy will begin research with a deliberately small candidate universe: SPY, QQQ, IWM, GLD, TLT and SLV. This is a research universe based on historical tastylive study precedent, liquidity considerations, and the need to avoid prematurely introducing individual-company event risk.
@@ -84,3 +82,31 @@ The options strategy will begin research with a deliberately small candidate uni
 The list is not a permanent production whitelist. Quantitative liquidity, capital-efficiency, event-risk and correlation filters must determine actual eligibility.
 
 See docs/02-research/options-underlying-universe.md.
+
+## 2026-09-28 — Historical regime classifier is not frozen
+
+**Decision:** Reject the current regime classifier as a production candidate.
+
+The 2010–2026 historical dataset contains 4,208 sessions. The current classifier labels approximately 91.6% of sessions as options-eligible, which conflicts with the architecture that expects ETF-001 to remain the default for most normal conditions.
+
+The ETF-001 backtest also does not support treating all current sideways/choppy sessions as ETF-failure periods. Under the current labels, sideways/choppy periods had positive aggregate historical return but a large within-regime drawdown, while turbulent/high-volatility periods showed materially weaker results in the validation and holdout splits for the stricter candidate definitions.
+
+Candidate testing produced a useful research range:
+
+- stricter volatility candidates: approximately 18–28% options-eligible depending on the chronological split;
+- broader sideways candidate: approximately 23% eligible over the full 2010–2026 sample;
+- turbulent-only candidate: approximately 10% eligible.
+
+None is frozen yet. The next decision depends on historical OPTIONS-001 replay rather than further indicator accumulation.
+
+See docs/02-research/historical-regime-validation.md.
+
+## 2026-09-28 — Historical options replay source
+
+**Decision:** Use the public SPY 2008–2025 end-of-day options-chain dataset as the first research replay source, without committing the raw data to this repository.
+
+The replay must test bid/ask-conservative and midpoint-sensitive execution assumptions and preserve source/version provenance.
+
+Cboe DataShop remains the higher-fidelity reference source if the public dataset fails quality or coverage requirements.
+
+See docs/02-research/options-historical-data.md.
