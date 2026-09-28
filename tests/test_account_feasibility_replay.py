@@ -212,9 +212,9 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
         {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
     ])
     marks = pd.DataFrame([
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0},
-        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0},
-        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
+        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0, "underlying_close": 320.0},
     ])
     ledger, summary = replay(
         candidates,
@@ -239,8 +239,8 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
 def test_mark_input_rejects_duplicate_candidate_date():
     candidates = candidate(candidate_id="A")
     marks = pd.DataFrame([
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.0},
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.1},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.1, "underlying_close": 320.0},
     ])
     with pytest.raises(ValueError, match="duplicate candidate_id/date"):
         replay(candidates, FeasibilityConfig(), marks=marks)
