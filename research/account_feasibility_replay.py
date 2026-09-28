@@ -157,6 +157,12 @@ def replay(
                     "underlying_close": float(mark_row.underlying_close),
                 }
 
+    marks_by_candidate: dict[str, list[tuple[pd.Timestamp, dict[str, float]]]] = {}
+    for (candidate_id, mark_date), mark in mark_lookup.items():
+        marks_by_candidate.setdefault(candidate_id, []).append((mark_date, mark))
+    for history in marks_by_candidate.values():
+        history.sort(key=lambda item: item[0])
+
     cash = float(config.starting_nlv)
     active: list[dict[str, object]] = []
     rows: list[dict[str, object]] = []
@@ -178,9 +184,10 @@ def replay(
         """
         missing = False
         for position in active:
-            key = (str(position["candidate_id"]), timestamp)
-            if key in mark_lookup:
-                mark = mark_lookup[key]
+            history = marks_by_candidate.get(str(position["candidate_id"]), [])
+            available = [item for item in history if item[0] <= timestamp]
+            if available:
+                mark_date, mark = available[-1]
                 position["position_value"] = -mark["mark_debit"] * config.contract_multiplier
                 position["underlying"] = mark["underlying_close"]
                 position["mark_debit"] = mark["mark_debit"]
@@ -194,7 +201,8 @@ def replay(
                     float(position["call_strike"]), mark["mark_debit"],
                     config.contract_multiplier, config.stress_multiplier,
                 )
-                position["last_mark_date"] = timestamp
+                position["last_mark_date"] = mark_date
+                position["mark_stale_days"] = (timestamp - mark_date).days
             else:
                 missing = True
         return missing
