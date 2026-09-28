@@ -190,3 +190,29 @@ The regime split is more informative than the aggregate:
 **Interpretation:** this baseline does not support a single combined “sideways/turbulent options regime.” The sideways subset was profitable in this reconstruction, while turbulent/high-volatility entries were the dominant source of losses. This is not yet a production conclusion because the 2×-credit loss rule is only a placeholder and no defensive rolling/inversion mechanics have been implemented.
 
 The next replay must therefore compare the documented defensive methods separately and model the $2,000 account constraint. The regime selector should not be tuned to make turbulent periods look favorable before those tests are completed.
+
+
+## 13. No-stop benchmark — 2026-09-28
+
+A second replay removed the temporary 2×-credit loss threshold while leaving every other baseline assumption unchanged. This isolates whether the initial negative result was caused by the arbitrary loss stop.
+
+| Fill model | Completed trades | Total P/L | Mean P/L/trade | Win rate |
+|---|---:|---:|---:|---:|
+| Bid/ask conservative | 103 | +$4,557 | +$44.24 | 72.8% |
+| Midpoint sensitivity | 106 | +$5,266 | +$49.68 | 75.5% |
+
+Regime split:
+
+| Fill model | Regime | Trades | Mean P/L | Total P/L |
+|---|---|---:|---:|---:|
+| Conservative | SIDEWAYS_CHOPPY | 32 | +$77.78 | +$2,489 |
+| Conservative | TURBULENT_HIGH_VOL | 71 | +$29.13 | +$2,068 |
+| Midpoint | SIDEWAYS_CHOPPY | 34 | +$82.94 | +$2,820 |
+| Midpoint | TURBULENT_HIGH_VOL | 72 | +$33.97 | +$2,446 |
+
+**Interpretation:** the 2×-credit loss threshold was materially destructive in this reconstruction. Removing it changed the turbulent/high-volatility subset from negative to positive in both fill models. Therefore the earlier conclusion that turbulent entries were intrinsically poor is not supported by the no-stop benchmark.
+
+This does **not** mean “never exit a losing strangle.” It means the current 2×-credit stop cannot be treated as a validated exit rule. The next research step is deterministic challenge management: compare no adjustment against documented-style untested-side rolls, roll-outs, and inversion using only historical chain observations available after entry. The objective is to determine whether defense improves tail outcomes without simply manufacturing P/L through hindsight.
+
+The no-stop result also strengthens the case for testing turbulent periods as a legitimate options regime rather than excluding them solely because of the first placeholder-stop result.
+
