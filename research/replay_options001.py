@@ -97,7 +97,7 @@ def select_entries(
     q = f"""
         WITH candidates AS (
             SELECT
-                o.date AS entry_date,
+                CAST(o.date AS DATE) AS entry_date,
                 o.contract_id,
                 o.expiration,
                 o.strike,
@@ -109,9 +109,9 @@ def select_entries(
                 o.open_interest,
                 o.delta,
                 o.implied_volatility,
-                datediff('day', o.date, o.expiration) AS dte
+                datediff('day', CAST(o.date AS DATE), CAST(o.expiration AS DATE)) AS dte
             FROM {source_sql(source)} o
-            INNER JOIN eligible_dates d ON o.date = d.entry_date
+            INNER JOIN eligible_dates d ON CAST(o.date AS DATE) = d.entry_date
             WHERE o.expiration BETWEEN
                     o.date + INTERVAL '{args.min_dte}' DAY
                 AND o.date + INTERVAL '{args.max_dte}' DAY
@@ -206,7 +206,7 @@ def quote_replay(
             s.contract_id_call,
             s.contract_id_put,
             s.expiration,
-            o.date,
+            CAST(o.date AS DATE) AS date,
             o.contract_id,
             o.bid,
             o.ask,
@@ -214,8 +214,8 @@ def quote_replay(
         FROM selected_entries s
         INNER JOIN {source_sql(source)} o
           ON o.contract_id IN (s.contract_id_call, s.contract_id_put)
-         AND o.date > s.entry_date
-         AND o.date <= s.expiration
+         AND CAST(o.date AS DATE) > s.entry_date
+         AND CAST(o.date AS DATE) <= s.expiration
         ORDER BY s.entry_date, o.date
     """
     quotes = con.execute(q).fetchdf()
