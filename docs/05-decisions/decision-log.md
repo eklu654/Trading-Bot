@@ -62,3 +62,16 @@ Before implementation, test:
 - and realistic option execution costs.
 
 The historical framework becomes the baseline research model against which modern adaptations are compared.
+
+
+## 2026-09-28 — Small-account feasibility and risk-model refinement
+
+The options research now treats account size as an explicit feasibility variable rather than assuming the historical portfolio framework scales linearly to $2,000.
+
+Current tastylive research documents substantial BPR expansion risk for naked positions in small accounts and discusses risk-defined structures as a practical response to small-account constraints. The project therefore will test historical-mix and defined-risk feasibility models separately rather than silently relaxing sizing rules.
+
+Beta-weighted Delta will remain a monitored directional metric but will not receive a frozen numerical neutrality band until stronger quantitative evidence is recovered. Recent tastylive material also emphasizes gamma and correlation behavior during volatility spikes.
+
+Undefined-risk defense methods will be tested comparatively rather than hard-coded from a single educational example.
+
+See docs/02-research/small-account-options-feasibility.md.
