@@ -27,9 +27,9 @@ def test_cash_flow_signs_and_nlv_reconcile():
     ledger, summary = replay(candidate(), FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0))
     row = ledger.iloc[0]
     assert row.accepted
-    assert row.net_pnl == pytest.approx(48.70)
-    assert row.post_trade_nlv == pytest.approx(2048.70)
-    assert summary["ending_nlv"] == pytest.approx(2048.70)
+    assert row.net_pnl == pytest.approx(47.40)
+    assert row.post_trade_nlv == pytest.approx(2047.40)
+    assert summary["ending_nlv"] == pytest.approx(2047.40)
 
 
 def test_quantity_is_implicitly_one_integer_contract():
@@ -83,3 +83,58 @@ def test_stress_loss_is_explicit():
 def test_missing_required_columns_fail_fast():
     with pytest.raises(ValueError):
         replay(pd.DataFrame([{"entry_date": "2020-01-01"}]), FeasibilityConfig())
+
+
+def test_account_replay_uses_independent_lifecycle_and_retains_overlap_rejection():
+    candidates = pd.DataFrame([
+        {
+            "candidate_id": "A",
+            "entry_date": "2020-01-02",
+            "entry_credit": 2.0,
+            "call_strike": 500.0,
+            "put_strike": 200.0,
+            "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "B",
+            "entry_date": "2020-01-03",
+            "entry_credit": 2.0,
+            "call_strike": 500.0,
+            "put_strike": 200.0,
+            "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "C",
+            "entry_date": "2020-01-20",
+            "entry_credit": 2.0,
+            "call_strike": 500.0,
+            "put_strike": 200.0,
+            "underlying_close": 320.0,
+        },
+    ])
+    outcomes = pd.DataFrame([
+        {"candidate_id": "A", "exit_date": "2020-01-10", "pnl": 50.0},
+        {"candidate_id": "B", "exit_date": "2020-01-12", "pnl": 50.0},
+        # C deliberately has no lifecycle row: it must remain auditable rather
+        # than being silently dropped or treated as a zero-profit trade.
+    ])
+
+    ledger, summary = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
+        outcomes,
+    )
+
+    assert set(ledger["candidate_id"]) == {"A", "B", "C"}
+    assert ledger["candidate_id"].is_unique
+    assert ledger.loc[ledger["candidate_id"] == "A", "accepted"].iloc[0]
+    assert not ledger.loc[ledger["candidate_id"] == "B", "accepted"].iloc[0]
+    assert "POSITION_ALREADY_OPEN" in ledger.loc[
+        ledger["candidate_id"] == "B", "rejection_codes"
+    ].iloc[0]
+    assert not ledger.loc[ledger["candidate_id"] == "C", "accepted"].iloc[0]
+    assert "UNRESOLVED_LIFECYCLE_DATA" in ledger.loc[
+        ledger["candidate_id"] == "C", "rejection_codes"
+    ].iloc[0]
+    assert summary["candidate_count"] == 3
+    assert summary["accepted_count"] == 1
