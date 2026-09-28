@@ -112,9 +112,9 @@ def select_entries(
                 datediff('day', CAST(o.date AS DATE), CAST(o.expiration AS DATE)) AS dte
             FROM {source_sql(source)} o
             INNER JOIN eligible_dates d ON CAST(o.date AS DATE) = d.entry_date
-            WHERE o.expiration BETWEEN
-                    o.date + INTERVAL '{args.min_dte}' DAY
-                AND o.date + INTERVAL '{args.max_dte}' DAY
+            WHERE CAST(o.expiration AS DATE) BETWEEN
+                    CAST(o.date AS DATE) + INTERVAL '{args.min_dte}' DAY
+                AND CAST(o.date AS DATE) + INTERVAL '{args.max_dte}' DAY
                 AND o.bid > 0
                 AND o.ask >= o.bid
                 AND o.mark > 0
