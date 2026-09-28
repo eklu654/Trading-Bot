@@ -193,7 +193,7 @@ def replay(
     config: FeasibilityConfig,
     outcomes: pd.DataFrame | None = None,
     marks: pd.DataFrame | None = None,
-) -> tuple[pd.DataFrame, dict[str, float]]:
+) -> tuple[pd.DataFrame, dict[str, object]]:
     required = {"entry_date", "entry_credit", "call_strike", "put_strike"}
     missing = required - set(candidates.columns)
     if missing:
