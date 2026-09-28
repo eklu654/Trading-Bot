@@ -244,7 +244,7 @@ def replay(
         roll_contracts["from_date"] = pd.to_datetime(rolls["challenge_date"])
         roll_quotes = fetch_contract_quotes(con, source, roll_contracts)
 
-    entry_lookup = entries.set_index("entry_date")
+    event_lookup = events.set_index("entry_date") if not events.empty else pd.DataFrame()
     roll_lookup = rolls.set_index("entry_date") if not rolls.empty else pd.DataFrame()
     trades = []
     active_until = pd.Timestamp.min
@@ -271,8 +271,12 @@ def replay(
         net_credit = initial_credit
         adjusted = False
         adjustment = 0.0
-        challenge_date = None
-        challenge_side = None
+        # Preserve challenge metadata for both the control and adjustment
+        # variants. The control does not roll, but it must still report which
+        # trades actually encountered the defined challenge condition.
+        event = event_lookup.loc[entry_date] if not event_lookup.empty and entry_date in event_lookup.index else None
+        challenge_date = pd.Timestamp(event["challenge_date"]) if event is not None else None
+        challenge_side = str(event["side"]) if event is not None else None
         max_debit = 0.0
         exit_reason = None
         exit_date = None
