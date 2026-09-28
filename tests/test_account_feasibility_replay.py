@@ -212,9 +212,9 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
         {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
     ])
     marks = pd.DataFrame([
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0},
-        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0},
-        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
+        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0, "underlying_close": 320.0},
     ])
     ledger, summary = replay(
         candidates,
@@ -239,8 +239,40 @@ def test_mark_to_market_updates_open_position_before_next_candidate():
 def test_mark_input_rejects_duplicate_candidate_date():
     candidates = candidate(candidate_id="A")
     marks = pd.DataFrame([
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.0},
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.1},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.1, "underlying_close": 320.0},
     ])
     with pytest.raises(ValueError, match="duplicate candidate_id/date"):
         replay(candidates, FeasibilityConfig(), marks=marks)
+
+
+def test_open_position_bpr_and_stress_recalculate_from_marked_underlying():
+    candidates = pd.DataFrame([
+        {
+            "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "B", "entry_date": "2020-01-05", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+    ])
+    outcomes = pd.DataFrame([
+        {"candidate_id": "A", "exit_date": "2020-01-10", "exit_debit": 1.0, "pnl": 100.0},
+        {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
+    ])
+    marks = pd.DataFrame([
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 350.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
+    ])
+    ledger, _ = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=4.0, max_concurrent_positions=2),
+        outcomes,
+        marks,
+    )
+    b = ledger.loc[ledger["candidate_id"] == "B"].iloc[0]
+    expected_bpr = estimate_short_strangle_bpr(350.0, 200.0, 500.0, 3.0)
+    expected_stress = max_stress_loss(350.0, 200.0, 500.0, 3.0)
+    assert b.aggregate_bpr_pre_trade == pytest.approx(expected_bpr)
+    assert b.aggregate_stress_loss_pre_trade == pytest.approx(expected_stress)
