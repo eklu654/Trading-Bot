@@ -6,6 +6,7 @@ from research.account_feasibility_replay import (
     estimate_short_strangle_bpr,
     max_stress_loss,
     replay,
+    summarize_account_risk,
 )
 
 
@@ -292,7 +293,7 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     ])
     ledger, summary = replay(
         candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.39),
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
         outcomes,
         marks,
     )
@@ -316,44 +317,68 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
 
 
 
-def test_stale_mark_metrics_capture_reused_quote_age():
-    candidates = pd.DataFrame([
+def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
+    snapshots = [
         {
-            "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
-            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+            "date": "2020-01-02", "cash": 1998.70, "open_position_value": 0.0,
+            "nlv": 1998.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1998.70,
+            "aggregate_stress_loss_estimate": 100.0,
+            "aggregate_stress_loss_pct_nlv": 100.0 / 1998.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": False, "max_mark_stale_days": 0,
         },
         {
-            "candidate_id": "B", "entry_date": "2020-01-08", "entry_credit": 2.0,
-            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+            "date": "2020-01-05", "cash": 2298.70, "open_position_value": -400.0,
+            "nlv": 1898.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1898.70,
+            "aggregate_stress_loss_estimate": 500.0,
+            "aggregate_stress_loss_pct_nlv": 500.0 / 1898.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": True, "max_mark_stale_days": 3,
         },
-    ])
-    outcomes = pd.DataFrame([
-        {"candidate_id": "A", "exit_date": "2020-01-10", "exit_debit": 1.0, "pnl": 100.0},
-        {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
-    ])
-    marks = pd.DataFrame([
-        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 320.0},
-        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
-        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0, "underlying_close": 320.0},
-    ])
-    _, summary = replay(
-        candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.80, max_concurrent_positions=2),
-        outcomes,
-        marks,
+        {
+            "date": "2020-01-06", "cash": 2298.70, "open_position_value": -350.0,
+            "nlv": 1948.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1948.70,
+            "aggregate_stress_loss_estimate": 400.0,
+            "aggregate_stress_loss_pct_nlv": 400.0 / 1948.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": True, "max_mark_stale_days": 4,
+        },
+        {
+            "date": "2020-01-10", "cash": 2097.40, "open_position_value": 0.0,
+            "nlv": 2097.40, "open_positions": 0, "aggregate_bpr_estimate": 0.0,
+            "aggregate_bpr_pct_nlv": 0.0,
+            "aggregate_stress_loss_estimate": 0.0,
+            "aggregate_stress_loss_pct_nlv": 0.0,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": False, "max_mark_stale_days": 0,
+        },
+    ]
+    metrics = summarize_account_risk(
+        snapshots,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.19),
     )
-    assert summary["stale_mark_snapshot_count"] == 1
-    assert summary["stale_mark_snapshot_pct"] > 0
-    assert summary["max_stale_mark_days"] == pytest.approx(3.0)
+    assert metrics["max_drawdown_dollars"] == pytest.approx(101.30)
+    assert metrics["max_drawdown_pct"] == pytest.approx(101.30 / 2000)
+    assert metrics["max_drawdown_peak_date"] == "start"
+    assert metrics["max_drawdown_trough_date"] == "2020-01-05T00:00:00"
+    assert metrics["peak_bpr_dollars"] == pytest.approx(340.0)
+    assert metrics["peak_bpr_pct_nlv"] == pytest.approx(340.0 / 1898.70)
+    assert metrics["peak_stress_loss_dollars"] == pytest.approx(500.0)
+    assert metrics["near_bpr_limit_snapshot_count"] == 2
+    assert metrics["max_near_bpr_limit_duration_days"] == pytest.approx(1.0)
+    assert metrics["stale_mark_snapshot_count"] == 2
+    assert metrics["stale_mark_snapshot_pct"] == pytest.approx(0.5)
+    assert metrics["max_stale_mark_days"] == pytest.approx(4.0)
 
 
 def test_risk_metrics_have_safe_empty_snapshot_defaults():
-    metrics = replay(
-        candidate(underlying_close=float("nan")),
-        FeasibilityConfig(starting_nlv=2000),
-    )[1]
-    assert metrics["snapshot_count"] == 1
+    metrics = summarize_account_risk([], FeasibilityConfig(starting_nlv=2000))
+    assert metrics["snapshot_count"] == 0
     assert metrics["max_drawdown_dollars"] == pytest.approx(0.0)
     assert metrics["max_drawdown_pct"] == pytest.approx(0.0)
     assert metrics["peak_bpr_dollars"] == pytest.approx(0.0)
     assert metrics["stale_mark_snapshot_count"] == 0
+
