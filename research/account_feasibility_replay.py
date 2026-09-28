@@ -32,6 +32,8 @@ class FeasibilityConfig:
     slippage_credit: float = 0.0
     stress_multiplier: float = 1.00
     fill_model: str = "conservative"
+    max_concurrent_positions: int = 1
+    pnl_reconciliation_tolerance: float = 0.01
     pnl_reconciliation_tolerance: float = 0.01
 
     @property
@@ -111,41 +113,62 @@ def replay(
     frame["entry_date"] = pd.to_datetime(frame["entry_date"])
     if "candidate_id" not in frame.columns:
         frame["candidate_id"] = (
-            frame["entry_date"].dt.strftime("%Y-%m-%d")
-            + ":"
-            + frame.index.astype(str)
+            frame["entry_date"].dt.strftime("%Y-%m-%d") + ":" + frame.index.astype(str)
         )
 
     if outcomes is not None:
         outcome_required = {"candidate_id", "exit_date", "pnl"}
         missing_outcomes = outcome_required - set(outcomes.columns)
         if missing_outcomes:
-            raise ValueError(
-                f"outcome input missing required columns: {sorted(missing_outcomes)}"
-            )
-        outcome_frame = outcomes[list(outcome_required) + (["exit_debit"] if "exit_debit" in outcomes.columns else [])].copy()
+            raise ValueError(f"outcome input missing required columns: {sorted(missing_outcomes)}")
+        outcome_columns = list(outcome_required)
+        if "exit_debit" in outcomes.columns:
+            outcome_columns.append("exit_debit")
+        outcome_frame = outcomes[outcome_columns].copy()
         outcome_frame["exit_date"] = pd.to_datetime(outcome_frame["exit_date"])
         if outcome_frame["candidate_id"].duplicated().any():
             raise ValueError("outcome input contains duplicate candidate_id values")
         frame = frame.merge(outcome_frame, on="candidate_id", how="left", validate="one_to_one")
-    else:
-        # Backward-compatible test/research path for already completed trade rows.
-        if not {"exit_date", "pnl"}.issubset(frame.columns):
-            raise ValueError("outcomes are required unless candidates contain exit_date and pnl")
+    elif not {"exit_date", "pnl"}.issubset(frame.columns):
+        raise ValueError("outcomes are required unless candidates contain exit_date and pnl")
 
     frame["exit_date"] = pd.to_datetime(frame.get("exit_date"), errors="coerce")
     frame = frame.sort_values(["entry_date", "candidate_id"]).reset_index(drop=True)
 
     cash = float(config.starting_nlv)
-    open_until = pd.Timestamp.min
-    open_position_value = 0.0
+    active: list[dict[str, object]] = []
     rows: list[dict[str, object]] = []
+
+    def open_value() -> float:
+        return float(sum(float(p["position_value"]) for p in active))
+
+    def active_bpr() -> float:
+        return float(sum(float(p["bpr"]) for p in active))
+
+    def active_stress_loss() -> float:
+        return float(sum(float(p["stress_loss"]) for p in active))
+
+    def settle_positions_through(timestamp: pd.Timestamp) -> None:
+        nonlocal cash, active
+        settling = [p for p in active if pd.Timestamp(p["exit_date"]) <= timestamp]
+        if not settling:
+            return
+        for position in sorted(settling, key=lambda p: (pd.Timestamp(p["exit_date"]), str(p["candidate_id"]))):
+            cash += float(position["exit_cash_flow"])
+            row = rows[int(position["row_index"])]
+            remaining_value = open_value() - float(position["position_value"])
+            row["cash_after_exit"] = cash
+            row["open_position_value_after_exit"] = remaining_value
+            row["post_exit_nlv"] = cash + remaining_value
+            active.remove(position)
 
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
-        nlv_before = cash + open_position_value
+        settle_positions_through(entry)
+        nlv_before = cash + open_value()
         exit_date = row["exit_date"]
         credit = float(row["entry_credit"])
+
         if _finite(row.get("exit_debit")):
             exit_debit = float(row["exit_debit"])
         elif _finite(row.get("pnl")):
@@ -155,8 +178,7 @@ def replay(
 
         rejection: list[str] = []
         pnl_reconciliation_residual = float("nan")
-        if entry <= open_until:
-            rejection.append("POSITION_ALREADY_OPEN")
+
         if credit <= 0:
             rejection.append("NONPOSITIVE_CREDIT")
         if not _finite(row.get("call_strike")) or not _finite(row.get("put_strike")):
@@ -178,51 +200,44 @@ def replay(
             stress_loss = float("nan")
         else:
             bpr = estimate_short_strangle_bpr(
-                float(underlying),
-                float(row["put_strike"]),
-                float(row["call_strike"]),
-                credit,
-                config.contract_multiplier,
-                config.stress_multiplier,
+                float(underlying), float(row["put_strike"]), float(row["call_strike"]),
+                credit, config.contract_multiplier, config.stress_multiplier,
             )
             stress_loss = max_stress_loss(
-                float(underlying),
-                float(row["put_strike"]),
-                float(row["call_strike"]),
-                credit,
-                config.contract_multiplier,
-                config.stress_multiplier,
+                float(underlying), float(row["put_strike"]), float(row["call_strike"]),
+                credit, config.contract_multiplier, config.stress_multiplier,
             )
-            if bpr > min(config.max_bpr_dollars, nlv_before * config.max_bpr_pct_nlv):
-                rejection.append("BUYING_POWER_LIMIT")
-            if stress_loss >= nlv_before:
-                rejection.append("STRESS_LOSS_EXCEEDS_NLV")
+            bp_limit = min(config.max_bpr_dollars, nlv_before * config.max_bpr_pct_nlv)
+            if active_bpr() + bpr > bp_limit:
+                rejection.append("AGGREGATE_BUYING_POWER_LIMIT" if active else "BUYING_POWER_LIMIT")
+            if len(active) + 1 > config.max_concurrent_positions:
+                rejection.append("MAX_CONCURRENT_POSITIONS")
+            if active_stress_loss() + stress_loss >= nlv_before:
+                rejection.append("AGGREGATE_STRESS_LOSS_EXCEEDS_NLV" if active else "STRESS_LOSS_EXCEEDS_NLV")
 
         accepted = not rejection
         entry_fee = 2.0 * config.fee_per_contract if accepted else 0.0
         exit_fee = 2.0 * config.fee_per_contract if accepted else 0.0
         fees = entry_fee + exit_fee
         pnl = float(row["pnl"]) if accepted and _finite(row.get("pnl")) else 0.0
-        nlv_before = cash + open_position_value
-
         entry_cash_flow = credit * config.contract_multiplier - entry_fee if accepted else 0.0
         entry_position_value = -credit * config.contract_multiplier if accepted else 0.0
         exit_cash_flow = -(exit_debit * config.contract_multiplier) - exit_fee if accepted else 0.0
 
+        row_index = len(rows)
         if accepted:
             cash += entry_cash_flow
-            open_position_value = entry_position_value
-            nlv_at_entry = cash + open_position_value
-            cash += exit_cash_flow
-            open_position_value = 0.0
-            nlv = cash
-            open_until = pd.Timestamp(exit_date)
-        else:
-            nlv = nlv_before
-            nlv_at_entry = nlv_before
+            active.append({
+                "candidate_id": row["candidate_id"],
+                "exit_date": pd.Timestamp(exit_date),
+                "position_value": entry_position_value,
+                "bpr": bpr,
+                "stress_loss": stress_loss,
+                "exit_cash_flow": exit_cash_flow,
+                "row_index": row_index,
+            })
 
-        net_pnl = pnl - fees
-
+        nlv_after_entry = cash + open_value()
         rows.append({
             "candidate_index": i,
             "candidate_id": row["candidate_id"],
@@ -233,35 +248,39 @@ def replay(
             "pre_trade_nlv": nlv_before,
             "entry_cash_flow": entry_cash_flow,
             "entry_position_value": entry_position_value,
-            "nlv_after_entry": nlv_at_entry,
+            "nlv_after_entry": nlv_after_entry,
             "exit_cash_flow": exit_cash_flow,
             "exit_debit": exit_debit,
-            "pnl_reconciliation_residual": pnl_reconciliation_residual,
-            "cash_after_exit": cash,
-            "open_position_value_after_exit": open_position_value,
+            "cash_after_exit": float("nan"),
+            "open_position_value_after_exit": float("nan"),
+            "post_exit_nlv": float("nan"),
             "bpr_estimate": bpr,
+            "aggregate_bpr_pre_trade": active_bpr(),
+            "aggregate_stress_loss_pre_trade": active_stress_loss(),
             "bpr_pct_pre_trade_nlv": bpr / nlv_before if _finite(bpr) and nlv_before else float("nan"),
             "stress_loss": stress_loss,
             "fees": fees,
             "gross_pnl": pnl,
-            "net_pnl": net_pnl,
+            "net_pnl": pnl - fees,
+            "pnl_reconciliation_residual": pnl_reconciliation_residual,
             "accepted": accepted,
             "rejection_codes": "|".join(rejection),
-            "post_trade_nlv": nlv,
+            "post_trade_nlv": nlv_after_entry,
         })
 
+    settle_positions_through(pd.Timestamp.max)
+    ending_nlv = cash
     ledger = pd.DataFrame(rows)
     summary = {
         "starting_nlv": config.starting_nlv,
-        "ending_nlv": cash,
+        "ending_nlv": ending_nlv,
         "candidate_count": float(len(ledger)),
         "accepted_count": float(ledger["accepted"].sum()) if len(ledger) else 0.0,
         "rejected_count": float((~ledger["accepted"]).sum()) if len(ledger) else 0.0,
         "fees": float(ledger["fees"].sum()) if len(ledger) else 0.0,
-        "net_pnl": cash - config.starting_nlv,
+        "net_pnl": ending_nlv - config.starting_nlv,
     }
     return ledger, summary
-
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="OPTIONS-001 $2,000 account feasibility replay")
@@ -271,6 +290,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--starting-nlv", type=float, default=2000.0)
     p.add_argument("--max-bpr-pct", type=float, default=0.50)
     p.add_argument("--fee-per-contract", type=float, default=0.65)
+    p.add_argument("--max-concurrent-positions", type=int, default=1)
     p.add_argument("--stress-multiplier", type=float, default=1.0)
     return p.parse_args()
 
@@ -297,6 +317,7 @@ def main() -> None:
         starting_nlv=args.starting_nlv,
         max_bpr_pct_nlv=args.max_bpr_pct,
         fee_per_contract=args.fee_per_contract,
+        max_concurrent_positions=args.max_concurrent_positions,
         stress_multiplier=args.stress_multiplier,
     )
     ledger, summary = replay(candidates, config, outcomes)
