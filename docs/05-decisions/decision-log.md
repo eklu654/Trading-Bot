@@ -153,3 +153,14 @@ Short strangles and iron condors form the neutral short-premium comparison; cred
 No structure may bypass hard sizing, buying-power, concentration, liquidity, stress, or expiration constraints to make it feasible for the small account. Rejected opportunities must be recorded as part of feasibility results.
 
 See docs/02-research/options-structure-universe.md.
+
+
+## 2026-09-28 — Historical run 46 completed; defense not promoted
+
+GitHub Actions Historical Research run 46 completed successfully. Its current ETF comparison reports 200-DMA total return 1,813.5%, annualized return 19.53%, and max drawdown -37.53%; the current VIX-overlay variant reports 660.5%, 13.05%, and -41.35%, respectively. The current VIX overlay therefore did not improve the reported return or drawdown in this run and remains experimental.
+
+For the SPY `BROAD_SIDEWAYS` short-strangle replay, rolling the untested leg underperformed the no-adjustment control in both conservative and midpoint fills, and had a worse worst-trade result. Do not promote `ROLL_UNTESTED`; defer roll-out and inversion.
+
+These results are exploratory. The options replay does not enforce full $2,000 account-level BPR/NLV constraints and must not be interpreted as an account return or production validation. Audit replay cash flows, contract coverage, execution assumptions, and risk proxies before expanding the strategy.
+
+See docs/02-research/historical-run-46-results.md and https://github.com/eklu654/Trading-Bot/actions/runs/36459483295.
