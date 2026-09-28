@@ -49,10 +49,13 @@ jobs:
           done
           ls -lh data/options/spy
 
-      - name: Replay OPTIONS-001 baseline
+      - name: Replay OPTIONS-001 baseline plus no-stop benchmark
         run: |
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative
           python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid
+          echo "=== NO-STOP BENCHMARK ==="
+          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --loss-credit-multiple 0
+          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --loss-credit-multiple 0
 
       - name: Print research summaries
         run: |
