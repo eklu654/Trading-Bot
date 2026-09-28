@@ -143,6 +143,7 @@ For each tested account size, publish:
 - concurrent positions and peak/median BPR as a percentage of NLV
 - maximum observed BPR expansion and duration near configured limits
 - mark coverage, stale-mark intervals, and whether BPR/stress were recalculated from contemporaneous option and underlying marks
+- a timestamped account valuation path including cash, signed open-position value, NLV, open-position count, aggregate modeled BPR, and aggregate modeled stress loss; calculate drawdown from this path, not only from candidate-entry snapshots
 - defined-risk maximum-loss exposure and named stress-scenario losses
 - data coverage, missing-quote rate, execution assumptions, and all model limitations
 
