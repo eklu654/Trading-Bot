@@ -360,7 +360,7 @@ def main() -> None:
     print(f"win_rate={(result['pnl'] > 0).mean():.3f}")
     print(result["exit_reason"].value_counts().to_string())
     print(result.groupby("regime")["pnl"].agg(["count", "mean", "sum"]).to_string())
-
+    challenged = result["first_challenge_date"].notna()\n    print(f"challenged_trades={challenged.sum()}")\n    if challenged.any():\n        print(f"challenge_rate={challenged.mean():.3f}")\n        print(result.loc[challenged, "challenge_side"].value_counts().to_string())\n        print(result.groupby("challenge_side", dropna=False)["pnl"].agg(["count", "mean", "sum"]).to_string())\n        print(f"worst_max_loss_pnl={result["max_loss_pnl"].min():.2f}")\n
 
 if __name__ == "__main__":
     main()
