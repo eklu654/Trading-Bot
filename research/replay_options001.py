@@ -234,7 +234,7 @@ def candidate_mark_ledger(
     args: argparse.Namespace,
     regime: pd.DataFrame,
 ) -> pd.DataFrame:
-    """Persist daily option debits and underlying closes for account risk marks.""
+    """Persist daily option debits and underlying closes for account risk marks."""
     if entries.empty or quotes.empty:
         return pd.DataFrame(columns=["candidate_id", "date", "mark_debit", "underlying_close", "mark_model"])
 
