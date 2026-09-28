@@ -1,0 +1,41 @@
+name: Historical Research
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/**"
+      - "docs/02-research/**"
+      - ".github/workflows/historical-research.yml"
+
+jobs:
+  historical-research:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+
+      - name: Build historical dataset
+        run: python research/build_historical_regime_dataset.py
+
+      - name: Run ETF-001 backtest
+        run: python research/backtest_etf001.py
+
+      - name: Analyze OPTIONS-001 opportunity windows
+        run: python research/analyze_options_opportunity_windows.py
+
+      - name: Upload research artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-research-results
+          path: data/research/
+          if-no-files-found: error
