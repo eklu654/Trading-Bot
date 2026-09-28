@@ -48,6 +48,8 @@ jobs:
           cat data/research/options_opportunity_summary.csv
           echo "=== REGIME FREQUENCY ==="
           cat data/research/regime_frequency_summary.csv
+          echo "=== OPTIONS CANDIDATE OPPORTUNITY ==="
+          cat data/research/options_opportunity_candidate_summary.csv
           echo "=== REGIME CANDIDATE RESULTS ==="
           cat data/research/regime_candidate_etf_results.csv
           echo "=== REGIME CANDIDATE FREQUENCY ==="
