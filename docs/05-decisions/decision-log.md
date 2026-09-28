@@ -142,3 +142,14 @@ With the same 45-DTE / approximately 16-delta SPY short-strangle construction an
 TURBULENT_HIGH_VOL was positive under both no-stop fill models (+$2,068 conservative; +$2,446 midpoint). Therefore the first replay's turbulent-period losses cannot be treated as evidence against turbulent options entries; they were strongly affected by the arbitrary 2×-credit stop.
 
 **Next:** implement deterministic challenge-management research variants rather than adding more regime indicators. Compare no adjustment, untested-side roll, roll-out, and inversion using only EOD chain information available after each entry. Do not freeze any defense rule or regime gate until the defense comparison and $2,000 feasibility analysis are complete.
+
+
+## 2026-09-28 — Initial options structure research scope
+
+**Decision:** Limit the first structure comparison to short strangles, iron condors, and directional credit verticals. Treat this as a research scope decision, not production approval.
+
+Short strangles and iron condors form the neutral short-premium comparison; credit verticals remain a separate directional family and must not be treated as delta-neutral substitutes. Defer straddles, iron butterflies, broken-wing butterflies, ratio spreads, diagonals/calendars and hybrid structures until the core comparisons and $2,000 feasibility analysis justify expanding scope.
+
+No structure may bypass hard sizing, buying-power, concentration, liquidity, stress, or expiration constraints to make it feasible for the small account. Rejected opportunities must be recorded as part of feasibility results.
+
+See docs/02-research/options-structure-universe.md.
