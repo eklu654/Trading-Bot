@@ -228,23 +228,24 @@ def quote_replay(
     return quotes
 
 
-def first_pass_trades(
+def candidate_trade_outcomes(
     entries: pd.DataFrame,
     quotes: pd.DataFrame,
     regime: pd.DataFrame,
     args: argparse.Namespace,
+    *,
+    enforce_one_position: bool = True,
 ) -> pd.DataFrame:
+    """Reconstruct each candidate independently unless baseline sequencing is requested."""
     if entries.empty or quotes.empty:
         return pd.DataFrame()
 
-    lookup = entries.set_index("entry_date")
     trades = []
     active_until = pd.Timestamp.min
 
     for entry_date, row in entries.iterrows():
-        # Only one SPY position at a time in this baseline.
         entry_date = pd.Timestamp(row["entry_date"])
-        if entry_date <= active_until:
+        if enforce_one_position and entry_date <= active_until:
             continue
 
         call_credit = float(row["mark_call"] if args.fill_model == "mid" else row["bid_call"])
@@ -300,6 +301,7 @@ def first_pass_trades(
 
             if reason:
                 trades.append({
+                    "candidate_id": row.get("candidate_id", f"{entry_date.date()}:{call_id}:{put_id}"),
                     "entry_date": entry_date,
                     "exit_date": pd.Timestamp(date),
                     "expiration": expiry,
@@ -321,7 +323,8 @@ def first_pass_trades(
                     "put_contract_id": put_id,
                     "regime": regime.loc[entry_date, "entry_regime"],
                 })
-                active_until = pd.Timestamp(date)
+                if enforce_one_position:
+                    active_until = pd.Timestamp(date)
                 break
 
     return pd.DataFrame(trades)
@@ -334,21 +337,25 @@ def main() -> None:
 
     con = duckdb.connect()
     entries = select_entries(con, args.options_source, regime, args)
+    if not entries.empty:
+        entries["candidate_id"] = (
+            entries["entry_date"].astype(str)
+            + ":"
+            + entries["contract_id_call"].astype(str)
+            + ":"
+            + entries["contract_id_put"].astype(str)
+        )
     quotes = quote_replay(con, args.options_source, entries, args)
     result = first_pass_trades(entries, quotes, regime, args)
+    independent_outcomes = candidate_trade_outcomes(
+        entries, quotes, regime, args, enforce_one_position=False
+    )
     con.close()
 
     # Persist the complete candidate universe separately from completed trades.
     # Account feasibility must evaluate every generated candidate, not only
     # candidates that happened to complete a trade.
     candidate_ledger = entries.copy()
-    candidate_ledger["candidate_id"] = (
-        candidate_ledger["entry_date"].astype(str)
-        + ":"
-        + candidate_ledger["contract_id_call"].astype(str)
-        + ":"
-        + candidate_ledger["contract_id_put"].astype(str)
-    )
     candidate_ledger["underlying_close"] = candidate_ledger["entry_date"].map(
         regime["spy_close"]
     )
@@ -363,6 +370,9 @@ def main() -> None:
     loss_tag = "nostop" if args.loss_credit_multiple <= 0 else f"loss{args.loss_credit_multiple:g}x"
     stem = f"options001_replay_{args.candidate.lower()}_{args.fill_model}_{loss_tag}"
     candidate_ledger.to_csv(RESEARCH_DIR / f"{stem}_candidates.csv", index=False)
+    independent_outcomes.to_csv(
+        RESEARCH_DIR / f"{stem}_candidate_outcomes.csv", index=False
+    )
     out = RESEARCH_DIR / f"{stem}.csv"
     result.to_csv(out, index=False)
 
