@@ -58,6 +58,8 @@ At each valuation timestamp:
 - cash reflects settled modeled trade cash flows, fees, and explicit external cash flows.
 - position_market_value is the sum of signed leg market values using a declared mark convention.
 - NLV = cash + position_market_value.
+- Open-position BPR and stress estimates are recalculated at each available valuation mark using the contemporaneous underlying price and option liability mark. These remain modeled estimates unless reconciled to broker snapshots.
+- If a required mark is missing, retain the last known mark only as a clearly flagged stale valuation; do not treat it as a current quote or silently advance the valuation date.
 - realized_pnl is calculated from closed lots and their actual modeled cash flows.
 - unrealized_pnl is calculated from open lots relative to their entry cash flows.
 - equity_return uses a declared denominator and must account for deposits/withdrawals separately.
@@ -140,6 +142,7 @@ For each tested account size, publish:
 - completed trades, average/median P/L, win rate, worst trade, and drawdown
 - concurrent positions and peak/median BPR as a percentage of NLV
 - maximum observed BPR expansion and duration near configured limits
+- mark coverage, stale-mark intervals, and whether BPR/stress were recalculated from contemporaneous option and underlying marks
 - defined-risk maximum-loss exposure and named stress-scenario losses
 - data coverage, missing-quote rate, execution assumptions, and all model limitations
 
