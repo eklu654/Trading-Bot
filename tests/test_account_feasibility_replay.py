@@ -402,3 +402,10 @@ def test_risk_metrics_have_safe_empty_snapshot_defaults():
 
 def test_stress_loss_is_never_reported_as_negative():
     assert max_stress_loss(320, 200, 500, 2.0) == pytest.approx(0.0)
+
+
+def test_account_replay_normalizes_option_replay_strike_names():
+    candidates = candidate().rename(columns={"call_strike": "strike_call", "put_strike": "strike_put"})
+    ledger, summary = replay(candidates, FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0))
+    assert ledger.iloc[0].accepted
+    assert summary["accepted_count"] == 1
