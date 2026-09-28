@@ -260,6 +260,10 @@ def first_pass_trades(
         by_date = q.pivot(index="date", columns="contract_id", values=["bid", "ask", "mark"])
         close_field = "mark" if args.fill_model == "mid" else "ask"
 
+        max_debit = 0.0
+        first_challenge = None
+        challenge_side = None
+
         for date, quote_row in by_date.iterrows():
             if (close_field, call_id) not in quote_row or (close_field, put_id) not in quote_row:
                 continue
@@ -269,7 +273,18 @@ def first_pass_trades(
                 continue
 
             debit = float(call_exit + put_exit)
+            max_debit = max(max_debit, debit)
             dte = (expiry - pd.Timestamp(date)).days
+            underlying_close = regime.loc[pd.Timestamp(date), "spy_close"] if pd.Timestamp(date) in regime.index else float("nan")
+            current_challenge = None
+            if pd.notna(underlying_close):
+                if underlying_close >= float(row["strike_call"]):
+                    current_challenge = "CALL"
+                elif underlying_close <= float(row["strike_put"]):
+                    current_challenge = "PUT"
+            if first_challenge is None and current_challenge is not None:
+                first_challenge = pd.Timestamp(date)
+                challenge_side = current_challenge
             reason = None
 
             if debit <= credit * (1 - args.profit_target):
@@ -287,6 +302,10 @@ def first_pass_trades(
                     "entry_credit": credit,
                     "exit_debit": debit,
                     "pnl": (credit - debit) * 100,
+                    "max_debit": max_debit,
+                    "max_loss_pnl": (credit - max_debit) * 100,
+                    "first_challenge_date": first_challenge,
+                    "challenge_side": challenge_side,
                     "exit_reason": reason,
                     "entry_dte": (expiry - entry_date).days,
                     "exit_dte": dte,
