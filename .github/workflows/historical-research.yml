@@ -39,12 +39,20 @@ jobs:
       - name: Evaluate regime candidates
         run: python research/evaluate_regime_candidates.py
 
-      - name: Replay OPTIONS-001 baseline
-        env:
-          OPTIONS_SOURCE: https://static.philippdubach.com/data/options/spy/options.parquet
+      - name: Download SPY historical option chains
         run: |
-          python research/replay_options001.py --options-source "$OPTIONS_SOURCE" --candidate BROAD_SIDEWAYS --fill-model conservative
-          python research/replay_options001.py --options-source "$OPTIONS_SOURCE" --candidate BROAD_SIDEWAYS --fill-model mid
+          mkdir -p data/options/spy
+          for year in $(seq 2010 2025); do
+            curl -L --fail --retry 3 --retry-delay 2 \
+              -o "data/options/spy/options_${year}.parquet" \
+              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
+          done
+          ls -lh data/options/spy
+
+      - name: Replay OPTIONS-001 baseline
+        run: |
+          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative
+          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid
 
       - name: Print research summaries
         run: |
