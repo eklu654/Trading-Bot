@@ -121,19 +121,23 @@ def select_entries(
                 AND o.mark > 0
                 AND (o.volume > 0 OR o.open_interest > 0)
         ),
+        expiry_candidates AS (
+            SELECT DISTINCT entry_date, expiration, dte
+            FROM candidates
+        ),
         chosen_expiry AS (
             SELECT entry_date, expiration
             FROM (
                 SELECT
                     entry_date,
                     expiration,
-                    min(abs(dte - {args.target_dte})) OVER (
+                    row_number() OVER (
                         PARTITION BY entry_date
-                    ) AS best_distance
-                FROM candidates
+                        ORDER BY abs(dte - {args.target_dte}), expiration
+                    ) AS expiry_rank
+                FROM expiry_candidates
             )
-            GROUP BY entry_date, expiration, best_distance
-            QUALIFY best_distance = min(best_distance) OVER (PARTITION BY entry_date)
+            WHERE expiry_rank = 1
         ),
         chain AS (
             SELECT c.*
