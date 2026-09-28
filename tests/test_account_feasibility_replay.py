@@ -6,6 +6,7 @@ from research.account_feasibility_replay import (
     estimate_short_strangle_bpr,
     max_stress_loss,
     replay,
+    summarize_account_risk,
 )
 
 
@@ -301,4 +302,83 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     assert trough["open_positions"] == 1
     assert trough["nlv"] == pytest.approx(1898.70)
     assert trough["aggregate_bpr_estimate"] > 0
+    assert trough["aggregate_bpr_pct_nlv"] == pytest.approx(
+        trough["aggregate_bpr_estimate"] / trough["nlv"]
+    )
     assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2097.40)
+    assert summary["max_drawdown_dollars"] == pytest.approx(101.30)
+    assert summary["max_drawdown_pct"] == pytest.approx(101.30 / 2000)
+    assert summary["peak_bpr_dollars"] == pytest.approx(3500.0)
+    assert summary["peak_bpr_pct_nlv"] == pytest.approx(3500.0 / 1898.70)
+    assert summary["peak_stress_loss_dollars"] == pytest.approx(0.0)
+    assert summary["near_bpr_limit_snapshot_count"] == 1
+    assert summary["max_near_bpr_limit_duration_days"] == pytest.approx(0.0)
+    assert summary["stale_mark_snapshot_count"] == 0
+
+
+
+def test_risk_metrics_capture_near_limit_drawdown_and_stale_marks():
+    snapshots = [
+        {
+            "date": "2020-01-02", "cash": 1998.70, "open_position_value": 0.0,
+            "nlv": 1998.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1998.70,
+            "aggregate_stress_loss_estimate": 100.0,
+            "aggregate_stress_loss_pct_nlv": 100.0 / 1998.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": False, "max_mark_stale_days": 0,
+        },
+        {
+            "date": "2020-01-05", "cash": 2298.70, "open_position_value": -400.0,
+            "nlv": 1898.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1898.70,
+            "aggregate_stress_loss_estimate": 500.0,
+            "aggregate_stress_loss_pct_nlv": 500.0 / 1898.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": True, "max_mark_stale_days": 3,
+        },
+        {
+            "date": "2020-01-06", "cash": 2298.70, "open_position_value": -350.0,
+            "nlv": 1948.70, "open_positions": 1, "aggregate_bpr_estimate": 340.0,
+            "aggregate_bpr_pct_nlv": 340.0 / 1948.70,
+            "aggregate_stress_loss_estimate": 400.0,
+            "aggregate_stress_loss_pct_nlv": 400.0 / 1948.70,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": True, "max_mark_stale_days": 4,
+        },
+        {
+            "date": "2020-01-10", "cash": 2097.40, "open_position_value": 0.0,
+            "nlv": 2097.40, "open_positions": 0, "aggregate_bpr_estimate": 0.0,
+            "aggregate_bpr_pct_nlv": 0.0,
+            "aggregate_stress_loss_estimate": 0.0,
+            "aggregate_stress_loss_pct_nlv": 0.0,
+            "mark_missing_for_open_position": False,
+            "stale_mark_for_open_position": False, "max_mark_stale_days": 0,
+        },
+    ]
+    metrics = summarize_account_risk(
+        snapshots,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.19),
+    )
+    assert metrics["max_drawdown_dollars"] == pytest.approx(101.30)
+    assert metrics["max_drawdown_pct"] == pytest.approx(101.30 / 2000)
+    assert metrics["max_drawdown_peak_date"] == "start"
+    assert metrics["max_drawdown_trough_date"] == "2020-01-05T00:00:00"
+    assert metrics["peak_bpr_dollars"] == pytest.approx(340.0)
+    assert metrics["peak_bpr_pct_nlv"] == pytest.approx(340.0 / 1898.70)
+    assert metrics["peak_stress_loss_dollars"] == pytest.approx(500.0)
+    assert metrics["near_bpr_limit_snapshot_count"] == 2
+    assert metrics["max_near_bpr_limit_duration_days"] == pytest.approx(1.0)
+    assert metrics["stale_mark_snapshot_count"] == 2
+    assert metrics["stale_mark_snapshot_pct"] == pytest.approx(0.5)
+    assert metrics["max_stale_mark_days"] == pytest.approx(4.0)
+
+
+def test_risk_metrics_have_safe_empty_snapshot_defaults():
+    metrics = summarize_account_risk([], FeasibilityConfig(starting_nlv=2000))
+    assert metrics["snapshot_count"] == 0
+    assert metrics["max_drawdown_dollars"] == pytest.approx(0.0)
+    assert metrics["max_drawdown_pct"] == pytest.approx(0.0)
+    assert metrics["peak_bpr_dollars"] == pytest.approx(0.0)
+    assert metrics["stale_mark_snapshot_count"] == 0
+

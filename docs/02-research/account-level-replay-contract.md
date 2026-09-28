@@ -143,7 +143,11 @@ For each tested account size, publish:
 - concurrent positions and peak/median BPR as a percentage of NLV
 - maximum observed BPR expansion and duration near configured limits
 - mark coverage, stale-mark intervals, and whether BPR/stress were recalculated from contemporaneous option and underlying marks
-- a timestamped account valuation path including cash, signed open-position value, NLV, open-position count, aggregate modeled BPR, and aggregate modeled stress loss; calculate drawdown from this path, not only from candidate-entry snapshots
+- a timestamped account valuation path including cash, signed open-position value, NLV, open-position count, aggregate modeled BPR, aggregate modeled BPR/NLV, aggregate modeled stress loss, aggregate stress loss/NLV, mark-missing status, stale-mark status, and maximum mark age; calculate drawdown from this path, not only from candidate-entry snapshots
+- maximum drawdown in dollars and percentage, with peak/trough timestamps
+- peak modeled BPR in dollars and as a percentage of NLV, peak modeled stress loss in dollars and as a percentage of NLV
+- count of valuation snapshots at or above 90% of the configured BPR/NLV ceiling and the maximum consecutive calendar-day span represented by those near-limit snapshots
+- stale-mark snapshot count, stale-mark snapshot percentage, and maximum stale-mark age; these metrics describe quote reuse and must not be presented as contemporaneous market coverage
 - defined-risk maximum-loss exposure and named stress-scenario losses
 - data coverage, missing-quote rate, execution assumptions, and all model limitations
 
