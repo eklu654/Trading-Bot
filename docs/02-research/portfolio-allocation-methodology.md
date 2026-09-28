@@ -1,7 +1,7 @@
 # Options Portfolio Allocation Methodology Research
 
 **Status:** Research reconciliation — historical framework reconstructed; production rules not yet frozen  
-**Last reviewed:** 2026-09-27
+**Last reviewed:** 2026-09-28
 
 ## Purpose
 
@@ -206,7 +206,22 @@ Newer tastylive material does not simply reproduce the 2020 table as a timeless 
 
 That newer material should be treated as a risk-control overlay when designing the modern bot rather than silently replacing the historical methodology.
 
-## 10. Preliminary deterministic hierarchy
+## 10. New 2024–2025 risk-management reconciliation
+
+Recent tastylive research sharpens the role of BPR rather than replacing the historical VIX framework.
+
+A 2024 study found that higher BPR does not automatically mean higher realized risk when comparing strangles and iron condors. However, a 2025 study describes BPR as a useful risk gauge for undefined-risk positions and documents large BPR expansion after adverse price/volatility moves. citeturn0search6turn0search5
+
+The correct reconciliation is:
+
+- **BPR is a hard capital-usage constraint.**
+- **BPR expansion is a dynamic stress signal.**
+- **BPR is not, by itself, a maximum-loss estimate.**
+- **Delta, notional exposure, correlation, and stress testing remain separate controls.**
+
+The 2025 small-account research is particularly relevant to the $2,000 project account: it documents examples of BPR increasing by more than 200%, with a worst-case example reaching 3.6× initial BPR. citeturn0search0
+
+## 11. Preliminary deterministic hierarchy
 
 For the reconstructed historical model:
 
@@ -223,7 +238,7 @@ For the reconstructed historical model:
 
 The exact numerical Delta, correlation, and stress thresholds remain unresolved.
 
-## 11. $2,000 account problem
+## 12. $2,000 account problem
 
 The historical framework was not designed specifically around a $2,000 account.
 
@@ -242,7 +257,7 @@ The small-account question becomes an explicit experiment:
 
 > What is the smallest account size at which the historical framework can be executed without systematically violating its own sizing and diversification constraints?
 
-## 12. Research experiments
+## 13. Research experiments
 
 The next backtesting matrix should include:
 
@@ -272,7 +287,8 @@ The next backtesting matrix should include:
 
 Test $2,000, $5,000, $10,000, and larger accounts to determine where contract granularity stops dominating the framework.
 
-## Current conclusion
+
+## 14. Current conclusion
 
 We have now reconstructed the most important missing relationship:
 
