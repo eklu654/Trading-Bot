@@ -228,6 +228,46 @@ def quote_replay(
     return quotes
 
 
+def candidate_mark_ledger(
+    entries: pd.DataFrame,
+    quotes: pd.DataFrame,
+    args: argparse.Namespace,
+) -> pd.DataFrame:
+    """Persist the daily strangle debit used to mark each independent candidate."""
+    if entries.empty or quotes.empty:
+        return pd.DataFrame(columns=["candidate_id", "date", "mark_debit", "mark_model"])
+
+    rows = []
+    for _, row in entries.iterrows():
+        candidate_id = row.get(
+            "candidate_id",
+            f"{pd.Timestamp(row['entry_date']).date()}:{row['contract_id_call']}:{row['contract_id_put']}",
+        )
+        call_id = str(row["contract_id_call"])
+        put_id = str(row["contract_id_put"])
+        q = quotes[quotes["entry_date"] == row["entry_date"]]
+        if q.empty:
+            continue
+        by_date = q.pivot(index="date", columns="contract_id", values=["bid", "ask", "mark"])
+        field = "mark" if args.fill_model == "mid" else "ask"
+        for date, quote_row in by_date.iterrows():
+            call_key = (field, call_id)
+            put_key = (field, put_id)
+            if call_key not in quote_row or put_key not in quote_row:
+                continue
+            call_value = quote_row[call_key]
+            put_value = quote_row[put_key]
+            if pd.isna(call_value) or pd.isna(put_value):
+                continue
+            rows.append({
+                "candidate_id": candidate_id,
+                "date": pd.Timestamp(date),
+                "mark_debit": float(call_value + put_value),
+                "mark_model": field,
+            })
+    return pd.DataFrame(rows)
+
+
 def candidate_trade_outcomes(
     entries: pd.DataFrame,
     quotes: pd.DataFrame,
@@ -350,6 +390,7 @@ def main() -> None:
     independent_outcomes = candidate_trade_outcomes(
         entries, quotes, regime, args, enforce_one_position=False
     )
+    candidate_marks = candidate_mark_ledger(entries, quotes, args)
     con.close()
 
     # Persist the complete candidate universe separately from completed trades.
@@ -372,6 +413,9 @@ def main() -> None:
     candidate_ledger.to_csv(RESEARCH_DIR / f"{stem}_candidates.csv", index=False)
     independent_outcomes.to_csv(
         RESEARCH_DIR / f"{stem}_candidate_outcomes.csv", index=False
+    )
+    candidate_marks.to_csv(
+        RESEARCH_DIR / f"{stem}_candidate_marks.csv", index=False
     )
     out = RESEARCH_DIR / f"{stem}.csv"
     result.to_csv(out, index=False)

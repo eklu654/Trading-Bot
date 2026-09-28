@@ -34,7 +34,6 @@ class FeasibilityConfig:
     fill_model: str = "conservative"
     max_concurrent_positions: int = 1
     pnl_reconciliation_tolerance: float = 0.01
-    pnl_reconciliation_tolerance: float = 0.01
 
     @property
     def max_bpr_dollars(self) -> float:
@@ -103,6 +102,7 @@ def replay(
     candidates: pd.DataFrame,
     config: FeasibilityConfig,
     outcomes: pd.DataFrame | None = None,
+    marks: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, dict[str, float]]:
     required = {"entry_date", "entry_credit", "call_strike", "put_strike"}
     missing = required - set(candidates.columns)
@@ -135,6 +135,20 @@ def replay(
     frame["exit_date"] = pd.to_datetime(frame.get("exit_date"), errors="coerce")
     frame = frame.sort_values(["entry_date", "candidate_id"]).reset_index(drop=True)
 
+    mark_lookup: dict[tuple[str, pd.Timestamp], float] = {}
+    if marks is not None:
+        mark_required = {"candidate_id", "date", "mark_debit"}
+        missing_marks = mark_required - set(marks.columns)
+        if missing_marks:
+            raise ValueError(f"mark input missing required columns: {sorted(missing_marks)}")
+        mark_frame = marks[["candidate_id", "date", "mark_debit"]].copy()
+        mark_frame["date"] = pd.to_datetime(mark_frame["date"])
+        if mark_frame.duplicated(["candidate_id", "date"]).any():
+            raise ValueError("mark input contains duplicate candidate_id/date values")
+        for mark_row in mark_frame.itertuples(index=False):
+            if _finite(mark_row.mark_debit) and float(mark_row.mark_debit) >= 0:
+                mark_lookup[(str(mark_row.candidate_id), pd.Timestamp(mark_row.date))] = float(mark_row.mark_debit)
+
     cash = float(config.starting_nlv)
     active: list[dict[str, object]] = []
     rows: list[dict[str, object]] = []
@@ -147,6 +161,22 @@ def replay(
 
     def active_stress_loss() -> float:
         return float(sum(float(p["stress_loss"]) for p in active))
+
+    def mark_positions(timestamp: pd.Timestamp) -> bool:
+        """Mark all open positions at the exact valuation date when marks exist.
+
+        Missing marks retain the prior mark but are surfaced to the candidate
+        ledger; no favorable synthetic price is invented.
+        """
+        missing = False
+        for position in active:
+            key = (str(position["candidate_id"]), timestamp)
+            if key in mark_lookup:
+                position["position_value"] = -mark_lookup[key] * config.contract_multiplier
+                position["last_mark_date"] = timestamp
+            else:
+                missing = True
+        return missing
 
     def settle_positions_through(timestamp: pd.Timestamp) -> None:
         nonlocal cash, active
@@ -166,6 +196,7 @@ def replay(
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
         settle_positions_through(entry)
+        active_mark_missing = bool(active) and marks is not None and mark_positions(entry)
         nlv_before = cash + open_value()
         exit_date = row["exit_date"]
         credit = float(row["entry_credit"])
@@ -197,6 +228,9 @@ def replay(
         underlying = row.get("underlying_close", float("nan"))
         if active and len(active) + 1 > config.max_concurrent_positions:
             rejection.append("POSITION_ALREADY_OPEN" if config.max_concurrent_positions == 1 else "MAX_CONCURRENT_POSITIONS")
+
+        if active_mark_missing:
+            rejection.append("MARK_MISSING_FOR_ACTIVE_POSITION")
 
         if not _finite(underlying):
             rejection.append("MISSING_UNDERLYING_PRICE")
@@ -237,6 +271,7 @@ def replay(
                 "stress_loss": stress_loss,
                 "exit_cash_flow": exit_cash_flow,
                 "row_index": row_index,
+                "last_mark_date": entry,
             })
 
         nlv_after_entry = cash + open_value()
@@ -257,8 +292,8 @@ def replay(
             "open_position_value_after_exit": float("nan"),
             "post_exit_nlv": float("nan"),
             "bpr_estimate": bpr,
-            "aggregate_bpr_pre_trade": active_bpr(),
-            "aggregate_stress_loss_pre_trade": active_stress_loss(),
+            "aggregate_bpr_post_entry": active_bpr(),
+            "aggregate_stress_loss_post_entry": active_stress_loss(),
             "bpr_pct_pre_trade_nlv": bpr / nlv_before if _finite(bpr) and nlv_before else float("nan"),
             "stress_loss": stress_loss,
             "fees": fees,
@@ -295,6 +330,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--fee-per-contract", type=float, default=0.65)
     p.add_argument("--max-concurrent-positions", type=int, default=1)
     p.add_argument("--stress-multiplier", type=float, default=1.0)
+    p.add_argument("--marks", default=None, help="Optional candidate/date mark ledger for daily open-position MTM")
     return p.parse_args()
 
 
@@ -303,6 +339,7 @@ def main() -> None:
     source = Path(args.input)
     candidates = pd.read_csv(source)
     outcomes = pd.read_csv(Path(args.outcomes)) if args.outcomes else None
+    marks = pd.read_csv(Path(args.marks)) if args.marks else None
 
     # Candidate replay persists the underlying close; reconstruct it only for
     # older candidate files that do not contain it.
@@ -323,7 +360,7 @@ def main() -> None:
         max_concurrent_positions=args.max_concurrent_positions,
         stress_multiplier=args.stress_multiplier,
     )
-    ledger, summary = replay(candidates, config, outcomes)
+    ledger, summary = replay(candidates, config, outcomes, marks)
 
     output = Path(args.output) if args.output else source.with_name(
         source.stem + f"_account_{int(args.starting_nlv)}.csv"

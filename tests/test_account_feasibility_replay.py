@@ -195,3 +195,52 @@ def test_overlapping_positions_use_open_position_state_and_settle_later():
     assert a.post_exit_nlv == pytest.approx(2046.10)
     assert b.post_exit_nlv == pytest.approx(2094.80)
     assert summary["ending_nlv"] == pytest.approx(2094.80)
+
+def test_mark_to_market_updates_open_position_before_next_candidate():
+    candidates = pd.DataFrame([
+        {
+            "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "B", "entry_date": "2020-01-05", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+    ])
+    outcomes = pd.DataFrame([
+        {"candidate_id": "A", "exit_date": "2020-01-10", "exit_debit": 1.0, "pnl": 100.0},
+        {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
+    ])
+    marks = pd.DataFrame([
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0},
+        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0},
+    ])
+    ledger, summary = replay(
+        candidates,
+        FeasibilityConfig(
+            starting_nlv=2000,
+            max_bpr_pct_nlv=4.0,
+            max_concurrent_positions=2,
+        ),
+        outcomes,
+        marks,
+    )
+    a = ledger.loc[ledger["candidate_id"] == "A"].iloc[0]
+    b = ledger.loc[ledger["candidate_id"] == "B"].iloc[0]
+    assert a.accepted and b.accepted
+    assert b.pre_trade_nlv == pytest.approx(1898.70)
+    assert b.nlv_after_entry == pytest.approx(1897.40)
+    assert a.post_exit_nlv == pytest.approx(2096.10)
+    assert b.post_exit_nlv == pytest.approx(2194.80)
+    assert summary["ending_nlv"] == pytest.approx(2194.80)
+
+
+def test_mark_input_rejects_duplicate_candidate_date():
+    candidates = candidate(candidate_id="A")
+    marks = pd.DataFrame([
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.0},
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 1.1},
+    ])
+    with pytest.raises(ValueError, match="duplicate candidate_id/date"):
+        replay(candidates, FeasibilityConfig(), marks=marks)
