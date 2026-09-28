@@ -292,7 +292,7 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     ])
     ledger, summary = replay(
         candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.39),
         outcomes,
         marks,
     )
