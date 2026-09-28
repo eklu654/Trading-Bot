@@ -4,9 +4,6 @@ This is deliberately a research-only comparison. Candidate thresholds are
 predefined, not selected by maximizing total historical return. Results are
 split chronologically into training (2010-2018), validation (2019-2022),
 and holdout (2023-present).
-
-Run from repository root:
-    python research/evaluate_regime_candidates.py
 """
 
 from __future__ import annotations
@@ -27,41 +24,32 @@ SPLITS = {
 
 
 def load() -> tuple[pd.DataFrame, pd.DataFrame]:
-    regime = pd.read_csv(
-        DATA_DIR / "historical_regime_dataset.csv",
-        parse_dates=["Date"],
-    ).set_index("Date").sort_index()
-    etf = pd.read_csv(
-        DATA_DIR / "etf001_dma_backtest.csv",
-        parse_dates=["Date"],
-    ).set_index("Date").sort_index()
+    regime = pd.read_csv(DATA_DIR / "historical_regime_dataset.csv", parse_dates=["Date"]).set_index("Date").sort_index()
+    etf = pd.read_csv(DATA_DIR / "etf001_dma_backtest.csv", parse_dates=["Date"]).set_index("Date").sort_index()
     return regime, etf
+
+
+def rolling_percentile(series: pd.Series, window: int = 252) -> pd.Series:
+    def pct(x: np.ndarray) -> float:
+        if len(x) < window + 1 or np.isnan(x[-1]):
+            return np.nan
+        return float((x[:-1] <= x[-1]).mean())
+    return series.rolling(window + 1).apply(pct, raw=True)
 
 
 def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
     vix_p = frame["vix_percentile252"]
-    rv_p = frame["spy_rv20_percentile252"]
+    rv_p = rolling_percentile(frame["spy_rv20"])
 
     if name == "CURRENT":
-        turbulent = (
-            (vix_p >= 0.80)
-            | (rv_p >= 0.80)
-            | (frame["vix_change5"] >= 0.25)
-        )
+        turbulent = (vix_p >= 0.80) | (rv_p >= 0.80) | (frame["vix_change5"] >= 0.25)
         trending = (
             (frame["spy_adx14"] >= 25)
             & (frame["spy_er20"] >= 0.35)
             & (frame["spy_sma200_distance"].abs() >= 0.02)
             & (frame["spy_sma200_slope_20"].abs() >= 0.005)
         )
-        return pd.Series(
-            np.select(
-                [turbulent, trending],
-                ["TURBULENT_HIGH_VOL", "TRENDING_NORMAL"],
-                default="SIDEWAYS_CHOPPY",
-            ),
-            index=frame.index,
-        )
+        return pd.Series(np.select([turbulent, trending], ["TURBULENT_HIGH_VOL", "TRENDING_NORMAL"], default="SIDEWAYS_CHOPPY"), index=frame.index)
 
     configs = {
         "BALANCED": {"vix_p": 0.90, "rv_p": 0.90, "adx": 20, "er": 0.30, "return20": 0.08, "slope": 0.003},
@@ -87,14 +75,7 @@ def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
         & (frame["spy_sma200_slope_20"].abs() < cfg["slope"])
     )
 
-    return pd.Series(
-        np.select(
-            [turbulent, sideways],
-            ["TURBULENT_HIGH_VOL", "SIDEWAYS_CHOPPY"],
-            default="TRENDING_NORMAL",
-        ),
-        index=frame.index,
-    )
+    return pd.Series(np.select([turbulent, sideways], ["TURBULENT_HIGH_VOL", "SIDEWAYS_CHOPPY"], default="TRENDING_NORMAL"), index=frame.index)
 
 
 def stats(etf: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
@@ -120,15 +101,13 @@ def stats(etf: pd.DataFrame, labels: pd.Series) -> pd.DataFrame:
 
 def main() -> None:
     regime, etf = load()
-    outputs = []
-    frequency = []
+    outputs, frequency = [], []
 
     for name in ["CURRENT", "BALANCED", "STRICT_VOL", "VIX_LEVEL", "STRICT_SIDEWAYS"]:
         labels = candidate_labels(regime, name).shift(1)
         for split, (start, end) in SPLITS.items():
             mask = (labels.index >= start) & (labels.index <= end)
-            split_labels = labels.loc[mask]
-            split_etf = etf.loc[mask]
+            split_labels, split_etf = labels.loc[mask], etf.loc[mask]
             s = stats(split_etf, split_labels)
             s.insert(0, "split", split)
             s.insert(0, "candidate", name)
