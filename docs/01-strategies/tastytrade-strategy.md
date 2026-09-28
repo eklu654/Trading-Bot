@@ -22,6 +22,22 @@ The strategy seeks to systematically sell option premium while controlling buyin
 
 AI may help identify eligible opportunities, but it cannot override hard entry, sizing, risk, or exit rules.
 
+
+## 2A. Role within SWITCH-001
+
+OPTIONS-001 is not expected to be the portfolio's default state.
+
+The project-level regime hypothesis is:
+
+- **ETF-001 is the primary/default regime** and is expected to hold the portfolio for the majority of normal market conditions.
+- **OPTIONS-001 becomes eligible for new risk when the market enters a regime that is unfavorable or less attractive for the leveraged-ETF trend strategy**, particularly sustained sideways/choppy conditions or elevated/turbulent volatility.
+- **SWITCH-001 controls eligibility for new options risk**; it does not automatically liquidate existing options positions merely because the preferred regime changes.
+- The switch decision must be based on quantitative regime signals rather than a single VIX threshold.
+
+This is a **project-specific architecture rule**, not a claim that tastytrade/tastylive prescribes switching between leveraged ETFs and options.
+
+VIX is treated as a portfolio-level volatility/regime input. Underlying-specific IV/IVR remains a separate trade-level opportunity filter. High VIX or high IV can improve premium-selling opportunity, but does not by itself authorize a trade.
+
 ## 3. Historical portfolio framework — now verified
 
 A primary-source tastytrade presentation, **From Strategy to Practice — India 2020**, provides a coherent portfolio framework:
@@ -179,6 +195,104 @@ Before implementation, define:
 
 Exact zero Delta is not required if achieving it would violate a more important risk constraint.
 
+
+## 10A. Position-sizing research for small accounts
+
+Current tastylive guidance published in 2024 states that defined-risk positions are generally sized at 1–3% of account value for average-sized accounts, while accounts below $20,000 may need to use a higher upper end, including 5–7% or higher in some cases. The same source describes 3–7% as a general undefined-risk range for average-sized accounts and notes that smaller accounts may require an upper bound above 7%. This is source evidence, not an automatic project rule.
+
+For the project's two feasibility cases:
+
+| Account | 1% | 3% | 5% | 7% | 10% | 15% |
+|---|---:|---:|---:|---:|---:|---:|
+| $2,000 | $20 | $60 | $100 | $140 | $200 | $300 |
+| $5,000 | $50 | $150 | $250 | $350 | $500 | $750 |
+
+The project must test the historical sizing bands against actual contract granularity.
+
+For a defined-risk vertical:
+
+`max_loss = (spread_width - credit) × 100 × contracts`
+
+For a multi-leg neutral portfolio, each candidate must also be evaluated for its **incremental** effect on:
+
+- portfolio beta-weighted Delta;
+- theta/NLV;
+- BPR;
+- maximum defined loss;
+- underlying concentration;
+- correlation concentration;
+- expiration concentration;
+- stress loss.
+
+A trade that cannot fit the intended risk band at one contract is **infeasible**, not a reason to increase size.
+
+The bot must record the reason for rejection so $2,000 versus $5,000 can be evaluated by constraint-infeasibility rate.
+
+
+## 10B. Undefined-risk loss management and emergency exits
+
+The project explicitly incorporates the documented tastytrade/tastylive **2× initial-credit loss-management benchmark** for undefined-risk premium-selling positions.
+
+Example:
+
+- initial credit = $1.00/share;
+- original credit = $100/contract;
+- a 2× credit loss = $200 loss;
+- therefore the position's closing cost is approximately $3.00/share more than the original credit, or $4.00/share total buyback value.
+
+This is a **strategy-level management benchmark**, not the only risk control.
+
+The risk engine can close a position before the 2× threshold when a harder portfolio/account constraint is breached.
+
+Defensive rolling is not automatic. If a roll is considered, the resulting position must be re-evaluated from scratch against the same risk controls. A roll cannot be used to evade a position-size, BPR, Delta, concentration, drawdown, or other hard limit.
+
+### Emergency-exit hierarchy
+
+1. **Normal strategy exit** — structure-specific profit/time management.
+2. **Strategy loss management** — e.g. 2× initial credit for qualifying undefined-risk positions.
+3. **Portfolio risk intervention** — excessive Delta, BPR, concentration, stress exposure, or drawdown.
+4. **Hard emergency exit** — immediate risk-engine override when a non-negotiable account or portfolio limit is breached.
+
+Emergency exits are deterministic and cannot be overridden by AI or the regime classifier.
+
+For multi-leg positions, the risk engine must monitor the spread/position itself and generate an appropriate closing multi-leg order; it must not assume that a conventional single-leg stop order protects an entire spread.
+
+
+## 10C. Portfolio construction: directional positions, balanced portfolio
+
+Individual positions do not need to be Delta-neutral.
+
+The portfolio may construct approximate neutrality by combining independent directional positions across different underlyings, for example:
+
+- bull put credit spread on Underlying A;
+- bear call credit spread on Underlying B;
+- additional bullish or bearish positions only when they improve portfolio exposure and remain within hard constraints.
+
+The primary standardized directional metric is **SPY beta-weighted Delta**.
+
+Candidate selection therefore evaluates both:
+
+1. **standalone candidate quality**; and
+2. **incremental portfolio usefulness**.
+
+A candidate can be rejected even when it is individually attractive if adding it would create excessive directional, volatility, correlation, concentration, or expiration exposure.
+
+The portfolio target is **approximately Delta-balanced**, not necessarily exact zero Delta.
+
+Portfolio construction should consider:
+
+- beta-weighted Delta;
+- Delta/theta relationship;
+- theta as % of NLV;
+- underlying correlation;
+- beta exposure;
+- vega;
+- gamma;
+- BPR;
+- maximum loss;
+- expiration clustering;
+- stress scenarios.
+
 ## 11. Risk-metric reconciliation
 
 Recent tastylive research changes how the risk engine should treat BPR.
@@ -276,7 +390,11 @@ Tests must distinguish in-sample development from out-of-sample validation.
 - Assignment and expiration policy.
 - Corporate-action handling.
 - Whether current 2024–2026 material materially modifies the historical framework.
-- Whether the SWITCH-001 regime layer should use VIX allocation directly or combine it with IVR, realized volatility, and market-regime signals.
+- Whether the SWITCH-001 regime layer should use VIX allocation directly or combine it with IVR, realized volatility, trend/chop measurements, and market-regime signals.
+- Exact emergency-loss thresholds for each structure beyond the documented 2× undefined-risk benchmark.
+- Minimum contract economics and spread-width feasibility at $2,000 versus $5,000.
+- Whether expiration staggering materially improves portfolio-level risk versus concentrated 45-DTE entries.
+- Exact candidate-ranking function for portfolio usefulness versus standalone trade quality.
 
 ## 16. Source policy
 
