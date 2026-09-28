@@ -43,7 +43,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--max-dte", type=int, default=60)
     p.add_argument("--profit-target", type=float, default=0.50)
     p.add_argument("--exit-dte", type=int, default=21)
-    p.add_argument("--loss-credit-multiple", type=float, default=2.0)
+    p.add_argument("--loss-credit-multiple", type=float, default=2.0,
+                   help="Loss benchmark in multiples of initial credit; <=0 disables it")
     p.add_argument("--start-date", default="2010-01-01")
     p.add_argument("--end-date", default="2025-12-31")
     return p.parse_args()
@@ -273,8 +274,8 @@ def first_pass_trades(
 
             if debit <= credit * (1 - args.profit_target):
                 reason = "PROFIT_50"
-            elif debit >= credit * args.loss_credit_multiple:
-                reason = "LOSS_2X_CREDIT"
+            elif args.loss_credit_multiple > 0 and debit >= credit * args.loss_credit_multiple:
+                reason = f"LOSS_{args.loss_credit_multiple:g}X_CREDIT"
             elif dte <= args.exit_dte:
                 reason = "DTE_21"
 
