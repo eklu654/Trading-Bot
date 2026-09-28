@@ -4,13 +4,10 @@ This module wraps the existing trade-economics replay with a deterministic
 account ledger. It deliberately treats buying-power and undefined-risk
 requirements as modeled estimates, not broker-observed values.
 
-Input CSV is the first-pass OPTIONS-001 trade-economics output. Each row is
-treated as a candidate opportunity. This is intentionally a separate layer:
-trade economics remain unchanged while account feasibility decides whether the
-candidate could have been carried by the configured account.
-
-The next iteration can consume a richer candidate ledger without changing the
-account engine.
+Input is a complete candidate ledger plus independently reconstructed
+candidate lifecycles. This separation is important: the account engine must
+not inherit the baseline strategy's one-position sequencing or silently lose
+opportunities that were rejected only because another candidate was open.
 """
 
 from __future__ import annotations
@@ -102,19 +99,41 @@ def max_stress_loss(
 def replay(
     candidates: pd.DataFrame,
     config: FeasibilityConfig,
+    outcomes: pd.DataFrame | None = None,
 ) -> tuple[pd.DataFrame, dict[str, float]]:
-    required = {
-        "entry_date", "exit_date", "entry_credit", "pnl",
-        "call_strike", "put_strike",
-    }
+    required = {"entry_date", "entry_credit", "call_strike", "put_strike"}
     missing = required - set(candidates.columns)
     if missing:
         raise ValueError(f"candidate input missing required columns: {sorted(missing)}")
 
     frame = candidates.copy()
     frame["entry_date"] = pd.to_datetime(frame["entry_date"])
-    frame["exit_date"] = pd.to_datetime(frame["exit_date"])
-    frame = frame.sort_values(["entry_date", "exit_date"]).reset_index(drop=True)
+    if "candidate_id" not in frame.columns:
+        frame["candidate_id"] = (
+            frame["entry_date"].dt.strftime("%Y-%m-%d")
+            + ":"
+            + frame.index.astype(str)
+        )
+
+    if outcomes is not None:
+        outcome_required = {"candidate_id", "exit_date", "pnl"}
+        missing_outcomes = outcome_required - set(outcomes.columns)
+        if missing_outcomes:
+            raise ValueError(
+                f"outcome input missing required columns: {sorted(missing_outcomes)}"
+            )
+        outcome_frame = outcomes[list(outcome_required)].copy()
+        outcome_frame["exit_date"] = pd.to_datetime(outcome_frame["exit_date"])
+        if outcome_frame["candidate_id"].duplicated().any():
+            raise ValueError("outcome input contains duplicate candidate_id values")
+        frame = frame.merge(outcome_frame, on="candidate_id", how="left", validate="one_to_one")
+    else:
+        # Backward-compatible test/research path for already completed trade rows.
+        if not {"exit_date", "pnl"}.issubset(frame.columns):
+            raise ValueError("outcomes are required unless candidates contain exit_date and pnl")
+
+    frame["exit_date"] = pd.to_datetime(frame.get("exit_date"), errors="coerce")
+    frame = frame.sort_values(["entry_date", "candidate_id"]).reset_index(drop=True)
 
     nlv = float(config.starting_nlv)
     open_until = pd.Timestamp.min
@@ -122,9 +141,8 @@ def replay(
 
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
-        exit_date = pd.Timestamp(row["exit_date"])
+        exit_date = row["exit_date"]
         credit = float(row["entry_credit"])
-        pnl = float(row["pnl"])
 
         rejection: list[str] = []
         if entry <= open_until:
@@ -133,6 +151,10 @@ def replay(
             rejection.append("NONPOSITIVE_CREDIT")
         if not _finite(row.get("call_strike")) or not _finite(row.get("put_strike")):
             rejection.append("MISSING_STRIKES")
+        if pd.isna(exit_date) or not _finite(row.get("pnl")):
+            rejection.append("UNRESOLVED_LIFECYCLE_DATA")
+        elif exit_date <= entry:
+            rejection.append("INVALID_LIFECYCLE_DATES")
 
         underlying = row.get("underlying_close", float("nan"))
         if not _finite(underlying):
@@ -162,16 +184,20 @@ def replay(
                 rejection.append("STRESS_LOSS_EXCEEDS_NLV")
 
         accepted = not rejection
-        fees = 2.0 * config.fee_per_contract if accepted else 0.0
+        # Two legs are opened and two legs are closed: four contract-side
+        # transactions for a one-contract strangle.
+        fees = 4.0 * config.fee_per_contract if accepted else 0.0
+        pnl = float(row["pnl"]) if accepted and _finite(row.get("pnl")) else 0.0
         net_pnl = pnl - fees if accepted else 0.0
         nlv_before = nlv
 
         if accepted:
             nlv += net_pnl
-            open_until = exit_date
+            open_until = pd.Timestamp(exit_date)
 
         rows.append({
             "candidate_index": i,
+            "candidate_id": row["candidate_id"],
             "account_id": f"NLV_{config.starting_nlv:g}",
             "mode": "account_feasibility_estimate",
             "entry_date": entry,
@@ -181,7 +207,7 @@ def replay(
             "bpr_pct_pre_trade_nlv": bpr / nlv_before if _finite(bpr) and nlv_before else float("nan"),
             "stress_loss": stress_loss,
             "fees": fees,
-            "gross_pnl": pnl if accepted else 0.0,
+            "gross_pnl": pnl,
             "net_pnl": net_pnl,
             "accepted": accepted,
             "rejection_codes": "|".join(rejection),
@@ -203,7 +229,8 @@ def replay(
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="OPTIONS-001 $2,000 account feasibility replay")
-    p.add_argument("--input", required=True, help="OPTIONS-001 trade-economics CSV")
+    p.add_argument("--input", required=True, help="Complete OPTIONS-001 candidate ledger CSV")
+    p.add_argument("--outcomes", default=None, help="Independent candidate lifecycle CSV")
     p.add_argument("--output", default=None, help="Ledger CSV path")
     p.add_argument("--starting-nlv", type=float, default=2000.0)
     p.add_argument("--max-bpr-pct", type=float, default=0.50)
@@ -216,8 +243,10 @@ def main() -> None:
     args = parse_args()
     source = Path(args.input)
     candidates = pd.read_csv(source)
+    outcomes = pd.read_csv(Path(args.outcomes)) if args.outcomes else None
 
-    # First-pass replay does not persist the underlying close, so reconstruct it
+    # Candidate replay persists the underlying close; reconstruct it only for
+    # older candidate files that do not contain it.
     # from the authoritative historical regime dataset before feasibility testing.
     regime = pd.read_csv(
         RESEARCH_DIR / "historical_regime_dataset.csv",
@@ -225,7 +254,8 @@ def main() -> None:
     )
     regime = regime.set_index("Date").sort_index()
     candidates["entry_date"] = pd.to_datetime(candidates["entry_date"])
-    candidates["underlying_close"] = candidates["entry_date"].map(regime["spy_close"])
+    if "underlying_close" not in candidates.columns:
+        candidates["underlying_close"] = candidates["entry_date"].map(regime["spy_close"])
 
     config = FeasibilityConfig(
         starting_nlv=args.starting_nlv,
@@ -233,7 +263,7 @@ def main() -> None:
         fee_per_contract=args.fee_per_contract,
         stress_multiplier=args.stress_multiplier,
     )
-    ledger, summary = replay(candidates, config)
+    ledger, summary = replay(candidates, config, outcomes)
 
     output = Path(args.output) if args.output else source.with_name(
         source.stem + f"_account_{int(args.starting_nlv)}.csv"
