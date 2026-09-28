@@ -49,11 +49,26 @@ Until the research phase produces stronger evidence, the options backtester shou
 
 - target DTE: 45
 - target short delta: 16
-- take profit: 50%
-- management DTE: configurable
+- take profit: structure-specific
+- management DTE: structure-specific; 21 DTE is a strong research baseline for several short-premium structures
 - time-in-trade: configurable
 - VIX entry floor/ceiling: configurable
 - portfolio beta-weighted Delta neutrality band: configurable
+
+### Structure-specific mechanics now verified
+
+An official tastylive mechanics guide documents the following examples:
+
+- short strangle: 50% of credit received or 21 DTE;
+- iron condor: 50% of credit received or 21 DTE;
+- credit spread: 50% of credit received or 21 DTE;
+- ratio spread: 30% of max profit;
+- broken-wing butterfly: 25% of max profit;
+- diagonal: 25% of max profit.
+
+This is stronger evidence than treating 50%/21 DTE as a universal strategy rule. The project should encode exits by structure and preserve these values as documented mechanics, subject to backtesting and current-source review.
+
+Official research also supports 45 DTE as a common duration and shows that DTE can be adjusted with IV: 60 DTE when IVR is low, 45 DTE generally, and 30 DTE when IVR is higher in one SPY study. 21-DTE management reduced P/L volatility across the tested durations.
 
 No parameter becomes a hard production rule until it is documented in the strategy specification and supported by backtesting.
 
