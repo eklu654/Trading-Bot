@@ -42,36 +42,43 @@ jobs:
         run: |
           mkdir -p data/options/spy
           for year in $(seq 2010 2025); do
-            curl -L --fail --retry 3 --retry-delay 2 \
-              -o "data/options/spy/options_${year}.parquet" \
-              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
+            curl -L --fail --retry 3 --retry-delay 2               -o "data/options/spy/options_${year}.parquet"               "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
           done
           ls -lh data/options/spy
 
-      - name: Replay OPTIONS-001 baseline plus no-stop benchmark
+      - name: Replay OPTIONS-001 broad-sideways baseline plus no-stop benchmark
         run: |
-          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative
-          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid
-          echo "=== NO-STOP BENCHMARK ==="
-          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --loss-credit-multiple 0
-          python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --loss-credit-multiple 0
+          for fill in conservative mid; do
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "${fill}"
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "${fill}" --loss-credit-multiple 0
+          done
 
-      - name: Replay OPTIONS-001 $2,000 account feasibility
+      - name: Replay OPTIONS-001 turbulent-only baseline plus no-stop benchmark
+        run: |
+          for fill in conservative mid; do
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "${fill}"
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "${fill}" --loss-credit-multiple 0
+          done
+
+      - name: Replay OPTIONS-001 $2,000 account feasibility — broad sideways
         run: |
           for fill in conservative mid; do
             for loss_tag in loss2x nostop; do
               stem="options001_replay_broad_sideways_${fill}_${loss_tag}"
-              python research/account_feasibility_replay.py \
-                --input "data/research/${stem}_candidates.csv" \
-                --outcomes "data/research/${stem}_candidate_outcomes.csv" \
-                --marks "data/research/${stem}_candidate_marks.csv" \
-                --starting-nlv 2000 \
-                --max-bpr-pct 0.50 \
-                --output "data/research/${stem}_account_2000.csv"
+              python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv 2000                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_2000.csv"
             done
           done
 
-      - name: Replay OPTIONS-001 defense variants
+      - name: Replay OPTIONS-001 $2,000 account feasibility — turbulent only
+        run: |
+          for fill in conservative mid; do
+            for loss_tag in loss2x nostop; do
+              stem="options001_replay_turbulent_only_${fill}_${loss_tag}"
+              python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv 2000                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_2000.csv"
+            done
+          done
+
+      - name: Replay OPTIONS-001 defense variants — broad sideways
         run: |
           echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
           python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
@@ -98,14 +105,22 @@ jobs:
           cat data/research/regime_candidate_etf_results.csv
           echo "=== REGIME CANDIDATE FREQUENCY ==="
           cat data/research/regime_candidate_frequency.csv
-          echo "=== ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
+          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
           cat data/research/options001_replay_broad_sideways_conservative_loss2x_account_2000_summary.csv
-          echo "=== ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
+          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
           cat data/research/options001_replay_broad_sideways_conservative_nostop_account_2000_summary.csv
-          echo "=== ACCOUNT FEASIBILITY MID LOSS2X ==="
+          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY MID LOSS2X ==="
           cat data/research/options001_replay_broad_sideways_mid_loss2x_account_2000_summary.csv
-          echo "=== ACCOUNT FEASIBILITY MID NO-STOP ==="
+          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY MID NO-STOP ==="
           cat data/research/options001_replay_broad_sideways_mid_nostop_account_2000_summary.csv
+          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
+          cat data/research/options001_replay_turbulent_only_conservative_loss2x_account_2000_summary.csv
+          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
+          cat data/research/options001_replay_turbulent_only_conservative_nostop_account_2000_summary.csv
+          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY MID LOSS2X ==="
+          cat data/research/options001_replay_turbulent_only_mid_loss2x_account_2000_summary.csv
+          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY MID NO-STOP ==="
+          cat data/research/options001_replay_turbulent_only_mid_nostop_account_2000_summary.csv
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
           cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
           echo "=== DEFENSE CONTROL MID ==="
