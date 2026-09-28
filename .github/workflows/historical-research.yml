@@ -84,6 +84,14 @@ jobs:
           cat data/research/regime_candidate_etf_results.csv
           echo "=== REGIME CANDIDATE FREQUENCY ==="
           cat data/research/regime_candidate_frequency.csv
+          echo "=== DEFENSE CONTROL CONSERVATIVE ==="
+          cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
+          echo "=== DEFENSE CONTROL MID ==="
+          cat data/research/options001_defense_summary_broad_sideways_mid_none.csv
+          echo "=== ROLL UNTESTED CONSERVATIVE ==="
+          cat data/research/options001_defense_summary_broad_sideways_conservative_roll_untested.csv
+          echo "=== ROLL UNTESTED MID ==="
+          cat data/research/options001_defense_summary_broad_sideways_mid_roll_untested.csv
 
       - name: Upload research artifacts
         uses: actions/upload-artifact@v4
