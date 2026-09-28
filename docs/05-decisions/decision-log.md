@@ -168,7 +168,7 @@ The corrected SPY BROAD_SIDEWAYS short-strangle comparison reports:
 - Midpoint fills: no adjustment +$7,211 across 98 trades; roll untested +$6,343 across 98.
 - Rolling the untested side reduced aggregate P/L in both fill models and did not materially improve the worst trade. Do not promote this defense on current evidence.
 
-A ledger audit found no call/put expiration inconsistencies in the baseline and 2×-loss-stop outputs. Adjustment cash-flow accounting and the max-debit risk proxy remain unresolved audit items.
+A ledger audit found no call/put expiration inconsistencies in the baseline and 2×-loss-stop outputs. Code inspection reconciled adjustment cash flow: the recorded amount is new-leg opening credit minus old-leg closing debit, so positive values are net credits in the model. Fees and broker margin are not modeled. The max-debit field remains an observed mark/debit proxy, not a defined maximum loss or broker BPR.
 
 The replay is not a $2,000 account simulation; do not interpret its cumulative dollar P/L as account return. The ETF VIX-overlay comparison remains exploratory and did not improve the reported return or maximum drawdown in the tested implementation.
 
