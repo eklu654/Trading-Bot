@@ -116,13 +116,13 @@ def replay(
         )
 
     if outcomes is not None:
-        outcome_required = {"candidate_id", "exit_date", "pnl", "entry_credit", "exit_debit"}
+        outcome_required = {"candidate_id", "exit_date", "pnl"}
         missing_outcomes = outcome_required - set(outcomes.columns)
         if missing_outcomes:
             raise ValueError(
                 f"outcome input missing required columns: {sorted(missing_outcomes)}"
             )
-        outcome_frame = outcomes[list(outcome_required)].copy()
+        outcome_frame = outcomes[list(outcome_required) + (["exit_debit"] if "exit_debit" in outcomes.columns else [])].copy()
         outcome_frame["exit_date"] = pd.to_datetime(outcome_frame["exit_date"])
         if outcome_frame["candidate_id"].duplicated().any():
             raise ValueError("outcome input contains duplicate candidate_id values")
@@ -142,9 +142,15 @@ def replay(
 
     for i, row in frame.iterrows():
         entry = pd.Timestamp(row["entry_date"])
+        nlv_before = cash + open_position_value
         exit_date = row["exit_date"]
         credit = float(row["entry_credit"])
-        exit_debit = float(row["exit_debit"]) if _finite(row.get("exit_debit")) else float("nan")
+        if _finite(row.get("exit_debit")):
+            exit_debit = float(row["exit_debit"])
+        elif _finite(row.get("pnl")):
+            exit_debit = credit - float(row["pnl"]) / config.contract_multiplier
+        else:
+            exit_debit = float("nan")
 
         rejection: list[str] = []
         if entry <= open_until:
@@ -153,7 +159,7 @@ def replay(
             rejection.append("NONPOSITIVE_CREDIT")
         if not _finite(row.get("call_strike")) or not _finite(row.get("put_strike")):
             rejection.append("MISSING_STRIKES")
-        if pd.isna(exit_date) or not _finite(row.get("pnl")) or not _finite(row.get("exit_debit")):
+        if pd.isna(exit_date) or not _finite(row.get("pnl")) or not _finite(exit_debit):
             rejection.append("UNRESOLVED_LIFECYCLE_DATA")
         elif exit_date <= entry:
             rejection.append("INVALID_LIFECYCLE_DATES")
@@ -180,7 +186,6 @@ def replay(
                 config.contract_multiplier,
                 config.stress_multiplier,
             )
-            nlv_before = cash + open_position_value
             if bpr > min(config.max_bpr_dollars, nlv_before * config.max_bpr_pct_nlv):
                 rejection.append("BUYING_POWER_LIMIT")
             if stress_loss >= nlv_before:
