@@ -128,3 +128,17 @@ The regime split was materially different:
 This is preliminary because the replay currently uses a temporary 2×-credit loss threshold and does not implement the documented defensive roll/untested-side/inversion mechanics.
 
 **Next:** test defense variants and $2,000 account feasibility before modifying SWITCH-001 regime thresholds further.
+
+
+## 2026-09-28 — No-stop OPTIONS-001 benchmark
+
+**Decision:** Retire the 2×-initial-credit loss threshold as a candidate production rule.
+
+With the same 45-DTE / approximately 16-delta SPY short-strangle construction and BROAD_SIDEWAYS entry gate, removing the temporary loss threshold changed results from negative to positive:
+
+- conservative bid/ask: 103 trades, +$4,557 total P/L, 72.8% winners;
+- midpoint: 106 trades, +$5,266 total P/L, 75.5% winners.
+
+TURBULENT_HIGH_VOL was positive under both no-stop fill models (+$2,068 conservative; +$2,446 midpoint). Therefore the first replay's turbulent-period losses cannot be treated as evidence against turbulent options entries; they were strongly affected by the arbitrary 2×-credit stop.
+
+**Next:** implement deterministic challenge-management research variants rather than adding more regime indicators. Compare no adjustment, untested-side roll, roll-out, and inversion using only EOD chain information available after each entry. Do not freeze any defense rule or regime gate until the defense comparison and $2,000 feasibility analysis are complete.
