@@ -121,7 +121,7 @@ def test_account_replay_uses_independent_lifecycle_and_retains_overlap_rejection
 
     ledger, summary = replay(
         candidates,
-        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=2.0),
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.39),
         outcomes,
     )
 
@@ -301,4 +301,59 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     assert trough["open_positions"] == 1
     assert trough["nlv"] == pytest.approx(1898.70)
     assert trough["aggregate_bpr_estimate"] > 0
+    assert trough["aggregate_bpr_pct_nlv"] == pytest.approx(
+        trough["aggregate_bpr_estimate"] / trough["nlv"]
+    )
     assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2097.40)
+    assert summary["max_drawdown_dollars"] == pytest.approx(101.30)
+    assert summary["max_drawdown_pct"] == pytest.approx(101.30 / 2000)
+    assert summary["peak_bpr_dollars"] == pytest.approx(670.0)
+    assert summary["peak_bpr_pct_nlv"] == pytest.approx(670.0 / 1898.70)
+    assert summary["peak_stress_loss_dollars"] > 0
+    assert summary["near_bpr_limit_snapshot_count"] == 1
+    assert summary["max_near_bpr_limit_duration_days"] == pytest.approx(0.0)
+    assert summary["stale_mark_snapshot_count"] == 0
+
+
+
+def test_stale_mark_metrics_capture_reused_quote_age():
+    candidates = pd.DataFrame([
+        {
+            "candidate_id": "A", "entry_date": "2020-01-02", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+        {
+            "candidate_id": "B", "entry_date": "2020-01-08", "entry_credit": 2.0,
+            "call_strike": 500.0, "put_strike": 200.0, "underlying_close": 320.0,
+        },
+    ])
+    outcomes = pd.DataFrame([
+        {"candidate_id": "A", "exit_date": "2020-01-10", "exit_debit": 1.0, "pnl": 100.0},
+        {"candidate_id": "B", "exit_date": "2020-01-12", "exit_debit": 1.0, "pnl": 100.0},
+    ])
+    marks = pd.DataFrame([
+        {"candidate_id": "A", "date": "2020-01-05", "mark_debit": 3.0, "underlying_close": 320.0},
+        {"candidate_id": "A", "date": "2020-01-10", "mark_debit": 1.0, "underlying_close": 320.0},
+        {"candidate_id": "B", "date": "2020-01-12", "mark_debit": 1.0, "underlying_close": 320.0},
+    ])
+    _, summary = replay(
+        candidates,
+        FeasibilityConfig(starting_nlv=2000, max_bpr_pct_nlv=0.80, max_concurrent_positions=2),
+        outcomes,
+        marks,
+    )
+    assert summary["stale_mark_snapshot_count"] == 1
+    assert summary["stale_mark_snapshot_pct"] > 0
+    assert summary["max_stale_mark_days"] == pytest.approx(3.0)
+
+
+def test_risk_metrics_have_safe_empty_snapshot_defaults():
+    metrics = replay(
+        candidate(underlying_close=float("nan")),
+        FeasibilityConfig(starting_nlv=2000),
+    )[1]
+    assert metrics["snapshot_count"] == 1
+    assert metrics["max_drawdown_dollars"] == pytest.approx(0.0)
+    assert metrics["max_drawdown_pct"] == pytest.approx(0.0)
+    assert metrics["peak_bpr_dollars"] == pytest.approx(0.0)
+    assert metrics["stale_mark_snapshot_count"] == 0
