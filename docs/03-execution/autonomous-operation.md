@@ -100,14 +100,14 @@ At any moment the system should be able to answer: what the strategy wants to do
 ## 19. Current project gate
 As of 2026-09-28:
 
-- Strategy profitability: still under historical validation.
-- $2,000 account feasibility: replay exists, but the latest historical workflow exposed a strike-column schema defect before account-level results could be produced.
-- Autonomous execution: not implemented yet.
-- Live trading: not authorized by this design.
+- **Strategy profitability:** still under historical validation. The latest replay shows a large difference between unconstrained trade economics and account-constrained feasibility.
+- **$2,000 OPTIONS-001 feasibility:** the corrected account replay completed successfully, but all 929 candidate entries were rejected under the current model's 50% BPR/NLV limit. The dominant rejection was BUYING_POWER_LIMIT. This is a substantive strategy/account feasibility result, not a workflow failure.
+- **Autonomous execution:** not implemented yet.
+- **Live trading:** not authorized by this design.
 
 Immediate priority:
-1. Finish the corrected $2,000 account-level replay.
-2. Inspect accepted/rejected opportunity rates and the resulting equity path.
-3. Resolve accounting/model defects.
-4. Run chronological robustness tests.
-5. Build the execution engine around the validated strategy contract.
+1. Treat the $2,000 naked-SPY-strangle configuration as infeasible under the current modeled BPR/stress constraints unless subsequent research changes the structure or sizing assumptions.
+2. Determine whether the problem is specific to naked SPY strangles, the chosen BPR model, or the $2,000 account size by running controlled sensitivity tests rather than weakening the risk limit.
+3. Test a $2,000-compatible defined-risk options construction and/or smaller-capital requirement as a separate strategy candidate.
+4. Continue validating ETF-001 and regime-switching profitability independently; do not force OPTIONS-001 into the portfolio simply because the architecture expects an options regime.
+5. After a viable strategy contract exists, build the execution engine around it and perform the autonomous-operation fault tests.
