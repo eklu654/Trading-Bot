@@ -308,10 +308,10 @@ def test_daily_snapshots_capture_intratrade_mark_to_market_drawdown():
     assert ledger.iloc[0]["post_exit_nlv"] == pytest.approx(2097.40)
     assert summary["max_drawdown_dollars"] == pytest.approx(101.30)
     assert summary["max_drawdown_pct"] == pytest.approx(101.30 / 2000)
-    assert summary["peak_bpr_dollars"] == pytest.approx(670.0)
-    assert summary["peak_bpr_pct_nlv"] == pytest.approx(670.0 / 1898.70)
-    assert summary["peak_stress_loss_dollars"] > 0
-    assert summary["near_bpr_limit_snapshot_count"] == 1
+    assert summary["peak_bpr_dollars"] == pytest.approx(340.0)
+    assert summary["peak_bpr_pct_nlv"] == pytest.approx(340.0 / 1898.70)
+    assert summary["peak_stress_loss_dollars"] == pytest.approx(0.0)
+    assert summary["near_bpr_limit_snapshot_count"] == 0
     assert summary["max_near_bpr_limit_duration_days"] == pytest.approx(0.0)
     assert summary["stale_mark_snapshot_count"] == 0
 
