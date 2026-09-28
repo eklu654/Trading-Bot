@@ -194,6 +194,9 @@ def replay(
                 rejection.append("PNL_RECONCILIATION_MISMATCH")
 
         underlying = row.get("underlying_close", float("nan"))
+        if active and len(active) + 1 > config.max_concurrent_positions:
+            rejection.append("POSITION_ALREADY_OPEN" if config.max_concurrent_positions == 1 else "MAX_CONCURRENT_POSITIONS")
+
         if not _finite(underlying):
             rejection.append("MISSING_UNDERLYING_PRICE")
             bpr = float("nan")
@@ -210,8 +213,6 @@ def replay(
             bp_limit = min(config.max_bpr_dollars, nlv_before * config.max_bpr_pct_nlv)
             if active_bpr() + bpr > bp_limit:
                 rejection.append("AGGREGATE_BUYING_POWER_LIMIT" if active else "BUYING_POWER_LIMIT")
-            if len(active) + 1 > config.max_concurrent_positions:
-                rejection.append("MAX_CONCURRENT_POSITIONS")
             if active_stress_loss() + stress_loss >= nlv_before:
                 rejection.append("AGGREGATE_STRESS_LOSS_EXCEEDS_NLV" if active else "STRESS_LOSS_EXCEEDS_NLV")
 
@@ -268,7 +269,8 @@ def replay(
             "post_trade_nlv": nlv_after_entry,
         })
 
-    settle_positions_through(pd.Timestamp.max)
+    if active:
+        settle_positions_through(pd.to_datetime(frame["exit_date"].dropna().max()))
     ending_nlv = cash
     ledger = pd.DataFrame(rows)
     summary = {
