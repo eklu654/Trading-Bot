@@ -379,6 +379,7 @@ def replay(
             "final_put_contract_id": current_put,
             "regime": regime.loc[entry_date, "entry_regime"],
             "exit_reason": exit_reason,
+            "max_debit": max_debit,
         })
         active_until = exit_date
 
@@ -417,6 +418,8 @@ def main() -> None:
             "p10_pnl": 0.0,
             "p25_pnl": 0.0,
             "max_observed_open_debit_proxy": 0.0,
+            "challenged_mean_pnl": 0.0,
+            "challenged_worst_trade": 0.0,
             "challenged_trades": 0,
             "challenge_rate": 0.0,
             "adjusted_trades": 0,
@@ -434,7 +437,9 @@ def main() -> None:
             "worst_trade": float(result["pnl"].min()),
             "p10_pnl": float(result["pnl"].quantile(0.10)),
             "p25_pnl": float(result["pnl"].quantile(0.25)),
-            "max_observed_open_debit_proxy": float(result["exit_debit"].max()),
+            "max_observed_open_debit_proxy": float(result["max_debit"].max()),
+            "challenged_mean_pnl": float(result.loc[challenged, "pnl"].mean()) if challenged.any() else 0.0,
+            "challenged_worst_trade": float(result.loc[challenged, "pnl"].min()) if challenged.any() else 0.0,
             "challenged_trades": int(challenged.sum()),
             "challenge_rate": float(challenged.mean()),
             "adjusted_trades": int(adjusted.sum()),
