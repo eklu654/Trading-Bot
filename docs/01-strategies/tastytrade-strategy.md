@@ -1,7 +1,7 @@
 # Options-Selling Strategy Specification
 
 **Status:** Research draft — historical portfolio framework reconstructed; production rules not yet frozen  
-**Last reviewed:** 2026-09-27
+**Last reviewed:** 2026-09-28
 
 ## 1. Purpose
 
@@ -165,7 +165,26 @@ Before implementation, define:
 
 Exact zero Delta is not required if achieving it would violate a more important risk constraint.
 
-## 11. Hard risk hierarchy
+## 11. Risk-metric reconciliation
+
+Recent tastylive research changes how the risk engine should treat BPR.
+
+BPR remains a hard capital constraint, but it must not be treated as a standalone loss forecast. A 2024 comparison found that higher-BPR strangles did not automatically produce larger realized losses than lower-BPR iron condors, while 2025 research describes BPR as a useful risk gauge for undefined-risk positions and documents substantial BPR expansion during adverse moves. citeturn0search6turn0search5
+
+Therefore the bot separately tracks:
+
+- current BPR;
+- BPR expansion from entry;
+- NLV allocation;
+- beta-weighted Delta;
+- unit/notional exposure;
+- correlation;
+- defined-risk maximum loss;
+- stress scenarios.
+
+This is especially important at $2,000, where a relatively small number of contracts can make a large percentage of the account dependent on one position.
+
+## 12. Hard risk hierarchy
 
 The execution architecture is:
 
@@ -187,7 +206,7 @@ The risk engine has absolute authority over:
 
 AI cannot bypass these controls.
 
-## 12. Existing positions during regime changes
+## 13. Existing positions during regime changes
 
 A regime change does **not** automatically liquidate existing options positions.
 
@@ -199,7 +218,7 @@ When the regime switcher makes the options strategy ineligible for new entries:
 
 Hard portfolio-wide risk controls remain authoritative.
 
-## 13. Backtesting requirements
+## 14. Backtesting requirements
 
 Before paper trading, test the strategy historically under reproducible assumptions.
 
@@ -228,7 +247,7 @@ Required metrics include:
 
 Tests must distinguish in-sample development from out-of-sample validation.
 
-## 14. Open questions before implementation
+## 15. Open questions before implementation
 
 - Whether the historical framework should be used unchanged for the $2,000 paper account.
 - Exact broker definition of BPR and how it maps to the historical BP allocation.
@@ -245,7 +264,7 @@ Tests must distinguish in-sample development from out-of-sample validation.
 - Whether current 2024–2026 material materially modifies the historical framework.
 - Whether the SWITCH-001 regime layer should use VIX allocation directly or combine it with IVR, realized volatility, and market-regime signals.
 
-## 15. Source policy
+## 16. Source policy
 
 Primary sources take precedence:
 
