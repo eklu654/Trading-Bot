@@ -1,0 +1,65 @@
+name: 0DTE 0DTESPX Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      benchmark:
+        description: "Frozen benchmark to run"
+        required: true
+        type: choice
+        options:
+          - put
+          - call
+          - iron-condor
+          - timing-matrix
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install 0DTE dependencies
+        run: python -m pip install --upgrade pip requests
+
+      - name: Run selected benchmark
+        env:
+          ODTESPX_EMAIL: ${{ secrets.ODTESPX_EMAIL }}
+          ODTESPX_PASSWORD: ${{ secrets.ODTESPX_PASSWORD }}
+        run: |
+          set -euo pipefail
+
+          case "${{ inputs.benchmark }}" in
+            put)
+              python tools/0dte/run_free_benchmark.py
+              ;;
+            call)
+              python tools/0dte/run_free_call_benchmark.py
+              ;;
+            iron-condor)
+              python tools/0dte/run_free_iron_condor_benchmark.py
+              ;;
+            timing-matrix)
+              python tools/0dte/run_free_management_timing_matrix.py
+              ;;
+            *)
+              echo "Unknown benchmark: ${{ inputs.benchmark }}"
+              exit 2
+              ;;
+          esac
+
+      - name: Upload sanitized benchmark result
+        uses: actions/upload-artifact@v4
+        with:
+          name: 0dte-${{ inputs.benchmark }}-${{ github.run_id }}
+          path: artifacts/*.json
+          if-no-files-found: error
+          retention-days: 30
