@@ -7,12 +7,13 @@ Writes sanitized aggregate results to artifacts/0dte_call_benchmark.json.
 
 from __future__ import annotations
 
-import getpass
 import json
 import sys
 import time
 from pathlib import Path
 from typing import Any
+
+from auth import get_credentials
 
 import requests
 
@@ -111,8 +112,7 @@ def sanitize(snapshot: dict[str, Any]) -> dict[str, Any]:
 
 
 def main() -> int:
-    email = input("0DTESPX email: ").strip()
-    password = getpass.getpass("0DTESPX password (hidden): ")
+    email, password = get_credentials()
     print("Logging in...")
     token = login(email, password)
     print("Authenticated. Token will not be printed or saved.")
@@ -140,7 +140,7 @@ def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(output, indent=2), encoding="utf-8")
     print(f"\nDone. Sanitized results written to: {OUT}")
-    print("Upload that JSON here; it contains no password or session token.")
+    print("Sanitized result is ready for analysis.")
     return 0
 
 
