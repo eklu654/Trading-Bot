@@ -69,25 +69,47 @@ def select_entries(con,source,regime,args):
     return c.merge(p,on="entry_date",suffixes=("_call","_put")).sort_values("entry_date").reset_index(drop=True)
 
 def attach_wings(con,source,entries,args):
+    """Attach protective wings with one bulk chain query, not one scan per entry."""
     if entries.empty:return entries
+    eligible=entries[["entry_date","expiration_call","strike_call","strike_put"]].copy()
+    eligible["entry_date"]=pd.to_datetime(eligible["entry_date"]).dt.date
+    eligible["expiration_call"]=pd.to_datetime(eligible["expiration_call"]).dt.date
+    con.register("wing_entries",eligible)
+    q=f"""
+    WITH candidates AS (
+      SELECT e.entry_date,e.expiration_call,e.strike_call,e.strike_put,
+             o.contract_id,o.strike,lower(o.type) option_type,o.bid,o.ask,o.mark,
+             o.volume,o.open_interest,
+             row_number() OVER (
+               PARTITION BY e.entry_date,e.expiration_call,lower(o.type)
+               ORDER BY
+                 CASE WHEN lower(o.type)='call' THEN o.strike END ASC NULLS LAST,
+                 CASE WHEN lower(o.type)='put' THEN o.strike END DESC NULLS LAST,
+                 o.volume DESC NULLS LAST,o.open_interest DESC NULLS LAST
+             ) rn
+      FROM wing_entries e
+      JOIN {source_sql(source)} o
+        ON CAST(o.date AS DATE)=e.entry_date
+       AND CAST(o.expiration AS DATE)=e.expiration_call
+      WHERE o.bid>0 AND o.ask>=o.bid AND o.mark>0
+        AND (o.volume>0 OR o.open_interest>0)
+        AND ((lower(o.type)='call' AND o.strike>=e.strike_call+{args.wing_width})
+          OR (lower(o.type)='put' AND o.strike<=e.strike_put-{args.wing_width}))
+    )
+    SELECT * FROM candidates WHERE rn=1
+    """
+    wings=con.execute(q).fetchdf()
+    con.unregister("wing_entries")
+    if wings.empty:return pd.DataFrame()
+    calls=wings[wings.option_type=="call"].set_index(["entry_date","expiration_call"])
+    puts=wings[wings.option_type=="put"].set_index(["entry_date","expiration_call"])
     rows=[]
     for _,r in entries.iterrows():
-        q=f"""
-        SELECT contract_id,strike,lower(type) AS option_type,bid,ask,mark,volume,open_interest
-        FROM {source_sql(source)}
-        WHERE CAST(date AS DATE)=DATE '{pd.Timestamp(r.entry_date).date()}'
-          AND CAST(expiration AS DATE)=DATE '{pd.Timestamp(r.expiration_call).date()}'
-          AND bid>0 AND ask>=bid AND mark>0 AND (volume>0 OR open_interest>0)
-          AND ((lower(type)='call' AND strike>={float(r.strike_call)+args.wing_width})
-            OR (lower(type)='put' AND strike<={float(r.strike_put)-args.wing_width}))
-        """
-        w=con.execute(q).fetchdf()
-        if w.empty:continue
-        calls=w[w.option_type=="call"].sort_values(["strike","volume"],ascending=[True,False])
-        puts=w[w.option_type=="put"].sort_values(["strike","volume"],ascending=[False,False])
-        if calls.empty or puts.empty:continue
-        c=calls.iloc[0];p=puts.iloc[0]
-        if float(c.strike)<=float(r.strike_call) or float(p.strike)>=float(r.strike_put):continue
+        key=(pd.Timestamp(r.entry_date).date(),pd.Timestamp(r.expiration_call).date())
+        if key not in calls.index or key not in puts.index:continue
+        c=calls.loc[key];p=puts.loc[key]
+        if isinstance(c,pd.DataFrame):c=c.iloc[0]
+        if isinstance(p,pd.DataFrame):p=p.iloc[0]
         row=r.to_dict()
         row.update({
           "long_call_id":str(c.contract_id),"long_put_id":str(p.contract_id),
