@@ -40,7 +40,7 @@ The core comparison is the paired difference between buy-and-hold and 200-DMA **
 
 The ETF replay now generates buy-and-hold, 200-DMA, and 200-DMA-plus-VIX results at 0%, 10%, 25%, and 50% target cash, plus a 100% cash reference. It writes per-configuration daily paths and a combined summary. The 25% 200-DMA and VIX outputs retain the prior artifact filenames for compatibility.
 
-The implementation uses unadjusted close for the moving-average signal and adjusted close for return accounting when available. Buy-and-hold starts with equal proportional ETF weights and allows those weights to drift. The 200-DMA signal is evaluated separately for each ETF and applied with a one-session lag. Cash earns 0% in this research model.
+The implementation uses unadjusted close for the moving-average signal and adjusted close for return accounting when available. Buy-and-hold starts with equal proportional ETF weights and allows those weights to drift. The 200-DMA signal is evaluated separately for each ETF and applied with a one-session lag; active sleeves are rebalanced to equal target weights at each close in this first-pass model. Cash earns 0% in this research model. These rebalancing policies differ by design and must be kept visible when interpreting the comparison.
 
 **Not yet included:** commissions, slippage, spread costs, fractional-share/whole-share execution constraints, or broker-specific fills. Therefore the new output is a controlled first-pass comparison, not yet an execution-realistic result. The GitHub Actions run triggered by these code changes must finish successfully before treating the artifacts as validated.
 
