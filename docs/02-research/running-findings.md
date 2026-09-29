@@ -2,6 +2,8 @@
 
 ## Very brief status
 
+- **0DTE chronological validation:** the 16D/6D iron condor 15:55 control was -3.98% in 2022–2024, +10.30% in 2025, and +7.69% in the 2026 holdout. The adjacent 15:00 version was -4.37%, -1.09%, and +12.96%. This confirms strong time/regime dependence; the full-sample +14.01% result is not an unconditional edge.
+
 - **0DTE timing matrix:** 45 frozen 0DTESPX configurations completed across 1,012 sessions. The 16D/6D iron condor was positive only at the two latest exits; the 15:55 cell reproduced the earlier +14.01% result. This is an in-sample control, not a deployment selection.
 
 - **ETF-001:** 200-DMA baseline beat the current VIX-filter variant in the corrected historical run; the current VIX filter is **not validated as a safety improvement**.
