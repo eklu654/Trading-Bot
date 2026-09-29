@@ -286,6 +286,12 @@ def main() -> None:
                 frame.to_csv(
                     OUTPUT_DIR / f"etf001_{strategy.lower()}_{label}_backtest.csv"
                 )
+                if cash == 0.25:
+                    legacy_name = (
+                        "etf001_dma_backtest.csv" if strategy == "DMA"
+                        else "etf001_dma_vix_backtest.csv"
+                    )
+                    frame.to_csv(OUTPUT_DIR / legacy_name)
                 summaries.append(
                     overall_summary(frame).assign(
                         strategy=strategy, cash_allocation=cash
