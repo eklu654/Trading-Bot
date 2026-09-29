@@ -28,9 +28,11 @@ This is a strategy/account feasibility result, not an execution failure. The unc
 
 The next research stage is therefore to test:
 
-- turbulent-only options eligibility;
-- defined-risk options structures that can actually fit a $2,000 account;
-- capital-feasibility sensitivity;
+- an unconditional/all-market OPTIONS-001 baseline, so the options portfolio is measured independently across the full historical sample;
+- turbulent-only and broad-sideways options eligibility;
+- capital-feasibility sensitivity at $2,000, $5,000, and $10,000;
+- defined-risk options structures that can actually fit small accounts;
+- 0DTE structures using timestamped intraday data when the data-quality gate is satisfied;
 - validation of the research BPR model against broker behavior;
 - combined ETF + options regime-switching economics.
 
