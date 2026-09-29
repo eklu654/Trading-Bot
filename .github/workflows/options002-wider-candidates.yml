@@ -89,7 +89,7 @@ jobs:
 
       - name: Print wider-candidate summaries
         run: |
-          for f in data/research/options002_delta20_w*_account_5000_risk_*_summary.csv; do
+          for f in data/research/options002_delta20_*_account_5000_risk_*_summary.csv; do
             [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
           done
 
