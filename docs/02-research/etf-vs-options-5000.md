@@ -190,3 +190,10 @@ It has established only that:
 - a properly constrained $5,000 non-0DTE options comparison is now required.
 
 The next authoritative research step is therefore the **$5,000 options-vs-ETF comparison**, followed by the regime-specific and combined-portfolio test.
+
+
+### Methodology correction — OPTIONS-002 2-point wings are a capital-feasibility probe, not the final tastytrade-fidelity baseline
+
+The initial OPTIONS-002 implementation uses a 45-DTE SPY iron condor with approximately 16-delta short strikes and 2-point wings. This should **not** be treated as a faithful representation of the broader tastylive/tastytrade iron-condor methodology. Current tastylive research describes 45-DTE SPY iron-condor studies using materially wider wings (including $5/$10/$20 and $10–$20 ranges), and a separate tastylive article specifically reports that $1–$2-wide SPY iron condors historically had weaker profitability characteristics than wider constructions. The same research emphasizes 50% profit management and 21-DTE management. Therefore, the 2-point run is retained as a deliberately capital-constrained feasibility probe, while the next options research pass must test wider, methodology-aligned constructions before drawing conclusions about a $5,000 tastytrade-informed portfolio.
+
+Next frozen-development candidates should include at least: (1) 20-delta shorts with $5 wings, (2) 20-delta shorts with $10 wings, and (3) a dynamic 20/10-delta construction where the long strikes are selected by delta rather than fixed width. These candidates should be evaluated under the same $5,000 account-feasibility gates, conservative/mid execution, 50% profit target, and 21-DTE exit. No candidate should be promoted based on full-sample optimization; development/validation results must be frozen before the untouched holdout is used.
