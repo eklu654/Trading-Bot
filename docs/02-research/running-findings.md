@@ -32,3 +32,10 @@ We also still need runtime fail-closed protections, broker-state verification, o
 ## Current disposition
 
 **Do not treat the bot as ready for unattended live money yet.** The research architecture is getting substantially stronger, but the account-constrained historical run and execution-safety validation are still required.
+
+
+### 2026-09-29 — OPTIONS-002 2-point wings reclassified as feasibility probe
+
+The initial defined-risk OPTIONS-002 replay uses 45 DTE, ~16-delta shorts, and 2-point SPY wings. This is useful for testing whether a very small defined-risk structure can fit a $5,000 account, but it is not an adequate stand-in for the wider iron-condor constructions studied by tastylive. Current tastylive research covers 45-DTE SPY iron condors with $5/$10/$20 wings and separately reports weaker historical behavior for $1–$2-wide iron condors than wider structures. The next options pass therefore needs methodology-aligned wider-wing candidates before any ETF-vs-options conclusion is made.
+
+The existing 2-point OPTIONS-002 run should still be completed because it answers the narrow capital-feasibility question. If it performs poorly, that result should not be generalized to all tastytrade-informed defined-risk options. Planned next candidates: 20-delta/$5-wide, 20-delta/$10-wide, and dynamic 20/10-delta SPY iron condors, all under identical $5,000 feasibility, conservative/mid fill, 50% profit, and 21-DTE controls.
