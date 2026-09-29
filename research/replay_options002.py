@@ -82,8 +82,8 @@ def attach_wings(con,source,entries,args):
         """
         w=con.execute(q).fetchdf()
         if w.empty:continue
-        calls=w[w.type=="call"].sort_values(["strike","volume"],ascending=[True,False])
-        puts=w[w.type=="put"].sort_values(["strike","volume"],ascending=[False,False])
+        calls=w[w.option_type=="call"].sort_values(["strike","volume"],ascending=[True,False])
+        puts=w[w.option_type=="put"].sort_values(["strike","volume"],ascending=[False,False])
         if calls.empty or puts.empty:continue
         c=calls.iloc[0];p=puts.iloc[0]
         if float(c.strike)<=float(r.strike_call) or float(p.strike)>=float(r.strike_put):continue
