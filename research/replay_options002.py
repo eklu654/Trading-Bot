@@ -26,6 +26,7 @@ def parse_args():
     p.add_argument("--target-dte",type=int,default=45)
     p.add_argument("--target-delta",type=float,default=0.16)
     p.add_argument("--wing-width",type=float,default=2.0)
+    p.add_argument("--strategy-label",default=None)
     p.add_argument("--min-dte",type=int,default=30)
     p.add_argument("--max-dte",type=int,default=60)
     p.add_argument("--profit-target",type=float,default=0.50)
@@ -184,7 +185,8 @@ def main():
                            "underlying_close":float(regime.loc[pd.Timestamp(r.entry_date),"spy_close"]),
                            "max_defined_loss":max(float(r.wing_width_call),float(r.wing_width_put))*100-credit*100})
     cdf=pd.DataFrame(candidates)
-    stem=f"options002_replay_{args.candidate.lower()}_{args.fill_model}"
+    label=args.strategy_label or f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
+    stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
     cdf.to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
     (trades[["candidate_id","exit_date","pnl","exit_debit"]] if not trades.empty else pd.DataFrame(columns=["candidate_id","exit_date","pnl","exit_debit"])).to_csv(RESEARCH_DIR/f"{stem}_candidate_outcomes.csv",index=False)
     marks.to_csv(RESEARCH_DIR/f"{stem}_candidate_marks.csv",index=False)
