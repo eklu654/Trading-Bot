@@ -25,7 +25,8 @@ def parse_args():
     p.add_argument("--fill-model",default="conservative",choices=["conservative","mid"])
     p.add_argument("--target-dte",type=int,default=45)
     p.add_argument("--target-delta",type=float,default=0.16)
-    p.add_argument("--wing-width",type=float,default=2.0)
+    p.add_argument("--wing-width",type=float,default=2.0, help="Fixed minimum wing width; ignored when --long-delta is supplied")
+    p.add_argument("--long-delta",type=float,default=None, help="If supplied, select long strikes closest to this absolute delta instead of fixed-width wings")
     p.add_argument("--strategy-label",default=None)
     p.add_argument("--min-dte",type=int,default=30)
     p.add_argument("--max-dte",type=int,default=60)
@@ -72,19 +73,32 @@ def attach_wings(con,source,entries,args):
     if entries.empty:return entries
     rows=[]
     for _,r in entries.iterrows():
+        delta_filter = ""
+        if args.long_delta is None:
+            delta_filter = f"""AND ((lower(type)='call' AND strike>={float(r.strike_call)+args.wing_width})
+            OR (lower(type)='put' AND strike<={float(r.strike_put)-args.wing_width}))"""
+        else:
+            delta_filter = f"""AND ((lower(type)='call' AND strike>{float(r.strike_call)} AND delta>0)
+            OR (lower(type)='put' AND strike<{float(r.strike_put)} AND delta<0))"""
         q=f"""
-        SELECT contract_id,strike,lower(type) AS option_type,bid,ask,mark,volume,open_interest
+        SELECT contract_id,strike,lower(type) AS option_type,bid,ask,mark,volume,open_interest,delta
         FROM {source_sql(source)}
         WHERE CAST(date AS DATE)=DATE '{pd.Timestamp(r.entry_date).date()}'
           AND CAST(expiration AS DATE)=DATE '{pd.Timestamp(r.expiration_call).date()}'
           AND bid>0 AND ask>=bid AND mark>0 AND (volume>0 OR open_interest>0)
-          AND ((lower(type)='call' AND strike>={float(r.strike_call)+args.wing_width})
-            OR (lower(type)='put' AND strike<={float(r.strike_put)-args.wing_width}))
+          {delta_filter}
         """
         w=con.execute(q).fetchdf()
         if w.empty:continue
-        calls=w[w.option_type=="call"].sort_values(["strike","volume"],ascending=[True,False])
-        puts=w[w.option_type=="put"].sort_values(["strike","volume"],ascending=[False,False])
+        if args.long_delta is None:
+            calls=w[w.option_type=="call"].sort_values(["strike","volume"],ascending=[True,False])
+            puts=w[w.option_type=="put"].sort_values(["strike","volume"],ascending=[False,False])
+        else:
+            w["delta_distance"]=w.apply(
+                lambda z: abs(float(z["delta"])-args.long_delta) if z["option_type"]=="call"
+                else abs(abs(float(z["delta"]))-args.long_delta), axis=1)
+            calls=w[w.option_type=="call"].sort_values(["delta_distance","volume"],ascending=[True,False])
+            puts=w[w.option_type=="put"].sort_values(["delta_distance","volume"],ascending=[True,False])
         if calls.empty or puts.empty:continue
         c=calls.iloc[0];p=puts.iloc[0]
         if float(c.strike)<=float(r.strike_call) or float(p.strike)>=float(r.strike_put):continue
@@ -185,7 +199,12 @@ def main():
                            "underlying_close":float(regime.loc[pd.Timestamp(r.entry_date),"spy_close"]),
                            "max_defined_loss":max(float(r.wing_width_call),float(r.wing_width_put))*100-credit*100})
     cdf=pd.DataFrame(candidates)
-    label=args.strategy_label or f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
+    if args.strategy_label:
+        label=args.strategy_label
+    elif args.long_delta is not None:
+        label=f"delta{int(round(args.target_delta*100))}_long{int(round(args.long_delta*100))}d"
+    else:
+        label=f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
     stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
     cdf.to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
     (trades[["candidate_id","exit_date","pnl","exit_debit"]] if not trades.empty else pd.DataFrame(columns=["candidate_id","exit_date","pnl","exit_debit"])).to_csv(RESEARCH_DIR/f"{stem}_candidate_outcomes.csv",index=False)
