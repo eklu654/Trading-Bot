@@ -128,8 +128,21 @@ def backtest(
     prices: dict[str, pd.DataFrame],
     vix: pd.Series,
     use_vix_overlay: bool,
+    cash_allocation: float = 0.25,
+    buy_and_hold: bool = False,
 ) -> pd.DataFrame:
+    """Backtest a proportional three-ETF basket with explicit cash.
+
+    Signals are evaluated at close t and applied to close-to-close returns
+    beginning at t+1. Buy-and-hold uses initial equal ETF weights and lets
+    weights drift; no periodic rebalancing or cash interest is assumed.
+    """
+    if not 0.0 <= cash_allocation <= 1.0:
+        raise ValueError("cash_allocation must be between 0 and 1")
+
     common = build_common_frame(prices, vix)
+    invested_weight = 1.0 - cash_allocation
+    sleeve_weight = invested_weight / len(SYMBOLS)
 
     signals = {
         symbol: generate_signals(
@@ -139,27 +152,26 @@ def backtest(
         )
         for symbol in SYMBOLS
     }
-
     returns = common[list(SYMBOLS)].pct_change().fillna(0.0)
-
-    # Today's close determines tomorrow's holding.
-    holdings = pd.DataFrame(
-        {
-            symbol: signals[symbol]["hold_signal"].shift(1).fillna(False)
-            for symbol in SYMBOLS
-        },
-        index=common.index,
-    )
+    if buy_and_hold:
+        holdings = pd.DataFrame(True, index=common.index, columns=SYMBOLS)
+    else:
+        # Today's close determines tomorrow's holding.
+        holdings = pd.DataFrame(
+            {
+                symbol: signals[symbol]["hold_signal"].shift(1).fillna(False)
+                for symbol in SYMBOLS
+            },
+            index=common.index,
+        )
 
     portfolio_returns = sum(
-        0.25 * returns[symbol] * holdings[symbol].astype(float)
+        sleeve_weight * returns[symbol] * holdings[symbol].astype(float)
         for symbol in SYMBOLS
     )
-
     equity = (1.0 + portfolio_returns).cumprod()
     running_max = equity.cummax()
     drawdown = equity / running_max - 1.0
-
     out = pd.DataFrame(
         {
             "portfolio_return": portfolio_returns,
@@ -169,20 +181,20 @@ def backtest(
         },
         index=common.index,
     )
-
     for symbol in SYMBOLS:
         out[f"{symbol}_hold"] = holdings[symbol]
         out[f"{symbol}_close"] = common[symbol]
         out[f"{symbol}_signal"] = signals[symbol]["hold_signal"]
-
     out["active_sleeves"] = sum(
         out[f"{symbol}_hold"].astype(int) for symbol in SYMBOLS
     )
-    out["invested_weight"] = out["active_sleeves"] * 0.25
+    out["invested_weight"] = out["active_sleeves"] * sleeve_weight
     out["cash_weight"] = 1.0 - out["invested_weight"]
-
+    out["cash_allocation_target"] = cash_allocation
+    out["strategy_type"] = "BUY_AND_HOLD" if buy_and_hold else (
+        "DMA_VIX" if use_vix_overlay else "DMA"
+    )
     return out
-
 
 def regime_summary(backtest_frame: pd.DataFrame, regime: pd.DataFrame) -> pd.DataFrame:
     joined = backtest_frame.join(regime[["decision_regime"]], how="left")
@@ -256,29 +268,53 @@ def main() -> None:
     prices = load_prices()
     vix = load_vix()
     regime = load_regime()
+    cash_levels = (0.0, 0.10, 0.25, 0.50, 1.0)
 
-    dma = backtest(prices, vix, use_vix_overlay=False)
-    dma_vix = backtest(prices, vix, use_vix_overlay=True)
+    summaries = []
+    for cash in cash_levels:
+        label = f"{int(cash * 100):02d}cash"
+        if cash < 1.0:
+            buy_hold = backtest(prices, vix, False, cash, buy_and_hold=True)
+            buy_hold.to_csv(OUTPUT_DIR / f"etf001_buyhold_{label}_backtest.csv")
+            summaries.append(
+                overall_summary(buy_hold).assign(
+                    strategy="BUY_AND_HOLD", cash_allocation=cash
+                )
+            )
+            for overlay, strategy in ((False, "DMA"), (True, "DMA_VIX")):
+                frame = backtest(prices, vix, overlay, cash)
+                frame.to_csv(
+                    OUTPUT_DIR / f"etf001_{strategy.lower()}_{label}_backtest.csv"
+                )
+                summaries.append(
+                    overall_summary(frame).assign(
+                        strategy=strategy, cash_allocation=cash
+                    )
+                )
+                if cash == 0.25:
+                    regime_summary(frame, regime).to_csv(
+                        OUTPUT_DIR / f"etf001_{strategy.lower()}_regime_summary.csv",
+                        index=False,
+                    )
+        else:
+            cash_returns = pd.Series(0.0, index=prices[SYMBOLS[0]].index)
+            cash_frame = pd.DataFrame(
+                {
+                    "portfolio_return": cash_returns,
+                    "portfolio_value": (1.0 + cash_returns).cumprod(),
+                    "drawdown": 0.0,
+                    "invested_weight": 0.0,
+                },
+                index=cash_returns.index,
+            )
+            summaries.append(
+                overall_summary(cash_frame).assign(
+                    strategy="CASH_ONLY", cash_allocation=1.0
+                )
+            )
 
-    dma.to_csv(OUTPUT_DIR / "etf001_dma_backtest.csv")
-    dma_vix.to_csv(OUTPUT_DIR / "etf001_dma_vix_backtest.csv")
-
-    regime_summary(dma, regime).to_csv(
-        OUTPUT_DIR / "etf001_dma_regime_summary.csv", index=False
-    )
-    regime_summary(dma_vix, regime).to_csv(
-        OUTPUT_DIR / "etf001_dma_vix_regime_summary.csv", index=False
-    )
-
-    combined = pd.concat(
-        [
-            overall_summary(dma).assign(strategy="ETF-001-DMA"),
-            overall_summary(dma_vix).assign(strategy="ETF-001-DMA-VIX"),
-        ],
-        ignore_index=True,
-    )
+    combined = pd.concat(summaries, ignore_index=True)
     combined.to_csv(OUTPUT_DIR / "etf001_overall_summary.csv", index=False)
-
     print(combined.to_string(index=False))
     print("\\nBacktest artifacts written to:", OUTPUT_DIR)
 
