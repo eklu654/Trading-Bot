@@ -14,6 +14,7 @@
 - **Risk accounting:** daily valuation snapshots now drive drawdown, BPR utilization, stress exposure, stale-mark, and BPR-expansion metrics.
 - **Broker audit:** Alpaca performs its own options buying-power/eligibility checks; our modeled BPR is only a research estimate and must never be treated as broker approval.
 
+- **Replay integrity fix (2026-09-29):** OPTIONS-001 and OPTIONS-002 now explicitly prevent duplicate same-day entries and overlapping positions in the sequential trade replay. This closes a bookkeeping issue that could otherwise inflate trade counts/P&L before account feasibility is applied.
 - **$5,000 options challenger:** OPTIONS-002 is now implemented as a defined-risk 45-DTE SPY iron condor with ~16-delta short strikes, 2-point wings, 50%/21-DTE management, and separate $5k 3%/5%/7% risk-band feasibility tests. The historical run is currently executing; no performance conclusion has been accepted yet.
 - **Validation discipline:** the first CI test pass exposed a missing DuckDB dev dependency and then a package-import issue; both were corrected before accepting research output. This is a useful guard against treating an unvalidated implementation as a result.
 
