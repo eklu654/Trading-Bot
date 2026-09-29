@@ -12,6 +12,52 @@ The decision question is:
 
 A result is useful only if the strategy is feasible at the tested account size and survives held-out validation.
 
+## ETF baseline assumptions now under review — 2026-09-29
+
+The existing ETF-001 baseline uses 25% TQQQ, 25% SPXL, 25% SOXL, and 25% cash, with the plain 200-day moving-average exit/re-entry rule. These are **untested design choices**, not established optimal settings. The research must directly answer both whether the moving-average rule adds value relative to holding and whether the standing cash allocation helps.
+
+### Required ETF factorial comparison
+
+Run a controlled comparison over the same historical dates, starting NLV, price/dividend conventions, transaction costs, and execution assumptions:
+
+| Signal | Cash allocation | ETF allocation |
+|---|---:|---|
+| Buy and hold | 0% | 1/3 each TQQQ, SPXL, SOXL |
+| Buy and hold | 10% | 30% each |
+| Buy and hold | 25% | 25% each |
+| Buy and hold | 50% | 16.667% each |
+| 200-DMA | 0% | 1/3 each |
+| 200-DMA | 10% | 30% each |
+| 200-DMA | 25% | 25% each |
+| 200-DMA | 50% | 16.667% each |
+| 200-DMA + VIX filter | 0%, 10%, 25%, 50% | Same proportional ETF weights |
+
+Include a 100%-cash reference series. Keep the three ETF weights equal within the invested allocation for this first controlled test; any unequal-weight experiment should be a separate, explicitly labeled follow-up rather than mixed into this comparison.
+
+The core comparison is the paired difference between buy-and-hold and 200-DMA **at each identical cash allocation**. Separately compare cash levels **within each signal**. This isolates the value of the timing rule from the effect of simply holding less leveraged exposure.
+
+### Portfolio accounting and implementation controls
+
+- State whether weights are initial weights with buy-and-hold drift or periodically rebalanced weights. Use the existing strategy's actual behavior as the primary baseline and label any alternative rebalancing policy separately.
+- For the 200-DMA strategy, specify whether each ETF's signal is evaluated independently or whether one signal controls the whole basket. Preserve the current implementation as the primary case; report individual-ETF signal results as diagnostics.
+- Define the 200-DMA calculation, warm-up period, close-to-close signal timing, and next-session execution consistently. Do not use a same-day close that would not have been known at order time.
+- Account for cash yield only if the historical data and assumptions support it; otherwise report a zero-yield cash baseline and a clearly separated cash-yield sensitivity.
+- Include dividends and splits consistently, and document whether prices are adjusted or unadjusted.
+- Include realistic slippage, fees, and turnover from switching. Do not treat a theoretical close-price fill as guaranteed.
+- Report time invested, cash exposure, trade count, turnover, and periods in which a rule exits and later re-enters.
+
+### Required metrics and interpretation
+
+For every variant, report total return, CAGR, annualized volatility, Sharpe, Sortino, maximum drawdown, recovery time, worst day, and time invested. Include annual and regime-level returns, plus performance across major drawdown and recovery periods.
+
+The 200-DMA rule should be evaluated on paired metrics, not just CAGR: it may lower drawdown while also missing recoveries or reducing total return. The cash allocation should be evaluated for its effects on both risk and return. A lower drawdown alone does not establish that a variant is preferable, and a higher historical return alone does not establish robustness.
+
+### Validation discipline
+
+Freeze the candidate grid before examining final holdout results. Use chronological development, validation, and untouched holdout periods. Do not tune cash percentage or signal parameters on the final holdout. Include sensitivity to modest execution costs and plausible cash yields. Treat any parameter search as multiple testing and report the full tested grid, not only favorable variants.
+
+No single variant is preselected as the winner. The current 25%-cash 200-DMA result remains a baseline until this direct comparison is complete.
+
 ## Important distinction
 
 The current ETF result and the current options result are not directly comparable yet.
@@ -190,7 +236,6 @@ It has established only that:
 - a properly constrained $5,000 non-0DTE options comparison is now required.
 
 The next authoritative research step is therefore the **$5,000 options-vs-ETF comparison**, followed by the regime-specific and combined-portfolio test.
-
 
 ### Methodology correction — OPTIONS-002 2-point wings are a capital-feasibility probe, not the final tastytrade-fidelity baseline
 
