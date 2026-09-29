@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--options-source", required=True,
                    help="Local parquet glob or HTTP(S) parquet URL")
     p.add_argument("--candidate", default="BROAD_SIDEWAYS",
-                   choices=["CURRENT", "BALANCED", "BROAD_SIDEWAYS", "TURBULENT_ONLY"])
+                   choices=["CURRENT", "BALANCED", "BROAD_SIDEWAYS", "TURBULENT_ONLY", "ALL_DAYS"])
     p.add_argument("--fill-model", default="conservative", choices=["conservative", "mid"])
     p.add_argument("--target-dte", type=int, default=45)
     p.add_argument("--target-delta", type=float, default=0.16)
@@ -57,6 +57,10 @@ def load_regime(candidate: str, start: str, end: str) -> pd.DataFrame:
     ).set_index("Date").sort_index()
 
     labels = candidate_labels(frame, candidate).shift(1)
+    if candidate == "ALL_DAYS":
+        frame["entry_regime"] = "ALL_DAYS"
+        frame["eligible"] = True
+        return frame.loc[start:end]
     if candidate == "TURBULENT_ONLY":
         labels = pd.Series(
             "TURBULENT_HIGH_VOL",
