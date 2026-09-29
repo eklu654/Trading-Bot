@@ -72,10 +72,7 @@ def load_regime(candidate: str, start: str, end: str) -> pd.DataFrame:
         frame["eligible"] = labels == "TURBULENT_HIGH_VOL"
         return frame.loc[start:end]
 
-        labels = pd.Series(
-            "TURBULENT_HIGH_VOL",
-            index=frame.index,
-        ).where(frame["vix_percentile252"] >= 0.90, "TRENDING_NORMAL")
+    labels = candidate_labels(frame, candidate).shift(1)
 
     frame["entry_regime"] = labels
     frame["eligible"] = labels.isin({"SIDEWAYS_CHOPPY", "TURBULENT_HIGH_VOL"})
