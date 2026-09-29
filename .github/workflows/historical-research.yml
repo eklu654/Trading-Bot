@@ -46,6 +46,16 @@ jobs:
           done
           ls -lh data/options/spy
 
+      - name: Audit 0DTE dataset availability
+        run: python research/audit_0dte_dataset.py --options-source "data/options/spy/options_*.parquet"
+
+      - name: Replay OPTIONS-001 all-market baseline plus no-stop benchmark
+        run: |
+          for fill in conservative mid; do
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "${fill}"
+            python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "${fill}" --loss-credit-multiple 0
+          done
+
       - name: Replay OPTIONS-001 broad-sideways baseline plus no-stop benchmark
         run: |
           for fill in conservative mid; do
@@ -62,10 +72,12 @@ jobs:
 
       - name: Replay OPTIONS-001 $2,000 account feasibility — broad sideways
         run: |
-          for fill in conservative mid; do
-            for loss_tag in loss2x nostop; do
+          for nlv in 2000 5000 10000; do
+            for fill in conservative mid; do
+              for loss_tag in loss2x nostop; do
               stem="options001_replay_broad_sideways_${fill}_${loss_tag}"
-              python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv 2000                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_2000.csv"
+                python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv "${nlv}"                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_${nlv}.csv"
+              done
             done
           done
 
@@ -105,22 +117,12 @@ jobs:
           cat data/research/regime_candidate_etf_results.csv
           echo "=== REGIME CANDIDATE FREQUENCY ==="
           cat data/research/regime_candidate_frequency.csv
-          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
-          cat data/research/options001_replay_broad_sideways_conservative_loss2x_account_2000_summary.csv
-          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
-          cat data/research/options001_replay_broad_sideways_conservative_nostop_account_2000_summary.csv
-          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY MID LOSS2X ==="
-          cat data/research/options001_replay_broad_sideways_mid_loss2x_account_2000_summary.csv
-          echo "=== BROAD SIDEWAYS ACCOUNT FEASIBILITY MID NO-STOP ==="
-          cat data/research/options001_replay_broad_sideways_mid_nostop_account_2000_summary.csv
-          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY CONSERVATIVE LOSS2X ==="
-          cat data/research/options001_replay_turbulent_only_conservative_loss2x_account_2000_summary.csv
-          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY CONSERVATIVE NO-STOP ==="
-          cat data/research/options001_replay_turbulent_only_conservative_nostop_account_2000_summary.csv
-          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY MID LOSS2X ==="
-          cat data/research/options001_replay_turbulent_only_mid_loss2x_account_2000_summary.csv
-          echo "=== TURBULENT-ONLY ACCOUNT FEASIBILITY MID NO-STOP ==="
-          cat data/research/options001_replay_turbulent_only_mid_nostop_account_2000_summary.csv
+          echo "=== ACCOUNT FEASIBILITY SENSITIVITY ==="
+          for f in data/research/*_account_2000_summary.csv data/research/*_account_5000_summary.csv data/research/*_account_10000_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
+          echo "=== 0DTE DATASET AUDIT ==="
+          cat data/research/options001_0dte_dataset_audit.csv
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
           cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
           echo "=== DEFENSE CONTROL MID ==="
