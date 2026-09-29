@@ -53,9 +53,23 @@ jobs:
             done
           done
 
+      - name: Replay dynamic 20/10-delta iron condors
+        run: |
+          for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
+            for fill in conservative mid; do
+              python research/replay_options002.py \
+                --options-source "data/options/spy/options_*.parquet" \
+                --candidate "$candidate" \
+                --fill-model "$fill" \
+                --target-delta 0.20 \
+                --long-delta 0.10 \
+                --strategy-label "delta20_long10d"
+            done
+          done
+
       - name: Replay account feasibility for wider candidates
         run: |
-          for label in delta20_w5 delta20_w10; do
+          for label in delta20_w5 delta20_w10 delta20_long10d; do
             for candidate in all_days broad_sideways turbulent_only; do
               for fill in conservative mid; do
                 stem="options002_${label}_${candidate}_${fill}"
