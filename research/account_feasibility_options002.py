@@ -1,4 +1,4 @@
-""""Account feasibility replay for defined-risk OPTIONS-002.
+"""Account feasibility replay for defined-risk OPTIONS-002.
 
 BPR is modeled as maximum defined loss. This is a research estimate, not a
 broker buying-power preview. One contract and one concurrent position are
@@ -97,4 +97,3 @@ def main():
     print("OPTIONS-002 account feasibility",summary)
 
 if __name__=="__main__":main()
-"
