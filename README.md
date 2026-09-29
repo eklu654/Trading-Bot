@@ -69,6 +69,14 @@ Detailed results: [0DTE iron condor benchmark](docs/02-research/0dte-iron-condor
 
 Runner: `python tools/0dte/run_free_management_timing_matrix.py`
 
+## 0DTE automated benchmark workflow
+
+The 0DTESPX runners now support non-interactive credentials through the environment variables `ODTESPX_EMAIL` and `ODTESPX_PASSWORD`. The repository includes an on-demand GitHub Actions workflow, **0DTE 0DTESPX Benchmark**, with the four frozen benchmark choices: put, call, iron-condor, and timing-matrix.
+
+The workflow does not download the historical archive. It uses 0DTESPX's strategy-preview/backtest service and uploads the sanitized JSON result as a GitHub Actions artifact. This avoids repeated credential entry and eliminates the need to upload each result to ChatGPT manually.
+
+One-time setup and usage: [docs/02-research/0dte-automated-benchmarks.md](docs/02-research/0dte-automated-benchmarks.md).
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
