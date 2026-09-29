@@ -14,6 +14,11 @@
 
 The most important unanswered question is whether the historically generated OPTIONS-001 candidates produce a **sufficient number of feasible trades inside the $2,000 account** after all hard gates, and what the surviving account-level equity curve looks like.
 
+- **0DTE free-data decision:** no paid historical dataset will be purchased. Free research will use public benchmark logs/code, free samples, legitimate free trials where available, expiry-only replay, synthetic sensitivity studies, and prospective data collection.
+- **0DTE benchmark source found:** a public SPX 0DTE credit-spread repository provides source code and a trade log with 9:45 AM ET entries, VIX1D expected-move strike selection, $5 defined-risk wings, and expiration settlement. It is useful as an independent benchmark/control, but it is not raw historical OPRA quote data.
+- **0DTE data conclusion:** the lack of free minute-by-minute historical option quotes does not block the project. It blocks only high-fidelity historical testing of path-dependent exits. Expiry-only defined-risk structures can still be researched with a separate evidence label.
+
+
 We also still need runtime fail-closed protections, broker-state verification, order/fill reconciliation, restart recovery, duplicate-order prevention, and live/paper operational tests before trusting unattended execution.
 
 ## Current disposition
