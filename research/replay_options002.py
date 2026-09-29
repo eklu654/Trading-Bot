@@ -109,8 +109,12 @@ def leg_price(qr,cid,kind,fill):
 
 def replay(entries,quotes,regime,args):
     trades=[];marks=[]
+    active_until=pd.Timestamp.min
+    last_entry_date=pd.Timestamp.min
     for _,r in entries.iterrows():
-        ed=pd.Timestamp(r.entry_date);q=quotes[quotes.entry_date==ed]
+        ed=pd.Timestamp(r.entry_date)
+        if ed<=active_until or ed<=last_entry_date: continue
+        q=quotes[quotes.entry_date==ed]
         if q.empty:continue
         by=q.pivot(index="date",columns="contract_id",values=["bid","ask","mark"])
         ids=[str(r.contract_id_call),str(r.contract_id_put),str(r.long_call_id),str(r.long_put_id)]
@@ -138,6 +142,7 @@ def replay(entries,quotes,regime,args):
             if dte<=args.exit_dte:
                 exit_date=pd.Timestamp(date);exit_debit=debit;reason="DTE_21";break
         if exit_date is None:continue
+        active_until=exit_date; last_entry_date=ed
         max_loss=max(float(r.wing_width_call),float(r.wing_width_put))*100-credit*100
         trades.append({"candidate_id":cid,"entry_date":ed,"exit_date":exit_date,"expiration":pd.Timestamp(r.expiration_call),
                        "entry_credit":credit,"exit_debit":exit_debit,"pnl":(credit-exit_debit)*100,
