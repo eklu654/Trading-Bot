@@ -191,9 +191,9 @@ def main():
         label=f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
     stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
     if entries.empty:
-        pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
+        pd.DataFrame(columns=["candidate_id","entry_date","entry_credit","call_strike","put_strike","long_call_strike","long_put_strike","wing_width_call","wing_width_put","underlying_close","max_defined_loss"]).to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
         pd.DataFrame(columns=["candidate_id","exit_date","pnl","exit_debit"]).to_csv(RESEARCH_DIR/f"{stem}_candidate_outcomes.csv",index=False)
-        pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}_candidate_marks.csv",index=False)
+        pd.DataFrame(columns=["candidate_id","date","mark_debit","underlying_close"]).to_csv(RESEARCH_DIR/f"{stem}_candidate_marks.csv",index=False)
         pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}.csv",index=False)
         print("OPTIONS-002: no chain candidates")
         return
