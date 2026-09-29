@@ -24,7 +24,10 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 
-from evaluate_regime_candidates import candidate_labels
+try:
+    from evaluate_regime_candidates import candidate_labels
+except ModuleNotFoundError:
+    from research.evaluate_regime_candidates import candidate_labels
 
 ROOT = Path(__file__).resolve().parents[1]
 RESEARCH_DIR = ROOT / "data" / "research"
