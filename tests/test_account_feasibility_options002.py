@@ -6,7 +6,7 @@ def test_defined_risk_accepts_when_max_loss_fits():
     c=pd.DataFrame([{"candidate_id":"A","entry_date":"2020-01-02","entry_credit":0.50,"max_defined_loss":150}])
     o=pd.DataFrame([{"candidate_id":"A","exit_date":"2020-01-10","pnl":50,"exit_debit":0.0}])
     m=pd.DataFrame([{"candidate_id":"A","date":"2020-01-05","mark_debit":0.2}])
-    a=Namespace(starting_nlv=5000,max_bpr_pct=.50,max_risk_pct=.07,fee_per_contract=.65)
+    a=Namespace(starting_nlv=5000,max_bpr_pct=.50,max_risk_pct=.07,fee_per_contract=.65,output="/tmp/test.csv")
     ledger,s=replay(c,o,m,a)
     assert bool(ledger.iloc[0].accepted)
     assert s["accepted_count"]==1
