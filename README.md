@@ -38,6 +38,18 @@ The next research stage is therefore to test:
 
 ETF-001 currently has a complete historical replay from 2010-03-11 through 2026-09-25. The plain 200-day trend version produced a 19.53% annualized return in that historical model versus 13.05% for the DMA+VIX variant, with maximum drawdowns of approximately 37.5% and 41.4%, respectively. These are backtest results, not forecasts.
 
+## 0DTE benchmark update — 2026-09-29
+
+The first free 0DTESPX benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ put-credit spread returned +1.04% total with a 0.07 annualized Sharpe and -16.57% maximum drawdown; the 20Δ/10Δ and 25Δ/15Δ variants returned -15.55% and -18.83%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+
+Detailed results: [0DTE first benchmark](docs/02-research/0dte-first-benchmark-results.md).
+
+Frozen follow-up runners are available:
+- `python tools/0dte/run_free_call_benchmark.py`
+- `python tools/0dte/run_free_iron_condor_benchmark.py`
+
+Run them locally from the repository root. They prompt for credentials without echoing the password and write sanitized JSON under `artifacts/`. Upload the resulting JSON for analysis. Do not share credentials or session tokens.
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
