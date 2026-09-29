@@ -52,7 +52,7 @@ def test_buy_and_hold_cash_levels_change_invested_exposure():
 
 
 def test_timed_strategy_uses_next_session_holdings():
-    index = pd.date_range("2026-01-02", periods=202, freq="D")
+    index = pd.date_range("2026-01-02", periods=205, freq="D")
     values = np.full(len(index), 100.0)
     prices = {
         symbol: pd.DataFrame(
@@ -70,4 +70,5 @@ def test_timed_strategy_uses_next_session_holdings():
     assert frame["invested_weight"].iloc[198] == 0.0
     # Once the signal is established, holdings are shifted one session so the
     # close that generates the signal cannot also receive that day's return.
-    assert frame["invested_weight"].iloc[201] == 0.75
+    assert frame["invested_weight"].iloc[203] == 0.0
+    assert frame["invested_weight"].iloc[204] == 0.75
