@@ -36,6 +36,14 @@ Include a 100%-cash reference series. Keep the three ETF weights equal within th
 
 The core comparison is the paired difference between buy-and-hold and 200-DMA **at each identical cash allocation**. Separately compare cash levels **within each signal**. This isolates the value of the timing rule from the effect of simply holding less leveraged exposure.
 
+### Implementation status — 2026-09-29
+
+The ETF replay now generates buy-and-hold, 200-DMA, and 200-DMA-plus-VIX results at 0%, 10%, 25%, and 50% target cash, plus a 100% cash reference. It writes per-configuration daily paths and a combined summary. The 25% 200-DMA and VIX outputs retain the prior artifact filenames for compatibility.
+
+The implementation uses unadjusted close for the moving-average signal and adjusted close for return accounting when available. Buy-and-hold starts with equal proportional ETF weights and allows those weights to drift. The 200-DMA signal is evaluated separately for each ETF and applied with a one-session lag. Cash earns 0% in this research model.
+
+**Not yet included:** commissions, slippage, spread costs, fractional-share/whole-share execution constraints, or broker-specific fills. Therefore the new output is a controlled first-pass comparison, not yet an execution-realistic result. The GitHub Actions run triggered by these code changes must finish successfully before treating the artifacts as validated.
+
 ### Portfolio accounting and implementation controls
 
 - State whether weights are initial weights with buy-and-hold drift or periodically rebalanced weights. Use the existing strategy's actual behavior as the primary baseline and label any alternative rebalancing policy separately.
