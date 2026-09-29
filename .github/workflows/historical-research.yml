@@ -104,6 +104,30 @@ jobs:
             done
           done
 
+      - name: Replay OPTIONS-002 defined-risk iron condor — $5,000 baseline
+        run: |
+          for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
+            for fill in conservative mid; do
+              python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate "$candidate" --fill-model "$fill" --wing-width 2
+            done
+          done
+
+      - name: Replay OPTIONS-002 account feasibility — $5,000 risk sensitivity
+        run: |
+          for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
+            lower_candidate=$(echo "$candidate" | tr "[:upper:]" "[:lower:]")
+            for fill in conservative mid; do
+              stem="options002_replay_${lower_candidate}_${fill}"
+              for risk in 0.03 0.05 0.07; do
+                python research/account_feasibility_options002.py \
+                  --input "data/research/${stem}_candidates.csv" \
+                  --outcomes "data/research/${stem}_candidate_outcomes.csv" \
+                  --marks "data/research/${stem}_candidate_marks.csv" \
+                  --starting-nlv 5000 --max-bpr-pct 0.50 --max-risk-pct "$risk" \
+                  --output "data/research/${stem}_account_5000_risk_${risk}.csv"
+              done
+            done
+          done
       - name: Replay OPTIONS-001 defense variants — broad sideways
         run: |
           echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
@@ -137,6 +161,10 @@ jobs:
           done
           echo "=== 0DTE DATASET AUDIT ==="
           cat data/research/options001_0dte_dataset_audit.csv
+          echo "=== OPTIONS-002 ACCOUNT FEASIBILITY ==="
+          for f in data/research/options002_replay_*_account_5000_risk_*_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
           cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
           echo "=== DEFENSE CONTROL MID ==="
