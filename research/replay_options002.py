@@ -72,7 +72,7 @@ def attach_wings(con,source,entries,args):
     rows=[]
     for _,r in entries.iterrows():
         q=f"""
-        SELECT contract_id,strike,lower(type) type,bid,ask,mark,volume,open_interest
+        SELECT contract_id,strike,lower(type) AS option_type,bid,ask,mark,volume,open_interest
         FROM {source_sql(source)}
         WHERE CAST(date AS DATE)=DATE '{pd.Timestamp(r.entry_date).date()}'
           AND CAST(expiration AS DATE)=DATE '{pd.Timestamp(r.expiration_call).date()}'
