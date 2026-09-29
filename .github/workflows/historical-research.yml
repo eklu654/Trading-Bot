@@ -70,23 +70,37 @@ jobs:
             python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "${fill}" --loss-credit-multiple 0
           done
 
-      - name: Replay OPTIONS-001 $2,000 account feasibility — broad sideways
+      - name: Replay OPTIONS-001 account feasibility sensitivity — broad sideways
         run: |
           for nlv in 2000 5000 10000; do
             for fill in conservative mid; do
               for loss_tag in loss2x nostop; do
-              stem="options001_replay_broad_sideways_${fill}_${loss_tag}"
-                python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv "${nlv}"                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_${nlv}.csv"
+                stem="options001_replay_broad_sideways_${fill}_${loss_tag}"
+                python research/account_feasibility_replay.py \
+                  --input "data/research/${stem}_candidates.csv" \
+                  --outcomes "data/research/${stem}_candidate_outcomes.csv" \
+                  --marks "data/research/${stem}_candidate_marks.csv" \
+                  --starting-nlv "${nlv}" \
+                  --max-bpr-pct 0.50 \
+                  --output "data/research/${stem}_account_${nlv}.csv"
               done
             done
           done
 
-      - name: Replay OPTIONS-001 $2,000 account feasibility — turbulent only
+      - name: Replay OPTIONS-001 account feasibility sensitivity — turbulent only
         run: |
-          for fill in conservative mid; do
-            for loss_tag in loss2x nostop; do
-              stem="options001_replay_turbulent_only_${fill}_${loss_tag}"
-              python research/account_feasibility_replay.py                 --input "data/research/${stem}_candidates.csv"                 --outcomes "data/research/${stem}_candidate_outcomes.csv"                 --marks "data/research/${stem}_candidate_marks.csv"                 --starting-nlv 2000                 --max-bpr-pct 0.50                 --output "data/research/${stem}_account_2000.csv"
+          for nlv in 2000 5000 10000; do
+            for fill in conservative mid; do
+              for loss_tag in loss2x nostop; do
+                stem="options001_replay_turbulent_only_${fill}_${loss_tag}"
+                python research/account_feasibility_replay.py \
+                  --input "data/research/${stem}_candidates.csv" \
+                  --outcomes "data/research/${stem}_candidate_outcomes.csv" \
+                  --marks "data/research/${stem}_candidate_marks.csv" \
+                  --starting-nlv "${nlv}" \
+                  --max-bpr-pct 0.50 \
+                  --output "data/research/${stem}_account_${nlv}.csv"
+              done
             done
           done
 
