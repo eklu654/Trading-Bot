@@ -296,10 +296,13 @@ def candidate_trade_outcomes(
 
     trades = []
     active_until = pd.Timestamp.min
+    last_entry_date = pd.Timestamp.min
 
     for entry_date, row in entries.iterrows():
         entry_date = pd.Timestamp(row["entry_date"])
         if enforce_one_position and entry_date <= active_until:
+            continue
+        if enforce_one_position and entry_date <= last_entry_date:
             continue
 
         call_credit = float(row["mark_call"] if args.fill_model == "mid" else row["bid_call"])
@@ -379,6 +382,7 @@ def candidate_trade_outcomes(
                 })
                 if enforce_one_position:
                     active_until = pd.Timestamp(date)
+                    last_entry_date = entry_date
                 break
 
     return pd.DataFrame(trades)
