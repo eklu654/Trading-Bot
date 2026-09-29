@@ -117,7 +117,7 @@ jobs:
           for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
             lower_candidate=$(echo "$candidate" | tr "[:upper:]" "[:lower:]")
             for fill in conservative mid; do
-              stem="options002_replay_${lower_candidate}_${fill}"
+              stem="options002_delta16_w2_${lower_candidate}_${fill}"
               for risk in 0.03 0.05 0.07; do
                 python research/account_feasibility_options002.py \
                   --input "data/research/${stem}_candidates.csv" \
@@ -162,7 +162,7 @@ jobs:
           echo "=== 0DTE DATASET AUDIT ==="
           cat data/research/options001_0dte_dataset_audit.csv
           echo "=== OPTIONS-002 ACCOUNT FEASIBILITY ==="
-          for f in data/research/options002_replay_*_account_5000_risk_*_summary.csv; do
+          for f in data/research/options002_*_account_5000_risk_*_summary.csv; do
             [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
           done
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
