@@ -50,6 +50,14 @@ Frozen follow-up runners are available:
 
 Run them locally from the repository root. They prompt for credentials without echoing the password and write sanitized JSON under `artifacts/`. Upload the resulting JSON for analysis. Do not share credentials or session tokens.
 
+## 0DTE call benchmark update — 2026-09-29
+
+The mirrored 0DTESPX call-credit benchmark also completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ, 20Δ/10Δ, and 25Δ/15Δ call-credit spreads returned -18.01%, -25.74%, and -28.85%, respectively, with maximum drawdowns of approximately 19.50%, 29.12%, and 31.02%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+
+The paired put/call comparison shows materially different daily behavior by market direction, so the next 0DTE test is a frozen management-timing matrix across both bullish and bearish defined-risk verticals rather than further unconstrained strike optimization.
+
+Detailed results: [0DTE call benchmark](docs/02-research/0dte-call-benchmark-results.md).
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
