@@ -58,6 +58,17 @@ The paired put/call comparison shows materially different daily behavior by mark
 
 Detailed results: [0DTE call benchmark](docs/02-research/0dte-call-benchmark-results.md).
 
+
+## 0DTE iron-condor benchmark update — 2026-09-29
+
+The symmetric 0DTESPX iron-condor benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ condor returned +14.01% total with a 0.419 annualized Sharpe and -9.14% maximum drawdown. The 20Δ/10Δ and 25Δ/15Δ variants returned -11.79% and -21.12%, respectively. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+
+This makes the 16Δ/6Δ condor an important research control, but not a production selection. The next frozen experiment is a 45-cell management-timing matrix covering the three put spreads, three call spreads, and three iron condors at five fixed time exits while keeping entry, deltas, and the 50% profit target unchanged.
+
+Detailed results: [0DTE iron condor benchmark](docs/02-research/0dte-iron-condor-benchmark-results.md).
+
+Runner: `python tools/0dte/run_free_management_timing_matrix.py`
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
