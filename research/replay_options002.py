@@ -183,8 +183,20 @@ def main():
     regime=load_regime(args.candidate,args.start_date,args.end_date)
     con=duckdb.connect()
     entries=attach_wings(con,args.options_source,select_entries(con,args.options_source,regime,args),args)
+    if args.strategy_label:
+        label=args.strategy_label
+    elif args.long_delta is not None:
+        label=f"delta{int(round(args.target_delta*100))}_long{int(round(args.long_delta*100))}d"
+    else:
+        label=f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
+    stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
     if entries.empty:
-        print("OPTIONS-002: no chain candidates");return
+        pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
+        pd.DataFrame(columns=["candidate_id","exit_date","pnl","exit_debit"]).to_csv(RESEARCH_DIR/f"{stem}_candidate_outcomes.csv",index=False)
+        pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}_candidate_marks.csv",index=False)
+        pd.DataFrame().to_csv(RESEARCH_DIR/f"{stem}.csv",index=False)
+        print("OPTIONS-002: no chain candidates")
+        return
     selected=entries[["entry_date","expiration_call","contract_id_call","contract_id_put","long_call_id","long_put_id"]]
     con.register("selected",selected)
     q=f"""SELECT s.entry_date,s.contract_id_call,s.contract_id_put,s.long_call_id,s.long_put_id,
@@ -207,8 +219,7 @@ def main():
                            "underlying_close":float(regime.loc[pd.Timestamp(r.entry_date),"spy_close"]),
                            "max_defined_loss":max(float(r.wing_width_call),float(r.wing_width_put))*100-credit*100})
     cdf=pd.DataFrame(candidates)
-    label=args.strategy_label or f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
-    stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
+    # stem is defined above so zero-candidate and normal runs use identical artifact names.
     cdf.to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
     (trades[["candidate_id","exit_date","pnl","exit_debit"]] if not trades.empty else pd.DataFrame(columns=["candidate_id","exit_date","pnl","exit_debit"])).to_csv(RESEARCH_DIR/f"{stem}_candidate_outcomes.csv",index=False)
     marks.to_csv(RESEARCH_DIR/f"{stem}_candidate_marks.csv",index=False)
