@@ -25,6 +25,7 @@ def parse_args():
     p.add_argument("--fill-model",default="conservative",choices=["conservative","mid"])
     p.add_argument("--target-dte",type=int,default=45)
     p.add_argument("--target-delta",type=float,default=0.16)
+    p.add_argument("--long-delta",type=float,default=None)
     p.add_argument("--wing-width",type=float,default=2.0)
     p.add_argument("--strategy-label",default=None)
     p.add_argument("--min-dte",type=int,default=30)
