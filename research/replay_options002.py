@@ -10,7 +10,10 @@ import argparse
 from pathlib import Path
 import duckdb
 import pandas as pd
-from replay_options001 import load_regime, source_sql, validate_local_source
+try:
+    from replay_options001 import load_regime, source_sql, validate_local_source
+except ModuleNotFoundError:
+    from research.replay_options001 import load_regime, source_sql, validate_local_source
 
 ROOT=Path(__file__).resolve().parents[1]
 RESEARCH_DIR=ROOT/"data"/"research"
