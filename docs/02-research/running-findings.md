@@ -2,6 +2,8 @@
 
 ## Very brief status
 
+- **0DTE timing matrix:** 45 frozen 0DTESPX configurations completed across 1,012 sessions. The 16D/6D iron condor was positive only at the two latest exits; the 15:55 cell reproduced the earlier +14.01% result. This is an in-sample control, not a deployment selection.
+
 - **ETF-001:** 200-DMA baseline beat the current VIX-filter variant in the corrected historical run; the current VIX filter is **not validated as a safety improvement**.
 - **OPTIONS-001:** historical one-contract SPY replay produced positive aggregate P/L, but that result is **not account-valid** by itself; worst trades were roughly **-$2.1k**, already a major warning for a $2k account.
 - **Defense test:** rolling the untested side reduced aggregate P/L in the corrected run and did not materially improve the worst observed trade; retain as a comparison, not a promoted rule.
