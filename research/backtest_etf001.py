@@ -152,7 +152,20 @@ def backtest(
         )
         for symbol in SYMBOLS
     }
-    returns = common[list(SYMBOLS)].pct_change().fillna(0.0)
+    # Use adjusted closes for total-return accounting (dividends/splits), while
+    # retaining unadjusted closes for the 200-DMA signal.
+    total_return_prices = pd.concat(
+        {
+            symbol: (
+                prices[symbol]["adj_close"]
+                if "adj_close" in prices[symbol].columns
+                else prices[symbol]["close"]
+            )
+            for symbol in SYMBOLS
+        },
+        axis=1,
+    ).reindex(common.index)
+    returns = total_return_prices.pct_change().fillna(0.0)
     if buy_and_hold:
         holdings = pd.DataFrame(True, index=common.index, columns=SYMBOLS)
     else:
