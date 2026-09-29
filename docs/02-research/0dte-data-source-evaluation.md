@@ -117,3 +117,22 @@ Do **not** buy the $1,500 ORATS raw archive yet.
 The highest-value next experiment is to use a one-minute commercial backtester as an independent reference, while designing our own engine so it can later ingest Cboe/OPRA-derived data.
 
 If the external benchmark and our eventual replay disagree materially, stop and resolve the discrepancy before trusting either result.
+
+
+## Free-source update — 2026-09-29
+
+A materially better free option has now been identified: **0DTESPX.com**.
+
+Its published documentation states that a free registered account provides historical SPX 0DTE sessions at 1-second resolution, historical option-chain reconstruction, strategy backtesting, portfolios, paper trading, and API access. The service states that there is no paid tier and no payment is required.
+
+This changes the acquisition decision:
+
+- **Do not buy ORATS/Cboe/TickData/etc.**
+- Use 0DTESPX as the primary external 0DTE benchmark if its free account and terms remain available.
+- Do not bulk-download its historical dataset; its acceptable-use rules explicitly prohibit systematic historical extraction.
+- Encode strategies on the platform and retrieve permitted aggregate/backtest diagnostics instead.
+- Use our own Trading-Bot engine as the independent implementation and compare results.
+
+The platform's strategy language supports defined-risk multi-leg structures, delta-based strikes, expected-move inputs, entry windows, profit targets, stop-losses, time exits, fees, slippage, and full-history results. This is sufficient to test most of the initial 0DTE strategy matrix without purchasing data.
+
+The platform therefore becomes the preferred free external benchmark, while the public Vilkov replication package remains the preferred free academic/research benchmark and public GitHub trade logs remain secondary controls.
