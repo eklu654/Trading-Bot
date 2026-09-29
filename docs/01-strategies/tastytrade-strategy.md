@@ -293,6 +293,51 @@ Portfolio construction should consider:
 - expiration clustering;
 - stress scenarios.
 
+## 10D. 0DTE research track
+
+0DTE is now a separate research candidate, not an assumption that the core 45-DTE short-premium strategy should simply be compressed into one trading day.
+
+Primary tastylive research describes materially different 0DTE behavior:
+
+- 0DTE has substantially higher gamma than longer-dated options, with gamma increasing as the session progresses. tastylive's SPY research showed roughly 50x the ATM straddle gamma of a 45-DTE comparison in the cited sample. citeturn1search6
+- tastylive research found that adding long wings can reduce capital requirements dramatically for 0DTE positions; its 2023 study reported roughly 80% lower capital requirements for defined-risk versions than comparable undefined-risk positions. citeturn0search2
+- A tastylive study comparing entry windows reported that selling 0DTE short strangles near the open and managing after roughly 90 minutes was profitable in the tested sample, while late-day short-premium entries performed poorly; this is research evidence, not a universal trading rule. citeturn0search3
+- tastylive's 2025 programming studied multiple 0DTE profit targets, including 10%, 25%, and 50% targets, and later programming continued to examine target selection by IVR. These are research variants rather than a single permanent "tastytrade 0DTE rule." citeturn1search9turn3search0turn3search1
+- tastylive's current general DTE guidance still describes approximately 25–50 DTE, with 45 DTE as a common target, for its core short-premium framework. 0DTE is therefore treated as a distinct strategy family rather than a replacement for the core framework. citeturn0search1
+
+### 0DTE project test matrix
+
+The project will test, where the historical data permits:
+
+1. **Defined-risk iron condor**
+2. **Defined-risk iron fly**
+3. **Defined-risk butterfly**
+4. **Defined-risk verticals**
+5. **Undefined-risk short strangle as a control only**, not as an assumed production candidate
+
+Each structure will be tested with:
+- entry-time delta/expected-move selection;
+- realistic bid/ask execution;
+- multiple mechanical profit targets (10%, 25%, 50%);
+- time-based intraday exits;
+- hard maximum-loss controls for defined-risk structures;
+- portfolio-level Delta/BPR/concentration limits;
+- VIX/IVR stratification;
+- opening-window versus later-entry sensitivity;
+- event-day exclusions/segmentation where the data supports them.
+
+### Data-quality gate
+
+The repository's current external SPY option dataset is daily-granularity in the existing replay architecture. A genuine 0DTE test of opening-window entries, 90-minute management, late-day behavior, or intraday profit targets requires timestamped intraday quotes/trades.
+
+Therefore:
+
+**No 0DTE profitability number will be generated from the current daily dataset by pretending the daily observation represents an intraday path.**
+
+The workflow now audits the dataset for same-day expirations and timestamp fields. If timestamped data is unavailable, the 0DTE track remains a data-acquisition gate rather than a fabricated backtest.
+
+This distinction is important because 0DTE gamma and execution behavior are strongly time-dependent. citeturn0search3turn1search6
+
 ## 11. Risk-metric reconciliation
 
 Recent tastylive research changes how the risk engine should treat BPR.
