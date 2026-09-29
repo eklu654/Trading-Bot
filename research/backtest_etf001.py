@@ -178,11 +178,18 @@ def backtest(
             index=common.index,
         )
 
-    portfolio_returns = sum(
-        sleeve_weight * returns[symbol] * holdings[symbol].astype(float)
-        for symbol in SYMBOLS
-    )
-    equity = (1.0 + portfolio_returns).cumprod()
+    if buy_and_hold:
+        # Buy once at the initial weights; each ETF sleeve then drifts naturally.
+        sleeve_growth = (1.0 + returns).cumprod()
+        equity = cash_allocation + sleeve_growth.mul(sleeve_weight).sum(axis=1)
+        portfolio_returns = equity.pct_change().fillna(0.0)
+    else:
+        # Rebalance active sleeves to equal target weights at each close.
+        portfolio_returns = sum(
+            sleeve_weight * returns[symbol] * holdings[symbol].astype(float)
+            for symbol in SYMBOLS
+        )
+        equity = (1.0 + portfolio_returns).cumprod()
     running_max = equity.cummax()
     drawdown = equity / running_max - 1.0
     out = pd.DataFrame(
