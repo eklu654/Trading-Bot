@@ -168,6 +168,14 @@ Cboe's long-running PUT index demonstrates that systematic index put writing can
 
 Those benchmark results are useful evidence that options deserve serious testing, but they are **not substitutes for testing our specific $5,000 rules**.
 
+## $5,000 implementation progress — 2026-09-29
+
+The first defined-risk challenger is now implemented as **OPTIONS-002**, a 45-DTE SPY iron condor using approximately 16-delta short strikes, 2-point wings, a 50% profit target or 21-DTE exit, and no undefined-risk 2x-credit stop. The research workflow now runs this candidate across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under both conservative and midpoint fills.
+
+Account feasibility is tested separately at **$5,000** with 3%, 5%, and 7% maximum defined-risk-per-position sensitivity bands, while retaining a 50% aggregate BPR ceiling. This is deliberately a sensitivity study rather than a claim that any one sizing band is authoritative.
+
+The first CI pass caught a test-environment dependency/import issue before the new research result could be considered valid. The dependency and package-import paths have been corrected, and the historical workflow is rerunning. No OPTIONS-002 performance number is being treated as established until that run completes successfully.
+
 ## Current conclusion
 
 **Unknown.**
