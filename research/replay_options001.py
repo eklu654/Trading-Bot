@@ -59,12 +59,19 @@ def load_regime(candidate: str, start: str, end: str) -> pd.DataFrame:
         parse_dates=["Date"],
     ).set_index("Date").sort_index()
 
-    labels = candidate_labels(frame, candidate).shift(1)
     if candidate == "ALL_DAYS":
         frame["entry_regime"] = "ALL_DAYS"
         frame["eligible"] = True
         return frame.loc[start:end]
     if candidate == "TURBULENT_ONLY":
+        labels = pd.Series(
+            "TURBULENT_HIGH_VOL",
+            index=frame.index,
+        ).where(frame["vix_percentile252"] >= 0.90, "TRENDING_NORMAL").shift(1)
+        frame["entry_regime"] = labels
+        frame["eligible"] = labels == "TURBULENT_HIGH_VOL"
+        return frame.loc[start:end]
+
         labels = pd.Series(
             "TURBULENT_HIGH_VOL",
             index=frame.index,
