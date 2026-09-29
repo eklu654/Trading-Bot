@@ -38,6 +38,9 @@ def rolling_percentile(series: pd.Series, window: int = 252) -> pd.Series:
 
 
 def candidate_labels(frame: pd.DataFrame, name: str) -> pd.Series:
+    if name == "ALL_DAYS":
+        return pd.Series("ALL_DAYS", index=frame.index)
+
     vix_p = frame["vix_percentile252"]
     rv_p = rolling_percentile(frame["spy_rv20"])
 
@@ -112,6 +115,7 @@ def main() -> None:
         "STRICT_SIDEWAYS",
         "BROAD_SIDEWAYS",
         "NO_SLOPE_SIDEWAYS",
+        "ALL_DAYS",
     ]
 
     for name in candidates:
