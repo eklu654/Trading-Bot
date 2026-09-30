@@ -53,3 +53,23 @@ ranks highly in the training sample. Promotion requires:
 6. comparison against the existing ETF baseline and the options component.
 
 The 2026 holdout is therefore protected from optimization.
+
+
+## Local parameter robustness
+
+After generating the 189 candidates, `research/analyze_etf001_robustness.py`
+examines each candidate's immediate parameter neighborhood. A neighbor changes
+exactly one parameter by one step in the declared grid while keeping the other
+parameters fixed.
+
+The robustness analysis uses training-period results to characterize whether a
+candidate sits inside a reasonably stable region rather than on an isolated peak.
+It reports neighbor return/drawdown-ratio mean, dispersion, positive fraction, and
+neighbor Sharpe statistics.
+
+Validation and holdout results are carried alongside the robustness report for
+inspection only. They are not inputs to the training robustness score.
+
+This is a diagnostic, not a new optimized trading rule. A robust candidate still
+has to pass the chronological validation, untouched holdout, execution, and risk
+gates.
