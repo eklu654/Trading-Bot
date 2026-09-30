@@ -111,7 +111,7 @@ jobs:
             done
           done
 
-      - name: Replay OPTIONS-002 defined-risk iron condor — $5,000 baseline
+      - name: Replay OPTIONS-002 defined-risk iron condor
         run: |
           for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
             for fill in conservative mid; do
@@ -121,7 +121,7 @@ jobs:
 
       - name: Replay OPTIONS-002 account feasibility across capital ladder
         run: |
-          for nlv in 2000 5000 10000 25000 50000; do
+          for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
             for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
               lower_candidate=$(echo "$candidate" | tr "[:upper:]" "[:lower:]")
               for fill in conservative mid; do
@@ -165,7 +165,7 @@ jobs:
           echo "=== REGIME CANDIDATE FREQUENCY ==="
           cat data/research/regime_candidate_frequency.csv
           echo "=== ACCOUNT FEASIBILITY SENSITIVITY ==="
-          for f in data/research/*_account_2000_summary.csv data/research/*_account_5000_summary.csv data/research/*_account_10000_summary.csv; do
+          for f in data/research/*_account_2000_summary.csv data/research/*_account_3000_summary.csv data/research/*_account_5000_summary.csv data/research/*_account_7500_summary.csv data/research/*_account_10000_summary.csv data/research/*_account_15000_summary.csv data/research/*_account_25000_summary.csv data/research/*_account_50000_summary.csv data/research/*_account_100000_summary.csv; do
             [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
           done
           echo "=== 0DTE DATASET AUDIT ==="
