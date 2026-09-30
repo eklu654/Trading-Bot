@@ -12,13 +12,22 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from backtest_etf001 import (
-    SYMBOLS,
-    build_common_frame,
-    load_prices,
-    load_vix,
-    overall_summary,
-)
+try:
+    from .backtest_etf001 import (
+        SYMBOLS,
+        build_common_frame,
+        load_prices,
+        load_vix,
+        overall_summary,
+    )
+except ImportError:
+    from backtest_etf001 import (
+        SYMBOLS,
+        build_common_frame,
+        load_prices,
+        load_vix,
+        overall_summary,
+    )
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "research"
