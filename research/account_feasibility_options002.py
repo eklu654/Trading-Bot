@@ -67,7 +67,6 @@ def replay(candidates,outcomes,marks,args):
             mark_nlv=cash-debit*100
             snapshots.append({"date":d,"nlv":mark_nlv,"bpr":max_loss,
                                "bpr_pct":max_loss/mark_nlv if mark_nlv>0 else None})
-        # Do not settle until the next candidate reaches/passes the exit date.
     if active is not None: cash += float(active["exit_cash_flow"])
     ledger=pd.DataFrame(rows)
     accepted=ledger[ledger.accepted] if not ledger.empty else ledger
@@ -75,6 +74,10 @@ def replay(candidates,outcomes,marks,args):
              "rejected_count":int((~ledger.accepted).sum()) if not ledger.empty else 0,
              "ending_nlv":float(cash),"total_net_pnl":float(accepted.net_pnl.sum()) if not accepted.empty else 0.0,
              "max_loss_pct":args.max_risk_pct,"max_bpr_pct":args.max_bpr_pct}
+    if snapshots:
+        snap=pd.DataFrame(snapshots)
+        summary["max_mark_bpr_pct"]=float(snap["bpr_pct"].max())
+        summary["min_mark_nlv"]=float(snap["nlv"].min())
     if not ledger.empty:
         counts=ledger.loc[~ledger.accepted,"rejection_codes"].str.split(";").explode().value_counts()
         for k,v in counts.items():summary[f"reject_{k.lower()}"]=int(v)
