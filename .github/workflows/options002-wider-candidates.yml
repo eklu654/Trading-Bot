@@ -53,6 +53,9 @@ jobs:
             done
           done
 
+      - name: Analyze wider candidates by chronology and entry regime
+        run: python research/analyze_options002_regime_results.py
+
       - name: Replay account feasibility for wider candidates
         run: |
           for nlv in 2000 5000 10000; do
