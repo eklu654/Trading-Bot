@@ -36,6 +36,9 @@ jobs:
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
 
+      - name: Evaluate ETF-001 local parameter robustness
+        run: python research/analyze_etf001_robustness.py
+
       - name: Evaluate ETF-001 trend matrix on validation and holdout
         run: python research/evaluate_etf001_matrix.py
 
