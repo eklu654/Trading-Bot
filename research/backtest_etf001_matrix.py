@@ -1,6 +1,6 @@
 """ETF-001 trend/hysteresis matrix with chronological validation splits.
 
-The sweep is deliberately a candidate generator, not a full-history optimizer.
+The sweep is deliberately a candidate generator, not a full-history optimizer.\n# Pipeline trigger marker: execute only after the workflow syntax is validated.
 Every candidate is reported separately on train, validation, and untouched
 holdout periods. Holdout performance is not used for selection.
 """
