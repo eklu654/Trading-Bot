@@ -28,7 +28,10 @@ def replay(candidates,outcomes,marks,args):
     cash=float(args.starting_nlv);active=None;rows=[];snapshots=[]
     for _,r in c.sort_values(["entry_date","candidate_id"]).iterrows():
         entry=pd.Timestamp(r.entry_date)
-        if active is not None and pd.Timestamp(active["exit_date"])<=entry:
+        # A position whose exit is today is still open for today's entry scan.
+        # This prevents same-day exit/re-entry from creating an artificial
+        # second position when candidates share an entry/exit date.
+        if active is not None and pd.Timestamp(active["exit_date"]) < entry:
             cash += float(active["exit_cash_flow"]); active=None
         nlv_before=cash if active is None else cash+float(active["position_value"])
         if active is not None:
