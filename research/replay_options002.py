@@ -180,7 +180,8 @@ def main():
     elif args.long_delta is not None:
         label=f"delta{int(round(args.target_delta*100))}_long{int(round(args.long_delta*100))}d"
     else:
-        label=f"delta{int(round(args.target_delta*100))}_w{str(args.wing_width).replace(".", "p")}"
+        wing_text = str(args.wing_width).rstrip("0").rstrip(".")
+        label=f"delta{int(round(args.target_delta*100))}_w{wing_text}"
     stem=f"options002_{label}_{args.candidate.lower()}_{args.fill_model}"
     if entries.empty:
         pd.DataFrame(columns=["candidate_id","entry_date","entry_credit","call_strike","put_strike","long_call_strike","long_put_strike","wing_width_call","wing_width_put","underlying_close","max_defined_loss"]).to_csv(RESEARCH_DIR/f"{stem}_candidates.csv",index=False)
