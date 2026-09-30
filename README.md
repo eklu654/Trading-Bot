@@ -42,7 +42,7 @@ ETF-001 currently has a complete historical replay from 2010-03-11 through 2026-
 
 The first free 0DTESPX benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ put-credit spread returned +1.04% total with a 0.07 annualized Sharpe and -16.57% maximum drawdown; the 20Δ/10Δ and 25Δ/15Δ variants returned -15.55% and -18.83%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
 
-Detailed results: [0DTE first benchmark](docs/02-research/0dte-first-benchmark-results.md).
+Detailed results: [0DTE first benchmark](docs/02-research/0dte-first-benchmark-results.md).\n\n## ETF-001 trend-matrix validation — 2026-09-30\n\nThe ETF-001 research pipeline now runs a frozen 189-candidate trend/hysteresis matrix with chronological train/validation/holdout splits, then evaluates fixed top-K training cohorts against validation and untouched holdout results. The evaluator does not use holdout performance for selection.\n\nDetailed methodology: [ETF-001 trend-matrix validation](docs/02-research/etf-001-trend-matrix-validation.md).
 
 Frozen follow-up runners are available:
 - `python tools/0dte/run_free_call_benchmark.py`
