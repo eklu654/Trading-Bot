@@ -77,6 +77,20 @@ The workflow does not download the historical archive. It uses 0DTESPX's strateg
 
 One-time setup and usage: [docs/02-research/0dte-automated-benchmarks.md](docs/02-research/0dte-automated-benchmarks.md).
 
+## OPTIONS-002 wider-wing feasibility gate — 2026-09-30
+
+The next defined-risk options research gate is now present on main as a manual-only GitHub Actions workflow: **OPTIONS-002 Wider-Wing Research**.
+
+It freezes three candidates without selecting on historical performance:
+
+- 20-delta shorts with $5 fixed wings;
+- 20-delta shorts with $10 fixed wings;
+- 20-delta shorts with 10-delta long wings.
+
+Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under conservative and midpoint fills. Account feasibility is tested at $2,000, $5,000, and $10,000 with 3%, 5%, and 7% defined-risk ceilings and a 50% modeled BPR ceiling.
+
+The workflow is intentionally workflow_dispatch only. It does not promote a candidate, and holdout performance is not used for selection. Candidate rejection reasons are retained for feasibility analysis.
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
