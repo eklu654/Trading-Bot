@@ -22,7 +22,7 @@ Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY,
 - 50% profit target.
 - 21-DTE time exit.
 - Defined risk; no undefined-risk 2x-credit stop.
-- $5,000 account feasibility.
+- $2,000, $5,000, and $10,000 account-feasibility checkpoints.
 - 50% modeled aggregate BPR ceiling.
 - 3%, 5%, and 7% maximum defined-risk sensitivity bands.
 - $0.65 per-contract fee model.
