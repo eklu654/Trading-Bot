@@ -38,23 +38,27 @@ SPLITS = {
 
 
 def generate_signal(close, ma_window, exit_buffer, reentry_buffer, reentry_sessions):
-    ma = close.rolling(ma_window, min_periods=ma_window).mean()
-    signal = pd.Series(False, index=close.index)
+    ma = close.rolling(ma_window, min_periods=ma_window).mean().to_numpy()
+    prices = close.to_numpy(dtype=float)
+    signal = np.zeros(len(close), dtype=bool)
     active = False
     above = 0
-    for date in close.index:
-        price, average = close.loc[date], ma.loc[date]
-        if pd.isna(average) or price < average * (1.0 - exit_buffer):
+    exit_level = 1.0 - exit_buffer
+    entry_level = 1.0 + reentry_buffer
+
+    for i, (price, average) in enumerate(zip(prices, ma)):
+        if np.isnan(average) or price < average * exit_level:
             active, above = False, 0
         elif not active:
-            if price >= average * (1.0 + reentry_buffer):
+            if price >= average * entry_level:
                 above += 1
                 if above >= reentry_sessions:
                     active = True
             else:
                 above = 0
-        signal.loc[date] = active
-    return signal
+        signal[i] = active
+
+    return pd.Series(signal, index=close.index)
 
 
 def backtest_candidate(prices, vix, ma_window, exit_buffer, reentry_buffer, reentry_sessions):
