@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from research.backtest_etf001 import (
+from backtest_etf001 import (
     SYMBOLS,
     build_common_frame,
     load_prices,
