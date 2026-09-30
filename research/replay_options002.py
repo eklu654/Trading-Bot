@@ -70,49 +70,89 @@ def select_entries(con,source,regime,args):
     return c.merge(p,on="entry_date",suffixes=("_call","_put")).sort_values("entry_date").reset_index(drop=True)
 
 def attach_wings(con,source,entries,args):
-    """Attach protective wings by fixed width or target delta."""
-    if entries.empty:return entries
-    rows=[]
-    for _,r in entries.iterrows():
-        if args.long_delta is None:
-            delta_filter=f"""AND ((lower(type)='call' AND strike>={float(r.strike_call)+args.wing_width})
-            OR (lower(type)='put' AND strike<={float(r.strike_put)-args.wing_width}))"""
-        else:
-            delta_filter=f"""AND ((lower(type)='call' AND strike>{float(r.strike_call)} AND delta>0)
-            OR (lower(type)='put' AND strike<{float(r.strike_put)} AND delta<0))"""
+    """Attach protective wings with one batched Parquet scan instead of one query per entry."""
+    if entries.empty:
+        return entries
+    base = entries[["entry_date","expiration_call","strike_call","strike_put"]].copy()
+    base["entry_date"] = pd.to_datetime(base["entry_date"])
+    base["expiration_call"] = pd.to_datetime(base["expiration_call"])
+    con.register("wing_entries", base)
+
+    if args.long_delta is None:
         q=f"""
-        SELECT contract_id,strike,lower(type) AS option_type,bid,ask,mark,volume,open_interest,delta
-        FROM {source_sql(source)}
-        WHERE CAST(date AS DATE)=DATE '{pd.Timestamp(r.entry_date).date()}'
-          AND CAST(expiration AS DATE)=DATE '{pd.Timestamp(r.expiration_call).date()}'
-          AND bid>0 AND ask>=bid AND mark>0 AND (volume>0 OR open_interest>0)
-          {delta_filter}
+        WITH candidates AS (
+          SELECT e.entry_date,e.expiration_call,o.contract_id,o.strike,
+                 lower(o.type) AS option_type,o.bid,o.ask,o.mark,o.volume,
+                 o.open_interest,o.delta,e.strike_call,e.strike_put,
+                 CASE WHEN lower(o.type)='call'
+                      THEN abs(o.strike-(e.strike_call+{float(args.wing_width)}))
+                      ELSE abs(o.strike-(e.strike_put-{float(args.wing_width)}))
+                 END AS strike_distance
+          FROM wing_entries e
+          JOIN {source_sql(source)} o
+            ON CAST(o.date AS DATE)=e.entry_date
+           AND CAST(o.expiration AS DATE)=e.expiration_call
+          WHERE o.bid>0 AND o.ask>=o.bid AND o.mark>0
+            AND (o.volume>0 OR o.open_interest>0)
+            AND ((lower(o.type)='call' AND o.strike>=e.strike_call+{float(args.wing_width)})
+              OR (lower(o.type)='put' AND o.strike<=e.strike_put-{float(args.wing_width)}))
+        ),
+        ranked AS (
+          SELECT *,row_number() OVER(
+            PARTITION BY entry_date,option_type
+            ORDER BY strike_distance,volume DESC NULLS LAST,
+                     open_interest DESC NULLS LAST,strike) rn
+          FROM candidates
+        )
+        SELECT * FROM ranked WHERE rn=1
         """
-        w=con.execute(q).fetchdf()
-        if w.empty:continue
-        if args.long_delta is None:
-            calls=w[w.option_type=="call"].sort_values(["strike","volume"],ascending=[True,False])
-            puts=w[w.option_type=="put"].sort_values(["strike","volume"],ascending=[False,False])
-        else:
-            w["delta_distance"]=w.apply(
-                lambda z: abs(float(z["delta"])-args.long_delta) if z["option_type"]=="call"
-                else abs(abs(float(z["delta"]))-args.long_delta), axis=1)
-            calls=w[w.option_type=="call"].sort_values(["delta_distance","volume"],ascending=[True,False])
-            puts=w[w.option_type=="put"].sort_values(["delta_distance","volume"],ascending=[True,False])
-        if calls.empty or puts.empty:continue
-        c=calls.iloc[0];p=puts.iloc[0]
-        if float(c.strike)<=float(r.strike_call) or float(p.strike)>=float(r.strike_put):continue
-        row=r.to_dict()
-        row.update({
-          "long_call_id":str(c.contract_id),"long_put_id":str(p.contract_id),
-          "long_call_strike":float(c.strike),"long_put_strike":float(p.strike),
-          "wing_width_call":float(c.strike)-float(r.strike_call),
-          "wing_width_put":float(r.strike_put)-float(p.strike),
-          "bid_long_call":float(c.bid),"ask_long_call":float(c.ask),"mark_long_call":float(c.mark),
-          "bid_long_put":float(p.bid),"ask_long_put":float(p.ask),"mark_long_put":float(p.mark)
-        })
-        rows.append(row)
-    return pd.DataFrame(rows)
+    else:
+        q=f"""
+        WITH candidates AS (
+          SELECT e.entry_date,e.expiration_call,o.contract_id,o.strike,
+                 lower(o.type) AS option_type,o.bid,o.ask,o.mark,o.volume,
+                 o.open_interest,o.delta,e.strike_call,e.strike_put,
+                 CASE WHEN lower(o.type)='call'
+                      THEN abs(o.delta-{float(args.long_delta)})
+                      ELSE abs(abs(o.delta)-{float(args.long_delta)})
+                 END AS delta_distance
+          FROM wing_entries e
+          JOIN {source_sql(source)} o
+            ON CAST(o.date AS DATE)=e.entry_date
+           AND CAST(o.expiration AS DATE)=e.expiration_call
+          WHERE o.bid>0 AND o.ask>=o.bid AND o.mark>0
+            AND (o.volume>0 OR o.open_interest>0)
+            AND ((lower(o.type)='call' AND o.strike>e.strike_call AND o.delta>0)
+              OR (lower(o.type)='put' AND o.strike<e.strike_put AND o.delta<0))
+        ),
+        ranked AS (
+          SELECT *,row_number() OVER(
+            PARTITION BY entry_date,option_type
+            ORDER BY delta_distance,volume DESC NULLS LAST,
+                     open_interest DESC NULLS LAST,strike) rn
+          FROM candidates
+        )
+        SELECT * FROM ranked WHERE rn=1
+        """
+    w=con.execute(q).fetchdf()
+    con.unregister("wing_entries")
+    if w.empty:
+        return pd.DataFrame()
+    calls=w[w.option_type=="call"].copy()
+    puts=w[w.option_type=="put"].copy()
+    if calls.empty or puts.empty:
+        return pd.DataFrame()
+    calls=calls.rename(columns={"contract_id":"long_call_id","strike":"long_call_strike",
+        "bid":"bid_long_call","ask":"ask_long_call","mark":"mark_long_call","delta":"long_call_delta"})
+    puts=puts.rename(columns={"contract_id":"long_put_id","strike":"long_put_strike",
+        "bid":"bid_long_put","ask":"ask_long_put","mark":"mark_long_put","delta":"long_put_delta"})
+    out=entries.merge(calls[["entry_date","long_call_id","long_call_strike","bid_long_call",
+        "ask_long_call","mark_long_call","long_call_delta"]],on="entry_date",how="inner")
+    out=out.merge(puts[["entry_date","long_put_id","long_put_strike","bid_long_put",
+        "ask_long_put","mark_long_put","long_put_delta"]],on="entry_date",how="inner")
+    out["wing_width_call"]=out["long_call_strike"]-out["strike_call"]
+    out["wing_width_put"]=out["strike_put"]-out["long_put_strike"]
+    return out[(out["wing_width_call"]>0)&(out["wing_width_put"]>0)].reset_index(drop=True)
 
 def leg_price(qr,cid,kind,fill):
     if fill=="mid":f="mark"
