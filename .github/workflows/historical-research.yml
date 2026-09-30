@@ -33,7 +33,7 @@ jobs:
       - name: Run ETF-001 backtest
         run: python research/backtest_etf001.py
 
-      - name: Analyze OPTIONS-001 opportunity windows
+      - name: Run ETF-001 trend and hysteresis matrix\n        run: python research/backtest_etf001_matrix.py\n\n      - name: Analyze OPTIONS-001 opportunity windows
         run: python research/analyze_options_opportunity_windows.py
 
       - name: Evaluate regime candidates
