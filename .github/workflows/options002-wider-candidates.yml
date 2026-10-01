@@ -2,6 +2,9 @@ name: OPTIONS-002 Wider-Wing Research
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/run-options002-now"
 
 jobs:
   wider-iron-condors:
@@ -28,7 +31,7 @@ jobs:
         run: |
           mkdir -p data/options/spy
           for year in $(seq 2010 2025); do
-            curl -L --fail --retry 3 --retry-delay 2               -o "data/options/spy/options_${year}.parquet"               "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
+            curl -L --fail --retry 3 --retry-delay 2 -o "data/options/spy/options_${year}.parquet" "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
           done
 
       - name: Replay fixed-width methodology candidates
@@ -40,7 +43,7 @@ jobs:
             wing="$3"
             for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
               for fill in conservative mid; do
-                python research/replay_options002.py                   --options-source "data/options/spy/options_*.parquet"                   --candidate "$candidate"                   --fill-model "$fill"                   --target-delta "$delta"                   --wing-width "$wing"                   --strategy-label "$label"
+                python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate "$candidate" --fill-model "$fill" --target-delta "$delta" --wing-width "$wing" --strategy-label "$label"
               done
             done
           done
@@ -49,7 +52,7 @@ jobs:
         run: |
           for candidate in ALL_DAYS BROAD_SIDEWAYS TURBULENT_ONLY; do
             for fill in conservative mid; do
-              python research/replay_options002.py                 --options-source "data/options/spy/options_*.parquet"                 --candidate "$candidate"                 --fill-model "$fill"                 --target-delta 0.20                 --long-delta 0.10                 --strategy-label "delta20_long10d"
+              python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate "$candidate" --fill-model "$fill" --target-delta 0.20 --long-delta 0.10 --strategy-label "delta20_long10d"
             done
           done
 
@@ -60,15 +63,16 @@ jobs:
         run: |
           for nlv in 2000 5000 10000; do
             for label in delta20_w5 delta20_w10 delta20_long10d; do
-            for candidate in all_days broad_sideways turbulent_only; do
-              for fill in conservative mid; do
-                stem="options002_${label}_${candidate}_${fill}"
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py                     --input "data/research/${stem}_candidates.csv"                     --outcomes "data/research/${stem}_candidate_outcomes.csv"                     --marks "data/research/${stem}_candidate_marks.csv"                     --starting-nlv "$nlv"                     --max-bpr-pct 0.50                     --max-risk-pct "$risk"                     --output "data/research/${stem}_account_${nlv}_risk_${risk}.csv"
+              for candidate in all_days broad_sideways turbulent_only; do
+                for fill in conservative mid; do
+                  stem="options002_${label}_${candidate}_${fill}"
+                  for risk in 0.03 0.05 0.07; do
+                    python research/account_feasibility_options002.py --input "data/research/${stem}_candidates.csv" --outcomes "data/research/${stem}_candidate_outcomes.csv" --marks "data/research/${stem}_candidate_marks.csv" --starting-nlv "${nlv}" --max-bpr-pct 0.50 --max-risk-pct "${risk}" --output "data/research/${stem}_account_${nlv}_risk_${risk}.csv"
+                  done
                 done
+              done
             done
           done
-        done
 
       - name: Consolidate wider-candidate capital ladder
         run: python research/analyze_options002_capital_ladder.py
