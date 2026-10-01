@@ -77,17 +77,7 @@ def main() -> None:
     out.to_csv(output, index=False)
 
     print(out.to_string(index=False))
-    print()
-    print("2023+ account-feasibility finding:")
-    two_k = out[out["file"].str.contains("account_2000_")]
-    if len(two_k):
-        accepted = int(two_k["holdout_accepted"].sum())
-        files = len(two_k)
-        print(
-            f"$2,000 configurations: {files}; accepted holdout trades across "
-            f"all configurations: {accepted}."
-        )
-
+    print()\n    print("2023+ account-feasibility finding:")\n    five_k = out[out["file"].str.contains("account_5000_")]\n    if len(five_k):\n        accepted = int(five_k["holdout_accepted"].sum())\n        files = len(five_k)\n        print(\n            f"$5,000 configurations: {files}; accepted holdout trades across "\n            f"all configurations: {accepted}."\n        )\n
 
 if __name__ == "__main__":
     main()
