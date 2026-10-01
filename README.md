@@ -30,7 +30,7 @@ The next research stage is therefore to test:
 
 - an unconditional/all-market OPTIONS-001 baseline, so the options portfolio is measured independently across the full historical sample;
 - turbulent-only and broad-sideways options eligibility;
-- capital-feasibility sensitivity at $5,000, $5,000, and $10,000;
+- capital-feasibility sensitivity at $5,000 and $10,000;
 - defined-risk options structures that can actually fit small accounts;
 - 0DTE structures using timestamped intraday data when the data-quality gate is satisfied;
 - validation of the research BPR model against broker behavior;
@@ -87,7 +87,7 @@ It freezes three candidates without selecting on historical performance:
 - 20-delta shorts with $10 fixed wings;
 - 20-delta shorts with 10-delta long wings.
 
-Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under conservative and midpoint fills. Account feasibility is tested at $5,000, $5,000, and $10,000 with 3%, 5%, and 7% defined-risk ceilings and a 50% modeled BPR ceiling.
+Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under conservative and midpoint fills. Account feasibility is tested at $5,000 and $10,000 with 3%, 5%, and 7% defined-risk ceilings and a 50% modeled BPR ceiling.
 
 The workflow is intentionally workflow_dispatch only. It does not promote a candidate, and holdout performance is not used for selection. Candidate rejection reasons are retained for feasibility analysis.
 
@@ -100,7 +100,7 @@ The holdout comparison is descriptive and does not promote a candidate. The dyna
 
 Detailed findings: [OPTIONS-002 vs ETF-001 common-date results](docs/research/options002-vs-etf001-common-date-results-2026-10-01.md).
 
-Runner: `python research/compare_options002_etf001_common_dates.py`.
+Runner: `python research/compare_options002_etf001_common_dates.py`.\n\nA separate $5,000 capital-equivalent holdout gate uses the actual account-feasibility acceptance lifecycle rather than unconstrained candidate P&L: `python research/compare_options002_etf001_capital_equivalent.py`. The current artifact shows the accepted $5,000 holdout sample is sparse and concentrated in $5-wing turbulent-only configurations; this is a feasibility finding, not a strategy selection.
 
 ## Autonomous-operation requirement
 
