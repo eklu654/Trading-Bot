@@ -91,6 +91,17 @@ Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY 
 
 The workflow is intentionally workflow_dispatch only. It does not promote a candidate, and holdout performance is not used for selection. Candidate rejection reasons are retained for feasibility analysis.
 
+
+## OPTIONS-002 vs ETF-001 common-date holdout — 2026-10-01
+
+A common-date comparison was added for the existing 2023+ holdout. During validation, the previously generated `etf001_dma_scaffold.csv` was found to contain non-finite portfolio values beginning 2013-01-04, so it is not used as the benchmark. The comparison rebuilds ETF-001 from the raw TQQQ/SPXL/SOXL/VIX data and explicitly checks that the rebuilt equity curve is finite.
+
+The holdout comparison is descriptive and does not promote a candidate. The dynamic 20Δ/10Δ candidate had positive candidate-level aggregate P&L in the tested holdout files, while the fixed $5 and $10 wing variants had negative aggregate candidate P&L. Normalized P&L per defined loss remained slightly negative on average for the dynamic candidate set, so this is not deployment evidence.
+
+Detailed findings: [OPTIONS-002 vs ETF-001 common-date results](docs/research/options002-vs-etf001-common-date-results-2026-10-01.md).
+
+Runner: `python research/compare_options002_etf001_common_dates.py`.
+
 ## Autonomous-operation requirement
 
 Profitability is the primary objective. Autonomous operation is a required capability, not a replacement for profitability.
