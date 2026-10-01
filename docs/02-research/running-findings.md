@@ -80,3 +80,25 @@ The current evidence therefore supports this research direction:
 ### Current disposition after run #150
 
 **The bot remains research-only.** Run #150 materially advances the evidence base, but it does not satisfy the promotion gates for unattended live trading. The next highest-value work is wider-wing OPTIONS-002 variants plus a formal chronological/regime comparison that evaluates the strategy and the regime selector separately.
+
+
+### 2026-10-01 — Historical Research run #163 completed
+
+Run #163 completed successfully with all research steps passing. It expanded the ETF cash-allocation sweep, reran the chronological ETF matrix/robustness work, audited the available 0DTE dataset, and completed the OPTIONS-001 account-feasibility/defense tests plus the OPTIONS-002 defined-risk/capital-ladder tests.
+
+Key evidence from the uploaded run artifact:
+
+- **ETF-001 cash sensitivity:** the 2023+ holdout is monotonic with respect to cash allocation in the tested sweep: adding cash reduces annualized return and reduces drawdown magnitude. At 25% cash, the 200-DMA ETF variant had 123.4% annualized return, -37.0% maximum drawdown, and 0.779 Sharpe in the holdout. At 0% cash those figures were 167.2%, -46.8%, and 0.779. This is descriptive; cash allocation must be chosen using training/validation robustness and the risk budget rather than holdout optimization.
+- **ETF-001 parameter robustness:** the strongest local robustness rows clustered around the 200-day MA family with modest exit/re-entry buffers rather than an isolated single-parameter spike. This supports a robustness-first parameter gate.
+- **VIX overlay:** the tested DMA_VIX variant produced lower annualized return than the corresponding DMA variant at every tested cash allocation in the 2023+ holdout. This does not establish that VIX controls are useless; this particular overlay is not validated as an unconditional improvement.
+- **0DTE data limitation:** the downloaded SPY option-chain dataset contains 481,662 zero-DTE rows across 1,948 trading days from 2010-03-31 through 2025-12-12, but has no intraday timestamp field. The audit therefore marks true intraday 0DTE replay as unsupported. This is a data limitation, not a strategy result.
+- **OPTIONS-001 at $5,000:** account-feasibility results remain strongly configuration- and regime-dependent. Broad-sideways $5,000 tests produced mixed modest P/L, while the tested turbulent-only $5,000 configurations were negative. These are feasibility experiments, not evidence of a deployable edge.
+- **OPTIONS-002 at $5,000:** the 2-point-wing defined-risk probe is capital-feasible for some trades, but acceptance and P/L vary materially by regime, fill model, and risk cap. Some $5,000 configurations accept very few or no trades.
+- **OPTIONS-002 wider-wing holdout:** the existing common-date analysis found positive aggregate candidate-level holdout P/L for the dynamic 20-delta-short/10-delta-long-wing structure under the tested fills, while fixed-width $5 and $10 variants were negative. The dynamic structure's normalized P/L per defined loss was slightly negative, and its $5,000 account-feasibility sample remains too small for deployment consideration.
+- **Defense variants:** the broad-sideways defense replay did not provide a clean promotion basis. The unadjusted controls had higher aggregate P/L than the tested roll-untested variants, while the roll variants introduced adjustment cashflows and did not eliminate large worst-trade observations.
+
+### Post-#163 research gate
+
+The evidence supports keeping **ETF-001 as the capital-scalable baseline** and treating options as conditional candidates until capital-equivalent chronological validation establishes a sufficiently stable feasible trade sample. The regime selector must not be trained on holdout outcomes: it should be evaluated as a separate selection layer using training and validation, then frozen before one untouched holdout test.
+
+The project remains research/paper-trading only. Historical results do not establish future profitability, and the 0DTE path-dependent strategy remains blocked by the absence of intraday historical option quotes.
