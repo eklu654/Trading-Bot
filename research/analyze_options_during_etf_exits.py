@@ -97,10 +97,12 @@ def accepted_trade_frames(config_stem: str):
     outcomes = pd.read_csv(outcomes_path, parse_dates=["exit_date"])
     marks = pd.read_csv(marks_path, parse_dates=["date"])
     accepted = account.loc[account["accepted"] == True].copy()
-    accepted = accepted.merge(
-        outcomes[["candidate_id", "exit_date", "pnl", "exit_debit"]],
-        on="candidate_id", how="left", validate="one_to_one",
-    )
+    # The account-feasibility ledger already contains the authoritative
+    # lifecycle fields (exit_date, exit_debit, net_pnl). Only use candidate
+    # outcomes to verify that each accepted candidate has a corresponding
+    # outcome; do not merge duplicate lifecycle columns.
+    outcome_ids = set(outcomes["candidate_id"].dropna())
+    accepted = accepted.loc[accepted["candidate_id"].isin(outcome_ids)].copy()
     accepted = accepted.loc[accepted["exit_date"].notna()].copy()
     return accepted, marks
 
@@ -125,7 +127,7 @@ def option_daily_contribution(trade: pd.Series, marks: pd.DataFrame) -> pd.DataF
         if date == exit_date:
             # Replace the marked value with realized net trade P/L so exit fees
             # are reflected exactly once on the lifecycle's final day.
-            realized = float(trade["pnl"]) * 1.0
+            realized = float(trade["net_pnl"]) * 1.0
             daily = realized - prev_equity
         rows.append({
             "candidate_id": cid,
