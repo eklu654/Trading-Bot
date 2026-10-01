@@ -95,7 +95,7 @@ def main() -> None:
     options.to_csv(output, index=False)
     print(options.to_string(index=False))
     print()
-    print(f"ETF-001 2023+ holdout: $\{STARTING_NLV:,.0f} -> $\{etf_ending:,.2f} (\{etf_ending / STARTING_NLV - 1:.2%}).")
+    print("ETF-001 2023+ holdout: ${:,.0f} -> ${:,.2f} ({:.2%}).".format(STARTING_NLV, etf_ending, etf_ending / STARTING_NLV - 1.0))
     print("OPTIONS-002 rows are independent configuration backtests, not a combined portfolio and not a deployment recommendation.")
 
 if __name__ == "__main__":
