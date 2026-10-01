@@ -23,6 +23,44 @@ The dynamic 20-delta-short / 10-delta-long-wing structure remains the only wider
 candidate that produced accepted trades in the broader historical account tests,
 but those accepted trades do not establish 2023+ capital viability at $2,000.
 
+## Why $2,000 fails the current risk gate
+
+On the 2023+ holdout, the smallest modeled defined loss observed among the
+tested midpoint candidates was approximately:
+
+| Structure | Minimum defined loss | Minimum NLV at 7% risk cap | Minimum NLV at 5% | Minimum NLV at 3% |
+|---|---:|---:|---:|---:|
+| 20Δ / 10Δ dynamic wings | $928 | ~$13,257 | ~$18,560 | ~$30,933 |
+| 20Δ / $5 fixed wings | $311 | ~$4,443 | ~$6,220 | ~$10,367 |
+| 20Δ / $10 fixed wings | $665 | ~$9,500 | ~$13,300 | ~$22,167 |
+
+These are **minimum theoretical NLV thresholds based only on the smallest
+holdout defined loss**. They are not recommendations for an account size and
+do not account for fees, future loss changes, lifecycle overlap, or broker
+specific requirements.
+
+At $2,000, the 7% ceiling is $140. Therefore even the smallest observed
+defined loss for every tested wider-wing structure exceeds the maximum allowed
+risk. The 50% modeled buying-power ceiling is not the binding constraint in
+these cases; the defined-risk ceiling is.
+
+## Higher-account holdout feasibility
+
+The existing account-feasibility outputs show that the 2023+ holdout begins to
+produce accepted trades at higher account sizes, but only for selected
+configurations:
+
+- **$5,000:** 20 accepted holdout trades across three tested configurations,
+  all using 7% risk caps. Aggregate net P&L across those independent
+  configurations was **+$148**.
+- **$10,000:** 17 tested configurations produced accepted holdout trades,
+  totaling **283 accepted trades** and aggregate net P&L of **-$794.60** across
+  independent configurations.
+
+These aggregates combine separate backtests and must **not** be interpreted as
+portfolio returns or as evidence that a single configuration earned those
+results.
+
 ## ETF reference
 
 The rebuilt ETF-001 25%-cash / 200-DMA strategy remains continuously
