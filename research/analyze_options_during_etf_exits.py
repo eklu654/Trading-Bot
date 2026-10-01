@@ -120,7 +120,7 @@ def option_daily_contribution(trade: pd.Series, marks: pd.DataFrame) -> pd.DataF
         date = pd.Timestamp(r["date"])
         if date < START or date > exit_date:
             continue
-        equity = credit - float(r["mark_debit"]) * 100.0 - entry_fee
+        equity = credit - float(r["mark_debit"]) * 100.0 - float(trade.get("entry_fee", 0.0))
         daily = equity - prev_equity
         if date == exit_date:
             # Replace the marked value with realized net trade P/L so exit fees
@@ -132,7 +132,7 @@ def option_daily_contribution(trade: pd.Series, marks: pd.DataFrame) -> pd.DataF
             "date": date,
             "daily_option_pnl": daily,
         })
-        prev_equity = equity if date != exit_date else float(trade["pnl"])
+        prev_equity = equity if date != exit_date else float(trade["net_pnl"])
     return pd.DataFrame(rows)
 
 
