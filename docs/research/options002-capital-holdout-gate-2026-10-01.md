@@ -7,42 +7,22 @@ repository's defined-risk account-feasibility model during the chronological
 holdout beginning 2023-01-01.
 
 This is separate from candidate-level P&L. A strategy that has attractive
-candidate-level marks but cannot open those trades in a $2,000 account is not
+candidate-level marks but cannot open those trades in a $5,000 account is not
 capital-feasible for the intended starting account.
 
 ## Result
 
-The existing account-feasibility replay outputs show **zero accepted OPTIONS-002
-trades on the 2023+ holdout for every tested $2,000 configuration**.
+The existing account-feasibility replay outputs show accepted 2023+ trades at the $5,000 account level for selected configurations. This makes $5,000 the first active capital-feasibility tier, but the observed sample remains too small and configuration-dependent to establish deployment viability.
 
-The wider-wing candidate-level holdout comparison therefore must not be
-interpreted as evidence that OPTIONS-002 can compete with ETF-001 in the actual
-$2,000 portfolio. The account-feasibility layer is the controlling constraint.
+The wider-wing candidate-level holdout comparison therefore must not be interpreted as evidence that OPTIONS-002 can compete with ETF-001 in the actual $5,000 portfolio. The account-feasibility layer remains the controlling constraint.
 
-The dynamic 20-delta-short / 10-delta-long-wing structure remains the only wider
-candidate that produced accepted trades in the broader historical account tests,
-but those accepted trades do not establish 2023+ capital viability at $2,000.
+The dynamic 20-delta-short / 10-delta-long-wing structure is the principal wider-wing candidate to investigate further because it produced accepted trades at higher capital levels. Those accepted trades do not by themselves establish $5,000 deployment viability.
 
-## Why $2,000 fails the current risk gate
+## Why the current structures remain capital-constrained
 
-On the 2023+ holdout, the smallest modeled defined loss observed among the
-tested midpoint candidates was approximately:
+The smallest observed defined losses imply that some configurations require materially more than $5,000 to satisfy a 3–7% per-trade risk ceiling. The $5 fixed-wing structure is the closest to the $5,000 boundary, while the dynamic 20Δ/10Δ and $10 fixed-wing structures generally require substantially more capital for the observed holdout losses.
 
-| Structure | Minimum defined loss | Minimum NLV at 7% risk cap | Minimum NLV at 5% | Minimum NLV at 3% |
-|---|---:|---:|---:|---:|
-| 20Δ / 10Δ dynamic wings | $928 | ~$13,257 | ~$18,560 | ~$30,933 |
-| 20Δ / $5 fixed wings | $311 | ~$4,443 | ~$6,220 | ~$10,367 |
-| 20Δ / $10 fixed wings | $665 | ~$9,500 | ~$13,300 | ~$22,167 |
-
-These are **minimum theoretical NLV thresholds based only on the smallest
-holdout defined loss**. They are not recommendations for an account size and
-do not account for fees, future loss changes, lifecycle overlap, or broker
-specific requirements.
-
-At $2,000, the 7% ceiling is $140. Therefore even the smallest observed
-defined loss for every tested wider-wing structure exceeds the maximum allowed
-risk. The 50% modeled buying-power ceiling is not the binding constraint in
-these cases; the defined-risk ceiling is.
+At $5,000, the 7% ceiling is $350. A trade with defined loss above $350 is rejected by the current risk gate regardless of its candidate-level historical P&L.
 
 ## Higher-account holdout feasibility
 
@@ -73,14 +53,12 @@ select or tune OPTIONS-002.
 
 ## Interpretation
 
-1. **$2,000 is currently the binding constraint.**
+1. **$5,000 is now the canonical starting balance and the primary capital-feasibility gate.**
 2. Candidate-level OPTIONS-002 holdout P&L is insufficient for deployment
    evaluation when the account-feasibility replay cannot open the trades.
 3. No OPTIONS-002 wider-wing candidate should be promoted on the basis of the
    candidate-level comparison alone.
-4. Further options research should first answer whether a different structure,
-   contract multiplier, entry credit, or capital rule can produce genuine
-   2023+ $2,000 feasibility without weakening the risk controls.
+4. Further options research should determine whether any tested structure can produce a sufficiently large, stable sample at $5,000 without weakening the risk controls.
 5. Any such change must be tested on training/validation first and then carried
    unchanged into the untouched holdout.
 
