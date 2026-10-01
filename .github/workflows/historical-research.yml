@@ -146,6 +146,9 @@ jobs:
       - name: Consolidate OPTIONS-002 capital ladder feasibility
         run: python research/analyze_options002_capital_ladder.py
 
+      - name: Replay ETF-exit conditional options analysis
+        run: python research/analyze_options_during_etf_exits.py
+
       - name: Replay OPTIONS-001 defense variants — broad sideways
         run: |
           echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
