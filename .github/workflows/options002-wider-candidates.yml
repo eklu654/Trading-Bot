@@ -2,6 +2,7 @@ name: OPTIONS-002 Wider-Wing Research
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   wider-iron-condors:
@@ -77,7 +78,7 @@ jobs:
       - name: Analyze OPTIONS-002 capital feasibility on holdout
         run: python research/analyze_options002_capital_holdout.py
 
-      - name: Print wider-candidate summaries
+      - name: Compare $5,000 capital-equivalent holdout\n        run: python research/compare_options002_etf001_capital_equivalent.py\n\n      - name: Print wider-candidate summaries
         run: |
           for f in data/research/options002_delta20_*_account_*_risk_*_summary.csv; do
             [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
