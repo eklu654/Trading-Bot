@@ -20,17 +20,17 @@ AI may assist with research and regime classification, but it may not override h
 
 ## Current research gate — 2026-09-28
 
-The first corrected $2,000 account-feasibility replay completed successfully.
+The first corrected $5,000 account-feasibility replay completed successfully.
 
-The current OPTIONS-001 configuration uses one-contract SPY short strangles. Under the current modeled 50%-of-NLV BPR ceiling, **0 of 929 historical candidate entries were feasible in the $2,000 account**. The dominant rejection was buying-power capacity.
+The current OPTIONS-001 configuration uses one-contract SPY short strangles. Under the current modeled 50%-of-NLV BPR ceiling, **capital feasibility remains a separate gate; the $5,000 starting account is now the canonical baseline for research.** The dominant rejection was buying-power capacity.
 
-This is a strategy/account feasibility result, not an execution failure. The unconstrained options replay remains useful for studying trade economics, but its historical P/L cannot be treated as realizable by the $2,000 account.
+This is a strategy/account feasibility result, not an execution failure. The unconstrained options replay remains useful for studying trade economics, but its historical P/L cannot be treated as realizable by the $5,000 account.
 
 The next research stage is therefore to test:
 
 - an unconditional/all-market OPTIONS-001 baseline, so the options portfolio is measured independently across the full historical sample;
 - turbulent-only and broad-sideways options eligibility;
-- capital-feasibility sensitivity at $2,000, $5,000, and $10,000;
+- capital-feasibility sensitivity at $5,000, $5,000, and $10,000;
 - defined-risk options structures that can actually fit small accounts;
 - 0DTE structures using timestamped intraday data when the data-quality gate is satisfied;
 - validation of the research BPR model against broker behavior;
@@ -40,7 +40,7 @@ ETF-001 currently has a complete historical replay from 2010-03-11 through 2026-
 
 ## 0DTE benchmark update — 2026-09-29
 
-The first free 0DTESPX benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ put-credit spread returned +1.04% total with a 0.07 annualized Sharpe and -16.57% maximum drawdown; the 20Δ/10Δ and 25Δ/15Δ variants returned -15.55% and -18.83%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+The first free 0DTESPX benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ put-credit spread returned +1.04% total with a 0.07 annualized Sharpe and -16.57% maximum drawdown; the 20Δ/10Δ and 25Δ/15Δ variants returned -15.55% and -18.83%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $5,000 account results, and none is deployment-approved.
 
 Detailed results: [0DTE first benchmark](docs/02-research/0dte-first-benchmark-results.md).\n\n## ETF-001 trend-matrix validation — 2026-09-30\n\nThe ETF-001 research pipeline now runs a frozen 189-candidate trend/hysteresis matrix with chronological train/validation/holdout splits, then evaluates fixed top-K training cohorts against validation and untouched holdout results. The evaluator does not use holdout performance for selection.\n\nDetailed methodology: [ETF-001 trend-matrix validation](docs/02-research/etf-001-trend-matrix-validation.md).
 
@@ -52,7 +52,7 @@ Run them locally from the repository root. They prompt for credentials without e
 
 ## 0DTE call benchmark update — 2026-09-29
 
-The mirrored 0DTESPX call-credit benchmark also completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ, 20Δ/10Δ, and 25Δ/15Δ call-credit spreads returned -18.01%, -25.74%, and -28.85%, respectively, with maximum drawdowns of approximately 19.50%, 29.12%, and 31.02%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+The mirrored 0DTESPX call-credit benchmark also completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ, 20Δ/10Δ, and 25Δ/15Δ call-credit spreads returned -18.01%, -25.74%, and -28.85%, respectively, with maximum drawdowns of approximately 19.50%, 29.12%, and 31.02%. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $5,000 account results, and none is deployment-approved.
 
 The paired put/call comparison shows materially different daily behavior by market direction, so the next 0DTE test is a frozen management-timing matrix across both bullish and bearish defined-risk verticals rather than further unconstrained strike optimization.
 
@@ -61,7 +61,7 @@ Detailed results: [0DTE call benchmark](docs/02-research/0dte-call-benchmark-res
 
 ## 0DTE iron-condor benchmark update — 2026-09-29
 
-The symmetric 0DTESPX iron-condor benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ condor returned +14.01% total with a 0.419 annualized Sharpe and -9.14% maximum drawdown. The 20Δ/10Δ and 25Δ/15Δ variants returned -11.79% and -21.12%, respectively. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $2,000 account results, and none is deployment-approved.
+The symmetric 0DTESPX iron-condor benchmark completed across 1,012 sessions per candidate (2022-06-16 through 2026-09-28). The 16Δ/6Δ condor returned +14.01% total with a 0.419 annualized Sharpe and -9.14% maximum drawdown. The 20Δ/10Δ and 25Δ/15Δ variants returned -11.79% and -21.12%, respectively. All results include platform-reported fees and slippage. These are $100,000 platform previews, not $5,000 account results, and none is deployment-approved.
 
 This makes the 16Δ/6Δ condor an important research control, but not a production selection. The next frozen experiment is a 45-cell management-timing matrix covering the three put spreads, three call spreads, and three iron condors at five fixed time exits while keeping entry, deltas, and the 50% profit target unchanged.
 
@@ -87,7 +87,7 @@ It freezes three candidates without selecting on historical performance:
 - 20-delta shorts with $10 fixed wings;
 - 20-delta shorts with 10-delta long wings.
 
-Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under conservative and midpoint fills. Account feasibility is tested at $2,000, $5,000, and $10,000 with 3%, 5%, and 7% defined-risk ceilings and a 50% modeled BPR ceiling.
+Each candidate is evaluated across ALL_DAYS, BROAD_SIDEWAYS, and TURBULENT_ONLY under conservative and midpoint fills. Account feasibility is tested at $5,000, $5,000, and $10,000 with 3%, 5%, and 7% defined-risk ceilings and a 50% modeled BPR ceiling.
 
 The workflow is intentionally workflow_dispatch only. It does not promote a candidate, and holdout performance is not used for selection. Candidate rejection reasons are retained for feasibility analysis.
 
@@ -113,6 +113,6 @@ Before unattended paper/live operation, the system must demonstrate both:
 
 See docs/03-execution/autonomous-operation.md for the execution architecture and deployment gates.
 
-See docs/02-research/account-feasibility-2000.md for the detailed $2,000 feasibility findings.
+See docs/02-research/account-feasibility-2000.md for the legacy $2,000 feasibility findings; the active starting balance is $5,000.
 
 See docs/01-strategies/tastytrade-strategy.md for the current options methodology draft.
