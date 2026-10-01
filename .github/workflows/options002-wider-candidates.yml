@@ -74,6 +74,9 @@ jobs:
       - name: Consolidate wider-candidate capital ladder
         run: python research/analyze_options002_capital_ladder.py
 
+      - name: Analyze OPTIONS-002 capital feasibility on holdout
+        run: python research/analyze_options002_capital_holdout.py
+
       - name: Print wider-candidate summaries
         run: |
           for f in data/research/options002_delta20_*_account_*_risk_*_summary.csv; do
