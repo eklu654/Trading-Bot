@@ -36,6 +36,9 @@ jobs:
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
 
+      - name: Analyze ETF-001 cash allocation sensitivity
+        run: python research/analyze_etf001_cash_allocation.py
+
       - name: Evaluate ETF-001 local parameter robustness
         run: python research/analyze_etf001_robustness.py
 
