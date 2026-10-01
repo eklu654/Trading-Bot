@@ -163,6 +163,10 @@ jobs:
           cat data/research/etf001_dma_regime_summary.csv
           echo "=== ETF BY REGIME (DMA + VIX) ==="
           cat data/research/etf001_dma_vix_regime_summary.csv
+          echo "=== ETF CASH-ALLOCATION SENSITIVITY ==="
+          cat data/research/etf001_cash_allocation_sensitivity.csv
+          echo "=== ETF CASH-ALLOCATION CONTROLS ==="
+          cat data/research/etf001_cash_allocation_sensitivity_controls.csv
           echo "=== OPTIONS WINDOWS ==="
           cat data/research/options_opportunity_summary.csv
           echo "=== REGIME FREQUENCY ==="
