@@ -173,3 +173,10 @@ A ledger audit found no call/put expiration inconsistencies in the baseline and 
 The replay is not a $2,000 account simulation; do not interpret its cumulative dollar P/L as account return. The ETF VIX-overlay comparison remains exploratory and did not improve the reported return or maximum drawdown in the tested implementation.
 
 See docs/02-research/historical-run-46-results.md and https://github.com/eklu654/Trading-Bot/actions/runs/36481614364.
+
+
+## 2026-10-01 — Canonical starting balance changed to $5,000
+
+The active research starting balance is now **$5,000**. The prior $2,000 account-feasibility work is retained as historical evidence only and is not an active capital tier.
+
+The active OPTIONS-002 gate tests $5,000 and $10,000 accounts with 3%, 5%, and 7% defined-risk ceilings plus a 50% modeled BPR ceiling. No candidate is promoted from holdout performance. The next comparison uses the actual $5,000 account-feasibility lifecycle against ETF-001 on the same chronological holdout.
