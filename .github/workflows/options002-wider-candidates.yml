@@ -2,6 +2,9 @@ name: OPTIONS-002 Wider-Wing Research
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/run-options002-now"
 
 jobs:
   wider-iron-condors:
