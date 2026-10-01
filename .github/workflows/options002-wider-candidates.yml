@@ -58,7 +58,7 @@ jobs:
 
       - name: Replay account feasibility for wider candidates
         run: |
-          for nlv in 2000 5000 10000; do
+          for nlv in 5000 10000; do
             for label in delta20_w5 delta20_w10 delta20_long10d; do
               for candidate in all_days broad_sideways turbulent_only; do
                 for fill in conservative mid; do
