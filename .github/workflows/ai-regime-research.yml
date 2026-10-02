@@ -5,10 +5,12 @@ on:
   push:
     paths:
       - "research/backtest_ai_action_selector.py"
+      - "research/backtest_ai_hgb_selector.py"
       - "research/analyze_e4_risk_overlays.py"
       - "research/build_historical_regime_dataset.py"
       - "research/requirements.txt"
       - "tests/test_backtest_ai_action_selector.py"
+      - "tests/test_backtest_ai_hgb_selector.py"
       - "docs/02-research/e4-ai-regime-action-selector.md"
       - ".github/workflows/ai-regime-research.yml"
 
@@ -27,11 +29,15 @@ jobs:
       - name: Compile
         run: python -m py_compile research/backtest_ai_action_selector.py
       - name: Run E4 unit tests
-        run: python -m pytest -q tests/test_backtest_ai_action_selector.py
+        run: python -m pytest -q tests/test_backtest_ai_action_selector.py tests/test_backtest_ai_hgb_selector.py
       - name: Build historical market dataset
         run: python research/build_historical_regime_dataset.py
       - name: Run E4 Ridge walk-forward research
         run: python research/backtest_ai_action_selector.py
+      - name: Run E4b HGB walk-forward research
+        run: python research/backtest_ai_hgb_selector.py
+      - name: Print E4b HGB summary
+        run: cat data/research/e4b_hgb_summary.csv
       - name: Analyze fixed E4 risk overlays
         run: python research/analyze_e4_risk_overlays.py
       - name: Print E4 summary
@@ -57,4 +63,9 @@ jobs:
             data/research/e4_ai_risk_overlay_summary.csv
             data/research/e4_ai_risk_overlay_splits.csv
             data/research/e4_ai_risk_overlay_stress.csv
+            data/research/e4b_hgb_predictions.csv
+            data/research/e4b_hgb_backtest.csv
+            data/research/e4b_hgb_summary.csv
+            data/research/e4b_hgb_annual_returns.csv
+            data/research/e4b_hgb_action_frequency.csv
           if-no-files-found: error
