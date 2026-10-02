@@ -17,7 +17,7 @@ The workflow completed all 29 research stages successfully, including:
 - Corrected ETF-exit switcher evaluation and chronological holdout gating.
 - Research artifact publication.
 
-The repository's full research-test suite also completed successfully on the subsequent commit `e87ab9f49b0f04547a18ca60db02f0462805c356`, with `pytest -q` passing in GitHub Actions run #260.
+The repository's full research-test suite also completed successfully on the subsequent commit `e87ab9f49b0f04547a18ca60db02f0462805c356`, with `pytest -q` passing in GitHub Actions run #260. After the later frozen 0DTE VIX-attribution test/implementation corrections, the full suite again passed: 48 tests passed in GitHub Actions run #271 on commit `32433b0c008be5c72a1eb8c1efe54085a46b86c0`.
 
 ## ETF-001 observations
 
