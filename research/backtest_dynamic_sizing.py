@@ -20,6 +20,7 @@ from research.backtest_dynamic_leverage import FAMILIES, load
 
 DATA_DIR = ROOT / "data" / "research"
 METHOD = "risk_adjusted_60d"
+SIZING_METHODS = ("full_ratio", "sqrt_ratio")
 
 def build_volatility_features(features: pd.DataFrame) -> pd.DataFrame:
     out = features.copy()
@@ -29,16 +30,21 @@ def build_volatility_features(features: pd.DataFrame) -> pd.DataFrame:
         out[f"{symbol}_rv20"] = returns.rolling(20).std() * np.sqrt(252)
     return out
 
-def choose_allocation(signal: pd.Series, selected: str | None) -> float:
+def choose_allocation(signal: pd.Series, selected: str | None, method: str = "full_ratio") -> float:
     if selected is None:
         return 0.0
     selected_vol = signal.get(f"{selected}_rv20", np.nan)
     spy_vol = signal.get("SPY_rv20", np.nan)
     if pd.isna(selected_vol) or pd.isna(spy_vol) or selected_vol <= 0 or spy_vol < 0:
         return 1.0
-    return float(min(1.0, spy_vol / selected_vol))
+    ratio = float(spy_vol / selected_vol)
+    if method == "full_ratio":
+        return float(min(1.0, ratio))
+    if method == "sqrt_ratio":
+        return float(min(1.0, np.sqrt(ratio)))
+    raise ValueError(f"Unknown sizing method: {method}")
 
-def backtest(features: pd.DataFrame) -> pd.DataFrame:
+def backtest(features: pd.DataFrame, sizing_method: str = "full_ratio") -> pd.DataFrame:
     prices = {symbol: load(symbol)["adj_close"].reindex(features.index)
               for family in FAMILIES.values() for symbol in family.values() if symbol}
     records, equity = [], 1.0
@@ -50,7 +56,7 @@ def backtest(features: pd.DataFrame) -> pd.DataFrame:
             leverage = choose_leverage(signal)
             family = choose_family(signal, METHOD)
             selected = FAMILIES[family][leverage]
-            allocation = choose_allocation(signal, selected)
+            allocation = choose_allocation(signal, selected, sizing_method)
             if selected is None:
                 daily_return = 0.0
             else:
