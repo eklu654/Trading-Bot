@@ -158,6 +158,17 @@ jobs:
           python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
           python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
 
+      - name: Evaluate ETF-exit options switcher candidates
+        run: |
+          for candidate in broad_sideways turbulent_only all_days; do
+            for fill in conservative mid; do
+              python research/evaluate_etf_exit_switcher.py \\
+                --options-trades "data/research/options002_delta16_w2_${candidate}_${fill}.csv" \\
+                --capital 5000 --max-risk-pct 0.07 \\
+                --output "data/research/etf_exit_switcher_${candidate}_${fill}.csv"
+            done
+          done
+
       - name: Print research summaries
         run: |
           echo "=== ETF OVERALL ==="
