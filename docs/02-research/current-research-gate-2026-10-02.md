@@ -71,6 +71,14 @@ The documented 16D/6D iron-condor 15:55 control returned +14.01% on the $100,000
 
 The next valid 0DTE research step is chronological validation of a frozen candidate/control set, followed by regime conditioning, bounded loss-management tests, cost sensitivity, and actual account-feasibility replay.
 
+## 0DTE VIX-regime attribution update
+
+A frozen descriptive attribution was completed using four predeclared 0DTE controls and fixed VIX buckets (<15, 15–20, 20–25, 25–30, >=30). The 20–25 bucket was negative for all four controls in the full sample, while the >=30 bucket contained only 31 sessions overall and only 2 in the 2026 holdout. The chronological IC 16D/6D 15:55 control was also negative in the 20–25 bucket in TRAIN, VALIDATION, and HOLDOUT.
+
+The result does not support replacing the project's regime logic with a single VIX threshold. The relationship is non-monotonic and the high-VIX holdout sample is too sparse. The attribution tool therefore remains descriptive and does not promote a VIX rule.
+
+Detailed methodology and reproducibility: `docs/02-research/0dte-vix-regime-attribution-2026-10-02.md`.
+
 ## Research implication
 
 The current evidence does **not** establish that the options sleeve improves the ETF portfolio at the $5,000 account size.
