@@ -2,6 +2,8 @@ name: E4 AI Regime Research
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "7/5 * * * *"
   issues:
     types: [opened]
   push:
@@ -25,17 +27,59 @@ on:
       - "docs/02-research/e4-ai-regime-action-selector.md"
       - ".github/workflows/ai-regime-research.yml"
 
+concurrency:
+  group: e4-e6-research
+  cancel-in-progress: false
+
 jobs:
-  e4-ai-research:
-    if: github.event_name != 'issues' || github.event.issue.title == '[RUN-E4-E6]'
+  trigger-gate:
     runs-on: ubuntu-latest
+    outputs:
+      run: \${{ steps.gate.outputs.run }}
+      issue_number: \${{ steps.gate.outputs.issue_number }}
     steps:
-      - name: Mark trigger started
-        if: github.event_name == 'issues'
+      - name: Determine whether this invocation should execute research
+        id: gate
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: "E4/E6 research workflow started."})
+            if (context.eventName !== "schedule") {
+              core.setOutput("run", "true");
+              core.setOutput("issue_number", context.issue?.number ? String(context.issue.number) : "");
+              return;
+            }
+            const { data } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              per_page: 100
+            });
+            const issue = data.find(i => !i.pull_request && i.title === "[RUN-E4-E6]");
+            core.setOutput("run", issue ? "true" : "false");
+            core.setOutput("issue_number", issue ? String(issue.number) : "");
+            if (issue) {
+              core.info("Found open research trigger issue #" + issue.number + "; starting scheduled research run.");
+            } else {
+              core.info("No open [RUN-E4-E6] trigger issue; scheduled invocation will exit without research.");
+            }
+
+  e4-ai-research:
+    needs: trigger-gate
+    if: needs.trigger-gate.outputs.run == 'true' && (github.event_name != 'issues' || github.event.issue.title == '[RUN-E4-E6]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark trigger started
+        if: github.event_name == 'issues' || (github.event_name == 'schedule' && needs.trigger-gate.outputs.issue_number != '')
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("\${{ needs.trigger-gate.outputs.issue_number }}");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: "E4/E6 research workflow started."
+            });
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Python
@@ -91,11 +135,25 @@ jobs:
       - name: Print E4 annual results
         run: cat data/research/e4_ai_annual_returns.csv
       - name: Mark trigger completed
-        if: always() && github.event_name == 'issues'
+        if: always() && (github.event_name == 'issues' || (github.event_name == 'schedule' && needs.trigger-gate.outputs.issue_number != ''))
         uses: actions/github-script@v7
         with:
           script: |
-            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: "E4/E6 research workflow completed."})
+            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("\${{ needs.trigger-gate.outputs.issue_number }}");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: "E4/E6 research workflow completed."
+            });
+            if (context.eventName === "schedule") {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                state: "closed"
+              });
+            }
       - name: Upload E4 artifacts
         uses: actions/upload-artifact@v4
         with:
