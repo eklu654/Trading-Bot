@@ -17,7 +17,7 @@ on:
       - "tests/test_backtest_ai_action_selector.py"
       - "tests/test_backtest_ai_hgb_selector.py"
       - "tests/test_backtest_ai_risk_aware_selector.py"
-      - "tests/test_backtest_ai_meta_selector.py tests/test_backtest_ai_e2_overlay.py"
+      - "tests/test_backtest_ai_meta_selector.py"
       - "tests/test_backtest_ai_e2_overlay.py"
       - "docs/02-research/e4-ai-regime-action-selector.md"
       - ".github/workflows/ai-regime-research.yml"
@@ -37,7 +37,7 @@ jobs:
       - name: Compile
         run: python -m py_compile research/backtest_ai_action_selector.py
       - name: Run E4 unit tests
-        run: python -m pytest -q tests/test_backtest_ai_action_selector.py tests/test_backtest_ai_hgb_selector.py tests/test_backtest_ai_risk_aware_selector.py tests/test_backtest_ai_meta_selector.py
+        run: python -m pytest -q tests/test_backtest_ai_action_selector.py tests/test_backtest_ai_hgb_selector.py tests/test_backtest_ai_risk_aware_selector.py tests/test_backtest_ai_meta_selector.py tests/test_backtest_ai_e2_overlay.py
       - name: Build historical market dataset
         run: python research/build_historical_regime_dataset.py
       - name: Run E6 AI E2-overlay research
