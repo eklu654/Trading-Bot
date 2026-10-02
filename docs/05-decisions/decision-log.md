@@ -180,3 +180,20 @@ See docs/02-research/historical-run-46-results.md and https://github.com/eklu654
 The active research starting balance is now **$5,000**. The prior $2,000 account-feasibility work is retained as historical evidence only and is not an active capital tier.
 
 The active OPTIONS-002 gate tests $5,000 and $10,000 accounts with 3%, 5%, and 7% defined-risk ceilings plus a 50% modeled BPR ceiling. No candidate is promoted from holdout performance. The next comparison uses the actual $5,000 account-feasibility lifecycle against ETF-001 on the same chronological holdout.
+
+
+## 2026-10-02 — Dynamic leveraged ETF research direction
+
+**Decision:** Do not assume the current static 3x ETF basket is the final ETF architecture. Expand research to test a controlled 0x/1x/2x/3x exposure ladder.
+
+The deterministic research sequence is:
+
+1. compare equivalent 1x, 2x and 3x exposure under the same trend framework;
+2. test dynamic leverage with a fixed ETF universe;
+3. test dynamic ETF/sector selection plus leverage;
+4. test constrained dynamic sizing;
+5. introduce ML/AI selection only after the deterministic baselines establish whether additional complexity improves untouched data.
+
+Cash remains a legitimate candidate rather than an assumed failure state. The 200-DMA remains a candidate regime feature rather than an unconditional master switch. AI/ML cannot override deterministic risk controls.
+
+See docs/02-research/dynamic-leveraged-etf-regime-research.md.
