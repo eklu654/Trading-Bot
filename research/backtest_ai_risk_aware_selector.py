@@ -133,10 +133,11 @@ def main() -> None:
                 row["policy"] = policy
                 summaries.append(row)
 
-    annual = result["portfolio_return"].groupby(result.index.year).apply(
+    cap3_result = backtest(policies["cap_3x"])
+    annual = cap3_result["portfolio_return"].groupby(cap3_result.index.year).apply(
         lambda x: (1 + x).prod() - 1
     )
-    spy = load("SPY")["adj_close"].reindex(result.index).pct_change().fillna(0.0)
+    spy = load("SPY")["adj_close"].reindex(cap3_result.index).pct_change().fillna(0.0)
     spy_annual = spy.groupby(spy.index.year).apply(lambda x: (1 + x).prod() - 1)
     annual_rows = [
         {
@@ -153,16 +154,18 @@ def main() -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     targets.to_csv(DATA_DIR / "e4c_risk_aware_targets.csv")
     predictions.to_csv(DATA_DIR / "e4c_risk_aware_predictions.csv")
-    result.to_csv(DATA_DIR / "e4c_risk_aware_backtest.csv")
+    cap3_result.to_csv(DATA_DIR / "e4c_risk_aware_backtest.csv")
+    backtest(policies["cap_2x"]).to_csv(DATA_DIR / "e4c_risk_aware_cap2x_backtest.csv")
+    backtest(policies["cap_1x"]).to_csv(DATA_DIR / "e4c_risk_aware_cap1x_backtest.csv")
     pd.DataFrame(summaries).to_csv(DATA_DIR / "e4c_risk_aware_summary.csv", index=False)
     pd.DataFrame(annual_rows).to_csv(DATA_DIR / "e4c_risk_aware_annual_returns.csv", index=False)
-    result["action"].value_counts(normalize=True).rename("frequency").to_csv(
+    cap3_result["action"].value_counts(normalize=True).rename("frequency").to_csv(
         DATA_DIR / "e4c_risk_aware_action_frequency.csv"
     )
 
     print(pd.DataFrame(summaries).to_string(index=False))
     print("\nAction frequency")
-    print(result["action"].value_counts(normalize=True).to_string())
+    print(cap3_result["action"].value_counts(normalize=True).to_string())
 
 
 if __name__ == "__main__":
