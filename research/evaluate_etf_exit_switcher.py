@@ -45,7 +45,9 @@ def build_switcher_path(
             exit_date = pd.Timestamp(row["exit_date"])
             if exit_date < entry:
                 continue
-            active_dates = daily.index[(daily.index >= entry) & (daily.index <= exit_date)]
+            active_dates = daily.index[
+                (daily.index >= entry) & (daily.index <= exit_date)
+            ]
             if len(active_dates):
                 daily.loc[active_dates, "option_active"] = True
             if exit_date in daily.index:
@@ -56,11 +58,28 @@ def build_switcher_path(
     # never both. On an option exit date, the realized option P&L is recorded
     # while ETF exposure resumes on the following session.
     etf_eligible = daily["active_sleeves"] > 0
-    daily["selector_return"] = daily["portfolio_return"].where(
-        etf_eligible & ~daily["option_active"], 0.0
-    )
-    daily["selector_return"] += daily["selector_pnl"] / capital
-    daily["selector_equity"] = capital * (1.0 + daily["selector_return"]).cumprod()
+    daily["selector_return"] = 0.0
+    equity = float(capital)
+    equity_path = []
+
+    # Option P&L is a dollar amount and must be applied to the actual current
+    # equity. Dividing by initial capital and compounding it would misstate
+    # results whenever the account had gained or lost before the option exit.
+    for date, row in daily.iterrows():
+        previous_equity = equity
+        option_pnl = float(row["selector_pnl"])
+        if option_pnl:
+            equity += option_pnl
+
+        if bool(etf_eligible.loc[date]) and not bool(row["option_active"]):
+            equity *= 1.0 + float(row["portfolio_return"])
+
+        daily.loc[date, "selector_return"] = (
+            equity / previous_equity - 1.0 if previous_equity else 0.0
+        )
+        equity_path.append(equity)
+
+    daily["selector_equity"] = equity_path
     daily["etf_equity"] = capital * (1.0 + daily["portfolio_return"]).cumprod()
     return daily
 
