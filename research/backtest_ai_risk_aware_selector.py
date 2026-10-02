@@ -96,19 +96,42 @@ def annual_walk_forward(features: pd.DataFrame,
     return pd.DataFrame(rows).set_index("Date") if rows else pd.DataFrame()
 
 
+
+LEVERAGE_CAPS = {
+    "cap_2x": {"SPY_3x": "SPY_2x", "QQQ_3x": "QQQ_2x", "SOXX_3x": "SOXX_2x"},
+    "cap_1x": {
+        "SPY_3x": "SPY_1x", "SPY_2x": "SPY_1x",
+        "QQQ_3x": "QQQ_1x", "QQQ_2x": "QQQ_1x",
+        "SOXX_3x": "SOXX_1x", "SOXX_2x": "SOXX_1x",
+    },
+}
+
+def apply_leverage_cap(predictions: pd.DataFrame, cap: str) -> pd.DataFrame:
+    out = predictions.copy()
+    out["action"] = out["action"].map(lambda x: LEVERAGE_CAPS[cap].get(x, x))
+    return out
+
 def main() -> None:
     features = build_features()
     targets = risk_aware_targets(features.index)
     predictions = annual_walk_forward(features, targets)
-    result = backtest(predictions.rename(columns={"predicted_score": "predicted_return"}))
+    predictions_for_backtest = predictions.rename(columns={"predicted_score": "predicted_return"})
+    policies = {
+        "cap_3x": predictions_for_backtest,
+        "cap_2x": apply_leverage_cap(predictions_for_backtest, "cap_2x"),
+        "cap_1x": apply_leverage_cap(predictions_for_backtest, "cap_1x"),
+    }
 
     summaries = []
-    for split, (start, end) in SPLITS.items():
-        segment = result.loc[start:end]
-        if not segment.empty:
-            row = summarize(segment, f"AI_RiskAware_Ridge_{split}")
-            row["split"] = split
-            summaries.append(row)
+    for policy, policy_predictions in policies.items():
+        result = backtest(policy_predictions)
+        for split, (start, end) in SPLITS.items():
+            segment = result.loc[start:end]
+            if not segment.empty:
+                row = summarize(segment, f"AI_RiskAware_Ridge_{policy}_{split}")
+                row["split"] = split
+                row["policy"] = policy
+                summaries.append(row)
 
     annual = result["portfolio_return"].groupby(result.index.year).apply(
         lambda x: (1 + x).prod() - 1
