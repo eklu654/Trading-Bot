@@ -160,6 +160,8 @@ def summarize(frame: pd.DataFrame, label: str) -> dict[str, object]:
     sharpe = daily.mean() / daily.std(ddof=1) * np.sqrt(252) if daily.std(ddof=1) else np.nan
     downside = daily.where(daily < 0).std(ddof=1)
     sortino = daily.mean() / downside * np.sqrt(252) if pd.notna(downside) and downside else np.nan
+    segment_equity = (1.0 + daily.fillna(0.0)).cumprod()
+    segment_drawdown = segment_equity / segment_equity.cummax() - 1.0
     return {
         "segment": label,
         "start": frame.index.min(),
@@ -169,7 +171,7 @@ def summarize(frame: pd.DataFrame, label: str) -> dict[str, object]:
         "annualized_volatility": vol,
         "sharpe": sharpe,
         "sortino": sortino,
-        "max_drawdown": frame["drawdown"].min(),
+        "max_drawdown": segment_drawdown.min(),
         "worst_day": daily.min(),
         "mean_leverage": frame["leverage"].mean(),
         "pct_cash": (frame["leverage"] == 0).mean(),
