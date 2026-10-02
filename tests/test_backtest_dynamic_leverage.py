@@ -56,15 +56,18 @@ def test_summary_uses_segment_returns_not_global_equity_level():
     assert abs(result["total_return"] - 0.045) < 1e-12
 
 
-def test_static_hold_is_true_buy_and_hold():
-    from research.compare_leverage_benchmarks import static_hold
-    idx = pd.to_datetime(["2018-01-02", "2018-01-03"])
-    # This test is structural: the helper must use the source series directly,
-    # rather than applying a trading signal or cash filter.
-    assert "adj_close" in __import__("research.compare_leverage_benchmarks", fromlist=["load"]).load.__annotations__ or True
 
-
-def test_2018_2025_slice_boundaries_are_explicit():
+def test_static_hold_is_true_buy_and_hold(monkeypatch):
     import research.compare_leverage_benchmarks as comparison
-    assert pd.Timestamp("2018-01-01") <= pd.Timestamp("2025-12-31")
-    assert comparison.ROOT.name == "Trading-Bot"
+
+    idx = pd.to_datetime(["2020-01-02", "2020-01-03", "2020-01-06"])
+    fake = pd.DataFrame({"adj_close": [100.0, 110.0, 99.0]}, index=idx)
+    monkeypatch.setattr(comparison, "load", lambda symbol: fake)
+    result = comparison.static_hold("SOXL", idx)
+    assert result["portfolio_return"].tolist() == [0.0, 0.10, -0.10]
+
+
+def test_2018_2025_comparison_period_is_explicit():
+    import research.compare_leverage_benchmarks as comparison
+    assert comparison.COMPARISON_START == pd.Timestamp("2018-01-01")
+    assert comparison.COMPARISON_END == pd.Timestamp("2025-12-31")
