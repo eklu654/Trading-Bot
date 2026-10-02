@@ -108,13 +108,24 @@ def main() -> None:
     }
 
     rows = []
+    split_rows = []
     stress_rows = []
+    splits = {
+        "validation": ("2020-01-03", "2022-12-30"),
+        "holdout": ("2023-01-03", "2026-09-25"),
+    }
     for label, mode in policies.items():
         frame = ai if mode == "none" else build_policy(ai, features, mode)
         if mode == "none":
             frame = frame.copy()
             frame["action"] = frame["action"].astype(str)
         rows.append(summarize(frame, label))
+        for split, (start, end) in splits.items():
+            segment = frame.loc[start:end]
+            if not segment.empty:
+                stats = summarize(segment, f"{label}_{split}")
+                stats["split"] = split
+                split_rows.append(stats)
         for window, (start, end) in WINDOWS.items():
             segment = frame.loc[start:end]
             if not segment.empty:
@@ -123,11 +134,15 @@ def main() -> None:
                 stress_rows.append(stats)
 
     summary = pd.DataFrame(rows)
+    split_summary = pd.DataFrame(split_rows)
     stress = pd.DataFrame(stress_rows)
     summary.to_csv(DATA_DIR / "e4_ai_risk_overlay_summary.csv", index=False)
+    split_summary.to_csv(DATA_DIR / "e4_ai_risk_overlay_splits.csv", index=False)
     stress.to_csv(DATA_DIR / "e4_ai_risk_overlay_stress.csv", index=False)
 
     print(summary.to_string(index=False))
+    print("\nChronological splits")
+    print(split_summary.to_string(index=False))
     print("\nStress windows")
     print(stress.to_string(index=False))
 
