@@ -31,8 +31,12 @@ jobs:
         run: python research/build_historical_regime_dataset.py
       - name: Run E4 Ridge walk-forward research
         run: python research/backtest_ai_action_selector.py
+      - name: Analyze fixed E4 risk overlays
+        run: python research/analyze_e4_risk_overlays.py
       - name: Print E4 summary
         run: cat data/research/e4_ai_summary.csv
+      - name: Print E4 risk overlay summary
+        run: cat data/research/e4_ai_risk_overlay_summary.csv
       - name: Print E4 annual results
         run: cat data/research/e4_ai_annual_returns.csv
       - name: Upload E4 artifacts
@@ -47,4 +51,6 @@ jobs:
             data/research/e4_ai_summary.csv
             data/research/e4_ai_annual_returns.csv
             data/research/e4_ai_action_frequency.csv
+            data/research/e4_ai_risk_overlay_summary.csv
+            data/research/e4_ai_risk_overlay_stress.csv
           if-no-files-found: error
