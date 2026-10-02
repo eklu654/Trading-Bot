@@ -68,6 +68,7 @@ def walk_forward(features: pd.DataFrame, target: pd.Series) -> pd.DataFrame:
 
 def backtest(predictions: pd.DataFrame, returns: pd.Series) -> pd.DataFrame:
     equity = 1.0
+    e2_equity = 1.0
     previous = "cash"
     rows = []
     for date, row in predictions.iterrows():
@@ -76,20 +77,25 @@ def backtest(predictions: pd.DataFrame, returns: pd.Series) -> pd.DataFrame:
             continue
         trade_date = future[0]
         action = row["action"]
-        daily = float(returns.loc[trade_date]) if action == "E2" else 0.0
+        e2_daily = float(returns.loc[trade_date])
+        daily = e2_daily if action == "E2" else 0.0
         equity *= 1.0 + daily
+        e2_equity *= 1.0 + e2_daily
         rows.append({
             "Date": trade_date,
             "action": action,
             "decision_date": date,
             "portfolio_return": daily,
             "portfolio_value": equity,
+            "e2_baseline_return": e2_daily,
+            "e2_baseline_value": e2_equity,
             "changed_action": action != previous,
             "predicted_score": row["predicted_score"],
         })
         previous = action
     out = pd.DataFrame(rows).set_index("Date")
     out["drawdown"] = out["portfolio_value"] / out["portfolio_value"].cummax() - 1.0
+    out["e2_baseline_drawdown"] = out["e2_baseline_value"] / out["e2_baseline_value"].cummax() - 1.0
     return out
 
 
@@ -109,6 +115,7 @@ def main() -> None:
             rows.append(row)
 
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    result[["e2_baseline_return", "e2_baseline_value", "e2_baseline_drawdown"]].to_csv(DATA_DIR / "e6_e2_baseline.csv")
     target.to_csv(DATA_DIR / "e6_target.csv")
     predictions.to_csv(DATA_DIR / "e6_predictions.csv")
     result.to_csv(DATA_DIR / "e6_backtest.csv")
