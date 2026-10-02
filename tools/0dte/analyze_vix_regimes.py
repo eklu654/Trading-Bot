@@ -53,30 +53,37 @@ def load_vix(path: Path) -> pd.Series:
 
 
 def summarize(frame: pd.DataFrame) -> pd.DataFrame:
-    frame = frame.copy()
-    frame["split"] = "FULL_SAMPLE"
-    for label, (start, end) in SPLITS.items():
-        mask = frame["date"].between(pd.Timestamp(start), pd.Timestamp(end))
-        frame.loc[mask, "split"] = label
+    """Return full-sample and chronological split attribution.
 
+    FULL_SAMPLE is an aggregate over the complete input. TRAIN, VALIDATION,
+    and HOLDOUT are separate chronological subsets, so the full-sample rows
+    remain available alongside the out-of-sample views.
+    """
+    frame = frame.copy()
     frame["vix_bucket"] = pd.cut(
         frame["vix"], bins=VIX_BINS, labels=VIX_LABELS, right=False
     )
+    frame = frame.dropna(subset=["vix_bucket"])
+
+    subsets: list[tuple[str, pd.DataFrame]] = [("FULL_SAMPLE", frame)]
+    for label, (start, end) in SPLITS.items():
+        mask = frame["date"].between(pd.Timestamp(start), pd.Timestamp(end))
+        subsets.append((label, frame.loc[mask]))
+
     rows = []
-    for (split, bucket), group in frame.dropna(subset=["vix_bucket"]).groupby(
-        ["split", "vix_bucket"], observed=True
-    ):
-        rows.append(
-            {
-                "split": split,
-                "vix_bucket": str(bucket),
-                "sessions": len(group),
-                "net_pnl": group["net_pnl"].sum(),
-                "mean_daily_pnl": group["net_pnl"].mean(),
-                "win_rate": (group["net_pnl"] > 0).mean(),
-                "worst_day": group["net_pnl"].min(),
-            }
-        )
+    for split, subset in subsets:
+        for bucket, group in subset.groupby("vix_bucket", observed=True):
+            rows.append(
+                {
+                    "split": split,
+                    "vix_bucket": str(bucket),
+                    "sessions": len(group),
+                    "net_pnl": group["net_pnl"].sum(),
+                    "mean_daily_pnl": group["net_pnl"].mean(),
+                    "win_rate": (group["net_pnl"] > 0).mean(),
+                    "worst_day": group["net_pnl"].min(),
+                }
+            )
     return pd.DataFrame(rows)
 
 
