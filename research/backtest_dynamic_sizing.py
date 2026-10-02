@@ -91,24 +91,30 @@ def summarize(frame: pd.DataFrame, label: str) -> dict[str, object]:
 
 def main() -> None:
     features = build_volatility_features(add_family_features(build_features()))
-    result = backtest(features)
-    result.to_csv(DATA_DIR / "dynamic_sizing_e3.csv")
-    splits = {"full": result, "train": result.loc[: "2019-12-31"],
-              "validation": result.loc["2020-01-01":"2022-12-31"],
-              "holdout": result.loc["2023-01-01":]}
-    summary = pd.DataFrame([summarize(x, name) for name, x in splits.items() if not x.empty])
+    all_summary, all_annual = [], []
+    for sizing_method in SIZING_METHODS:
+        result = backtest(features, sizing_method)
+        suffix = "" if sizing_method == "full_ratio" else f"_{sizing_method}"
+        result.to_csv(DATA_DIR / f"dynamic_sizing_e3{suffix}.csv")
+        splits = {"full": result, "train": result.loc[: "2019-12-31"],
+                  "validation": result.loc["2020-01-01":"2022-12-31"],
+                  "holdout": result.loc["2023-01-01":]}
+        for name, x in splits.items():
+            if not x.empty:
+                row = summarize(x, name)
+                row["sizing_method"] = sizing_method
+                all_summary.append(row)
+        annual = result["portfolio_return"].groupby(result.index.year).apply(lambda x: (1+x).prod()-1)
+        spy = load("SPY")["adj_close"].reindex(result.index).pct_change().fillna(0)
+        spy_annual = spy.groupby(spy.index.year).apply(lambda x: (1+x).prod()-1)
+        all_annual.extend([{"sizing_method": sizing_method, "year": int(y),
+                            "strategy_return": float(v), "spy_return": float(spy_annual.loc[y]),
+                            "excess_return": float(v-spy_annual.loc[y]),
+                            "beats_spy": bool(v > spy_annual.loc[y])}
+                           for y,v in annual.items() if y in spy_annual.index])
+    summary = pd.DataFrame(all_summary)
     summary.to_csv(DATA_DIR / "dynamic_sizing_e3_summary.csv", index=False)
-
-    annual = result["portfolio_return"].groupby(result.index.year).apply(lambda x: (1+x).prod()-1)
-    spy = load("SPY")["adj_close"].reindex(result.index).pct_change().fillna(0)
-    spy_annual = spy.groupby(spy.index.year).apply(lambda x: (1+x).prod()-1)
-    pd.DataFrame([{"year": int(y), "strategy_return": float(v),
-                   "spy_return": float(spy_annual.loc[y]),
-                   "excess_return": float(v-spy_annual.loc[y]),
-                   "beats_spy": bool(v > spy_annual.loc[y])}
-                  for y,v in annual.items() if y in spy_annual.index]
-                 ).to_csv(DATA_DIR / "dynamic_sizing_e3_annual_returns.csv", index=False)
-
+    pd.DataFrame(all_annual).to_csv(DATA_DIR / "dynamic_sizing_e3_annual_returns.csv", index=False)
     print(summary.to_string(index=False))
     print("\nArtifacts:", DATA_DIR)
 
