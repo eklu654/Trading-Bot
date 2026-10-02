@@ -12,6 +12,8 @@ on:
       - "research/analyze_dynamic_performance.py"
       - "research/analyze_stress_periods.py"
       - "tests/test_dynamic_etf_selection.py"
+      - "research/backtest_dynamic_sizing.py"
+      - "tests/test_dynamic_sizing.py"
       - ".github/workflows/dynamic-etf-research.yml"
 
 jobs:
@@ -42,6 +44,8 @@ jobs:
         run: python research/backtest_dynamic_etf_selection.py
       - name: Analyze fixed stress periods
         run: python research/analyze_stress_periods.py
+      - name: Run E3 dynamic volatility sizing
+        run: python research/backtest_dynamic_sizing.py
       - name: Print benchmark
         run: cat data/research/dynamic_leverage_benchmark_summary.csv
       - name: Print leverage comparison
@@ -62,4 +66,10 @@ jobs:
             data/research/dynamic_etf_selection_trend_confirmed.csv
             data/research/dynamic_etf_selection_risk_adjusted_60d.csv
             data/research/stress_period_comparison.csv
+            data/research/dynamic_sizing_e3.csv
+            data/research/dynamic_sizing_e3_summary.csv
+            data/research/dynamic_sizing_e3_annual_returns.csv
+            data/research/dynamic_etf_selection_split_summary.csv
+            data/research/dynamic_etf_selection_annual_returns.csv
+            data/research/dynamic_etf_selection_rolling_relative.csv
           if-no-files-found: error
