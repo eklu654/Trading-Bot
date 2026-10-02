@@ -6,16 +6,18 @@ This document records the current evidence state after the corrected $5,000 hist
 
 ## Verified pipeline state
 
-The latest historical-research workflow completed successfully on commit `29091e76c07c771d56292686d12829311615144f`.
+The latest corrected historical-research workflow completed successfully as GitHub Actions run **#183**, run ID `36967330414`, on commit `21adf5f6ceda593c34fe0709665d29259b1c7d6f` ("Print corrected ETF-exit switcher results").
 
-The workflow completed all 29 research stages, including:
+The workflow completed all 29 research stages successfully, including:
 
 - ETF-001 historical replay, trend/hysteresis matrix, cash sensitivity, local robustness, and chronological validation/holdout evaluation.
 - OPTIONS-001 all-market, broad-sideways, turbulent-only, account-feasibility, and defense-variant replays.
 - OPTIONS-002 defined-risk iron-condor replay and capital-ladder feasibility from $2,000 through $100,000.
 - ETF-exit conditional options analysis.
-- ETF-exit switcher evaluation and chronological holdout gating.
+- Corrected ETF-exit switcher evaluation and chronological holdout gating.
 - Research artifact publication.
+
+The repository's full research-test suite also completed successfully on the subsequent commit `e87ab9f49b0f04547a18ca60db02f0462805c356`, with `pytest -q` passing in GitHub Actions run #260.
 
 ## ETF-001 observations
 
@@ -33,7 +35,7 @@ These are historical backtest outputs, not forecasts. The buy-and-hold row is in
 
 ## OPTIONS-002 observations at the canonical $5,000 account
 
-The $5,000 account-feasibility results are substantially more constrained than unconstrained candidate P&L.
+The $5,000 account-feasibility results remain substantially more constrained than unconstrained candidate P&L.
 
 For the 16-delta / 2-point-wing configuration at a 7% defined-risk ceiling:
 
@@ -44,32 +46,43 @@ For the 16-delta / 2-point-wing configuration at a 7% defined-risk ceiling:
 
 At lower risk limits and smaller accounts, contract granularity causes many candidates to be rejected before trading. This means an unconstrained historical options result cannot be substituted for an account-realizable result.
 
-## ETF-exit switcher holdout gate
+## Corrected ETF-exit switcher holdout gate
 
-The latest chronological holdout file divides the 4,162 observations into 2,218 training, 1,008 validation, and 936 holdout observations.
+The corrected chronological holdout still contains 936 observations, with 2,218 training and 1,008 validation observations.
 
-The switcher holdout option sample is currently too sparse for a deployment-quality conclusion:
+The mutually-exclusive switcher now suppresses ETF returns throughout an open option lifecycle and applies realized option P&L as a dollar change to the account's current equity. The corrected holdout results are:
 
-- All-days conservative: 3 option-realized holdout days.
-- All-days midpoint: 2 option-realized holdout days.
-- Broad-sideways conservative: 2 option-realized holdout days.
-- Broad-sideways midpoint: 2 option-realized holdout days.
-- Turbulent-only conservative: 2 option-realized holdout days.
-- Turbulent-only midpoint: 1 option-realized holdout day.
+| Configuration | Holdout option-realized days | Option P&L | Switcher ending equity | ETF ending equity | Incremental vs ETF | Sample status |
+|---|---:|---:|---:|---:|---:|---|
+| All-days, conservative | 3 | -$21.60 | $10,922.59 | $11,204.45 | -$281.86 | Insufficient |
+| All-days, midpoint | 2 | -$39.40 | $11,192.60 | $11,204.45 | -$11.84 | Insufficient |
+| Broad-sideways, conservative | 2 | +$1.60 | $11,167.36 | $11,204.45 | -$37.08 | Insufficient |
+| Broad-sideways, midpoint | 2 | +$2.60 | $11,167.66 | $11,204.45 | -$36.79 | Insufficient |
+| Turbulent-only, conservative | 2 | +$5.60 | $11,205.45 | $11,204.45 | +$1.01 | Insufficient |
+| Turbulent-only, midpoint | 1 | +$24.80 | $11,208.88 | $11,204.45 | +$4.43 | Insufficient |
 
-The holdout evaluator therefore marks these switcher samples as insufficient for a reliable option-sample conclusion. The small positive incremental values observed in several holdout rows must not be treated as evidence of a validated edge.
+The evaluator therefore marks every switcher holdout sample as insufficient for a reliable option-sample conclusion. The small positive incremental values in the turbulent-only rows are observations from one or two realized option days, not validated evidence of an edge.
+
+## 0DTE management-timing evidence
+
+The frozen 45-cell 0DTE management-timing matrix is already completed for 1,012 sessions per configuration from 2022-06-16 through 2026-09-28. It remains research-only.
+
+The documented 16D/6D iron-condor 15:55 control returned +14.01% on the $100,000 platform preview, but the experiment contains 45 related hypotheses and therefore has multiple-testing/selection risk. The result is not out-of-sample evidence and is not a production selection.
+
+The next valid 0DTE research step is chronological validation of a frozen candidate/control set, followed by regime conditioning, bounded loss-management tests, cost sensitivity, and actual account-feasibility replay.
 
 ## Research implication
 
 The current evidence does **not** establish that the options sleeve improves the ETF portfolio at the $5,000 account size.
 
-The next research gate should therefore focus on increasing the quality and relevance of the options evidence rather than tuning the existing switcher against its sparse holdout sample. In particular:
+The immediate research priorities are:
 
-1. Preserve the existing chronological holdout untouched.
+1. Preserve the chronological holdout and do not tune against it.
 2. Treat the $5,000 account-feasibility lifecycle as authoritative for small-account tests.
 3. Keep OPTIONS-002 defined-risk structures separate from OPTIONS-001 unconstrained economics.
-4. Continue the frozen 0DTE management-timing research using the already-defined benchmark matrix when valid timestamped/platform data are available.
-5. Compare any surviving options configuration against the ETF control on common dates and under identical starting capital.
-6. Require a non-sparse held-out sample before treating a switcher result as research evidence.
+4. Keep the corrected ETF/options switcher mutually exclusive and require a non-sparse held-out option sample before interpreting incremental results.
+5. Advance the frozen 0DTE timing matrix into chronological validation rather than expanding full-sample optimization.
+6. Compare any surviving options configuration against the ETF control on common dates and under identical starting capital.
+7. Keep candidate promotion and unattended deployment disabled until the economic, account-feasibility, out-of-sample, execution, and risk gates are all satisfied.
 
 No candidate is promoted by this document.
