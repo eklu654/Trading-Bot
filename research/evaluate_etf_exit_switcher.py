@@ -82,7 +82,7 @@ def main() -> None:
         for _, row in accepted_df.iterrows():
             exit_date = pd.Timestamp(row["exit_date"])
             if exit_date in daily.index:
-                daily.loc[exit_date, "selector_pnl"] += float(row["pnl"])
+                daily.loc[exit_date, "selector_pnl"] += float(row["net_pnl"])
                 daily.loc[exit_date, "selector_source"] = "OPTIONS_REALIZED"
         daily["selector_return"] += daily["selector_pnl"] / a.capital
 
@@ -94,7 +94,7 @@ def main() -> None:
         "capital": a.capital,
         "max_risk_pct": a.max_risk_pct,
         "accepted_option_trades": len(accepted_df),
-        "option_pnl": float(accepted_df["pnl"].sum()) if not accepted_df.empty else 0.0,
+        "option_pnl": float(accepted_df["net_pnl"].sum()) if not accepted_df.empty else 0.0,
         "selector_ending_equity": float(daily["selector_equity"].iloc[-1]),
         "etf_ending_equity": float(daily["etf_equity"].iloc[-1]),
         "selector_total_return": float(daily["selector_equity"].iloc[-1] / a.capital - 1.0),
