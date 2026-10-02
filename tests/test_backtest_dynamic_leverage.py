@@ -37,3 +37,9 @@ def test_family_selection_uses_only_declared_relative_strength():
 def test_family_selection_falls_back_when_all_scores_missing():
     row = pd.Series({"SPY_rs": float("nan"), "QQQ_rs": float("nan"), "SOXX_rs": float("nan")})
     assert choose_family(row) == "SPY"
+
+
+
+def test_comparison_script_can_be_imported_from_repo_root():
+    import research.compare_leverage_benchmarks as comparison
+    assert comparison.ROOT == ROOT
