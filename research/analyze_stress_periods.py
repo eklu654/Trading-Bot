@@ -50,7 +50,9 @@ def main() -> None:
     dynamic = backtest(features)
     e2_features = add_family_features(features)
     dynamic_e2 = backtest_e2(e2_features, "risk_adjusted_60d")
-    dynamic_e3 = backtest_e3(build_volatility_features(e2_features))
+    e3_features = build_volatility_features(e2_features)
+    dynamic_e3 = backtest_e3(e3_features, "full_ratio")
+    dynamic_e3_sqrt = backtest_e3(e3_features, "sqrt_ratio")
     spy = load("SPY")["adj_close"].reindex(features.index)
     spxl = load("SPXL")["adj_close"].reindex(features.index)
 
@@ -61,6 +63,7 @@ def main() -> None:
         "dynamic_family_leverage": dynamic["portfolio_return"],
         "dynamic_e2_risk_adjusted": dynamic_e2["portfolio_return"],
         "dynamic_e3_vol_sized": dynamic_e3["portfolio_return"],
+        "dynamic_e3_sqrt_vol_sized": dynamic_e3_sqrt["portfolio_return"],
     }
 
     rows = []
