@@ -22,16 +22,11 @@ def test_vix_bucket_boundaries_are_fixed_and_left_closed():
     )
 
     result = MODULE.summarize(frame)
-    full_sample = result[result["split"] == "FULL_SAMPLE"].sort_values("vix_bucket")
+    full_sample = result[result["split"] == "FULL_SAMPLE"]
+    by_bucket = full_sample.set_index("vix_bucket")["sessions"]
 
-    assert full_sample["vix_bucket"].tolist() == [
-        "<15",
-        "15-20",
-        "20-25",
-        "25-30",
-        ">=30",
-    ]
-    assert full_sample["sessions"].tolist() == [1, 1, 1, 1, 1]
+    assert set(by_bucket.index) == {"<15", "15-20", "20-25", "25-30", ">=30"}
+    assert by_bucket.to_dict() == {"<15": 1, "15-20": 1, "20-25": 1, "25-30": 1, ">=30": 1}
 
 
 def test_summarize_keeps_full_sample_and_chronological_splits():
