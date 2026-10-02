@@ -423,3 +423,69 @@ character unnecessarily.
 
 No E6 result is promoted until the generated validation and holdout artifacts
 have been reviewed.
+
+
+## E6 empirical result: binary E2-or-cash overlay
+
+The completed E6 walk-forward run does **not** show incremental value over the
+frozen E2 engine.
+
+Validation (2020-2022):
+- E6 CAGR: -2.58%, Sharpe: 0.110, maximum drawdown: -51.72%.
+- Frozen E2 CAGR: +5.96%, Sharpe: 0.356, maximum drawdown: -51.72%.
+
+Untouched holdout (2023-2026-09-25):
+- E6 CAGR: +18.32%, Sharpe: 0.595, maximum drawdown: -62.47%.
+- Frozen E2 CAGR: +39.10%, Sharpe: 0.863, maximum drawdown: -62.33%.
+
+E6 spent about 42.5% of decision sessions in cash. That reduced exposure, but
+it did not improve maximum drawdown in either evaluation period and materially
+reduced CAGR and Sharpe.
+
+Stress behavior reinforces the result:
+- COVID 2020: E6 returned 0.0% while E2 returned -19.33%.
+- 2022 rate-hike period: both E6 and E2 returned -41.77%, with essentially the
+  same maximum drawdown and worst day.
+
+The binary overlay is therefore **not promoted**. The experiment provides
+evidence against using a generic AI timing layer simply to decide when the
+deterministic E2 engine should be switched off.
+
+## E4c fixed-control comparison
+
+The latest fixed-control diagnostics tested the risk-aware E4c Ridge selector
+under 1x and 2x leverage ceilings, with optional SPY 200-DMA and VIX
+80th-percentile gates. The controls were predeclared rather than fitted to the
+holdout.
+
+The raw capped policies remain stronger on return than the gated versions:
+- 1x raw: 11.19% validation CAGR / 17.30% holdout CAGR, with -39.82% /
+  -31.33% maximum drawdown.
+- 2x raw: 8.58% validation CAGR / 25.88% holdout CAGR, with -66.74% /
+  -56.33% maximum drawdown.
+- 1x + both gates: 9.30% validation CAGR / 9.40% holdout CAGR, with -21.71% /
+  -29.72% maximum drawdown.
+- 2x + both gates: 10.66% validation CAGR / 13.34% holdout CAGR, with -35.34% /
+  -41.37% maximum drawdown.
+
+The 2022 stress period remains particularly informative:
+- 1x cap: -29.28% return, -39.82% maximum drawdown.
+- 2x cap: -55.52% return, -66.64% maximum drawdown.
+
+The capped AI policies also trail SPY on the available rolling 3- and 5-year
+windows. This means the current evidence supports bounded leverage as a useful
+risk-control research mechanism, but does not establish an AI return advantage.
+
+## Updated research position
+
+The E6 experiment closes an important hypothesis: **AI has not yet
+demonstrated that it can improve E2 merely by deciding between E2 and cash.**
+The direct-selector experiments likewise have not demonstrated durable
+out-of-sample superiority.
+
+The next AI work should therefore remain incremental and tightly constrained.
+A promising question is whether a model can identify a small, explicitly
+bounded set of conditions in which reducing E2 exposure adds value, while
+leaving E2's underlying engine untouched. Any such overlay must beat the frozen
+E2 baseline on both chronological validation and the untouched holdout without
+being tuned to those results.
