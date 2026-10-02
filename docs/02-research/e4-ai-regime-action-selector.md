@@ -508,3 +508,40 @@ bounded set of conditions in which reducing E2 exposure adds value, while
 leaving E2's underlying engine untouched. Any such overlay must beat the frozen
 E2 baseline on both chronological validation and the untouched holdout without
 being tuned to those results.
+
+## E6 threshold-sensitivity diagnostic
+
+The existing E6 prediction scores were also tested at several fixed thresholds
+as a diagnostic. This is not a holdout optimization exercise: the purpose is
+to determine whether the poor zero-threshold result is simply a calibration
+problem.
+
+On 2020-2022 validation:
+- threshold 0.0:  -2.58% CAGR, 0.110 Sharpe, -51.71% max drawdown, 66.1%
+  E2 exposure;
+- threshold 0.2:  +2.52% CAGR, 0.247 Sharpe, -38.06% max drawdown, 45.6%
+  exposure;
+- threshold 0.3:  +3.31% CAGR, 0.262 Sharpe, -33.56% max drawdown, 26.6%
+  exposure;
+- threshold 0.5:  +6.00% CAGR, 0.350 Sharpe, -33.56% max drawdown, 15.8%
+  exposure.
+
+However, those apparent validation improvements did not generalize:
+- threshold 0.0: +18.32% holdout CAGR;
+- threshold 0.1: -8.40%;
+- threshold 0.2: -25.11%;
+- threshold 0.3: -1.75%.
+
+The 0.3 and 0.5 thresholds almost completely eliminated holdout exposure,
+rather than identifying a robust subset of E2 gains.
+
+This closes another simple hypothesis: **the E6 failure is not fixed merely by
+raising the cash threshold.** The model's score ranking itself is unstable
+across regimes. Threshold tuning should therefore not continue on this same
+signal family.
+
+The next AI experiment should change the information being asked of the model,
+not keep searching thresholds for E6. A bounded overlay should instead use a
+small number of predeclared regime states and only permit modest exposure
+changes around frozen E2, with validation used once for specification selection
+and the final holdout remaining untouched.
