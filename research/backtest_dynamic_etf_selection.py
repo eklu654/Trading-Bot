@@ -31,12 +31,13 @@ def family_score(row: pd.Series, family: str, method: str) -> float:
 
     if method == "trend_confirmed":
         rs = row[f"{family}_rs"]
-        market = row["SPY"]
-        ma = row["spy_ma"]
-        if pd.isna(rs) or pd.isna(ma):
+        ma = row[f"{family}_ma200"]
+        price = row[family]
+        if pd.isna(rs) or pd.isna(ma) or pd.isna(price):
             return np.nan
-        trend_bonus = 0.0 if market < ma else 0.02
-        return float(rs + trend_bonus)
+        # A family must itself be above its 200-DMA to be eligible. Among
+        # eligible families, select the strongest trailing 60-session return.
+        return float(rs) if price >= ma else -np.inf
 
     if method == "risk_adjusted_60d":
         rs = row[f"{family}_rs"]
@@ -53,6 +54,7 @@ def add_family_features(features: pd.DataFrame) -> pd.DataFrame:
     for family in FAMILY_NAMES:
         returns = out[family].pct_change()
         out[f"{family}_rv20"] = returns.rolling(20).std() * np.sqrt(252)
+        out[f"{family}_ma200"] = out[family].rolling(200).mean()
     return out
 
 
