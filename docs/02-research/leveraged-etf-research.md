@@ -137,3 +137,31 @@ No threshold is frozen until tested.
 ## References
 
 The project should add primary fund-provider documentation for each leveraged ETF before implementation, including daily leverage objective, reset mechanics and stated risks. These facts should be captured from the issuer rather than inferred from ticker names.
+
+
+## 2026-10-02 — Dynamic leverage research direction
+
+The ETF research is expanded to test leverage as a managed state rather than assuming that the static 3x basket is optimal.
+
+The new research direction treats **0x/1x/2x/3x** as candidate exposure gears and separates:
+
+1. market-regime classification;
+2. leverage selection;
+3. ETF/sector selection;
+4. constrained position sizing; and
+5. deterministic hard-risk controls.
+
+This is motivated by the documented path dependence of daily-reset leveraged ETFs. Recent research found that the S&P 500 rose over 2022–2023 while corresponding 2x and 3x products produced substantially negative returns, with volatility/compounding explaining much of the gap. This does not establish that lower leverage is always superior; it establishes that leverage should be evaluated conditionally on the return/volatility path.
+
+The first deterministic experiments should compare:
+
+- existing ETF-001 baseline;
+- 1x/2x/3x versions of equivalent exposures;
+- dynamic leverage with a fixed ETF universe;
+- dynamic ETF plus leverage selection;
+- constrained dynamic sizing;
+- only then an ML/AI selector.
+
+Cash remains an explicit competitor during risk-off states. No AI/ML model may override deterministic risk limits.
+
+See docs/02-research/dynamic-leveraged-etf-regime-research.md.
