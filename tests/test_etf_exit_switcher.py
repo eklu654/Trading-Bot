@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from research.evaluate_etf_exit_switcher import build_switcher_path
 
@@ -28,10 +29,12 @@ def test_switcher_keeps_cash_while_option_is_open():
     # The option entry occurs while ETF sleeves are flat. ETF returns on the
     # next two sessions must remain suppressed until the option exits.
     assert result["option_active"].tolist() == [True, True, True, False, False]
-    assert result["selector_return"].tolist() == [0.0, 0.0, 0.01, 0.10, 0.10]
+    assert result["selector_return"].tolist() == pytest.approx(
+        [0.0, 0.0, 0.01, 0.10, 0.10]
+    )
     assert result.loc[dates[2], "selector_source"] == "OPTIONS_REALIZED"
     assert result.loc[dates[3], "selector_source"] == "CASH_OR_ETF"
-    assert result["selector_equity"].iloc[-1] == 6105.0
+    assert result["selector_equity"].iloc[-1] == pytest.approx(6110.5)
 
 
 def test_switcher_does_not_double_count_etf_return_on_option_exit():
@@ -59,6 +62,6 @@ def test_switcher_does_not_double_count_etf_return_on_option_exit():
     # Exit-day performance is option P&L only. ETF exposure resumes on the
     # following session, so the exit-day 25% ETF return cannot be combined
     # with the option realization.
-    assert result.loc[dates[1], "selector_return"] == 0.02
-    assert result.loc[dates[2], "selector_return"] == 0.25
-    assert result["selector_equity"].iloc[-1] == 6375.0
+    assert result.loc[dates[1], "selector_return"] == pytest.approx(0.02)
+    assert result.loc[dates[2], "selector_return"] == pytest.approx(0.25)
+    assert result["selector_equity"].iloc[-1] == pytest.approx(6375.0)
