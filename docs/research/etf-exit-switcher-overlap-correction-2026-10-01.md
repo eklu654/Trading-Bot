@@ -34,3 +34,14 @@ switcher results should be treated as superseded. The historical research
 workflow is configured to run on pushes affecting research/, so the corrected
 evaluator is intended to regenerate the switcher artifacts before any further
 interpretation.
+
+
+## Additional accounting correction — 2026-10-02
+
+The switcher now applies each realized option P&L as a dollar change to the
+account's current equity. It does not convert the P&L into a return against
+the original starting capital and compound that return. This distinction
+matters whenever the account has gained or lost before an option trade exits.
+
+A regression test covers a pre-option ETF gain followed by an option
+realization and a subsequent ETF session.
