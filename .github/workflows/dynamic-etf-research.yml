@@ -67,6 +67,7 @@ jobs:
             data/research/dynamic_etf_selection_risk_adjusted_60d.csv
             data/research/stress_period_comparison.csv
             data/research/dynamic_sizing_e3.csv
+            data/research/dynamic_sizing_e3_sqrt_ratio.csv
             data/research/dynamic_sizing_e3_summary.csv
             data/research/dynamic_sizing_e3_annual_returns.csv
             data/research/dynamic_etf_selection_split_summary.csv
