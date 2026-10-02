@@ -155,7 +155,7 @@ def backtest(features: pd.DataFrame) -> pd.DataFrame:
 def summarize(frame: pd.DataFrame, label: str) -> dict[str, object]:
     daily = frame["portfolio_return"]
     years = max((frame.index[-1] - frame.index[0]).days / 365.25, 1 / 365.25)
-    total = frame["portfolio_value"].iloc[-1] - 1.0
+    total = (1.0 + daily.fillna(0.0)).prod() - 1.0
     vol = daily.std(ddof=1) * np.sqrt(252)
     sharpe = daily.mean() / daily.std(ddof=1) * np.sqrt(252) if daily.std(ddof=1) else np.nan
     downside = daily.where(daily < 0).std(ddof=1)
