@@ -1,6 +1,7 @@
 from pathlib import Path
 import sys
 
+import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,7 +65,7 @@ def test_static_hold_is_true_buy_and_hold(monkeypatch):
     fake = pd.DataFrame({"adj_close": [100.0, 110.0, 99.0]}, index=idx)
     monkeypatch.setattr(comparison, "load", lambda symbol: fake)
     result = comparison.static_hold("SOXL", idx)
-    assert result["portfolio_return"].tolist() == [0.0, 0.10, -0.10]
+    assert np.allclose(result["portfolio_return"].to_numpy(), [0.0, 0.10, -0.10])
 
 
 def test_2018_2025_comparison_period_is_explicit():
