@@ -49,3 +49,29 @@ def test_select_action_ignores_nan_and_infinite_predictions():
         "SPY_3x": 0.03,
     })
     assert select_action(predictions) == "SPY_3x"
+
+from research import backtest_ai_action_selector as ai
+
+
+def test_backtest_applies_decision_to_next_session(monkeypatch):
+    dates = pd.date_range("2025-01-01", periods=3, freq="D")
+    synthetic = {
+        symbol: pd.DataFrame(
+            {"Date": dates, "adj_close": [100.0, 110.0, 121.0]},
+        ).set_index("Date")
+        for symbol in ["SPY", "SSO", "SPXL", "QQQ", "QLD", "TQQQ", "SOXX", "USD", "SOXL"]
+    }
+
+    monkeypatch.setattr(ai, "load", lambda symbol: synthetic[symbol])
+    predictions = pd.DataFrame(
+        {
+            "action": ["SPY_1x", "cash"],
+            "predicted_return": [0.2, 0.0],
+        },
+        index=dates[:2],
+    )
+    result = ai.backtest(predictions)
+
+    assert list(result.index) == [dates[1]]
+    assert np.isclose(result.iloc[0]["portfolio_return"], 0.10)
+    assert result.iloc[0]["decision_date"] == dates[0]
