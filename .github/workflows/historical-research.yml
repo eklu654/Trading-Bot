@@ -1,5 +1,6 @@
 name: Historical Research
 # Research pipeline trigger: run against current main implementation.
+# Holdout gate fix: exclude generated summary ledgers from daily-path discovery.
 
 on:
   workflow_dispatch:
