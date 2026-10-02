@@ -277,8 +277,8 @@ period and carried unacceptable drawdowns. The risk-aware objective produced
 positive validation performance, and the 1x/2x ceilings materially improved
 the stability of that policy.
 
-Before any promotion decision, the next research stage should compare the
-capped E4c candidates against E2 and E3 on:
+Before any promotion decision, the next research stage should compare the capped
+E4c candidates against E2 and E3 on:
 - rolling 3/5/10-year metrics;
 - every predefined stress period;
 - calendar-year SPY-relative returns;
@@ -321,8 +321,8 @@ retains more upside but still carries severe bear-market exposure.
 **Current decision:** E4c remains a research result rather than the production
 strategy. The evidence does not justify replacing the deterministic E2 engine
 with the current AI selector. Future AI work should therefore focus on using AI
-as a meta-regime selector around proven strategy sleeves, rather than asking a
-single model to directly choose highly leveraged ETFs every day.
+as a meta-regime selector around proven strategy sleeves, rather than asking AI
+to directly choose highly leveraged ETFs every day.
 
 ## E5 meta-selector result
 
@@ -380,7 +380,6 @@ value. The next candidate architecture should explicitly ask whether AI can
 reduce E2's drawdowns without sacrificing its return engine, rather than asking
 AI to discover the entire strategy from scratch.
 
-
 ## E6: binary AI overlay around frozen E2
 
 E6 changes the AI question again. Instead of asking the model to choose a
@@ -424,7 +423,6 @@ character unnecessarily.
 No E6 result is promoted until the generated validation and holdout artifacts
 have been reviewed.
 
-
 ## E6 empirical result: binary E2-or-cash overlay
 
 The completed E6 walk-forward run does **not** show incremental value over the
@@ -450,6 +448,27 @@ Stress behavior reinforces the result:
 The binary overlay is therefore **not promoted**. The experiment provides
 evidence against using a generic AI timing layer simply to decide when the
 deterministic E2 engine should be switched off.
+
+### E6 cash-timing diagnostic
+
+The daily E6 artifact provides an additional reason the binary overlay failed.
+Across the 2020-2026 out-of-sample history, E6 selected cash on 42.5% of
+decision sessions. On those cash-selected sessions, the frozen E2 engine's
+next-session return was positive on 45.8% of days and negative on 35.9% of
+days; the remaining sessions were effectively flat. The mean E2 return on
+cash-selected days was +0.156%.
+
+The mistiming was especially visible in the validation and holdout periods:
+- validation cash days: 33.9% of sessions; 41.4% were positive E2 days and
+  29.3% were negative;
+- holdout cash days: 49.5% of sessions; 48.2% were positive E2 days and 39.5%
+  were negative.
+
+The overlay therefore was not simply “removing bad days.” It frequently removed
+positive E2 exposure as well as negative exposure, while still failing to
+avoid the large 2022 loss. This supports treating the current E6 score as an
+insufficient timing signal rather than as evidence that E2 itself should be
+replaced.
 
 ## E4c fixed-control comparison
 
