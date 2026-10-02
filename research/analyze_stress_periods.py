@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from research.backtest_dynamic_leverage import backtest, build_features, load
+from research.backtest_dynamic_etf_selection import add_family_features, backtest as backtest_e2
 from research.compare_leverage_benchmarks import dma_cash
 
 DATA_DIR = ROOT / "data" / "research"
@@ -46,6 +47,8 @@ def summarize(returns: pd.Series) -> dict[str, float]:
 def main() -> None:
     features = build_features()
     dynamic = backtest(features)
+    e2_features = add_family_features(features)
+    dynamic_e2 = backtest_e2(e2_features, "risk_adjusted_60d")
     spy = load("SPY")["adj_close"].reindex(features.index)
     spxl = load("SPXL")["adj_close"].reindex(features.index)
 
@@ -54,6 +57,7 @@ def main() -> None:
         "SPXL_3x": spxl.pct_change().fillna(0.0),
         "SPY_200DMA_cash": dma_cash("SPY", features.index)["portfolio_return"],
         "dynamic_family_leverage": dynamic["portfolio_return"],
+        "dynamic_e2_risk_adjusted": dynamic_e2["portfolio_return"],
     }
 
     rows = []
