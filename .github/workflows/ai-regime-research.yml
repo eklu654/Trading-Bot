@@ -35,8 +35,8 @@ jobs:
   trigger-gate:
     runs-on: ubuntu-latest
     outputs:
-      run: \${{ steps.gate.outputs.run }}
-      issue_number: \${{ steps.gate.outputs.issue_number }}
+      run: ${{ steps.gate.outputs.run }}
+      issue_number: ${{ steps.gate.outputs.issue_number }}
     steps:
       - name: Determine whether this invocation should execute research
         id: gate
@@ -73,7 +73,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("\${{ needs.trigger-gate.outputs.issue_number }}");
+            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("${{ needs.trigger-gate.outputs.issue_number }}");
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -139,7 +139,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("\${{ needs.trigger-gate.outputs.issue_number }}");
+            const issueNumber = context.eventName === "issues" ? context.issue.number : Number("${{ needs.trigger-gate.outputs.issue_number }}");
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
