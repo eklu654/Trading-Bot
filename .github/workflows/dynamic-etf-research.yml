@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "research/backtest_dynamic_leverage.py"
+      - "research/compare_leverage_benchmarks.py"
       - "research/build_historical_regime_dataset.py"
       - "tests/test_backtest_dynamic_leverage.py"
       - ".github/workflows/dynamic-etf-research.yml"
@@ -22,15 +23,19 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
       - name: Compile
-        run: python -m py_compile research/backtest_dynamic_leverage.py research/build_historical_regime_dataset.py
+        run: python -m py_compile research/backtest_dynamic_leverage.py research/compare_leverage_benchmarks.py research/build_historical_regime_dataset.py
       - name: Run dynamic benchmark unit tests
         run: python -m pytest -q tests/test_backtest_dynamic_leverage.py
       - name: Build historical market dataset
         run: python research/build_historical_regime_dataset.py
       - name: Run deterministic dynamic leverage benchmark
         run: python research/backtest_dynamic_leverage.py
+      - name: Compare deterministic leverage controls
+        run: python research/compare_leverage_benchmarks.py
       - name: Print benchmark
         run: cat data/research/dynamic_leverage_benchmark_summary.csv
+      - name: Print leverage comparison
+        run: cat data/research/leverage_strategy_comparison.csv
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -38,4 +43,5 @@ jobs:
           path: |
             data/research/dynamic_leverage_benchmark.csv
             data/research/dynamic_leverage_benchmark_summary.csv
+            data/research/leverage_strategy_comparison.csv
           if-no-files-found: error
