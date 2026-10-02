@@ -20,6 +20,8 @@ import pandas as pd
 from research.backtest_dynamic_leverage import build_features, backtest, load, MA_WINDOW
 
 OUTPUT_DIR = ROOT / "data" / "research"
+COMPARISON_START = pd.Timestamp("2018-01-01")
+COMPARISON_END = pd.Timestamp("2025-12-31")
 
 
 def static_hold(symbol: str, index: pd.DatetimeIndex) -> pd.DataFrame:
@@ -92,8 +94,8 @@ def main() -> None:
     full = build_summary(strategies)
     full.to_csv(OUTPUT_DIR / "leverage_strategy_comparison.csv", index=False)
 
-    start = pd.Timestamp("2018-01-01")
-    end = pd.Timestamp("2025-12-31")
+    start = COMPARISON_START
+    end = COMPARISON_END
     slice_map = {
         label: frame.loc[start:end].copy() for label, frame in strategies.items()
     }
