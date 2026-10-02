@@ -7,9 +7,13 @@ comparison against E4 Ridge, not a hyperparameter search.
 from __future__ import annotations
 
 from pathlib import Path
+import sys
 
 import pandas as pd
 from sklearn.ensemble import HistGradientBoostingRegressor
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 from research.backtest_ai_action_selector import (
     ACTIONS,
