@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from research.analyze_etf_exit_switcher_holdout import split_metrics
 
@@ -15,8 +16,8 @@ def test_split_metrics_resets_capital_for_each_chronological_split():
     )
     result = split_metrics(frame, capital=5000.0, minimum_option_days=2)
     holdout = result[result["split"] == "HOLDOUT"].iloc[0]
-    assert holdout["selector_ending_equity"] == 5610.0
-    assert holdout["etf_ending_equity"] == 5500.0
-    assert holdout["incremental_vs_etf"] == 110.0
+    assert holdout["selector_ending_equity"] == pytest.approx(5610.0)
+    assert holdout["etf_ending_equity"] == pytest.approx(5500.0)
+    assert holdout["incremental_vs_etf"] == pytest.approx(110.0)
     assert holdout["option_realized_days"] == 1
     assert holdout["sample_status"] == "INSUFFICIENT_OPTION_SAMPLE"
