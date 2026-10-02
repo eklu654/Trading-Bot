@@ -32,3 +32,18 @@ def test_leverage_caps_only_reduce_leverage():
     cap1 = ai.apply_leverage_cap(predictions, "cap_1x")
     assert list(cap2["action"]) == ["SPY_2x", "QQQ_2x", "SOXX_1x", "cash"]
     assert list(cap1["action"]) == ["SPY_1x", "QQQ_1x", "SOXX_1x", "cash"]
+
+def test_transaction_cost_is_charged_only_on_action_change():
+    frame = pd.DataFrame(
+        {
+            "portfolio_return": [0.01, 0.02, 0.03],
+            "portfolio_value": [1.01, 1.0302, 1.061106],
+            "drawdown": [0.0, 0.0, 0.0],
+            "changed_action": [False, True, False],
+        },
+        index=pd.date_range("2025-01-01", periods=3),
+    )
+    adjusted = ai.apply_transaction_costs(frame, 0.001)
+    assert np.isclose(adjusted.iloc[0]["portfolio_return"], 0.01)
+    assert np.isclose(adjusted.iloc[1]["portfolio_return"], 0.019)
+    assert np.isclose(adjusted.iloc[2]["portfolio_return"], 0.03)
