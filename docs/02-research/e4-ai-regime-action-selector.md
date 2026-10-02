@@ -224,3 +224,67 @@ E4c is therefore a **promising research candidate, not a promoted final
 strategy**. The next comparison should test whether the risk-aware target can
 be combined with a bounded action/risk controller without turning into
 holdout-driven tuning.
+
+## Fixed leverage-cap and control diagnostics
+
+The E4c risk-aware policy was evaluated with predeclared leverage ceilings:
+- 3x ceiling (unmodified E4c)
+- 2x ceiling
+- 1x ceiling
+
+The 2x ceiling improved validation CAGR from 6.23% to 8.58% and reduced
+validation maximum drawdown from -70.1% to -66.7%. Holdout CAGR was 25.88%
+with -56.3% maximum drawdown.
+
+The 1x ceiling produced a much lower-risk profile:
+- validation CAGR: 11.19%
+- validation maximum drawdown: -39.8%
+- holdout CAGR: 17.30%
+- holdout maximum drawdown: -31.3%
+- holdout Sharpe: 1.12
+- holdout worst day: -5.85%
+
+Transaction-cost sensitivity remained positive. At 10 basis points per action
+change, the 1x policy produced 9.20% validation CAGR and 15.46% holdout CAGR;
+the 2x policy produced 5.05% validation CAGR and 23.50% holdout CAGR.
+
+The fixed 200-DMA/VIX controls were also tested on the capped policies. The
+combined gates reduced drawdown further, but at a substantial return cost. For
+example, the 1x-plus-both-gates policy produced 9.30% validation CAGR and
+9.40% holdout CAGR with -21.7% and -29.7% maximum drawdowns respectively.
+The 2x-plus-both-gates policy produced 10.66% validation CAGR and 13.34%
+holdout CAGR with -35.3% and -41.4% maximum drawdowns.
+
+These results indicate that the risk-aware learner plus a leverage ceiling is
+more useful than stacking multiple slow risk gates. The 1x and 2x capped
+variants should remain research candidates for deeper rolling/stress analysis,
+but neither is promoted as the final strategy yet.
+
+## Current E4 research position
+
+The AI experiments have now tested:
+1. raw forward-return Ridge;
+2. nonlinear HGB forward-return model;
+3. risk-aware forward-return/volatility Ridge;
+4. fixed leverage ceilings;
+5. fixed 200-DMA and VIX controls;
+6. transaction-cost sensitivity.
+
+The strongest evidence so far is that **objective design and bounded leverage
+matter more than estimator complexity**. The raw AI models generated enormous
+returns in the recent holdout but failed badly in the 2020-2022 validation
+period and carried unacceptable drawdowns. The risk-aware objective produced
+positive validation performance, and the 1x/2x ceilings materially improved
+the stability of that policy.
+
+Before any promotion decision, the next research stage should compare the
+capped E4c candidates against E2 and E3 on:
+- rolling 3/5/10-year metrics;
+- every predefined stress period;
+- calendar-year SPY-relative returns;
+- recovery time and time underwater;
+- turnover and transaction-cost sensitivity;
+- parameter/model perturbation;
+- an untouched final holdout after the candidate specification is frozen.
+
+No holdout result is being used to tune the leverage ceiling.
