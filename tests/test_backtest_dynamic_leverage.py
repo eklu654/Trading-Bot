@@ -24,9 +24,9 @@ def test_exposure_ladder_is_explicit():
 def test_leverage_uses_trend_then_vix():
     base = pd.Series({"SPY": 110.0, "spy_ma": 100.0, "vix_pct": 0.20})
     assert choose_leverage(base) == 3
-    assert choose_leverage(base.assign(vix_pct=0.70)) == 2
-    assert choose_leverage(base.assign(vix_pct=0.90)) == 1
-    assert choose_leverage(base.assign(SPY=99.0)) == 0
+    assert choose_leverage(base.copy().assign(vix_pct=0.70)) == 2
+    assert choose_leverage(base.copy().assign(vix_pct=0.90)) == 1
+    assert choose_leverage(base.copy().assign(SPY=99.0)) == 0
 
 
 def test_family_selection_uses_only_declared_relative_strength():
