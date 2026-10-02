@@ -21,7 +21,7 @@ The leverage controller remains unchanged from E1. Only family selection changes
 Three transparent, non-optimized methods are tested:
 
 1. **raw_60d** — highest trailing 60-session return.
-2. **trend_confirmed** — trailing 60-session return plus a fixed broad-market trend bonus when SPY is above its 200-DMA.
+2. **trend_confirmed** — only families above their own 200-DMA are eligible; among eligible families, choose the highest trailing 60-session return.
 3. **risk_adjusted_60d** — trailing 60-session return divided by the family's trailing 20-session annualized volatility.
 
 These are a small hypothesis set, not a sweep of dozens of indicators.
