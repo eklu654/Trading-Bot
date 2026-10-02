@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "research/backtest_ai_action_selector.py"
+      - "research/analyze_e4_risk_overlays.py"
       - "research/build_historical_regime_dataset.py"
       - "research/requirements.txt"
       - "tests/test_backtest_ai_action_selector.py"
