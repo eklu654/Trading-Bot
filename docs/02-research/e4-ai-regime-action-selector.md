@@ -106,3 +106,89 @@ E2 risk-adjusted family selection, and E3 square-root volatility sizing on
 validation and holdout. If Ridge has no durable predictive value, the next
 step is diagnostic feature/target analysis rather than immediately increasing
 model complexity.
+
+## Empirical results: Ridge baseline
+
+The first chronological Ridge implementation completed successfully. It passed
+compile and unit tests and used next-session execution timing.
+
+The validation period (2020-2022) produced:
+- CAGR: -3.83%
+- Sharpe: 0.506
+- maximum drawdown: -88.38%
+- worst day: -38.59%
+
+The untouched holdout (2023 through 2026-09-25) produced:
+- CAGR: 53.27%
+- Sharpe: 1.040
+- maximum drawdown: -84.25%
+- worst day: -18.03%
+
+The model selected 3x actions heavily; SOXX 3x alone represented about 34.5%
+of all decision sessions. The large holdout CAGR therefore does not establish
+robustness because the validation period was materially weaker and the
+drawdown remained extreme.
+
+The Ridge model is **not promoted**.
+
+## Fixed risk-controller diagnostic
+
+Three predeclared overlays were tested without changing the Ridge model:
+- SPY 200-DMA gate
+- VIX 80th-percentile gate
+- both gates together
+
+The combined gate reduced full-period maximum drawdown from about -88.4% to
+-68.2%, and reduced the worst day from about -38.6% to -17.0%. Its validation
+CAGR was 24.5% with -59.1% maximum drawdown, while its holdout CAGR was 22.2%
+with -51.0% maximum drawdown.
+
+The overlay experiment demonstrates that a hard risk controller can materially
+change the failure mode, but none of these fixed overlays is being promoted as
+the final policy. The holdout remains deeply drawdown-heavy and the controller
+was not designed as a tuned solution to the Ridge model.
+
+The stress analysis also shows why a simple trend gate is insufficient by
+itself: the AI can remain exposed to severe losses during rapid shocks before
+a slow trend signal reacts.
+
+## Empirical results: HGB nonlinear baseline
+
+A second, fixed nonlinear model was tested using
+HistGradientBoostingRegressor with predeclared regularization settings. It was
+evaluated with the same chronological annual-refit protocol and no holdout
+tuning.
+
+Validation (2020-2022):
+- CAGR: -3.39%
+- Sharpe: 0.476
+- maximum drawdown: -82.48%
+- worst day: -34.47%
+
+Holdout (2023-2026-09-25):
+- CAGR: 82.12%
+- Sharpe: 1.195
+- maximum drawdown: -77.55%
+- worst day: -29.83%
+
+The nonlinear model therefore improves the later-period return substantially,
+but it does not fix the validation failure or the catastrophic drawdown
+profile. It is **not promoted**.
+
+## Next research direction
+
+The evidence now points away from simply adding model complexity. Both a
+regularized linear model and a nonlinear tree model learned raw forward-return
+signals that can produce very high leverage exposure and unacceptable
+drawdowns.
+
+The next AI experiment should therefore change the **target/decision
+objective**, not merely the estimator:
+- retain the same leakage-safe chronological feature set;
+- predict a risk-aware forward target or multiple forward outcomes;
+- explicitly model downside/drawdown risk alongside return;
+- keep the hard risk controller outside the learner;
+- preserve validation and untouched holdout separation.
+
+Only after a risk-aware objective demonstrates durable validation behavior
+should further model complexity be considered.
