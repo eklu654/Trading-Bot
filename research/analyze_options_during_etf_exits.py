@@ -114,7 +114,6 @@ def option_daily_contribution(trade: pd.Series, marks: pd.DataFrame) -> pd.DataF
         return pd.DataFrame(columns=["date", "daily_option_pnl"])
     credit = float(trade["entry_credit"]) * 100.0
     entry_fee = float(trade.get("entry_fee", 0.0))
-    exit_fee = float(trade.get("exit_fee", 0.0))
     prev_equity = 0.0
     rows = []
     exit_date = pd.Timestamp(trade["exit_date"])
@@ -122,12 +121,12 @@ def option_daily_contribution(trade: pd.Series, marks: pd.DataFrame) -> pd.DataF
         date = pd.Timestamp(r["date"])
         if date < START or date > exit_date:
             continue
-        equity = credit - float(r["mark_debit"]) * 100.0 - float(trade.get("entry_fee", 0.0))
+        equity = credit - float(r["mark_debit"]) * 100.0 - entry_fee
         daily = equity - prev_equity
         if date == exit_date:
             # Replace the marked value with realized net trade P/L so exit fees
             # are reflected exactly once on the lifecycle's final day.
-            realized = float(trade["net_pnl"]) * 1.0
+            realized = float(trade["net_pnl"])
             daily = realized - prev_equity
         rows.append({
             "candidate_id": cid,
@@ -171,8 +170,8 @@ def config_analysis(stem: str, state: pd.DataFrame) -> tuple[dict, pd.DataFrame]
             "best_option_exit_day_pnl": np.nan,
             "exit_day_pnl_std": np.nan,
             "full_trade_count_holdout": len(accepted),
-            "full_trade_pnl_holdout": float(accepted["pnl"].sum()),
-            "full_trade_win_rate_holdout": float((accepted["pnl"] > 0).mean()) if len(accepted) else np.nan,
+            "full_trade_pnl_holdout": float(accepted["net_pnl"].sum()),
+            "full_trade_win_rate_holdout": float((accepted["net_pnl"] > 0).mean()) if len(accepted) else np.nan,
         }
         return summary, daily
 
@@ -190,8 +189,8 @@ def config_analysis(stem: str, state: pd.DataFrame) -> tuple[dict, pd.DataFrame]
         "best_option_exit_day_pnl": float(by_date["daily_option_pnl"].max()),
         "exit_day_pnl_std": float(by_date["daily_option_pnl"].std(ddof=1)) if len(by_date) > 1 else np.nan,
         "full_trade_count_holdout": len(accepted),
-        "full_trade_pnl_holdout": float(accepted["pnl"].sum()),
-        "full_trade_win_rate_holdout": float((accepted["pnl"] > 0).mean()) if len(accepted) else np.nan,
+        "full_trade_pnl_holdout": float(accepted["net_pnl"].sum()),
+        "full_trade_win_rate_holdout": float((accepted["net_pnl"] > 0).mean()) if len(accepted) else np.nan,
     }
     return summary, daily
 
