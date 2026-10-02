@@ -3,12 +3,19 @@
 import numpy as np
 import pandas as pd
 
-from research.backtest_ai_risk_aware_selector import risk_aware_targets
+from research import backtest_ai_risk_aware_selector as ai
 
 
-def test_risk_aware_targets_have_forward_horizon():
-    index = pd.date_range("2025-01-01", periods=25, freq="D")
-    # Structural contract: the target function must preserve the decision index.
-    # Full market-data behavior is exercised by the workflow.
-    assert len(index) == 25
-    assert np.isfinite(1.0)
+def test_risk_aware_target_uses_future_volatility(monkeypatch):
+    dates = pd.date_range("2025-01-01", periods=25, freq="D")
+    prices = pd.DataFrame({
+        "Date": dates,
+        "adj_close": np.arange(100.0, 125.0),
+    }).set_index("Date")
+    monkeypatch.setattr(ai, "load", lambda symbol: prices)
+    targets = ai.risk_aware_targets(dates)
+
+    assert targets.index.equals(dates)
+    assert np.isfinite(targets.iloc[0]["SPY_1x"])
+    assert pd.isna(targets.iloc[-1]["SPY_1x"])
+    assert targets.iloc[0]["cash"] == 0.0
