@@ -28,11 +28,11 @@ sys.path.insert(0, str(ROOT))
 from research.backtest_ai_action_selector import (
     DATA_DIR,
     SPLITS,
-    build_features,
     feature_columns,
     load,
     summarize,
 )
+from research.backtest_dynamic_leverage import build_features
 from research.backtest_dynamic_etf_selection import (
     add_family_features,
     backtest as e2_backtest,
