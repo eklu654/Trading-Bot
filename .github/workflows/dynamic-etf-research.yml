@@ -6,6 +6,7 @@ on:
     paths:
       - "research/backtest_dynamic_leverage.py"
       - "research/build_historical_regime_dataset.py"
+      - "tests/test_backtest_dynamic_leverage.py"
       - ".github/workflows/dynamic-etf-research.yml"
 
 jobs:
