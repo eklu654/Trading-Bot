@@ -173,6 +173,14 @@ jobs:
             done
           done
 
+      - name: Evaluate ETF-exit switcher chronological holdout gate
+        run: |
+          python research/analyze_etf_exit_switcher_holdout.py \
+            --input-glob "etf_exit_switcher_*_options002_delta16_w2_*.csv" \
+            --capital 5000 \
+            --minimum-option-days 20 \
+            --output "data/research/etf_exit_switcher_holdout_summary.csv"
+
       - name: Print research summaries
         run: |
           echo "=== ETF OVERALL ==="
