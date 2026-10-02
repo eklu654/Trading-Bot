@@ -162,7 +162,7 @@ jobs:
         run: |
           for candidate in broad_sideways turbulent_only all_days; do
             for fill in conservative mid; do
-              matches=(data/research/options002_delta16_w2_${candidate}_${fill}*.csv)
+              matches=(data/research/options002_delta16_w2_${candidate}_${fill}.csv)
               for trades in "${matches[@]}"; do
                 [ -f "$trades" ] || continue
                 python research/evaluate_etf_exit_switcher.py \
