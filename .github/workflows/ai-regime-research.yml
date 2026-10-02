@@ -2,6 +2,8 @@ name: E4 AI Regime Research
 
 on:
   workflow_dispatch:
+  issues:
+    types: [opened]
   push:
     paths:
       - "research/backtest_ai_action_selector.py"
@@ -25,6 +27,7 @@ on:
 
 jobs:
   e4-ai-research:
+    if: github.event_name != 'issues' || github.event.issue.title == '[RUN-E4-E6]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
