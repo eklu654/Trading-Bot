@@ -379,3 +379,47 @@ edge preserved and the AI required to demonstrate incremental out-of-sample
 value. The next candidate architecture should explicitly ask whether AI can
 reduce E2's drawdowns without sacrificing its return engine, rather than asking
 AI to discover the entire strategy from scratch.
+
+
+## E6: binary AI overlay around frozen E2
+
+E6 changes the AI question again. Instead of asking the model to choose a
+leveraged ETF or among multiple sleeves, it can make only one binary decision:
+**run the frozen deterministic E2 engine or hold cash**.
+
+The E2 engine itself is unchanged. Its family-selection rule, leverage rule,
+200-DMA condition, VIX-percentile controls, and underlying ETF choices remain
+outside the learner. The learner predicts the E2 sleeve's forward 20-session
+return divided by the same period's annualized realized volatility. The
+predeclared decision threshold is zero:
+- predicted score > 0: E2;
+- predicted score <= 0: cash.
+
+Training remains chronological with annual expanding refits and the same
+leakage controls used by E4/E5. The first eligible out-of-sample year is 2020;
+2020-2022 remains validation and 2023 onward remains the untouched holdout.
+
+This experiment is specifically designed to answer whether AI can **reduce
+E2's drawdown by selectively standing aside**, without giving AI permission to
+change E2's underlying return engine. The implementation records both the E6
+overlay equity curve and an unmodified E2 baseline equity curve on the same
+trading dates, allowing incremental value to be measured directly.
+
+E6 is not a promotion by construction. It must demonstrate incremental
+out-of-sample benefit versus frozen E2, with particular attention to:
+- validation and holdout CAGR;
+- maximum drawdown and recovery;
+- Sharpe/Sortino;
+- time spent in cash;
+- turnover between E2 and cash;
+- predefined stress periods including 2020 and 2022;
+- whether the apparent benefit survives the untouched holdout.
+
+A result that merely lowers drawdown by spending large portions of the period
+in cash is not sufficient evidence of an improved return engine. The primary
+question is whether the overlay improves the risk/return profile of the
+already-established E2 strategy without sacrificing its historical return
+character unnecessarily.
+
+No E6 result is promoted until the generated validation and holdout artifacts
+have been reviewed.
