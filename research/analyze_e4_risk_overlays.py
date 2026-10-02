@@ -130,3 +130,6 @@ def main() -> None:
     print(summary.to_string(index=False))
     print("\nStress windows")
     print(stress.to_string(index=False))
+
+if __name__ == "__main__":
+    main()
