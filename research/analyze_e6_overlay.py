@@ -90,3 +90,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+# Keep this module in the workflow path list so diagnostic-only changes retrigger CI.
