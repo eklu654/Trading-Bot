@@ -34,8 +34,8 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
-      - name: Compile
-        run: python -m py_compile research/backtest_ai_action_selector.py
+      - name: Compile research modules
+        run: python -m py_compile research/backtest_ai_action_selector.py research/backtest_ai_meta_selector.py research/backtest_ai_e2_overlay.py
       - name: Run E4 unit tests
         run: python -m pytest -q tests/test_backtest_ai_action_selector.py tests/test_backtest_ai_hgb_selector.py tests/test_backtest_ai_risk_aware_selector.py tests/test_backtest_ai_meta_selector.py tests/test_backtest_ai_e2_overlay.py
       - name: Build historical market dataset
@@ -113,6 +113,7 @@ jobs:
             data/research/e5_summary.csv
             data/research/e5_annual_returns.csv
             data/research/e5_sleeve_frequency.csv
+            data/research/e6_e2_baseline.csv
             data/research/e6_target.csv
             data/research/e6_predictions.csv
             data/research/e6_backtest.csv
