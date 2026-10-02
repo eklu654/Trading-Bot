@@ -545,3 +545,38 @@ not keep searching thresholds for E6. A bounded overlay should instead use a
 small number of predeclared regime states and only permit modest exposure
 changes around frozen E2, with validation used once for specification selection
 and the final holdout remaining untouched.
+
+
+## Bounded E2 drawdown-overlay diagnostic
+
+A follow-up diagnostic tested a simple hypothesis: if AI should only make a
+small exposure adjustment around E2, perhaps E2's own drawdown state could be
+used to reduce exposure during stressed periods.
+
+The first implementation of this diagnostic deliberately failed a timing audit.
+It applied the drawdown measured after a session to that same session's return,
+which creates same-session lookahead. That version produced unusually strong
+results and was discarded rather than treated as evidence.
+
+The corrected test lags the drawdown state by one session so the exposure rule
+is known before the next-session return. A small predeclared grid of drawdown
+thresholds and exposure reductions was then tested. On 2020-2022 validation,
+the best coarse candidates were only modestly better than E2 and none produced
+a durable improvement on the untouched holdout. For example, a 5% drawdown
+trigger with 75% remaining exposure produced 6.97% validation CAGR versus
+5.95% for E2, but only 29.23% holdout CAGR versus 39.30% for E2.
+
+The same lagged test was extended across the full E2 history available in the
+E5 sleeve-return artifact, including 2018. The 50%-exposure-after-10%-drawdown
+variant produced only 13.22% full-period CAGR versus 24.52% for E2, while E2's
+2018 return of -3.69% became +0.92%. The improvement in individual stress years
+did not compensate for lost upside elsewhere.
+
+This diagnostic is therefore **not promoted**. The key result is methodological:
+any future E2 overlay must be aligned to the decision timestamp and explicitly
+lag state variables before evaluating performance. The apparently spectacular
+same-session drawdown result was a leakage artifact, not a strategy result.
+
+The next constrained-overlay experiment should therefore use only properly
+lagged regime information and should remain small enough that validation can
+select the specification once without turning the holdout into a tuning set.
