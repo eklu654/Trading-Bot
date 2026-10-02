@@ -47,7 +47,9 @@ def main() -> None:
             DATA_DIR / f"e4c_risk_aware_{cap}_backtest.csv",
             parse_dates=["Date"],
         ).set_index("Date")
-        returns = frame["portfolio_return"].reindex(spy.index).fillna(0.0)
+        common = frame.index.intersection(spy.index)
+        returns = frame["portfolio_return"].reindex(common).fillna(0.0)
+        spy_common = spy.reindex(common).fillna(0.0)
 
         for window in (3, 5, 10):
             years = window * 252
@@ -55,7 +57,7 @@ def main() -> None:
                 lambda x: (1 + x).prod() ** (252 / len(x)) - 1,
                 raw=False,
             )
-            rolling_spy = spy.rolling(years).apply(
+            rolling_spy = spy_common.rolling(years).apply(
                 lambda x: (1 + x).prod() ** (252 / len(x)) - 1,
                 raw=False,
             )
@@ -72,7 +74,7 @@ def main() -> None:
 
         for year in sorted(set(returns.index.year)):
             segment = returns[returns.index.year == year]
-            spy_segment = spy[spy.index.year == year]
+            spy_segment = spy_common[spy_common.index.year == year]
             if not segment.empty:
                 annual_rows.append({
                     "policy": cap,
