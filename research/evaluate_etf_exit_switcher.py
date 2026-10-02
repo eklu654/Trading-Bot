@@ -4,6 +4,10 @@ This is research only. Option trades must come from the authoritative $5,000
 account-feasibility ledger and must already be marked accepted=True. The
 selector only permits an accepted OPTIONS-002 trade when the ETF basket is
 fully out of its sleeves on the option entry date.
+
+While an accepted option trade is open, the selector remains in cash. ETF
+exposure resumes only after the option lifecycle has ended, preventing the
+switcher from accidentally holding both legs at once.
 """
 from __future__ import annotations
 
@@ -22,6 +26,43 @@ def args() -> argparse.Namespace:
     p.add_argument("--capital", type=float, default=5000.0)
     p.add_argument("--output", required=True)
     return p.parse_args()
+
+
+def build_switcher_path(
+    etf: pd.DataFrame,
+    accepted_df: pd.DataFrame,
+    capital: float,
+) -> pd.DataFrame:
+    """Build the switcher daily path without simultaneous ETF/option exposure."""
+    daily = etf[["portfolio_return", "active_sleeves"]].copy()
+    daily["selector_pnl"] = 0.0
+    daily["option_active"] = False
+    daily["selector_source"] = "CASH_OR_ETF"
+
+    if not accepted_df.empty:
+        for _, row in accepted_df.iterrows():
+            entry = pd.Timestamp(row["entry_date"])
+            exit_date = pd.Timestamp(row["exit_date"])
+            if exit_date < entry:
+                continue
+            active_dates = daily.index[(daily.index >= entry) & (daily.index <= exit_date)]
+            if len(active_dates):
+                daily.loc[active_dates, "option_active"] = True
+            if exit_date in daily.index:
+                daily.loc[exit_date, "selector_pnl"] += float(row["net_pnl"])
+                daily.loc[exit_date, "selector_source"] = "OPTIONS_REALIZED"
+
+    # The switcher is either in the ETF basket or in an open options trade,
+    # never both. On an option exit date, the realized option P&L is recorded
+    # while ETF exposure resumes on the following session.
+    etf_eligible = daily["active_sleeves"] > 0
+    daily["selector_return"] = daily["portfolio_return"].where(
+        etf_eligible & ~daily["option_active"], 0.0
+    )
+    daily["selector_return"] += daily["selector_pnl"] / capital
+    daily["selector_equity"] = capital * (1.0 + daily["selector_return"]).cumprod()
+    daily["etf_equity"] = capital * (1.0 + daily["portfolio_return"]).cumprod()
+    return daily
 
 
 def main() -> None:
@@ -58,23 +99,7 @@ def main() -> None:
         active_until = exit_
 
     accepted_df = pd.DataFrame(accepted)
-    daily = etf[["portfolio_return", "active_sleeves"]].copy()
-    daily["selector_pnl"] = 0.0
-    daily["selector_source"] = "CASH_OR_ETF"
-    daily["selector_return"] = daily["portfolio_return"].where(
-        daily["active_sleeves"] > 0, 0.0
-    )
-
-    if not accepted_df.empty:
-        for _, row in accepted_df.iterrows():
-            exit_date = pd.Timestamp(row["exit_date"])
-            if exit_date in daily.index:
-                daily.loc[exit_date, "selector_pnl"] += float(row["net_pnl"])
-                daily.loc[exit_date, "selector_source"] = "OPTIONS_REALIZED"
-        daily["selector_return"] += daily["selector_pnl"] / a.capital
-
-    daily["selector_equity"] = a.capital * (1.0 + daily["selector_return"]).cumprod()
-    daily["etf_equity"] = a.capital * (1.0 + daily["portfolio_return"]).cumprod()
+    daily = build_switcher_path(etf, accepted_df, a.capital)
 
     daily.to_csv(ROOT / a.output)
     summary = pd.DataFrame([{
