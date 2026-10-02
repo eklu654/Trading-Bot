@@ -214,6 +214,12 @@ jobs:
           done
           echo "=== OPTIONS-002 NORMALIZED CAPITAL LADDER ==="
           cat data/research/options002_capital_ladder_analysis.csv
+          echo "=== ETF-EXIT SWITCHER HOLDOUT ==="
+          cat data/research/etf_exit_switcher_holdout_summary.csv
+          echo "=== ETF-EXIT SWITCHER DAILY-PATH SUMMARIES ==="
+          for f in data/research/etf_exit_switcher_*_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
           echo "=== DEFENSE CONTROL CONSERVATIVE ==="
           cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
           echo "=== DEFENSE CONTROL MID ==="
