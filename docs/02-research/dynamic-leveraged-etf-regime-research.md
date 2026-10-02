@@ -191,7 +191,7 @@ Secondary metrics:
 - performance by regime;
 - performance by stress period.
 
-The primary optimization target should be a declared risk-adjusted metric, not raw CAGR alone.
+The project-level performance hurdle is substantial absolute return relative to SPY, not merely a small improvement in risk-adjusted statistics. Every candidate must therefore report CAGR, calendar-year excess return, percentage of years beating SPY, and rolling excess CAGR alongside drawdown and risk metrics. Risk-adjusted metrics determine whether the return profile is survivable; they do not substitute for the project's absolute-return objective.
 
 ## Anti-overfitting rules
 
@@ -222,10 +222,8 @@ The question is not whether cash has the highest return during a recovery. The q
 
 ## Current conclusion
 
-The evidence does not justify promoting dynamic leverage yet.
+The current deterministic result does not justify promoting dynamic leverage yet: it has not demonstrated the required combination of substantial absolute-return improvement over SPY and robust drawdown behavior.
 
-It **does** justify expanding ETF-001 research from a fixed 3x basket toward a controlled 1x/2x/3x/cash experiment.
+It **does** justify moving the research to dynamic ETF-family selection. The deterministic E2 experiment now tests whether choosing among SPY/QQQ/SOXX families can create a larger return edge without simply increasing static leverage.
 
-The next implementation step should therefore be a deterministic dynamic-leverage research engine, not an unrestricted AI optimizer.
-
-Only after that benchmark exists should an ML/AI selector be introduced.
+The AI selector remains the eventual target. It should only be promoted after deterministic family selection and sizing controls establish a credible baseline, and only if walk-forward testing shows a meaningful incremental return advantage rather than a cosmetic risk-metric improvement.
