@@ -38,6 +38,8 @@ jobs:
         run: cat data/research/e4_ai_summary.csv
       - name: Print E4 risk overlay summary
         run: cat data/research/e4_ai_risk_overlay_summary.csv
+      - name: Print E4 risk overlay splits
+        run: cat data/research/e4_ai_risk_overlay_splits.csv
       - name: Print E4 annual results
         run: cat data/research/e4_ai_annual_returns.csv
       - name: Upload E4 artifacts
@@ -53,5 +55,6 @@ jobs:
             data/research/e4_ai_annual_returns.csv
             data/research/e4_ai_action_frequency.csv
             data/research/e4_ai_risk_overlay_summary.csv
+            data/research/e4_ai_risk_overlay_splits.csv
             data/research/e4_ai_risk_overlay_stress.csv
           if-no-files-found: error
