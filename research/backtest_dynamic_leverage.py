@@ -55,7 +55,6 @@ def build_features() -> pd.DataFrame:
     spy = load("SPY")
     qqq = load("QQQ")
     soxx = load("SOXX")
-    vix = load("^VIX") if (DATA_DIR / "vix_daily.csv").exists() else None
 
     close = pd.concat(
         {
