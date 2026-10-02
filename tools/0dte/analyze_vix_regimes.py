@@ -88,9 +88,10 @@ def main() -> int:
     args = parser.parse_args()
 
     vix = load_vix(args.vix_csv)
+    days = load_days(args.timing_json)
     rows = []
     for control, description in CONTROLS.items():
-        frame = load_days(args.timing_json)[control].merge(
+        frame = days[control].merge(
             vix.rename("vix"), left_on="date", right_index=True, how="left"
         )
         missing = int(frame["vix"].isna().sum())
