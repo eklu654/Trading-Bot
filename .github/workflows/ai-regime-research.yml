@@ -144,7 +144,7 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: "E4/E6 research workflow finished with job status: " + "${{ job.status }}".replace(".", "")
+              body: "E4/E6 research workflow finished with job status: " + "${{ job.status }}"
             });
             if (context.eventName === "schedule" && "${{ job.status }}" === "success") {
               await github.rest.issues.update({
