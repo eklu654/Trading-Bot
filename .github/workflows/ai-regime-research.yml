@@ -30,6 +30,12 @@ jobs:
     if: github.event_name != 'issues' || github.event.issue.title == '[RUN-E4-E6]'
     runs-on: ubuntu-latest
     steps:
+      - name: Mark trigger started
+        if: github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: "E4/E6 research workflow started."})
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up Python
@@ -84,6 +90,12 @@ jobs:
         run: cat data/research/e4_ai_risk_overlay_splits.csv
       - name: Print E4 annual results
         run: cat data/research/e4_ai_annual_returns.csv
+      - name: Mark trigger completed
+        if: always() && github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, body: "E4/E6 research workflow completed."})
       - name: Upload E4 artifacts
         uses: actions/upload-artifact@v4
         with:
