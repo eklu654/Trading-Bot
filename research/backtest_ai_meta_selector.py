@@ -132,6 +132,7 @@ def backtest(predictions: pd.DataFrame, returns: pd.DataFrame) -> pd.DataFrame:
             "portfolio_return": daily,
             "portfolio_value": equity,
             "changed_sleeve": sleeve != previous,
+            "changed_action": sleeve != previous,
             "predicted_score": row["predicted_score"],
         })
         previous = sleeve
