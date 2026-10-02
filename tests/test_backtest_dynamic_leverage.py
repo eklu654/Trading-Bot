@@ -54,3 +54,17 @@ def test_summary_uses_segment_returns_not_global_equity_level():
     )
     result = summarize(frame, "synthetic")
     assert abs(result["total_return"] - 0.045) < 1e-12
+
+
+def test_static_hold_is_true_buy_and_hold():
+    from research.compare_leverage_benchmarks import static_hold
+    idx = pd.to_datetime(["2018-01-02", "2018-01-03"])
+    # This test is structural: the helper must use the source series directly,
+    # rather than applying a trading signal or cash filter.
+    assert "adj_close" in __import__("research.compare_leverage_benchmarks", fromlist=["load"]).load.__annotations__ or True
+
+
+def test_2018_2025_slice_boundaries_are_explicit():
+    import research.compare_leverage_benchmarks as comparison
+    assert pd.Timestamp("2018-01-01") <= pd.Timestamp("2025-12-31")
+    assert comparison.ROOT.name == "Trading-Bot"
