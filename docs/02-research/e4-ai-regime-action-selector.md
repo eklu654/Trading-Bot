@@ -192,3 +192,35 @@ objective**, not merely the estimator:
 
 Only after a risk-aware objective demonstrates durable validation behavior
 should further model complexity be considered.
+
+## Empirical results: E4c risk-aware target
+
+The next experiment changed the learning objective while keeping Ridge and the
+same leakage-safe feature set. Each action target is its forward 20-session
+cumulative return divided by the annualized realized volatility of those same
+future 20 sessions. The future volatility is used only to construct the
+training label.
+
+Validation (2020-2022):
+- CAGR: +6.23%
+- Sharpe: 0.469
+- maximum drawdown: -70.08%
+- worst day: -38.59%
+
+Holdout (2023-2026-09-25):
+- CAGR: +26.97%
+- Sharpe: 1.329
+- Sortino: 1.691
+- maximum drawdown: -56.79%
+- worst day: -9.31%
+
+This is a substantial improvement in robustness over raw-return Ridge and
+shows that the objective function matters more than simply increasing model
+complexity. However, the result still does not reproduce the large absolute
+return edge of the deterministic E2 selector, and drawdown remains much larger
+than the E3 square-root sizing benchmark.
+
+E4c is therefore a **promising research candidate, not a promoted final
+strategy**. The next comparison should test whether the risk-aware target can
+be combined with a bounded action/risk controller without turning into
+holdout-driven tuning.
