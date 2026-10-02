@@ -73,6 +73,9 @@ def risk_aware_targets(returns: pd.DataFrame) -> pd.DataFrame:
     for sleeve in SLEEVES:
         series = returns[sleeve]
         future_return = (1.0 + series).rolling(HORIZON).apply(np.prod).shift(-HORIZON) - 1.0
+        if sleeve == "cash":
+            targets[sleeve] = 0.0
+            continue
         future_vol = series.rolling(HORIZON).std().shift(-HORIZON) * np.sqrt(252)
         targets[sleeve] = future_return / future_vol.replace(0.0, np.nan)
     return targets.replace([np.inf, -np.inf], np.nan)
@@ -81,9 +84,9 @@ def risk_aware_targets(returns: pd.DataFrame) -> pd.DataFrame:
 def fit_models(features: pd.DataFrame, targets: pd.DataFrame,
                 cutoff: pd.Timestamp) -> dict[str, Pipeline]:
     cols = feature_columns(features)
-    eligible = (features.index <= cutoff) & targets.notna().all(axis=1)
     models = {}
     for sleeve in SLEEVES:
+        eligible = (features.index <= cutoff) & targets[sleeve].notna()
         model = make_model()
         model.fit(features.loc[eligible, cols], targets.loc[eligible, sleeve])
         models[sleeve] = model
