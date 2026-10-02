@@ -143,7 +143,74 @@ def main() -> None:
 
     summary = pd.DataFrame(rows)
     summary.to_csv(DATA_DIR / "dynamic_etf_selection_comparison.csv", index=False)
+
+    # Chronological evaluation slices are fixed in advance and are not used
+    # to select or tune a method.
+    splits = {
+        "train": ("2010-01-04", "2019-12-31"),
+        "validation": ("2020-01-01", "2022-12-31"),
+        "holdout": ("2023-01-01", "2026-09-25"),
+    }
+    split_rows = []
+    annual_rows = []
+    rolling_rows = []
+    spy_prices = load("SPY")["adj_close"].reindex(features.index)
+    spy_returns = spy_prices.pct_change().fillna(0.0)
+
+    for method in methods:
+        result = backtest(features, method)
+        for split, (start, end) in splits.items():
+            segment = result.loc[start:end]
+            if segment.empty:
+                continue
+            stats = summarize(segment, f"{method}_{split}")
+            stats["method"] = method
+            stats["split"] = split
+            split_rows.append(stats)
+
+        annual = result["portfolio_return"].groupby(result.index.year).apply(
+            lambda x: (1.0 + x).prod() - 1.0
+        )
+        spy_annual = spy_returns.groupby(spy_returns.index.year).apply(
+            lambda x: (1.0 + x).prod() - 1.0
+        )
+        for year, value in annual.items():
+            if year in spy_annual.index:
+                annual_rows.append({
+                    "method": method,
+                    "year": int(year),
+                    "strategy_return": float(value),
+                    "spy_return": float(spy_annual.loc[year]),
+                    "excess_return": float(value - spy_annual.loc[year]),
+                    "beats_spy": bool(value > spy_annual.loc[year]),
+                })
+
+        equity = (1.0 + result["portfolio_return"].fillna(0.0)).cumprod()
+        spy_equity = (1.0 + spy_returns).cumprod()
+        for window in (3, 5, 10):
+            years = window
+            strategy_roll = equity / equity.shift(window * 252)
+            spy_roll = spy_equity / spy_equity.shift(window * 252)
+            rolling = (strategy_roll / spy_roll) ** (1.0 / years) - 1.0
+            valid = rolling.dropna()
+            for date, value in valid.items():
+                rolling_rows.append({
+                    "method": method,
+                    "window_years": window,
+                    "date": date,
+                    "excess_cagr": float(value),
+                })
+
+    split_summary = pd.DataFrame(split_rows)
+    annual_summary = pd.DataFrame(annual_rows)
+    rolling_summary = pd.DataFrame(rolling_rows)
+    split_summary.to_csv(DATA_DIR / "dynamic_etf_selection_split_summary.csv", index=False)
+    annual_summary.to_csv(DATA_DIR / "dynamic_etf_selection_annual_returns.csv", index=False)
+    rolling_summary.to_csv(DATA_DIR / "dynamic_etf_selection_rolling_relative.csv", index=False)
+
     print(summary.to_string(index=False))
+    print("\nChronological split summary")
+    print(split_summary.to_string(index=False))
     print("\nArtifacts:", DATA_DIR)
 
 
