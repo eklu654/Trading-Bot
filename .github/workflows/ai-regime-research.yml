@@ -77,6 +77,8 @@ jobs:
             data/research/e4c_risk_aware_targets.csv
             data/research/e4c_risk_aware_predictions.csv
             data/research/e4c_risk_aware_backtest.csv
+            data/research/e4c_risk_aware_cap2x_backtest.csv
+            data/research/e4c_risk_aware_cap1x_backtest.csv
             data/research/e4c_risk_aware_summary.csv
             data/research/e4c_risk_aware_annual_returns.csv
             data/research/e4c_risk_aware_action_frequency.csv
