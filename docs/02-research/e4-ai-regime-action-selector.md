@@ -288,3 +288,38 @@ capped E4c candidates against E2 and E3 on:
 - an untouched final holdout after the candidate specification is frozen.
 
 No holdout result is being used to tune the leverage ceiling.
+
+## Corrected rolling/annual/stress diagnostics
+
+The capped-policy diagnostics were corrected to use only dates actually covered
+by the AI backtest; earlier diagnostic output that implicitly filled 2010-2019
+with zero returns was discarded.
+
+For the available 2020-09-25 through 2026-09-25-style common history, both capped
+policies trail SPY on rolling windows:
+- 1x cap: mean 3-year excess CAGR -6.65%, mean 5-year excess CAGR -5.36%;
+- 2x cap: mean 3-year excess CAGR -9.67%, mean 5-year excess CAGR -7.85%.
+
+There are not enough observations for a valid 10-year rolling window because the
+AI backtest starts in 2020.
+
+Calendar-year results show both capped policies beating SPY in 2020 and 2021,
+underperforming in 2022, 2023, 2024, and 2025, and beating SPY through the
+available portion of 2026. Thus the AI cap variants do not currently establish
+a durable multi-year return advantage over SPY.
+
+Stress diagnostics:
+- 1x cap: COVID -9.84%, maximum drawdown -32.3%; 2022 -29.3%, maximum drawdown
+  -39.8%.
+- 2x cap: COVID -15.2%, maximum drawdown -51.2%; 2022 -55.5%, maximum drawdown
+  -66.6%.
+
+The 1x cap is therefore the materially more controlled AI candidate, but its
+rolling relative-return profile is not strong enough for promotion. The 2x cap
+retains more upside but still carries severe bear-market exposure.
+
+**Current decision:** E4c remains a research result rather than the production
+strategy. The evidence does not justify replacing the deterministic E2 engine
+with the current AI selector. Future AI work should therefore focus on using AI
+as a meta-regime selector around proven strategy sleeves, rather than asking a
+single model to directly choose highly leveraged ETFs every day.
