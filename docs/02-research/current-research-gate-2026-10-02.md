@@ -46,6 +46,19 @@ For the 16-delta / 2-point-wing configuration at a 7% defined-risk ceiling:
 
 At lower risk limits and smaller accounts, contract granularity causes many candidates to be rejected before trading. This means an unconstrained historical options result cannot be substituted for an account-realizable result.
 
+## OPTIONS-002 wider-wing research update
+
+The manual wider-wing workflow (run #12, completed 2026-10-01) evaluated 20-delta shorts with $5 fixed wings, $10 fixed wings, and 10-delta long wings across the declared regime filters, fill models, and $2,000/$5,000/$10,000 account-feasibility tiers.
+
+At the $5,000 tier, the workflow accepted trades for the dynamic 20-delta-short/10-delta-long structure and the $5 fixed-wing structure, while the $10 fixed-wing structure remained infeasible in the tested configurations. Across the independent $5,000 feasibility configurations, the dynamic 20/10-delta candidate produced 45 accepted trades in aggregate with +$684.00 aggregate P&L; the $5 fixed-wing candidate produced 86 accepted trades with -$1,485.20 aggregate P&L; the $10 fixed-wing candidate produced no accepted trades. These aggregates combine separate configurations and are not portfolio returns.
+
+The chronological 2023+ candidate-level holdout comparison reported:
+- Dynamic 20/10-delta: +$316 conservative over 44 matched trades; +$638 midpoint over 42.
+- 20-delta/$5 fixed wing: -$108 conservative over 45; -$474 midpoint over 42.
+- 20-delta/$10 fixed wing: -$379 conservative over 44; -$723 midpoint over 42.
+
+Those candidate-level figures are not capital-equivalent portfolio results. The account-feasibility lifecycle remains the controlling layer, and no wider-wing candidate is promoted by this evidence.
+
 ## Corrected ETF-exit switcher holdout gate
 
 The corrected chronological holdout still contains 936 observations, with 2,218 training and 1,008 validation observations.
