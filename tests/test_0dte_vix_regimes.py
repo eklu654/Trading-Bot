@@ -22,9 +22,16 @@ def test_vix_bucket_boundaries_are_fixed_and_left_closed():
     )
 
     result = MODULE.summarize(frame)
+    full_sample = result[result["split"] == "FULL_SAMPLE"].sort_values("vix_bucket")
 
-    assert result["vix_bucket"].tolist() == ["<15", "15-20", "20-25", "25-30", ">=30"]
-    assert result["sessions"].tolist() == [1, 1, 1, 1, 1]
+    assert full_sample["vix_bucket"].tolist() == [
+        "<15",
+        "15-20",
+        "20-25",
+        "25-30",
+        ">=30",
+    ]
+    assert full_sample["sessions"].tolist() == [1, 1, 1, 1, 1]
 
 
 def test_summarize_keeps_full_sample_and_chronological_splits():
@@ -57,8 +64,9 @@ def test_summarize_drops_sessions_without_a_vix_bucket():
     )
 
     result = MODULE.summarize(frame)
+    full_sample = result[result["split"] == "FULL_SAMPLE"]
 
-    assert result["sessions"].sum() == 1
-    assert result.loc[result["vix_bucket"] == "20-25", "net_pnl"].iloc[0] == pytest.approx(
-        7.0
-    )
+    assert full_sample["sessions"].sum() == 1
+    assert full_sample.loc[
+        full_sample["vix_bucket"] == "20-25", "net_pnl"
+    ].iloc[0] == pytest.approx(7.0)
