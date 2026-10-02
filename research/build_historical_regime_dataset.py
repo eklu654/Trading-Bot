@@ -35,6 +35,9 @@ PRICE_SYMBOLS = [
     "SPY",
     "QQQ",
     "SOXX",
+    "QLD",
+    "SSO",
+    "USD",
 ]
 
 
