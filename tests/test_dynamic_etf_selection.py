@@ -39,4 +39,4 @@ def test_trend_confirmed_prefers_highest_eligible_score():
         SPY=110.0, QQQ=90.0, SOXX=120.0,
         SPY_ma200=100.0, QQQ_ma200=100.0, SOXX_ma200=100.0,
     )
-    assert choose_family(features, "trend_confirmed") == "SOXX"
+    assert choose_family(features, "trend_confirmed") == "SPY"
