@@ -3,7 +3,7 @@ name: E4 AI Regime Research
 on:
   workflow_dispatch:
   schedule:
-    - cron: "7/5 * * * *"
+    - cron: "*/5 * * * *"
   issues:
     types: [opened]
   push:
