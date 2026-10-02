@@ -323,3 +323,59 @@ strategy. The evidence does not justify replacing the deterministic E2 engine
 with the current AI selector. Future AI work should therefore focus on using AI
 as a meta-regime selector around proven strategy sleeves, rather than asking a
 single model to directly choose highly leveraged ETFs every day.
+
+## E5 meta-selector result
+
+E5 changed the AI's role from direct ETF selection to selecting among four
+predefined sleeves:
+- E2 risk-adjusted dynamic family/leverage selection;
+- E3 square-root volatility sizing;
+- SPY 1x;
+- cash.
+
+The learner used the same chronological Ridge framework and a forward
+20-session sleeve return divided by future sleeve volatility as the target.
+
+Results:
+- validation CAGR: **11.43%**
+- validation maximum drawdown: **-40.6%**
+- validation Sharpe: 0.489
+- holdout CAGR: **6.42%**
+- holdout maximum drawdown: **-62.5%**
+- holdout Sharpe: 0.370
+
+The selector spent approximately 65.3% of decision sessions in SPY, 13.1% in
+E2, 7.5% in E3-square-root, and 14.2% in cash.
+
+E5 is **not promoted**. Its validation behavior looked materially better than
+the direct ETF models, but the holdout result demonstrates that the learned
+regime mapping did not generalize. This is exactly why the validation/holdout
+separation is being preserved.
+
+## E4/E5 research conclusion
+
+At this stage, the AI experiments have answered an important architectural
+question: directly optimizing or selecting leveraged ETF exposure is not
+producing a sufficiently stable out-of-sample edge.
+
+The strongest deterministic engine remains E2:
+- approximately 24.47% full-period CAGR;
+- approximately -62.33% full-period maximum drawdown;
+- approximately 39.10% CAGR in the 2023-2026 holdout.
+
+The strongest lower-risk deterministic sizing candidate, E3 square-root,
+reduced the drawdown substantially but gave up much of E2's return advantage.
+
+The strongest AI risk-aware capped variant, E4c 1x/2x, produced more controlled
+profiles but trailed SPY over rolling relative-return windows. E5 then showed
+that a simple AI meta-selector over E2/E3/SPY/cash can still fail to generalize.
+
+**No AI variant is promoted.**
+
+The next phase should therefore not be another unconstrained model search. If
+AI development continues, it should be treated as a tightly constrained
+overlay around a frozen deterministic baseline, with the baseline's historical
+edge preserved and the AI required to demonstrate incremental out-of-sample
+value. The next candidate architecture should explicitly ask whether AI can
+reduce E2's drawdowns without sacrificing its return engine, rather than asking
+AI to discover the entire strategy from scratch.
