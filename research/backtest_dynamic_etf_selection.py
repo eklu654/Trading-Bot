@@ -10,13 +10,16 @@ No parameter search is performed. All signals are shifted one session.
 from __future__ import annotations
 
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import pandas as pd
 
 from research.backtest_dynamic_leverage import FAMILIES, build_features, choose_leverage, load
 
-ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "research"
 
 FAMILY_NAMES = tuple(FAMILIES.keys())
