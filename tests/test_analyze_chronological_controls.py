@@ -1,13 +1,35 @@
-from datetime import date
+from datetime import date, timedelta
+import importlib.util
+from pathlib import Path
 
-from tools_0dte_chronological_validation import (
-    CONTROLS,
-    SPLITS,
-    evaluate,
-)
+
+MODULE_PATH = Path(__file__).parents[1] / "tools" / "0dte" / "analyze_chronological_controls.py"
+SPEC = importlib.util.spec_from_file_location("chronological_controls", MODULE_PATH)
+MODULE = importlib.util.module_from_spec(SPEC)
+assert SPEC.loader is not None
+SPEC.loader.exec_module(MODULE)
+
+CONTROLS = MODULE.CONTROLS
+evaluate = MODULE.evaluate
+
+
+def _business_days(start: date, end: date, count: int) -> list[date]:
+    result = []
+    current = start
+    while current <= end and len(result) < count:
+        if current.weekday() < 5:
+            result.append(current)
+        current += timedelta(days=1)
+    assert len(result) == count
+    return result
 
 
 def test_frozen_control_set_and_split_sizes():
+    dates = (
+        _business_days(date(2022, 6, 16), date(2024, 12, 31), 597)
+        + _business_days(date(2025, 1, 1), date(2025, 12, 31), 238)
+        + _business_days(date(2026, 1, 1), date(2026, 9, 28), 177)
+    )
     data = {
         "configs": [
             {
@@ -15,11 +37,8 @@ def test_frozen_control_set_and_split_sizes():
                 "result": {
                     "results": {
                         "days": [
-                            {
-                                "date": d.isoformat(),
-                                "net_pnl": "1.0",
-                            }
-                            for d in _dates()
+                            {"date": day.isoformat(), "net_pnl": "1.0"}
+                            for day in dates
                         ]
                     }
                 },
@@ -35,25 +54,4 @@ def test_frozen_control_set_and_split_sizes():
         ("VALIDATION", 238),
         ("HOLDOUT", 177),
     }
-
-
-def _dates():
-    # Exact split cardinalities, with one synthetic date per calendar day in
-    # the same chronological windows used by the production artifact.
-    dates = []
-    current = date(2022, 6, 16)
-    while current <= date(2026, 9, 28):
-        if current.weekday() < 5:
-            dates.append(current)
-        current = date.fromordinal(current.toordinal() + 1)
-
-    # The production artifact contains market sessions rather than every
-    # weekday. For this unit test, replace the synthetic sequence with exact
-    # split cardinalities while preserving the split boundaries.
-    train = [date(2022, 6, 16)] * 0
-    del dates
-    return (
-        [date(2022, 6, 16)] * 597
-        + [date(2025, 1, 1)] * 238
-        + [date(2026, 1, 1)] * 177
-    )
+    assert all(r["net_pnl"] == r["sessions"] for r in rows)
