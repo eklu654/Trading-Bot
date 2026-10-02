@@ -52,6 +52,8 @@ jobs:
         run: cat data/research/dynamic_leverage_benchmark_summary.csv
       - name: Print leverage comparison
         run: cat data/research/leverage_strategy_comparison.csv
+      - name: Print 2018-2025 leverage comparison
+        run: cat data/research/leverage_strategy_comparison_2018_2025.csv
       - name: Upload benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -60,6 +62,7 @@ jobs:
             data/research/dynamic_leverage_benchmark.csv
             data/research/dynamic_leverage_benchmark_summary.csv
             data/research/leverage_strategy_comparison.csv
+            data/research/leverage_strategy_comparison_2018_2025.csv
             data/research/dynamic_relative_summary.csv
             data/research/dynamic_annual_returns.csv
             data/research/dynamic_rolling_relative.csv
