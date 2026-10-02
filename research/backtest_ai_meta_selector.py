@@ -147,6 +147,7 @@ def main() -> None:
     targets = risk_aware_targets(returns)
     predictions = walk_forward(features, targets)
     result = backtest(predictions, returns)
+    result["action"] = result["sleeve"]
 
     rows = []
     for split, (start, end) in SPLITS.items():
