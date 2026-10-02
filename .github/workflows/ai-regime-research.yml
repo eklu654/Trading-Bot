@@ -8,6 +8,7 @@ on:
       - "research/backtest_ai_hgb_selector.py"
       - "research/backtest_ai_risk_aware_selector.py"
       - "research/analyze_e4c_fixed_controls.py"
+      - "research/analyze_e4c_cap_diagnostics.py"
       - "research/analyze_e4_risk_overlays.py"
       - "research/build_historical_regime_dataset.py"
       - "research/requirements.txt"
@@ -45,6 +46,10 @@ jobs:
         run: python research/backtest_ai_risk_aware_selector.py
       - name: Print E4c summary
         run: cat data/research/e4c_risk_aware_summary.csv
+      - name: Analyze E4c capped-policy diagnostics
+        run: python research/analyze_e4c_cap_diagnostics.py
+      - name: Print E4c capped-policy diagnostics
+        run: cat data/research/e4c_cap_rolling.csv && cat data/research/e4c_cap_stress.csv
       - name: Analyze E4c fixed controls
         run: python research/analyze_e4c_fixed_controls.py
       - name: Print E4c fixed controls
@@ -86,6 +91,9 @@ jobs:
             data/research/e4c_risk_aware_cap1x_backtest.csv
             data/research/e4c_risk_aware_cost_sensitivity.csv
             data/research/e4c_fixed_control_summary.csv
+            data/research/e4c_cap_rolling.csv
+            data/research/e4c_cap_annual.csv
+            data/research/e4c_cap_stress.csv
             data/research/e4c_risk_aware_summary.csv
             data/research/e4c_risk_aware_annual_returns.csv
             data/research/e4c_risk_aware_action_frequency.csv
