@@ -7,14 +7,17 @@ for diagnosis of how trend filters behave in different kinds of selloffs.
 from __future__ import annotations
 
 from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
 
 import numpy as np
 import pandas as pd
 
-from research.backtest_dynamic_leverage import MA_WINDOW, backtest, build_features, load
+from research.backtest_dynamic_leverage import backtest, build_features, load
 from research.compare_leverage_benchmarks import dma_cash
 
-ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "research"
 
 WINDOWS = {
