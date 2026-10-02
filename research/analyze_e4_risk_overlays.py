@@ -52,6 +52,9 @@ def build_policy(ai: pd.DataFrame, features: pd.DataFrame, mode: str) -> pd.Data
     ma200 = spy.rolling(200).mean()
     vix_pct = features["vix_pct"]
 
+    prices = {action: (load(symbol)["adj_close"] if symbol else None)
+              for action, symbol in ACTIONS.items()}
+    spy = prices["SPY_1x"]
     records = []
     equity = 1.0
     for _, row in ai.iterrows():
@@ -73,9 +76,9 @@ def build_policy(ai: pd.DataFrame, features: pd.DataFrame, mode: str) -> pd.Data
         if symbol is None:
             daily_return = 0.0
         else:
-            prices = load(symbol)["adj_close"]
-            prev = prices.reindex([decision_date]).iloc[0]
-            cur = prices.reindex([next_date]).iloc[0]
+            price_series = prices[effective]
+            prev = price_series.reindex([decision_date]).iloc[0]
+            cur = price_series.reindex([next_date]).iloc[0]
             daily_return = float(cur / prev - 1) if pd.notna(prev) and pd.notna(cur) and prev != 0 else 0.0
 
         equity *= 1 + daily_return
