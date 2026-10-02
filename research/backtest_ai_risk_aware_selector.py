@@ -111,6 +111,18 @@ def apply_leverage_cap(predictions: pd.DataFrame, cap: str) -> pd.DataFrame:
     out["action"] = out["action"].map(lambda x: LEVERAGE_CAPS[cap].get(x, x))
     return out
 
+
+TRANSACTION_COSTS = (0.0005, 0.0010, 0.0025)
+
+def apply_transaction_costs(frame: pd.DataFrame, cost: float) -> pd.DataFrame:
+    out = frame.copy()
+    out["portfolio_return"] = out["portfolio_return"] - (
+        out["changed_action"].astype(float) * cost
+    )
+    out["portfolio_value"] = (1.0 + out["portfolio_return"]).cumprod()
+    out["drawdown"] = out["portfolio_value"] / out["portfolio_value"].cummax() - 1.0
+    return out
+
 def main() -> None:
     features = build_features()
     targets = risk_aware_targets(features.index)
@@ -123,6 +135,7 @@ def main() -> None:
     }
 
     summaries = []
+    cost_rows = []
     for policy, policy_predictions in policies.items():
         result = backtest(policy_predictions)
         for split, (start, end) in SPLITS.items():
@@ -132,6 +145,18 @@ def main() -> None:
                 row["split"] = split
                 row["policy"] = policy
                 summaries.append(row)
+        if policy in {"cap_1x", "cap_2x"}:
+            base = backtest(policy_predictions)
+            for cost in TRANSACTION_COSTS:
+                adjusted = apply_transaction_costs(base, cost)
+                for split, (start, end) in SPLITS.items():
+                    segment = adjusted.loc[start:end]
+                    if not segment.empty:
+                        row = summarize(segment, f"AI_RiskAware_Ridge_{policy}_cost_{int(cost*10000)}bps_{split}")
+                        row["split"] = split
+                        row["policy"] = policy
+                        row["cost_bps"] = int(cost * 10000)
+                        cost_rows.append(row)
 
     cap3_result = backtest(policies["cap_3x"])
     annual = cap3_result["portfolio_return"].groupby(cap3_result.index.year).apply(
@@ -158,12 +183,15 @@ def main() -> None:
     backtest(policies["cap_2x"]).to_csv(DATA_DIR / "e4c_risk_aware_cap2x_backtest.csv")
     backtest(policies["cap_1x"]).to_csv(DATA_DIR / "e4c_risk_aware_cap1x_backtest.csv")
     pd.DataFrame(summaries).to_csv(DATA_DIR / "e4c_risk_aware_summary.csv", index=False)
+    pd.DataFrame(cost_rows).to_csv(DATA_DIR / "e4c_risk_aware_cost_sensitivity.csv", index=False)
     pd.DataFrame(annual_rows).to_csv(DATA_DIR / "e4c_risk_aware_annual_returns.csv", index=False)
     cap3_result["action"].value_counts(normalize=True).rename("frequency").to_csv(
         DATA_DIR / "e4c_risk_aware_action_frequency.csv"
     )
 
     print(pd.DataFrame(summaries).to_string(index=False))
+    print("\nTransaction-cost sensitivity")
+    print(pd.DataFrame(cost_rows).to_string(index=False))
     print("\nAction frequency")
     print(cap3_result["action"].value_counts(normalize=True).to_string())
 
