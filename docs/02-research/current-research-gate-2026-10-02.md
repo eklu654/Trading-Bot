@@ -107,3 +107,29 @@ The immediate research priorities are:
 7. Keep candidate promotion and unattended deployment disabled until the economic, account-feasibility, out-of-sample, execution, and risk gates are all satisfied.
 
 No candidate is promoted by this document.
+
+
+## 0DTE chronological-validation audit correction
+
+The frozen 0DTE chronological validator is now committed at
+`tools/0dte/analyze_chronological_controls.py`, with regression coverage.
+GitHub Actions research-test run **#276** passed after the validator was added.
+
+The validator reconciled several percentages in the earlier chronological
+validation document against the actual frozen timing-matrix daily net-P/L
+ledger. The corrected split results are:
+
+| Control | Train | Validation | Holdout |
+|---|---:|---:|---:|
+| IC 16D/6D, 15:55 | -3.98% | +10.30% | +7.69% |
+| IC 16D/6D, 15:00 | -4.37% | -1.09% | +12.96% |
+| Put 16D/6D, 15:55 | +2.05% | -11.59% | +10.58% |
+| Call 16D/6D, 15:55 | -16.93% | +1.33% | -2.41% |
+
+These corrections do not alter the research disposition. The frozen controls
+still show substantial chronological variation, the 2026 holdout remains
+untouched for selection purposes, and 0DTE remains research-only.
+
+The repository should use the automated validator and the sanitized timing
+matrix artifact as the reproducibility source of truth rather than manually
+transcribed split percentages.
