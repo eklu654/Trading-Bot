@@ -27,6 +27,10 @@ on:
       - "docs/02-research/e4-ai-regime-action-selector.md"
       - ".github/workflows/ai-regime-research.yml"
 
+permissions:
+  contents: read
+  issues: write
+
 concurrency:
   group: e4-e6-research
   cancel-in-progress: false
