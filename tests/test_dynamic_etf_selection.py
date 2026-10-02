@@ -32,3 +32,11 @@ def test_risk_adjusted_selection_penalizes_high_volatility():
 def test_missing_scores_fallback_to_spy():
     features = row(SPY_rs=np.nan, QQQ_rs=np.nan, SOXX_rs=np.nan)
     assert choose_family(features, "raw_60d") == "SPY"
+
+def test_trend_confirmed_prefers_highest_eligible_score():
+    features = row(
+        SPY_rs=0.10, QQQ_rs=0.20, SOXX_rs=0.05,
+        SPY=110.0, QQQ=90.0, SOXX=120.0,
+        SPY_ma200=100.0, QQQ_ma200=100.0, SOXX_ma200=100.0,
+    )
+    assert choose_family(features, "trend_confirmed") == "SOXX"
