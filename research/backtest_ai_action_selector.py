@@ -169,23 +169,31 @@ def annual_walk_forward(features: pd.DataFrame,
 def backtest(predictions: pd.DataFrame) -> pd.DataFrame:
     prices = {a: (load(s)["adj_close"] if s else None)
               for a, s in ACTIONS.items()}
+    dates = predictions.index
     records = []
     equity = 1.0
     previous_action = "cash"
-    for date, row in predictions.iterrows():
+
+    # A prediction made at close t controls the return from t to t+1.
+    # Therefore the performance record is timestamped at the next session.
+    for i in range(len(dates) - 1):
+        decision_date = dates[i]
+        next_date = dates[i + 1]
+        row = predictions.loc[decision_date]
         action = str(row["action"])
         series = prices[action]
         if series is None:
             daily_return = 0.0
         else:
-            previous = series.shift(1).reindex([date]).iloc[0]
-            current = series.reindex([date]).iloc[0]
+            previous = series.reindex([decision_date]).iloc[0]
+            current = series.reindex([next_date]).iloc[0]
             daily_return = (float(current / previous - 1.0)
                             if pd.notna(previous) and pd.notna(current) and previous != 0
                             else 0.0)
         equity *= 1.0 + daily_return
         records.append({
-            "Date": date,
+            "Date": next_date,
+            "decision_date": decision_date,
             "portfolio_return": daily_return,
             "portfolio_value": equity,
             "action": action,
@@ -193,6 +201,7 @@ def backtest(predictions: pd.DataFrame) -> pd.DataFrame:
             "predicted_return": row["predicted_return"],
         })
         previous_action = action
+
     out = pd.DataFrame(records).set_index("Date")
     out["drawdown"] = out["portfolio_value"] / out["portfolio_value"].cummax() - 1.0
     return out
