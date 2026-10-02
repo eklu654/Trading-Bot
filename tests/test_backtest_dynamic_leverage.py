@@ -43,3 +43,14 @@ def test_family_selection_falls_back_when_all_scores_missing():
 def test_comparison_script_can_be_imported_from_repo_root():
     import research.compare_leverage_benchmarks as comparison
     assert comparison.ROOT == ROOT
+
+
+
+def test_summary_uses_segment_returns_not_global_equity_level():
+    from research.backtest_dynamic_leverage import summarize
+    frame = pd.DataFrame(
+        {"portfolio_return": [0.10, -0.05], "portfolio_value": [1.10, 1.045], "leverage": [3, 2]},
+        index=pd.to_datetime(["2020-01-01", "2020-01-02"]),
+    )
+    result = summarize(frame, "synthetic")
+    assert abs(result["total_return"] - 0.045) < 1e-12
