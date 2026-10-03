@@ -197,3 +197,21 @@ The deterministic research sequence is:
 Cash remains a legitimate candidate rather than an assumed failure state. The 200-DMA remains a candidate regime feature rather than an unconditional master switch. AI/ML cannot override deterministic risk controls.
 
 See docs/02-research/dynamic-leveraged-etf-regime-research.md.
+
+## 2026-10-03 — Bull/bear exclusivity is family-level
+
+**Decision:** The bull/bear mutual-exclusion rule applies independently within each benchmark/ETF family, not globally across the portfolio.
+
+A family may never hold its paired bull and inverse ETF simultaneously:
+
+- SPXL and SPXS are mutually exclusive.
+- TQQQ and SQQQ are mutually exclusive.
+- SOXL and SOXS are mutually exclusive.
+- UDOW and SDOW are mutually exclusive.
+- TNA and TZA are mutually exclusive.
+
+Different families may hold opposite directional states at the same time. Examples such as **UDOW + SOXS** or **TQQQ + SDOW** are valid because the positions represent different underlying families.
+
+Partial inverse exposure is modeled as the configured inverse weight with the remainder in cash: 25%, 50%, 75%, or 100%.
+
+The deterministic research implementation and behavioral tests enforce this family-level rule. See docs/02-research/dma-bull-bear-switching.md.
