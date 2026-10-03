@@ -26,12 +26,14 @@ jobs:
           cache: "pip"
           cache-dependency-path: research/requirements.txt
       - name: Cache historical research dataset
+        id: dataset-cache
         uses: actions/cache@v4
         with:
           path: data/research
           key: etf-research-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-09-28
       - run: python -m pip install -r research/requirements.txt
       - name: Build historical dataset when cache is cold
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
         run: python research/build_historical_regime_dataset.py
       - name: Run ETF-027 transition diagnostics
         run: python research/backtest_etf027_signal_transition_diagnostics.py
