@@ -1,0 +1,46 @@
+name: DMA Family Rotation $5000 Account Replay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/replay_family_rotation_account.py"
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/build_historical_regime_dataset.py"
+      - "research/requirements.txt"
+      - ".github/workflows/dma-family-rotation-5000-account-replay.yml"
+
+concurrency:
+  group: dma-family-rotation-5000-account-replay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Cache historical research dataset
+        id: dataset-cache
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: dma-family-rotation-5000-replay-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-10-03
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build historical market dataset
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: python research/build_historical_regime_dataset.py
+      - name: Run $5,000 account replay
+        run: python research/replay_family_rotation_account.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dma-family-rotation-5000-account-replay
+          path: data/research/dma_family_rotation_5000_account_replay.csv
