@@ -1,0 +1,27 @@
+name: ETF Signal Lead Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf019_signal_lead_diagnostics.py"
+      - "research/build_historical_regime_dataset.py"
+      - ".github/workflows/etf-signal-diagnostics.yml"
+
+concurrency:
+  group: etf-signal-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build historical dataset
+        run: python research/build_historical_regime_dataset.py
+      - name: Run ETF-019 signal lead diagnostics
+        run: python research/backtest_etf019_signal_lead_diagnostics.py
