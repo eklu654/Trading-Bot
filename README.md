@@ -116,3 +116,14 @@ See docs/03-execution/autonomous-operation.md for the execution architecture and
 See docs/02-research/account-feasibility-2000.md for the legacy $2,000 feasibility findings; the active starting balance is $5,000.
 
 See docs/01-strategies/tastytrade-strategy.md for the current options methodology draft.
+
+
+## Research update — 2026-10-03
+
+The leveraged-ETF research has moved beyond the original 200-DMA/inverse-switch experiments. ETF-017 established the canonical-accounting inverse-overlay benchmark; ETF-018 showed that MACD/channel/momentum/breadth combinations can materially improve some validation periods but did not survive the 2023+ holdout. ETF-020 through ETF-024 then tested broad technical-indicator ML, walk-forward retraining, retraining cadence, and transaction-cost stress. The walk-forward signal produced only a small, event-sparse improvement, so it remains research-only.
+
+The next diagnostics are intentionally focused rather than another blind parameter sweep:
+- ETF-019 measures which bearish signal families lead sustained weakness and how often they produce false triggers.
+- ETF-025 tests whether the walk-forward holdout improvement is unusually concentrated in its three observed activation dates by comparing them with deterministic random-date placebos.
+
+Neither diagnostic can promote a trading strategy. The eventual strategy must still pass chronological validation/holdout, realistic cost analysis, account-feasibility testing, and autonomous paper-trading gates.
