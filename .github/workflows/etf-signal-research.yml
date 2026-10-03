@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "research/backtest_etf010_bear_gate.py"
+      - "research/backtest_etf011_partial_inverse.py"
       - ".github/workflows/etf-signal-research.yml"
 
 jobs:
