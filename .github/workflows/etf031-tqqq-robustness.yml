@@ -1,0 +1,69 @@
+name: ETF-031 TQQQ Robustness
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf031_tqqq_robustness.py"
+      - "tests/test_etf031_tqqq_robustness.py"
+      - ".github/workflows/etf031-tqqq-robustness.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  etf031:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            research/requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
+
+      - name: Compile
+        run: python -m py_compile research/backtest_etf031_tqqq_robustness.py
+
+      - name: Run ETF-031 unit tests
+        run: python -m pytest -q tests/test_etf031_tqqq_robustness.py
+
+      - name: Build historical market dataset
+        run: python research/build_historical_regime_dataset.py
+
+      - name: Run ETF-031 robustness audit
+        run: python research/backtest_etf031_tqqq_robustness.py
+
+      - name: Print ETF-031 controls
+        run: cat data/research/etf031_control_summary.csv
+
+      - name: Print ETF-031 rolling statistics
+        run: cat data/research/etf031_rolling_stats.csv
+
+      - name: Print ETF-031 lower-CAGR scenarios
+        run: cat data/research/etf031_lower_future_cagr_scenarios.csv
+
+      - name: Upload ETF-031 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: etf031-tqqq-robustness
+          path: |
+            data/research/etf031_control_summary.csv
+            data/research/etf031_rolling_stats.csv
+            data/research/etf031_start_date_sensitivity.csv
+            data/research/etf031_era_sensitivity.csv
+            data/research/etf031_exceptional_year_removal.csv
+            data/research/etf031_path_stress.csv
+            data/research/etf031_lower_future_cagr_scenarios.csv
+          if-no-files-found: error
