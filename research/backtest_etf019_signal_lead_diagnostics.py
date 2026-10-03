@@ -59,7 +59,7 @@ def features():
 
 def main():
     f,m=features()
-    bench=m.pct_change().mean(axis=1)
+    bench=(1.0+m.pct_change().mean(axis=1).fillna(0.0)).cumprod()
     rows=[]
     for family,s in f.items():
         for threshold in (.4,.5,.6,.7):
