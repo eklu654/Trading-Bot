@@ -6,7 +6,7 @@ from research.analyze_regime_directional_opportunity import PAIRS, SPLITS, summa
 
 
 def test_summarize_preserves_bull_bear_exclusivity_as_separate_sides():
-    dates = pd.date_range("2020-01-01", periods=3, freq="D")
+    dates = pd.to_datetime(["2019-01-01", "2020-01-01", "2023-01-01"])
     rows = []
     for date in dates:
         for regime in ("TRENDING_NORMAL", "SIDEWAYS_CHOPPY", "TURBULENT_HIGH_VOL"):
