@@ -142,6 +142,7 @@ def summarize(frame: pd.DataFrame, label: str, split: str) -> dict[str, object]:
         "max_drawdown": dd.min(),
         "average_daily_turnover": frame["turnover"].mean(),
         "annualized_turnover": frame["turnover"].mean() * 252,
+        "total_turnover": frame["turnover"].sum(),
     }
 
 
