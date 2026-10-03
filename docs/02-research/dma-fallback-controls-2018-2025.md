@@ -50,3 +50,4 @@ profile relative to cash across the full sample and the predefined stress window
 The workflow artifact is:
 - `data/research/dma_fallback_controls_2018_2025.csv`
 - `data/research/dma_fallback_stress_2018_2025.csv`
+- `data/research/dma_fallback_annual_returns_2018_2025.csv`
