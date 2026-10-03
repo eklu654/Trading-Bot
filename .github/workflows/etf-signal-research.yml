@@ -9,6 +9,7 @@ on:
       - "research/backtest_etf012_early_bear_override.py"
       - "research/backtest_etf013_absolute_vix_early_bear.py"
       - "research/backtest_etf014_inverse_instrument_grid.py"
+      - "research/backtest_etf015_risk_adjusted_bull_rotation.py"
       - ".github/workflows/etf-signal-research.yml"
 
 jobs:
@@ -32,3 +33,5 @@ jobs:
         run: python research/backtest_etf013_absolute_vix_early_bear.py
       - name: Run ETF-014 inverse instrument grid
         run: python research/backtest_etf014_inverse_instrument_grid.py
+      - name: Run ETF-015 risk-adjusted bull rotation
+        run: python research/backtest_etf015_risk_adjusted_bull_rotation.py
