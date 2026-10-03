@@ -246,6 +246,8 @@ def replay(
 
     event_lookup = events.set_index("entry_date") if not events.empty else pd.DataFrame()
     roll_lookup = rolls.set_index("entry_date") if not rolls.empty else pd.DataFrame()
+    original_groups = {pd.Timestamp(k): v for k, v in original_quotes.groupby("entry_date", sort=True)}
+    roll_groups = {pd.Timestamp(k): v for k, v in roll_quotes.groupby("entry_date", sort=True)} if not roll_quotes.empty else {}
     trades = []
     active_until = pd.Timestamp.min
 
@@ -264,8 +266,8 @@ def replay(
         if initial_credit <= 0:
             continue
 
-        oq = original_quotes[original_quotes["entry_date"] == row["entry_date"]]
-        rq = roll_quotes[roll_quotes["entry_date"] == row["entry_date"]] if not roll_quotes.empty else pd.DataFrame()
+        oq = original_groups.get(entry_date, pd.DataFrame())
+        rq = roll_groups.get(entry_date, pd.DataFrame())
         roll = roll_lookup.loc[entry_date] if args.defense == "roll-untested" and entry_date in roll_lookup.index else None
 
         net_credit = initial_credit
