@@ -409,3 +409,24 @@ The next signal experiment should therefore move from static family scores towar
 This should be tested as another **diagnostic first**, not immediately as a return-optimized parameter grid. The goal is to determine whether the July 2024 pattern is part of a recurring archetype across earlier selloffs and whether the 2022 false-positive pattern can be separated from it without using future information.
 
 ETF-026 does **not** produce a paper-trading candidate. It does, however, materially sharpen the research target: the unresolved problem appears less like “find a bearish indicator” and more like “detect the transition into a sustained bearish regime early enough, while avoiding already-bearish conditions that are about to reverse.”
+
+
+## ETF-027 signal-transition diagnostics
+
+ETF-027 followed ETF-026 without optimizing portfolio returns. It examined how the six family scores changed from 10 to 5 to 0 sessions before the 93 de-clustered event starts for which all three snapshots were available. The purpose was to test whether bearish events are better described by **indicator movement** than by a static bearish score.
+
+The aggregate event population shows that the family scores are not simply moving monotonically toward a bearish state:
+- MACD averaged 0.535 at 10 sessions before, 0.492 at 5 sessions before, and 0.500 at the event date. Its mean 10-to-0 change was slightly negative (-0.030).
+- Momentum rose from 0.337 at 10 sessions before to 0.361 at 5, then fell to 0.330 at the event date.
+- Volatility rose from 0.371 at 10 sessions before to 0.430 at 5, then fell to 0.309 at the event date.
+- Breadth was relatively stable: 0.371 at 10 sessions, 0.355 at 5, and 0.353 at the event date.
+- Trend was almost unchanged and low on average (0.189, 0.189, 0.194).
+- Channel-break scores actually declined toward the event date (0.084, 0.077, 0.015), reinforcing that the present binary lower-channel-break feature is not a reliable event-date trigger.
+
+The July 2024 cluster has a particularly distinctive shape. On all three activation dates, the trend and channel scores were **zero**, while MACD had been more bearish five sessions earlier and then faded sharply by the activation date. For July 9/10, MACD moved from 0.467 at 10 sessions before to 0.667 at 5 sessions before and then to 0.000 on the activation date. All three July dates also had a 5-to-0 MACD decline of at least 0.40. Breadth similarly fell sharply into the activation dates, while trend remained at zero.
+
+The 2022-12-28 false positive was structurally different. It was already heavily bearish-looking at the activation date: trend 0.867, MACD 0.800, momentum 0.600, and breadth 0.900. The next 20-session benchmark return was **+11.79%**. Its MACD also faded from 1.000 five sessions before to 0.800 at the activation date, so MACD fade by itself is clearly not sufficient.
+
+The diagnostic therefore sharpens the hypothesis again: the useful information may be a **transition pattern conditional on the broader regime**, rather than a high bearish score. In particular, the successful July 2024 case looked like a bearish signal developing while the long-term trend/breadth state was still relatively healthy, whereas the 2022 false positive looked like an already-bearish market that subsequently mean-reverted.
+
+ETF-027 does not justify a new trading rule yet. The next diagnostic should test this distinction across the full historical event population: compare fast deterioration while trend/breadth remain relatively healthy against deterioration occurring inside an already-bearish regime. If that separation recurs across multiple historical selloffs, it would provide a more principled basis for a transition detector than simply adding more indicators to a static score.
