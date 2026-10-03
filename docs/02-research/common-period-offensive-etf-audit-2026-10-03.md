@@ -2,13 +2,11 @@
 
 ## Research rule
 
-All headline comparisons in this audit use the same available historical endpoint: **2010-01-04 through 2026-09-25**, or the later common start date forced by the instruments in a particular portfolio. No 2018-2025 result should be compared directly with a 2010-present result.
+All headline comparisons use the same available historical endpoint: **2010-01-04 through 2026-09-25**, or the later common start date forced by the instruments in a particular portfolio. No 2018-2025 result should be compared directly with a 2010-present result.
 
 Starting capital for terminal-wealth comparisons is **$5,000**.
 
 ## Core controls
-
-Source: completed historical-research artifact from the repository's 2026-10-03 research run.
 
 | Strategy | Start | End | $5k ending balance | CAGR | Max DD |
 |---|---|---|---:|---:|---:|
@@ -42,19 +40,25 @@ From 2010-03-11 through 2026-09-25:
 
 - 100% invested buy-and-hold: total-return multiple 209.012493, approximately **$1,045,062** from $5,000; CAGR 38.12%; max DD -82.10%.
 - 200-DMA, 0% cash: total-return multiple 38.974750, approximately **$194,874**; CAGR 24.79%; max DD -47.84%.
-- 200-DMA, 25% cash: total-return multiple 19.992398, approximately **$99,962**; max DD -32.58%.
-- 200-DMA+VIX, 25% cash: total-return multiple 9.??? should not be used until the exact artifact value is separately verified.
+- 200-DMA, 25% cash: total-return multiple 18.992398, approximately **$99,962**; CAGR 19.85%; max DD -37.35%.
+- 200-DMA+VIX, 25% cash: total-return multiple 6.941912, approximately **$34,710**; CAGR 13.34%; max DD -41.35%.
+
+## Important methodological distinction
+
+The single-ETF controls above use the common research endpoint in the dynamic-leverage artifact. The five-family control has a later common start because SOXL did not have observations before 2010-03-11.
+
+This is preferable to truncating every strategy to 2018-2025 merely for convenience. The goal is now to use **the longest identical available period for each explicitly defined comparison set**, while never mixing periods in the same table.
 
 ## Interpretation
 
-The date-range correction materially changes the apparent comparisons. The five-family $621k figure is a 2010-2026 result. It should be compared against other strategies over that same common period before drawing conclusions.
+The date-range correction materially changes the apparent comparisons. The five-family $621k figure is a 2010-2026 result. It should be compared against other strategies over that same period before drawing conclusions.
 
-The next research gate is therefore:
+The next research gate is:
 
-1. Keep **2010-09/25-2026** as the common headline period wherever the required instruments have data.
-2. Preserve each strategy's exact start date when an instrument limits availability.
+1. Keep **2010-01-04 → 2026-09-25** as the common headline period where the required instruments permit it.
+2. Preserve the exact common start date when an instrument limits availability.
 3. Use exact $5,000 terminal wealth, not CAGR-derived approximations.
-4. Keep max drawdown alongside terminal wealth rather than using drawdown as an automatic rejection criterion.
+4. Keep maximum drawdown alongside terminal wealth rather than using drawdown as an automatic rejection criterion.
 5. Separately evaluate train/validation/holdout behavior so the long full-period result is not mistaken for evidence of future performance.
-6. Retain buy-and-hold TQQQ/SOXL and the five-family always-bull portfolio as aggressive offensive controls.
-7. Compare the dynamic/switching strategies against these controls over the identical full period before spending more compute on parameter refinement.
+6. Retain buy-and-hold TQQQ/SOXL and the five-family always-bull portfolio as aggressive controls.
+7. Compare dynamic/switching strategies against these controls over the identical full period before spending more compute on parameter refinement.
