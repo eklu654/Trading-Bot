@@ -1,0 +1,27 @@
+name: ETF Event Placebo Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf025_event_placebo.py"
+      - "research/build_historical_regime_dataset.py"
+      - ".github/workflows/etf-event-placebo.yml"
+
+concurrency:
+  group: etf-event-placebo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  placebo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build historical dataset
+        run: python research/build_historical_regime_dataset.py
+      - name: Run ETF-025 event concentration placebo
+        run: python research/backtest_etf025_event_placebo.py
