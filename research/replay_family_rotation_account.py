@@ -35,6 +35,12 @@ CANDIDATES = (
     ("RISK_V30_L20_DD25", (25, 0.30)),
     ("RISK_V30_L20_DD30", (30, 0.30)),
 )
+SPLITS = {
+    "full": ("2010-03-12", "2026-09-25"),
+    "train": ("2010-03-12", "2019-12-31"),
+    "validation": ("2020-01-01", "2022-12-31"),
+    "holdout": ("2023-01-01", "2026-09-25"),
+}
 
 
 def prices_for(names, idx):
@@ -48,8 +54,6 @@ def prices_for(names, idx):
     frames = {}
     for name in names:
         raw = load(symbol_map[name]).reindex(idx)
-        # Yahoo adjusted close preserves distributions/splits. Scale OHLC by
-        # adj_close / close so the open execution model is distribution-aware.
         factor = raw["adj_close"] / raw["close"]
         frames[name] = pd.DataFrame(
             {"adj_open": raw["open"] * factor, "adj_close": raw["adj_close"]},
@@ -88,7 +92,6 @@ def replay_close(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
         cur_prices = pd.Series(
             {name: float(prices[name].loc[date, "adj_close"]) for name in targets.columns}
         )
-
         cash, shares, turnover = _trade_to_target(
             cash, shares, targets.loc[date], prev_prices, cost_bps
         )
@@ -101,12 +104,11 @@ def replay_close(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
 
 
 def replay_open(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
-    """More realistic sensitivity: rebalance at session-t adjusted open.
+    """Causal sensitivity: rebalance at session-t adjusted open.
 
-    Existing positions experience the overnight move from the prior open to
-    today's open before the new target is applied. The new target then earns
-    the open-to-next-open return. The final session is omitted because there is
-    no following open at which to mark the held portfolio.
+    Existing positions experience the overnight move into today's open before
+    the new target is applied. The new target then earns the open-to-next-open
+    return. The final session is omitted because there is no following open.
     """
     idx = targets.index
     cash = STARTING_BALANCE
@@ -122,7 +124,6 @@ def replay_open(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
         next_open = pd.Series(
             {name: float(prices[name].loc[next_date, "adj_open"]) for name in targets.columns}
         )
-
         cash, shares, turnover = _trade_to_target(
             cash, shares, targets.loc[date], open_prices, cost_bps
         )
@@ -134,7 +135,7 @@ def replay_open(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
     ).set_index("date")
 
 
-def summary(frame, label, cost, execution):
+def summary(frame, label, cost, execution, split):
     eq = frame.equity
     years = max((eq.index[-1] - eq.index[0]).days / 365.25, 1 / 365.25)
     dd = eq / eq.cummax() - 1
@@ -143,6 +144,7 @@ def summary(frame, label, cost, execution):
         "strategy": label,
         "execution": execution,
         "cost_bps": cost,
+        "split": split,
         "start": eq.index[0],
         "end": eq.index[-1],
         "ending_equity": eq.iloc[-1],
@@ -170,11 +172,15 @@ def main():
             targets = base_w.mul(overlay.exposure, axis=0)
 
         for cost in COSTS:
-            close = replay_close(targets, prices, cost)
-            rows.append(summary(close, label, cost, "prior_close"))
-
-            open_model = replay_open(targets, prices, cost)
-            rows.append(summary(open_model, label, cost, "next_open"))
+            executions = {
+                "prior_close": replay_close(targets, prices, cost),
+                "next_open": replay_open(targets, prices, cost),
+            }
+            for execution, frame in executions.items():
+                for split, (start, end) in SPLITS.items():
+                    segment = frame.loc[start:end]
+                    if not segment.empty:
+                        rows.append(summary(segment, label, cost, execution, split))
 
     out = pd.DataFrame(rows)
     out.to_csv(DATA_DIR / "dma_family_rotation_5000_account_replay.csv", index=False)
