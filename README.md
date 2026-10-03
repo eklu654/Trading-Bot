@@ -159,3 +159,12 @@ The current deterministic ETF research target is the frozen **250-DMA / top-2 / 
 The next gate therefore does not broaden the selector. The risk-overlay runner keeps that base candidate frozen and tests causal portfolio-level risk controls: prior-close realized-volatility targeting and a simple drawdown de-risking overlay. The matrix includes 20/60-session volatility windows, fixed volatility targets, drawdown thresholds, and 0/10/25/50 bps transaction-cost stress. Train/validation/holdout results are retained separately; holdout is not used for candidate selection.
 
 The purpose of this stage is to determine whether risk can be reduced without destroying the underlying family-rotation edge. A positive result would still require further walk-forward robustness, subperiod analysis, account-level replay at the canonical $5,000 starting balance, and paper trading before any live deployment.
+
+
+### Risk-overlay result — 2026-10-03
+
+The first frozen risk-overlay matrix completed successfully in about 1.5 minutes. The raw 250-DMA/top-2/5-session rotation produced 19.18% CAGR in train, 12.93% in validation, and 80.13% in holdout, with maximum drawdowns of roughly 64–67%. These figures are historical diagnostics, not forecasts.
+
+The simple overlay produced a meaningful risk reduction. The most useful robustness cluster from the initial matrix is around a **30% volatility target, 20-session lookback, and 20–30% drawdown trigger**. For example, the V30/L20/DD25 variant had train/validation/holdout CAGRs of 7.78% / 10.32% / 36.82%, with maximum drawdowns of -38.50% / -29.88% / -32.82%. At 25 bps transaction cost those CAGRs were 4.75% / 8.17% / 33.54%. V30/L20/DD30 was similar: 8.11% / 14.70% / 36.95% at zero cost and 5.06% / 12.35% / 33.83% at 25 bps.
+
+This is not yet a selected production configuration. The next gate is parameter-neighborhood/era robustness for this small cluster, followed by a $5,000 account-level replay using realistic position sizing and execution constraints. The objective is to determine whether the drawdown reduction survives different historical periods and practical implementation friction before paper trading.
