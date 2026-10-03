@@ -26,7 +26,7 @@ ROOT=Path(__file__).resolve().parents[1]
 DATA=ROOT/"data"/"research"
 PAIRS={"QQQ":"TQQQ","SPY":"SPXL","SOXX":"SOXL","DIA":"UDOW","IWM":"TNA"}
 SPLITS={"train":("2010-03-01","2019-12-31"),"validation":("2020-01-01","2022-12-31"),"holdout":("2023-01-01","2099-12-31")}
-SCORES=("MOM60","MOM120","RISK60","RISK120")
+SCORES=("mom60","mom120","risk60","risk120")
 CONFIRM=(1,3,5)
 TOP_N=(1,2,3)
 CASH=0.25
@@ -72,7 +72,7 @@ def main():
         for u,f in features.items():
             raw=f["eligible_raw"].fillna(False).astype(bool)
             runs=raw.astype(int).groupby((~raw).cumsum()).cumsum()
-            eligible_state[u]=(runs>=confirm).shift(1).fillna(False).astype(bool)
+            eligible_state[u]=(runs>=confirm).astype(bool).shift(1).fillna(False).astype(bool)
 
         for i in range(1,len(idx)):
             prev=idx[i-1]; date=idx[i]; candidates=[]
