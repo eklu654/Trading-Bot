@@ -134,3 +134,10 @@ ETF-025 found that the small walk-forward holdout improvement was concentrated a
 ETF-029 adds a fixed robustness diagnostic around ETF-028. It repeats the bearish-event context classification at 3, 5, 10, 15, and 20 sessions before each event, using fixed non-overlapping healthy/bearish cutoffs of 1/3, 0.40, and 1/2. The experiment measures the same 20-session event outcome and does not optimize a trading rule or select a cutoff. Its purpose is to determine whether ETF-028 context differences survive reasonable changes in the pre-event observation point.
 
 Runner: `python research/backtest_etf029_context_robustness.py`.
+
+
+## ETF-030 temporal stability — 2026-10-03
+
+ETF-030 extends the ETF-029 robustness gate by splitting the bearish-event sample into four calendar eras (2007–2014, 2015–2019, 2020–2022, and 2023–2026) and repeating the same fixed lag/cutoff context diagnostics inside each era. This is a temporal-stability check, not a parameter-selection sweep: no lag, cutoff, or trading rule is promoted from the results.
+
+Runner: `python research/backtest_etf030_era_stability.py`.
