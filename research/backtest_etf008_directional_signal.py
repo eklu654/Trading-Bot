@@ -91,7 +91,7 @@ def load(symbol: str) -> pd.DataFrame:
 def make_feature_frame() -> tuple[dict[str, pd.DataFrame], pd.DataFrame]:
     raw = {symbol: load(symbol) for pair in PAIRS.values() for symbol in pair}
     underlyings = {symbol: load(symbol)["close"] for symbol in PAIRS}
-    vix = load("vix_daily")["vix"] if (DATA / "vix_daily.csv").exists() else pd.Series(dtype=float)
+    vix = pd.read_csv(DATA / "vix_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()["vix"] if (DATA / "vix_daily.csv").exists() else pd.Series(dtype=float)
 
     close = pd.concat(underlyings, axis=1)
     bull_fraction = (close > close.rolling(200).mean()).mean(axis=1)
