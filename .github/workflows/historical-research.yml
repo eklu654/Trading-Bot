@@ -130,6 +130,16 @@ jobs:
             run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid
 
       - parallel:
+          - name: Replay OPTIONS-001 defense — none conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense none --fill-model conservative
+          - name: Replay OPTIONS-001 defense — none mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense none --fill-model mid
+          - name: Replay OPTIONS-001 defense — roll-untested conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense roll-untested --fill-model conservative
+          - name: Replay OPTIONS-001 defense — roll-untested mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense roll-untested --fill-model mid
+
+      - parallel:
           - name: Batch OPTIONS-002 account feasibility — ALL_DAYS conservative
             run: python research/batch_account_feasibility_options002.py --regime all_days --fill-model conservative
           - name: Batch OPTIONS-002 account feasibility — ALL_DAYS mid
