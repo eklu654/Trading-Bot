@@ -83,6 +83,7 @@ jobs:
             data/research/dynamic_sizing_e3_sqrt_ratio.csv
             data/research/dma_fallback_controls_2018_2025.csv
             data/research/dma_fallback_stress_2018_2025.csv
+            data/research/dma_fallback_annual_returns_2018_2025.csv
             data/research/dma_reentry_confirmation_2018_2025.csv
             data/research/dynamic_sizing_e3_summary.csv
             data/research/dynamic_sizing_e3_annual_returns.csv
