@@ -27,3 +27,5 @@ jobs:
         env:
           PYTHONPATH: .
         run: python backtest_etf023_walk_forward_cadence_sensitivity.py
+
+# Final event-alignment correction trigger.
