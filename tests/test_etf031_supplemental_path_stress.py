@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 
 from research.etf031_supplemental_path_stress import (
-    load_tqqq,
     remove_observation_stress,
     severe_bear_recovery_scenarios,
 )
@@ -17,14 +16,27 @@ def test_individual_observation_stress_preserves_baseline_case():
     assert np.isfinite(baseline["cagr"])
 
 
-def test_load_tqqq_uses_common_etf031_period():
-    price = load_tqqq()
-    assert price.index.min() == pd.Timestamp("2010-03-11")
-    assert price.index.max() == min(
-        pd.read_csv("data/research/tqqq_daily.csv", parse_dates=["Date"])["Date"].max(),
-        pd.read_csv("data/research/qqq_daily.csv", parse_dates=["Date"])["Date"].max(),
-        pd.read_csv("data/research/soxl_daily.csv", parse_dates=["Date"])["Date"].max(),
-        pd.read_csv("data/research/spxl_daily.csv", parse_dates=["Date"])["Date"].max(),
+def test_load_tqqq_uses_common_etf031_period(monkeypatch):
+    dates = pd.date_range("2010-03-01", periods=20, freq="D")
+    frames = {
+        "TQQQ": pd.Series(np.arange(20, dtype=float) + 100, index=dates),
+        "QQQ": pd.Series(np.arange(18, dtype=float) + 100, index=dates[1:19]),
+        "SOXL": pd.Series(np.arange(17, dtype=float) + 100, index=dates[2:19]),
+        "SPXL": pd.Series(np.arange(16, dtype=float) + 100, index=dates[3:19]),
+    }
+
+    def fake_load(symbol):
+        return frames[symbol]
+
+    import research.etf031_supplemental_path_stress as stress
+
+    monkeypatch.setattr(stress, "_load", fake_load)
+    price = stress.load_tqqq()
+
+    assert price.index.min() == pd.Timestamp("2010-03-04")
+    assert price.index.max() == pd.Timestamp("2010-03-19")
+    pd.testing.assert_series_equal(
+        price, frames["TQQQ"].loc["2010-03-04":"2010-03-19"]
     )
 
 
