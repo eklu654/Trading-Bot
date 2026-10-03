@@ -1,0 +1,46 @@
+name: ETF-028 Bearish Transition Context Diagnostics
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/backtest_etf028_transition_context.py"
+      - "research/backtest_etf026_bear_event_archetypes.py"
+      - "research/build_historical_regime_dataset.py"
+      - "research/requirements.txt"
+      - ".github/workflows/etf028-transition-context-diagnostics.yml"
+
+concurrency:
+  group: etf028-transition-context-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: research/requirements.txt
+      - name: Cache historical research dataset
+        id: dataset-cache
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: etf-research-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-09-28
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build historical dataset when cache is cold
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: python research/build_historical_regime_dataset.py
+      - name: Run ETF-028 context diagnostics
+        run: python research/backtest_etf028_transition_context.py
+      - name: Upload ETF-028 diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: etf028-transition-context-diagnostics
+          path: |
+            data/research/etf028_context_summary.csv
+            data/research/etf028_event_context_rows.csv
