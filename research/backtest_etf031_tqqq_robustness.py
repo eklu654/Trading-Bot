@@ -19,6 +19,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from research.test_dma_family_rotation import backtest as family_rotation_backtest
+from research.test_dma_family_rotation_risk_overlay import base_weights, build_overlay
+
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "research"
 STARTING_CAPITAL = 5000.0
@@ -270,6 +273,22 @@ def main() -> None:
                 cost,
             )
         )
+
+    # Existing frozen family-rotation controls are included on the same common
+    # empirical date range. These are imported unchanged; ETF-031 does not
+    # optimize them.
+    rotation = family_rotation_backtest(250, 2, 5)
+    rotation = rotation.loc[common_start:common_end]
+    controls.append(summarize(rotation["portfolio_return"], "BASE_ROTATE_DMA250_TOP2_C5", 0))
+
+    base_w, family_returns = base_weights()
+    base_w = base_w.loc[common_start:common_end]
+    family_returns = family_returns.loc[common_start:common_end]
+    for dd in (0.20, 0.25, 0.30):
+        overlay = build_overlay(base_w, family_returns, 20, 0.30, dd)
+        for cost in COSTS_BPS:
+            stressed = overlay["portfolio_return"] - overlay["turnover"] * cost / 10000.0
+            controls.append(summarize(stressed, f"RISK_V30_L20_DD{int(dd*100)}", cost))
 
     summary = pd.DataFrame(controls)
     summary.to_csv(DATA / "etf031_control_summary.csv", index=False)
