@@ -331,3 +331,18 @@ At **50 bps**:
 At **100 bps**, the candidate's annualized return falls slightly below the baseline in holdout, although its Sharpe remains marginally higher. Thus the signal's advantage is not dependent on assuming zero costs, but the edge remains small and event-sparse.
 
 This strengthens the case for further research rather than promotion: the walk-forward inverse signal has now survived a basic cost stress, but its improvement is still concentrated in a handful of events and is not large enough to justify paper trading without a stronger robustness test.
+
+
+## ETF-019 signal-lead diagnostics
+
+A focused diagnostic was added to answer the next question raised by ETF-018: which signal families actually arrive before sustained bearish periods, rather than merely producing a profitable validation grid? ETF-019 measures trend, MACD, channel, momentum, volatility, and breadth conditions across QQQ/SPY/SOXX/DIA/IWM and records their forward 5/10/20/40-session behavior. It is explicitly diagnostic and does not select a trading rule.
+
+The focused workflow is isolated from the long historical suite so signal diagnostics do not consume the same runtime budget as unrelated research.
+
+## ETF-025 event-concentration placebo diagnostic
+
+ETF-023/024's selected walk-forward inverse signal produced only one validation activation and a three-session holdout cluster (July 9–11, 2024). Because such a small event count can make a modest performance difference look more meaningful than it is, ETF-025 was added as a fixed post-selection diagnostic rather than another optimization.
+
+ETF-025 compares those three frozen holdout dates with 20,000 deterministic random three-date placebo samples from the same 2023+ period, measuring forward 5/10/20/40-session benchmark returns. It does not change the candidate, threshold, retraining cadence, or portfolio accounting. The purpose is to quantify how unusual the observed event concentration is and to determine whether the apparent holdout advantage is plausibly explained by a handful of favorable dates.
+
+No ETF-025 result is being used for strategy selection until the diagnostic completes.
