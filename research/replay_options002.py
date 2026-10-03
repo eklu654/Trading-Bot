@@ -171,7 +171,7 @@ def replay(entries,quotes,regime,args):
         ed=pd.Timestamp(r.entry_date)
         if ed<=active_until or ed<=last_entry_date: continue
         q=quote_groups.get(ed)
-        if q.empty:continue
+        if q is None or q.empty:continue
         by=q.pivot(index="date",columns="contract_id",values=["bid","ask","mark"])
         ids=[str(r.contract_id_call),str(r.contract_id_put),str(r.long_call_id),str(r.long_put_id)]
         if args.fill_model=="mid":
