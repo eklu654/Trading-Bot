@@ -1,0 +1,26 @@
+name: ETF ML Indicator Research
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf020_ml_indicator_bear_transition.py"
+      - ".github/workflows/etf-ml-indicator-research.yml"
+
+concurrency:
+  group: etf-ml-indicator-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ml-indicator-research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build lightweight indicator dataset
+        run: python research/build_historical_regime_dataset.py
+      - name: Run ETF-020 supervised indicator synthesis
+        run: python research/backtest_etf020_ml_indicator_bear_transition.py
