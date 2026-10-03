@@ -47,3 +47,19 @@ def test_severe_bear_recovery_has_requested_drawdowns():
         subset = result[np.isclose(result["shock_drawdown"], expected)]
         assert len(subset) == 3
         assert np.allclose(subset["max_drawdown"], expected, atol=1e-10)
+
+
+def test_severe_bear_recovery_is_fixed_horizon_and_path_sensitive():
+    result = severe_bear_recovery_scenarios()
+    assert result["calendar_years"].max() - result["calendar_years"].min() < 0.1
+
+    dd90 = result[result["shock_drawdown"] == -0.90].set_index("recovery_years")
+    dd50 = result[result["shock_drawdown"] == -0.50].set_index("recovery_years")
+
+    # Deeper shocks must not disappear from terminal wealth merely because
+    # the scenario is allowed to run longer.
+    assert dd90.loc[2, "ending_balance_5000"] < dd50.loc[2, "ending_balance_5000"]
+
+    # With a fixed horizon, a slower recovery leaves less time for baseline
+    # growth after the recovery completes.
+    assert dd50.loc[5, "ending_balance_5000"] < dd50.loc[2, "ending_balance_5000"]
