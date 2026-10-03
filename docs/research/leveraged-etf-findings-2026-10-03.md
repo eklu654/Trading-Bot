@@ -206,3 +206,34 @@ The current evidence does not support promoting:
 The strongest defensible baseline remains the canonical ETF-001 family with cash as the default defensive state, pending further bull-side research and cost/robustness validation.
 
 The next experiments should use the canonical accounting framework from the start. No exploratory replay with a different portfolio ledger should be used to select a production strategy.
+
+
+## ETF-018 multi-signal bearish transition
+
+ETF-018 directly tested the hypothesis that the inverse-ETF problem is primarily a signal problem rather than an instrument problem. It combined interpretable ex-ante signal families:
+- trend: price vs 200-DMA, 200-DMA slope, and 50/200-DMA relationship;
+- MACD: bearish line relationship, negative histogram, and histogram deterioration;
+- channels: prior 20/40/60-session Donchian breakdowns;
+- momentum: 20/60-session returns;
+- volatility: VIX percentile and 5-session change;
+- breadth: weakness across QQQ/SPY/SOXX/DIA/IWM.
+
+It also tested hysteresis, confirmation, and 25/50/75/100% inverse sleeve allocation. The same-underlying bull/bear exclusivity rule is enforced: an inverse position replaces that underlying's bull sleeve rather than coexisting with it.
+
+The first canonical run completed successfully. It produced a materially stronger validation result than ETF-017, which confirms that the richer signal collection is worth investigating further, but the improvement did not survive the 2023+ holdout.
+
+The validation leader was the full signal family with threshold 0.60, one-session confirmation, release threshold 0.40, and 25% inverse allocation:
+- Validation: **36.21% annualized, Sharpe 1.047, max DD -22.65%**
+- Canonical baseline: **20.18% annualized, Sharpe 0.708, max DD -32.82%**
+
+The exact validation-selected configuration then produced in holdout:
+- **16.44% annualized, Sharpe 0.602, max DD -39.38%**
+- Canonical baseline: **24.18% annualized, Sharpe 0.779, max DD -36.99%**
+
+Other validation leaders also failed to beat the holdout baseline. For example, the trend_macd_channel configuration at threshold 0.70 / confirmation 3 / release 0.40 / 75% inverse produced 21.09% annualized and Sharpe 0.708 in holdout, versus 24.18% and 0.779 for the baseline.
+
+Interpretation: **MACD + channel information appears capable of improving the timing signal in some historical periods, but the first composite implementation is not robust enough to promote.** This is stronger evidence for continuing signal research than the earlier simple 200-DMA inverse tests, while still rejecting the tested configuration as a paper-trading candidate.
+
+The most important next refinement is therefore not another large blind parameter grid. It should examine which signal arrives first and whether that sequence consistently precedes sustained bearish periods: channel breakdown, MACD histogram deterioration/cross, momentum deterioration, breadth confirmation, VIX expansion, and eventual 200-DMA loss. Lead-time, false-trigger, and regime-by-regime diagnostics should be added before another selection grid.
+
+ETF-018 also exposed a runtime optimization opportunity. Its workflow now uses a lightweight data bootstrap containing only the 11 required ETFs/underlyings plus VIX instead of rebuilding the full historical research universe. This keeps focused signal experiments isolated from the slower full historical pipeline.
