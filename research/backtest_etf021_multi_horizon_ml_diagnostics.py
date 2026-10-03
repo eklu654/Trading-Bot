@@ -103,7 +103,8 @@ def main() -> None:
           .sort_values(["avg_precision", "roc_auc"], ascending=False)
           .to_string(index=False))
 
-    out_path = Path(__file__).resolve().parents[1] / "data" / "research" / "etf021_multi_horizon_ml_diagnostics.csv"\n    out.to_csv(out_path, index=False)
+    out_path = Path(__file__).resolve().parents[1] / "data" / "research" / "etf021_multi_horizon_ml_diagnostics.csv"
+    out.to_csv(out_path, index=False)
 
 
 if __name__ == "__main__":
