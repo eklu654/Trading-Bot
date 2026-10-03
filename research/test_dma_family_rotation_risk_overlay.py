@@ -107,11 +107,18 @@ def build_overlay(
     valid_vol = realized_vol.notna() & (realized_vol > 0)
     exposure.loc[valid_vol] = (vol_target / realized_vol.loc[valid_vol]).clip(upper=1.0)
 
-    # Drawdown guard also uses only the prior day's equity curve.
-    raw_equity = (1.0 + raw).cumprod()
-    prior_dd = (raw_equity / raw_equity.cummax() - 1.0).shift(1)
+    # Drawdown guard is based on the overlay's own equity curve and is
+    # evaluated sequentially. Only the prior day's close/equity is used.
     if dd_threshold > 0:
-        exposure.loc[prior_dd <= -dd_threshold] *= DD_SCALE
+        overlay_equity = 1.0
+        peak = 1.0
+        for date in idx:
+            prior_dd = overlay_equity / peak - 1.0
+            if prior_dd <= -dd_threshold:
+                exposure.loc[date] *= DD_SCALE
+            day_return = float((base_w.loc[date] * exposure.loc[date] * returns.loc[date]).sum())
+            overlay_equity *= 1.0 + day_return
+            peak = max(peak, overlay_equity)
 
     weights = base_w.mul(exposure, axis=0)
     portfolio_return = (weights * returns).sum(axis=1)
