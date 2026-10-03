@@ -6,15 +6,17 @@ from research.analyze_regime_directional_opportunity import PAIRS, SPLITS, summa
 
 
 def test_summarize_preserves_bull_bear_exclusivity_as_separate_sides():
+    dates = pd.date_range("2020-01-01", periods=3, freq="D")
     rows = []
-    for regime in ("TRENDING_NORMAL", "SIDEWAYS_CHOPPY", "TURBULENT_HIGH_VOL"):
-        for pair in PAIRS:
-            rows.append({
-                "decision_regime": regime,
-                f"{pair}_bull": 0.01,
-                f"{pair}_bear": -0.01,
-            })
-    result = summarize(pd.DataFrame(rows))
+    for date in dates:
+        for regime in ("TRENDING_NORMAL", "SIDEWAYS_CHOPPY", "TURBULENT_HIGH_VOL"):
+            row = {"Date": date, "decision_regime": regime}
+            for pair in PAIRS:
+                row[f"{pair}_bull"] = 0.01
+                row[f"{pair}_bear"] = -0.01
+            rows.append(row)
+    frame = pd.DataFrame(rows).set_index("Date")
+    result = summarize(frame)
     assert set(result["side"]) == {"bull", "bear"}
     assert len(result) == len(SPLITS) * 3 * len(PAIRS) * 2
 
