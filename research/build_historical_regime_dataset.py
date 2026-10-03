@@ -14,6 +14,7 @@ Dependencies:
 from __future__ import annotations
 
 from pathlib import Path
+import argparse
 
 import numpy as np
 import pandas as pd
@@ -25,9 +26,9 @@ DATA_DIR = ROOT / "data" / "research"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 START = "2010-01-01"
-END = (pd.Timestamp.now().normalize() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+END = pd.Timestamp.now().normalize().strftime("%Y-%m-%d")
 
-# Yahoo Finance provides daily OHLCV history. END is dynamic so reruns use the latest completed market data available.
+# Yahoo Finance treats END as exclusive. Using today as END therefore excludes an in-progress session and captures the latest completed session.
 PRICE_SYMBOLS = [
     "TQQQ",
     "SQQQ",
@@ -296,7 +297,24 @@ def simulate_etf(
 
 
 def main() -> None:
-    prices = {symbol: read_price(symbol) for symbol in PRICE_SYMBOLS}
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--symbols",
+        nargs="+",
+        help="Download only these symbols and write their research CSVs. "
+        "Skips the broader SWITCH-001 feature/scaffold build.",
+    )
+    args = parser.parse_args()
+
+    symbols = args.symbols or PRICE_SYMBOLS
+    prices = {symbol: read_price(symbol) for symbol in symbols}
+
+    if args.symbols:
+        for symbol, frame in prices.items():
+            frame.to_csv(DATA_DIR / f"{symbol.lower()}_daily.csv")
+        print(f"Downloaded {len(prices)} focused research symbols.")
+        print(f"Date range requested: {START} through the latest completed session before {END}.")
+        return
     vix = read_vix()
 
     for symbol, frame in prices.items():
