@@ -136,54 +136,19 @@ jobs:
             run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
 
       - parallel:
-          - name: Replay OPTIONS-002 account feasibility — ALL_DAYS conservative
-            run: |
-              stem="options002_delta16_w2_all_days_conservative"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
-          - name: Replay OPTIONS-002 account feasibility — ALL_DAYS mid
-            run: |
-              stem="options002_delta16_w2_all_days_mid"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
-          - name: Replay OPTIONS-002 account feasibility — BROAD_SIDEWAYS conservative
-            run: |
-              stem="options002_delta16_w2_broad_sideways_conservative"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
-          - name: Replay OPTIONS-002 account feasibility — BROAD_SIDEWAYS mid
-            run: |
-              stem="options002_delta16_w2_broad_sideways_mid"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
-          - name: Replay OPTIONS-002 account feasibility — TURBULENT_ONLY conservative
-            run: |
-              stem="options002_delta16_w2_turbulent_only_conservative"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
-          - name: Replay OPTIONS-002 account feasibility — TURBULENT_ONLY mid
-            run: |
-              stem="options002_delta16_w2_turbulent_only_mid"
-              for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
-                for risk in 0.03 0.05 0.07; do
-                  python research/account_feasibility_options002.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --max-risk-pct "$risk" --output "data/research/"$stem"_account_"$nlv"_risk_"$risk".csv"
-                done
-              done
+          - name: Batch OPTIONS-002 account feasibility — ALL_DAYS conservative
+            run: python research/batch_account_feasibility_options002.py --regime all_days --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — ALL_DAYS mid
+            run: python research/batch_account_feasibility_options002.py --regime all_days --fill-model mid
+          - name: Batch OPTIONS-002 account feasibility — BROAD_SIDEWAYS conservative
+            run: python research/batch_account_feasibility_options002.py --regime broad_sideways --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — BROAD_SIDEWAYS mid
+            run: python research/batch_account_feasibility_options002.py --regime broad_sideways --fill-model mid
+          - name: Batch OPTIONS-002 account feasibility — TURBULENT_ONLY conservative
+            run: python research/batch_account_feasibility_options002.py --regime turbulent_only --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — TURBULENT_ONLY mid
+            run: python research/batch_account_feasibility_options002.py --regime turbulent_only --fill-model mid
+
       - name: Consolidate OPTIONS-002 capital ladder feasibility
         run: python research/analyze_options002_capital_ladder.py
 
