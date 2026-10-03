@@ -280,6 +280,7 @@ def main() -> None:
                 buy_hold_returns(tqqq, cost),
                 "TQQQ_buy_and_hold",
                 cost,
+                1.0,
             )
         )
         controls.append(
@@ -287,6 +288,7 @@ def main() -> None:
                 buy_hold_returns(qqq, cost),
                 "QQQ_buy_and_hold",
                 cost,
+                1.0,
             )
         )
         controls.append(
@@ -294,6 +296,7 @@ def main() -> None:
                 dma_returns(tqqq, cost),
                 "TQQQ_200DMA_cash",
                 cost,
+                float(((tqqq.shift(1) >= tqqq.rolling(MA_WINDOW).mean().shift(1)).fillna(False)).mean()),
             )
         )
         controls.append(
@@ -301,6 +304,7 @@ def main() -> None:
                 buy_hold_returns(soxl, cost),
                 "SOXL_buy_and_hold",
                 cost,
+                1.0,
             )
         )
         controls.append(
@@ -308,6 +312,7 @@ def main() -> None:
                 buy_hold_returns(spxl, cost),
                 "SPXL_buy_and_hold",
                 cost,
+                1.0,
             )
         )
 
@@ -316,7 +321,7 @@ def main() -> None:
     # optimize them.
     rotation = family_rotation_backtest(250, 2, 5)
     rotation = rotation.loc[common_start:common_end]
-    controls.append(summarize(rotation["portfolio_return"], "BASE_ROTATE_DMA250_TOP2_C5", 0))
+    controls.append(summarize(rotation["portfolio_return"], "BASE_ROTATE_DMA250_TOP2_C5", 0, float(rotation.filter(like="_weight").sum(axis=1).mean())))
 
     base_w, family_returns = base_weights()
     base_w = base_w.loc[common_start:common_end]
@@ -325,7 +330,7 @@ def main() -> None:
         overlay = build_overlay(base_w, family_returns, 20, 0.30, dd)
         for cost in COSTS_BPS:
             stressed = overlay["portfolio_return"] - overlay["turnover"] * cost / 10000.0
-            controls.append(summarize(stressed, f"RISK_V30_L20_DD{int(dd*100)}", cost))
+            controls.append(summarize(stressed, f"RISK_V30_L20_DD{int(dd*100)}", cost, float(overlay["exposure"].mean())))
 
     summary = pd.DataFrame(controls)
     summary.to_csv(DATA / "etf031_control_summary.csv", index=False)
