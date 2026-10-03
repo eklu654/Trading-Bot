@@ -41,7 +41,7 @@ jobs:
 
       - name: Run ETF-001 backtest
         run: python research/backtest_etf001.py
-
+\n      - name: Run ETF-002 directional leveraged ETF rotation research\n        run: python research/backtest_etf002_directional_rotation.py\n
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
 
