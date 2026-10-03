@@ -40,7 +40,7 @@ def load(symbol):
 def build():
     under={x:load(x)["close"] for x in PAIRS}
     raw={x:load(x) for p in PAIRS.values() for x in p}
-    vix=load("vix_daily")["vix"]
+    vix=pd.read_csv(DATA/"vix_daily.csv",parse_dates=["Date"]).set_index("Date").sort_index()["vix"]
     close=pd.concat(under,axis=1)
     bull=(close>close.rolling(200).mean()).mean(axis=1)
     vix_pct=vix.rolling(253).apply(lambda x: (x[:-1] <= x[-1]).mean() if len(x)>30 else np.nan,raw=True)
