@@ -66,6 +66,7 @@ jobs:
           path: |
             data/research/etf031_control_summary.csv
             data/research/etf031_rolling_stats.csv
+            data/research/etf031_rolling_summary.csv
             data/research/etf031_start_date_sensitivity.csv
             data/research/etf031_era_sensitivity.csv
             data/research/etf031_exceptional_year_removal.csv
