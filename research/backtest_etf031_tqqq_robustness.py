@@ -31,10 +31,13 @@ FORWARD_HORIZONS_YEARS = (5, 10, 20)
 SCENARIO_FRACTIONS = (0.0, 1 / 3, 0.5, 2 / 3, 1.0)
 
 
-def load(symbol: str) -> pd.Series:
+def load_frame(symbol: str) -> pd.DataFrame:
     path = DATA / f"{symbol.lower()}_daily.csv"
-    frame = pd.read_csv(path, parse_dates=["Date"]).set_index("Date").sort_index()
-    return frame["adj_close"].astype(float)
+    return pd.read_csv(path, parse_dates=["Date"]).set_index("Date").sort_index()
+
+
+def load(symbol: str) -> pd.Series:
+    return load_frame(symbol)["adj_close"].astype(float)
 
 
 def daily_returns(price: pd.Series) -> pd.Series:
@@ -105,6 +108,25 @@ def buy_hold_returns(price: pd.Series, cost_bps: float) -> pd.Series:
     if len(out):
         out.iloc[0] -= cost_bps / 10000.0
     return out
+
+
+def dma_next_open_returns(frame: pd.DataFrame, cost_bps: float) -> pd.Series:
+    """200-DMA/cash with signal at prior close and execution at next open.
+
+    Raw opens are scaled by adj_close / close so splits and distributions are
+    represented consistently with the adjusted-close total-return series.
+    """
+    adjusted_open = frame["open"].astype(float) * (
+        frame["adj_close"].astype(float) / frame["close"].astype(float)
+    )
+    ma = frame["adj_close"].rolling(MA_WINDOW).mean()
+    signal = (frame["adj_close"].shift(1) >= ma.shift(1)).fillna(False)
+    open_to_open = adjusted_open.shift(-1) / adjusted_open - 1.0
+    held = signal.astype(float)
+    turnover = held.diff().abs().fillna(held)
+    out = open_to_open.where(held.astype(bool), 0.0)
+    out = out - turnover * (cost_bps / 10000.0)
+    return out.iloc[:-1]
 
 
 def rolling_stats(ret: pd.Series, label: str, window: int) -> pd.DataFrame:
@@ -272,6 +294,7 @@ def main() -> None:
     qqq = prices["QQQ"]
     soxl = prices["SOXL"]
     spxl = prices["SPXL"]
+    tqqq_frame = load_frame("TQQQ").loc[common_start:common_end]
 
     controls = []
     for cost in COSTS_BPS:
@@ -297,6 +320,14 @@ def main() -> None:
                 "TQQQ_200DMA_cash",
                 cost,
                 float(((tqqq.shift(1) >= tqqq.rolling(MA_WINDOW).mean().shift(1)).fillna(False)).mean()),
+            )
+        )
+        controls.append(
+            summarize(
+                dma_next_open_returns(tqqq_frame, cost),
+                "TQQQ_200DMA_next_open",
+                cost,
+                float(((tqqq_frame["adj_close"].shift(1) >= tqqq_frame["adj_close"].rolling(MA_WINDOW).mean().shift(1)).fillna(False)).mean()),
             )
         )
         controls.append(
