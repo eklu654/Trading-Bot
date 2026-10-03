@@ -323,6 +323,7 @@ def main() -> None:
     # controls. This is the direct test of whether inverse exposure adds value
     # beyond the corresponding bull/cash rule.
     combined_rows: list[dict[str, object]] = []
+    combined_split_rows: list[dict[str, object]] = []
     combined_controls = list(HEADLINE_CONTROLS) + [
         (bull_dma, bear_dma, confirmation, 0.0)
         for bull_dma, bear_dma, confirmation, _ in HEADLINE_CONTROLS
@@ -336,6 +337,25 @@ def main() -> None:
         )
         row = summarize(holdout.assign(state="COMBINED"), label, "holdout")
         state_columns = [f"{pair}_state" for pair in PAIRS]
+        for split_name, segment in {
+            "full": frame.loc["2010-01-01":"2026-09-25"],
+            "train": frame.loc["2010-01-01":"2019-12-31"],
+            "validation": frame.loc["2020-01-01":"2022-12-31"],
+            "holdout": holdout,
+        }.items():
+            if not segment.empty:
+                split_row = summarize(segment.assign(state="COMBINED"), label, split_name)
+                split_states = segment[state_columns]
+                split_row.update({
+                    "bull_dma": bull_dma, "bear_dma": bear_dma,
+                    "confirmation": confirmation, "bear_weight": weight,
+                    "bear_enabled": bool(weight > 0),
+                    "bull_family_days": int((split_states == "BULL").sum().sum()),
+                    "bear_family_days": int((split_states == "BEAR").sum().sum()),
+                    "cash_family_days": int((split_states == "CASH").sum().sum()),
+                    "mixed_direction_days": int(((split_states == "BULL").any(axis=1) & (split_states == "BEAR").any(axis=1)).sum()),
+                })
+                combined_split_rows.append(split_row)
         state_matrix = holdout[state_columns]
         row.update(
             {
@@ -357,8 +377,23 @@ def main() -> None:
         )
         combined_rows.append(row)
 
+    # Equal-weight always-bull benchmark using the same five leveraged families.
+    benchmark_rows: list[dict[str, object]] = []
+    benchmark_daily = pd.DataFrame({pair: pair_market_data(pair)[2] for pair in PAIRS}).mean(axis=1)
+    benchmark_frame = pd.DataFrame({"portfolio_return": benchmark_daily}, index=benchmark_daily.index)
+    for split_name, segment in {
+        "full": benchmark_frame.loc["2010-01-01":"2026-09-25"],
+        "train": benchmark_frame.loc["2010-01-01":"2019-12-31"],
+        "validation": benchmark_frame.loc["2020-01-01":"2022-12-31"],
+        "holdout": benchmark_frame.loc["2023-01-01":"2026-09-25"],
+    }.items():
+        benchmark_rows.append(summarize(segment.assign(state="BULL"), "ALL_PAIRS_ALWAYS_BULL", split_name))
+
     pd.DataFrame(combined_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_combined_holdout.csv", index=False
+    )
+    pd.DataFrame(combined_split_rows + benchmark_rows).to_csv(
+        DATA_DIR / "dma_bull_bear_switch_combined_splits.csv", index=False
     )
     pd.DataFrame(all_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_matrix.csv", index=False
@@ -376,6 +411,8 @@ def main() -> None:
     print(pd.DataFrame(headline_rows).to_string(index=False))
     print("\n=== COMBINED CROSS-FAMILY HOLDOUT CONTROLS ===")
     print(pd.DataFrame(combined_rows).to_string(index=False))
+    print("\n=== COMBINED CROSS-FAMILY SPLITS + ALWAYS-BULL BENCHMARK ===")
+    print(pd.DataFrame(combined_split_rows + benchmark_rows).to_string(index=False))
 
 
 if __name__ == "__main__":
