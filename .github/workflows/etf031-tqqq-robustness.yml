@@ -51,8 +51,10 @@ jobs:
       - name: Run ETF-031 unit tests
         run: python -m pytest -q tests/test_etf031_tqqq_robustness.py
 
-      - name: Build historical market dataset
-        run: python research/build_historical_regime_dataset.py
+      - name: Build ETF-031 market dataset
+        run: >-
+          python research/build_historical_regime_dataset.py --symbols
+          SPY SPXL QQQ TQQQ SOXX SOXL DIA UDOW IWM TNA
 
       - name: Run ETF-031 robustness audit
         run: python research/backtest_etf031_tqqq_robustness.py
