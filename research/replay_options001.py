@@ -81,6 +81,11 @@ def load_regime(candidate: str, start: str, end: str) -> pd.DataFrame:
 
 
 def source_sql(source: str) -> str:
+    # Batch replays can materialize the immutable historical chain once and
+    # reuse it across multiple strategy variants. This changes only I/O, not
+    # the underlying rows or calculation semantics.
+    if source.startswith("table:"):
+        return source[len("table:"):]
     escaped = source.replace("'", "''")
     return f"read_parquet('{escaped}', hive_partitioning=false)"
 
