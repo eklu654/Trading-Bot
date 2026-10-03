@@ -141,3 +141,12 @@ Runner: `python research/backtest_etf029_context_robustness.py`.
 ETF-030 extends the ETF-029 robustness gate by splitting the bearish-event sample into four calendar eras (2007–2014, 2015–2019, 2020–2022, and 2023–2026) and repeating the same fixed lag/cutoff context diagnostics inside each era. This is a temporal-stability check, not a parameter-selection sweep: no lag, cutoff, or trading rule is promoted from the results.
 
 Runner: `python research/backtest_etf030_era_stability.py`.
+
+
+## ETF-030 temporal-stability result — 2026-10-03
+
+ETF-030 completed successfully. Across the tested eras, pre-event trend/breadth context produced only small differences in the already-qualified bearish-event sample; the groups remained broadly negative rather than separating into a clearly distinct predictive class. Because ETF-030 conditions on a known 20-session loss event, it is useful as a structural diagnostic but is not evidence of forward predictive power. The bearish-transition context branch therefore remains research-only and should not be promoted into an exit rule without an all-days, signal-availability, and out-of-sample strategy replay.
+
+## Bull/cash/bear switching matrix — 2026-10-03
+
+The existing `research/test_dma_bull_bear_switching.py` matrix now has an automated GitHub Actions workflow. It tests benchmark-DMA switching among BULL, CASH, and BEAR states across SP500, NASDAQ100, semiconductors, Dow 30, and Russell 2000 families. The implementation enforces the hard per-family constraint that a family can never hold its bull and bear ETF simultaneously. Cross-family directional differences are permitted, so a portfolio can hold, for example, a Dow bull sleeve while a semiconductor sleeve is bearish. Results are split into full, train, validation, and 2023+ holdout views; the predefined headline controls are reported rather than selected from holdout performance.
