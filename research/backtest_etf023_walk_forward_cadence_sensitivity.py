@@ -133,8 +133,8 @@ def main():
     }]).to_string(index=False))
 
     events = pd.DataFrame({
-        "probability": prob,
-        "gate_next_session": gate,
+        "trigger_probability": prob.shift(1),
+        "gate_for_session": gate,
         "forward20_benchmark_return": fwd,
     })
     events = events.loc[gate & (events.index >= "2020-01-01"), :]
