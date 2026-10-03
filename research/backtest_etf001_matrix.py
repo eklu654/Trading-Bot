@@ -2,7 +2,9 @@
 
 The sweep is deliberately a candidate generator, not a full-history optimizer.
 Every candidate is reported separately on train, validation, and untouched
-holdout periods. Holdout performance is not used for selection.
+holdout periods. Split metrics are explicitly rebased to the first day of
+each split so annualized returns and drawdowns are not contaminated by prior
+history of the equity curve.
 """
 
 from __future__ import annotations
@@ -95,9 +97,17 @@ def backtest_candidate(prices, vix, ma_window, exit_buffer, reentry_buffer, reen
 
 
 def split_summary(frame, start, end):
-    part = frame.loc[start:end]
+    part = frame.loc[start:end].copy()
     if part.empty:
         return {"observations": 0}
+
+    initial_value = float(part["portfolio_value"].iloc[0])
+    if not np.isfinite(initial_value) or initial_value <= 0:
+        return {"observations": len(part)}
+
+    part["portfolio_value"] = part["portfolio_value"] / initial_value
+    part["drawdown"] = part["portfolio_value"] / part["portfolio_value"].cummax() - 1.0
+
     summary = overall_summary(part).iloc[0].to_dict()
     summary["observations"] = len(part)
     return summary
