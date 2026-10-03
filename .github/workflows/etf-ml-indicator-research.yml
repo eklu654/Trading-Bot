@@ -21,6 +21,6 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install -r research/requirements.txt
       - name: Build lightweight indicator dataset
-        run: python research/build_historical_regime_dataset.py
+        run: python research/build_etf020_dataset.py
       - name: Run ETF-020 supervised indicator synthesis
         run: python research/backtest_etf020_ml_indicator_bear_transition.py
