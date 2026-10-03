@@ -361,3 +361,10 @@ The observed mean forward benchmark returns were:
 This materially strengthens the interpretation that the July 2024 cluster was not an ordinary random three-day sample. However, it does **not** establish that the model has a durable predictive edge: the selected signal still produced only three holdout activation dates, and the placebo test conditions on those already-selected dates rather than independently validating the model-selection process.
 
 The appropriate next step is therefore event-level analysis: identify what technical conditions were present around the successful 2024 transition, compare them with the 2022 false-positive event, and test whether those characteristics recur across earlier bearish episodes. No promotion decision is made from ETF-025 alone.
+
+
+## ETF-026 bearish-event archetypes
+
+Because ETF-025 showed that the July 2024 holdout cluster was unusually weak relative to random three-date placebos, ETF-026 was added to investigate *why* without fitting another return-maximizing grid. It de-clusters benchmark forward-20-session declines of at least 4% into event starts and records trend, MACD, channel, momentum, volatility, and breadth scores on the event date and 5/10 sessions beforehand.
+
+The diagnostic explicitly includes the 2022-12-28 false-positive date and July 9–11, 2024 activation cluster so the successful and unsuccessful cases can be compared against the broader historical event population. This is intended to identify recurring event characteristics before constructing any new inverse trigger.
