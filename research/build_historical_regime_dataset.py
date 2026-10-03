@@ -25,9 +25,9 @@ DATA_DIR = ROOT / "data" / "research"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 START = "2010-01-01"
-END = "2026-09-27"
+END = (pd.Timestamp.now().normalize() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
 
-# Stooq provides daily OHLCV history for these U.S. symbols.
+# Yahoo Finance provides daily OHLCV history. END is dynamic so reruns use the latest completed market data available.
 PRICE_SYMBOLS = [
     "TQQQ",
     "SQQQ",
@@ -59,7 +59,7 @@ def read_price(symbol: str) -> pd.DataFrame:
     frame = yf.download(
         symbol,
         start=START,
-        end="2026-09-28",
+        end=END,
         auto_adjust=False,
         progress=False,
         actions=False,
