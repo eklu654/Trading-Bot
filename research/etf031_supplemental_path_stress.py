@@ -74,19 +74,23 @@ def geometric_segment(start: float, end: float, sessions: int) -> np.ndarray:
 
 
 def severe_bear_recovery_scenarios() -> pd.DataFrame:
-    """Fixed-horizon deterministic shock paths; parameters are stress cases, not forecasts.
+    """Fixed-horizon deterministic shock/recovery paths; not forecasts.
 
-    The total horizon is held constant so a deeper shock or slower recovery
-    cannot disappear merely because the scenario is allowed to run longer.
-    The recovery segment is constructed to return exactly to the pre-shock peak.
+    The total horizon is held constant. After the shock, the path compounds at
+    a fixed 20% annualized recovery rate for the requested recovery period,
+    then resumes the baseline CAGR. This keeps shock depth and recovery speed
+    economically visible in terminal wealth rather than allowing a guaranteed
+    return to the pre-shock peak to cancel the stress.
     """
     annual = 0.1381
+    recovery_annual = 0.20
     pre_years = 3
     shock_years = 1
     total_years = 15
     sessions_per_year = 252
     rows = []
     growth_daily = (1.0 + annual) ** (1.0 / sessions_per_year) - 1.0
+    recovery_daily = (1.0 + recovery_annual) ** (1.0 / sessions_per_year) - 1.0
 
     for drawdown in (0.50, 0.70, 0.80, 0.90):
         for recovery_years in (2, 3, 5):
@@ -106,9 +110,8 @@ def severe_bear_recovery_scenarios() -> pd.DataFrame:
             for r in down:
                 values.append(values[-1] * (1.0 + r))
 
-            recovery = geometric_segment(trough, peak, recovery_years * sessions_per_year)
-            for r in recovery:
-                values.append(values[-1] * (1.0 + r))
+            for _ in range(recovery_years * sessions_per_year):
+                values.append(values[-1] * (1.0 + recovery_daily))
 
             for _ in range(remaining_years * sessions_per_year):
                 values.append(values[-1] * (1.0 + growth_daily))
@@ -119,6 +122,7 @@ def severe_bear_recovery_scenarios() -> pd.DataFrame:
                 {
                     "scenario": f"DD{int(drawdown*100)}_recovery_{recovery_years}y",
                     "assumed_baseline_cagr": annual,
+                    "assumed_recovery_cagr": recovery_annual,
                     "shock_drawdown": -drawdown,
                     "recovery_years": recovery_years,
                     "ending_balance_5000": eq.iloc[-1],
@@ -128,7 +132,6 @@ def severe_bear_recovery_scenarios() -> pd.DataFrame:
             )
 
     return pd.DataFrame(rows)
-
 
 def main() -> None:
     observation = remove_observation_stress(load_tqqq())
