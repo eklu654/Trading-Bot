@@ -33,3 +33,5 @@ jobs:
 # Retrigger after diagnostics syntax correction.
 
 # Final clean-run trigger after import correction.
+
+# Final trigger: Path import is now present in the diagnostic script.
