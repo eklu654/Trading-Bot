@@ -47,6 +47,9 @@ jobs:
       - name: Run ETF-003 bull-only and Dow-pivot rotation research
         run: python research/backtest_etf003_bull_rotation.py
 
+      - name: Run ETF-004 cash versus bear-side fallback research
+        run: python research/backtest_etf004_cash_vs_bear.py
+
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
 
