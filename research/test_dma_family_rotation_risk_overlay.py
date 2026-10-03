@@ -41,6 +41,7 @@ VOL_TARGETS = (0.30, 0.40, 0.50, 0.60, 0.80)
 DD_THRESHOLDS = (0.00, 0.15, 0.20, 0.25, 0.30)
 DD_SCALE = 0.50
 COST_BPS = (0, 10, 25, 50)
+LATEST_DATE = (pd.Timestamp.now().normalize() + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
 
 
 def base_weights() -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -144,7 +145,7 @@ def apply_costs(frame: pd.DataFrame, cost_bps: int) -> pd.DataFrame:
 
 def splits(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return {
-        "full": frame.loc["2010-01-01":"2026-09-25"],
+        "full": frame.loc["2010-01-01":LATEST_DATE],
         "train": frame.loc["2010-01-01":"2019-12-31"],
         "validation": frame.loc["2020-01-01":"2022-12-31"],
         "holdout": frame.loc["2023-01-01":"2026-09-25"],
