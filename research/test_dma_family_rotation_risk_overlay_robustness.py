@@ -42,7 +42,7 @@ ERAS = {
     "era_2020_2022": ("2020-01-01", "2022-12-31"),
     "era_2023_2026": ("2023-01-01", "2026-09-25"),
 }
-COSTS = (0, 10, 25, 50)
+COSTS = (0, 10, 25, 50)  # implementation-friction stress
 
 
 def main() -> None:
