@@ -368,3 +368,44 @@ The appropriate next step is therefore event-level analysis: identify what techn
 Because ETF-025 showed that the July 2024 holdout cluster was unusually weak relative to random three-date placebos, ETF-026 was added to investigate *why* without fitting another return-maximizing grid. It de-clusters benchmark forward-20-session declines of at least 4% into event starts and records trend, MACD, channel, momentum, volatility, and breadth scores on the event date and 5/10 sessions beforehand.
 
 The diagnostic explicitly includes the 2022-12-28 false-positive date and July 9–11, 2024 activation cluster so the successful and unsuccessful cases can be compared against the broader historical event population. This is intended to identify recurring event characteristics before constructing any new inverse trigger.
+
+
+### ETF-026 result
+
+ETF-026 completed successfully after correcting the pre-event lag direction. The final diagnostic contains **94 de-clustered bearish event starts** from the historical sample, defined as a forward 20-session equal-weight QQQ/SPY/SOXX decline of at least 4%.
+
+Across those events, the family scores show a clear difference between signals that are already bearish and signals that may lead a transition:
+- At the event date, **MACD** had the highest mean family score at **0.50**.
+- **Breadth** averaged **0.353**, momentum **0.330**, and volatility **0.309**.
+- The trend score averaged only **0.194**.
+- The current channel-break score was extremely sparse, averaging only **0.015** at the event date, rising to **0.077** five sessions before and **0.084** ten sessions before.
+- Ten sessions before events, MACD averaged **0.535**, volatility **0.371**, breadth **0.371**, and momentum **0.337**.
+
+The explicitly requested comparison dates are particularly informative:
+
+| Date | Forward 20-session return | Trend | MACD | Channel | Momentum | Volatility | Breadth |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 2022-12-28 false positive | **+11.79%** | 0.867 | 0.800 | 0.467 | 0.600 | 0.500 | 0.900 |
+| 2024-07-09 activation | **-11.15%** | 0.000 | 0.000 | 0.000 | 0.100 | 0.500 | 0.000 |
+| 2024-07-10 activation | **-13.31%** | 0.000 | 0.000 | 0.000 | 0.000 | 0.500 | 0.000 |
+| 2024-07-11 activation | **-8.69%** | 0.000 | 0.000 | 0.000 | 0.000 | 0.500 | 0.000 |
+
+The July 2024 cluster therefore **did not look like an already-established bearish regime on the activation dates**. Five sessions earlier, MACD was 0.667, while ten sessions earlier it was 0.467; trend remained 0 throughout. By contrast, the 2022-12-28 false positive already had very high trend, MACD, momentum, and breadth scores when the model activated, yet the next 20 sessions produced a +11.79% benchmark return.
+
+This is an important refinement of the signal hypothesis. A simple rule saying “the market already looks bearish, therefore switch to inverse” can produce exactly the wrong behavior: the 2022 false positive was heavily bearish-looking, while the successful July 2024 transition occurred **before** the conventional bearish-state indicators became broadly negative. The useful signal may therefore be the *trajectory and interaction of indicators*, rather than their absolute bearish level on the trigger date.
+
+ETF-026 also suggests that the current Donchian-break feature is probably too sparse to serve as a primary trigger in its present binary form. That does not reject channels generally; it suggests testing channel **position, compression/expansion, distance from recent highs/lows, volatility-normalized breaks, and changes in those quantities** rather than only “new low today.”
+
+### ETF-026 research implication
+
+The next signal experiment should therefore move from static family scores toward **transition/velocity features**:
+1. change in MACD line/signal relationship and histogram over 3/5/10 sessions;
+2. acceleration in momentum and breadth deterioration rather than their current level alone;
+3. VIX change/acceleration and volatility-regime transition;
+4. channel position and channel-width expansion before an outright lower-channel break;
+5. interactions such as MACD deterioration + breadth deterioration + volatility expansion while price is still above the 200-DMA;
+6. explicit distinction between a fast bearish transition and an already-bearish, potentially mean-reverting condition.
+
+This should be tested as another **diagnostic first**, not immediately as a return-optimized parameter grid. The goal is to determine whether the July 2024 pattern is part of a recurring archetype across earlier selloffs and whether the 2022 false-positive pattern can be separated from it without using future information.
+
+ETF-026 does **not** produce a paper-trading candidate. It does, however, materially sharpen the research target: the unresolved problem appears less like “find a bearish indicator” and more like “detect the transition into a sustained bearish regime early enough, while avoiding already-bearish conditions that are about to reverse.”
