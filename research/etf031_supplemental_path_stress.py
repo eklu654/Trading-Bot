@@ -1,4 +1,4 @@
-"""ETF-031 supplemental path stress: individual observations and severe bear/recovery paths."""
+""""ETF-031 supplemental path stress: individual observations and severe bear/recovery paths."""
 
 from __future__ import annotations
 
@@ -9,11 +9,20 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "research"
 STARTING_CAPITAL = 5000.0
+COMMON_SYMBOLS = ("TQQQ", "QQQ", "SOXL", "SPXL")
+
+
+def _load(symbol: str) -> pd.Series:
+    frame = pd.read_csv(DATA / f"{symbol.lower()}_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()
+    return frame["adj_close"].astype(float)
 
 
 def load_tqqq() -> pd.Series:
-    frame = pd.read_csv(DATA / "tqqq_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()
-    return frame["adj_close"].astype(float)
+    """Load TQQQ on the exact common empirical range used by ETF-031."""
+    prices = {symbol: _load(symbol) for symbol in COMMON_SYMBOLS}
+    common_start = max(series.index.min() for series in prices.values())
+    common_end = min(series.index.max() for series in prices.values())
+    return prices["TQQQ"].loc[common_start:common_end]
 
 
 def equity(ret: pd.Series) -> pd.Series:
@@ -65,12 +74,7 @@ def geometric_segment(start: float, end: float, sessions: int) -> np.ndarray:
 
 
 def severe_bear_recovery_scenarios() -> pd.DataFrame:
-    """Deterministic shock paths; parameters are stress cases, not forecasts.
-
-    Each path starts at $5,000, rises at 13.81% annualized until a shock,
-    falls to a specified drawdown, then recovers the lost capital over the
-    specified number of years and resumes 13.81% growth.
-    """
+    """Deterministic shock paths; parameters are stress cases, not forecasts."""
     annual = 0.1381
     rows = []
 
@@ -122,9 +126,12 @@ def main() -> None:
     bear = severe_bear_recovery_scenarios()
     bear.to_csv(DATA / "etf031_severe_bear_recovery_stress.csv", index=False)
 
+    print("=== ETF-031 COMMON PERIOD SUPPLEMENTAL STRESS ===")
+    price = load_tqqq()
+    print(f"start={price.index.min().date()} end={price.index.max().date()}")
     print("=== INDIVIDUAL OBSERVATION STRESS ===")
     print(observation.to_string(index=False))
-    print("\n=== SEVERE BEAR / RECOVERY STRESS ===")
+    print("\\n=== SEVERE BEAR / RECOVERY STRESS ===")
     print(bear.to_string(index=False))
 
 
