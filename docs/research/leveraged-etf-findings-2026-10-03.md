@@ -268,3 +268,30 @@ ETF-020 uses the canonical ETF-001 portfolio ledger and preserves the same-under
 A lightweight ETF-020 data bootstrap was added so this experiment does not rebuild the entire historical research universe. The focused workflow is therefore isolated from the slower full historical/options pipelines.
 
 The experiment is not yet a paper-trading candidate. A model would need to demonstrate chronological robustness, realistic transaction-cost resilience, stable behavior across market regimes, and account-level execution feasibility before being considered for paper trading.
+
+
+## ETF-021 multi-horizon ML diagnostics
+
+ETF-021 tested whether the broad ETF-020 indicator library has predictive information at several fixed bearish horizons. The targets were specified in advance as:
+- 5 sessions: benchmark decline of at least 2%;
+- 10 sessions: at least 3%;
+- 20 sessions: at least 4%;
+- 40 sessions: at least 6%.
+
+Both fixed HistGradientBoosting models fit the 2010-2019 training period extremely well but lost that separation out of sample. Validation ROC-AUC was approximately 0.39-0.52 across the targets/models, and the 20-session target was below 0.50 for both models. This is important evidence that simply expanding the indicator library and freezing a nonlinear model does not solve the regime-transition problem.
+
+The holdout results were mixed: the 40-session target reached ROC-AUC about 0.73-0.76 in 2023+, while the shorter horizons remained close to chance. Because this holdout strength was not present in validation, it is not treated as a selected signal. The clean conclusion is that the static model is unstable across regimes and should not be promoted.
+
+## ETF-022 walk-forward ML adaptation
+
+ETF-022 tested the next logical hypothesis: perhaps the indicator relationships are non-stationary, so the model must periodically retrain using only information available before each prediction. A fixed shallow HistGradientBoosting model was retrained every 63 trading sessions using an expanding historical training set. The 20-session / -4% target and model architecture were fixed in advance.
+
+Walk-forward predictive diagnostics improved validation ROC-AUC to **0.596**, but holdout ROC-AUC was only **0.516**. Portfolio selection on validation chose a 0.60 probability threshold and 100% inverse allocation within the affected 25% sleeves. That produced:
+- Validation: **21.36% annualized, Sharpe 0.736, max DD -32.82%**
+- Baseline: **20.18%, Sharpe 0.708, max DD -32.82%**
+- Holdout: **25.14% annualized, Sharpe 0.801, max DD -36.99%**
+- Baseline holdout: **24.18%, Sharpe 0.779, max DD -36.99%**
+
+However, the model activated on only **1 validation day and 3 holdout days** at the selected threshold. The small number of activations means the apparent portfolio improvement could be driven by a handful of observations rather than a durable predictive edge. It is therefore **not a paper-trading candidate** yet.
+
+Interpretation: walk-forward retraining is more interesting than the frozen ETF-020 model, but the current evidence still does not establish a robust inverse signal. The next test should stress retraining cadence, event attribution, and transaction costs rather than immediately increasing model complexity or searching a large parameter space.
