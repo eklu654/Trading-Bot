@@ -23,7 +23,7 @@ from research.test_dma_family_rotation_risk_overlay import base_weights, build_o
 
 DATA_DIR = ROOT / "data" / "research"
 STARTING_BALANCE = 5000.0
-COSTS = (0, 10, 25, 50)
+COSTS = (0, 10, 25, 50)  # explicit implementation-friction stress
 CANDIDATES = (
     ("BASE_ROTATE_DMA250_TOP2_C5", None),
     ("RISK_V30_L20_DD20", (20, 0.30)),
