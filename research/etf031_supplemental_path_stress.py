@@ -74,24 +74,35 @@ def geometric_segment(start: float, end: float, sessions: int) -> np.ndarray:
 
 
 def severe_bear_recovery_scenarios() -> pd.DataFrame:
-    """Deterministic shock paths; parameters are stress cases, not forecasts."""
+    """Fixed-horizon deterministic shock paths; parameters are stress cases, not forecasts.
+
+    The total horizon is held constant so a deeper shock or slower recovery
+    cannot disappear merely because the scenario is allowed to run longer.
+    The recovery segment is constructed to return exactly to the pre-shock peak.
+    """
     annual = 0.1381
+    pre_years = 3
+    shock_years = 1
+    total_years = 15
+    sessions_per_year = 252
     rows = []
+    growth_daily = (1.0 + annual) ** (1.0 / sessions_per_year) - 1.0
 
     for drawdown in (0.50, 0.70, 0.80, 0.90):
         for recovery_years in (2, 3, 5):
-            pre_years = 3
-            post_years = 10
-            sessions_per_year = 252
+            remaining_years = total_years - pre_years - shock_years - recovery_years
+            if remaining_years < 0:
+                raise ValueError("Stress horizon is shorter than the requested scenario.")
+
             values = [STARTING_CAPITAL]
-            growth_daily = (1.0 + annual) ** (1.0 / sessions_per_year) - 1.0
 
             for _ in range(pre_years * sessions_per_year):
                 values.append(values[-1] * (1.0 + growth_daily))
 
             peak = values[-1]
             trough = peak * (1.0 - drawdown)
-            down = geometric_segment(peak, trough, sessions_per_year)
+
+            down = geometric_segment(peak, trough, shock_years * sessions_per_year)
             for r in down:
                 values.append(values[-1] * (1.0 + r))
 
@@ -99,7 +110,7 @@ def severe_bear_recovery_scenarios() -> pd.DataFrame:
             for r in recovery:
                 values.append(values[-1] * (1.0 + r))
 
-            for _ in range(post_years * sessions_per_year):
+            for _ in range(remaining_years * sessions_per_year):
                 values.append(values[-1] * (1.0 + growth_daily))
 
             idx = pd.date_range("2027-01-04", periods=len(values), freq="B")
