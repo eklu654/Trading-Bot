@@ -6,6 +6,9 @@ on:
     paths:
       - "research/backtest_etf031_tqqq_robustness.py"
       - "tests/test_etf031_tqqq_robustness.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/build_historical_regime_dataset.py"
       - ".github/workflows/etf031-tqqq-robustness.yml"
   push:
     paths:
