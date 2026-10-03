@@ -1,0 +1,29 @@
+name: ETF-022 Walk-Forward ML Bear Transition
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf022_walk_forward_ml_bear_transition.py"
+      - ".github/workflows/etf022-walk-forward-ml.yml"
+
+concurrency:
+  group: etf022-walk-forward-\${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  walk-forward:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build focused dataset
+        run: python research/build_etf020_dataset.py
+      - name: Run ETF-022 walk-forward ML research
+        working-directory: research
+        env:
+          PYTHONPATH: .
+        run: python backtest_etf022_walk_forward_ml_bear_transition.py
