@@ -92,6 +92,7 @@ jobs:
             data/research/dma_bull_bear_switch_matrix.csv
             data/research/dma_bull_bear_switch_annual_returns.csv
             data/research/dma_bull_bear_switch_headline_holdout.csv
+            data/research/dma_bull_bear_switch_combined_holdout.csv
             data/research/dynamic_sizing_e3_summary.csv
             data/research/dynamic_sizing_e3_annual_returns.csv
             data/research/dynamic_etf_selection_split_summary.csv
