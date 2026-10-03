@@ -166,10 +166,11 @@ def replay(entries,quotes,regime,args):
     trades=[];marks=[]
     active_until=pd.Timestamp.min
     last_entry_date=pd.Timestamp.min
+    quote_groups={pd.Timestamp(k):v for k,v in quotes.groupby("entry_date", sort=True)}
     for _,r in entries.iterrows():
         ed=pd.Timestamp(r.entry_date)
         if ed<=active_until or ed<=last_entry_date: continue
-        q=quotes[quotes.entry_date==ed]
+        q=quote_groups.get(ed)
         if q.empty:continue
         by=q.pivot(index="date",columns="contract_id",values=["bid","ask","mark"])
         ids=[str(r.contract_id_call),str(r.contract_id_put),str(r.long_call_id),str(r.long_put_id)]
