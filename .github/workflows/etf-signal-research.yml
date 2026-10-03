@@ -19,3 +19,6 @@ jobs:
       - run: python research/build_historical_regime_dataset.py
       - name: Run ETF-010 rare-event bear gate
         run: python research/backtest_etf010_bear_gate.py
+
+      - name: Run ETF-011 partial inverse overlay
+        run: python research/backtest_etf011_partial_inverse.py
