@@ -189,7 +189,36 @@ def summarize(frame: pd.DataFrame, label: str, split: str) -> dict[str, object]:
     }
 
 
+
 def validate_exclusivity(frame: pd.DataFrame) -> None:
+    """Validate that one underlying never holds both sides at once."""
+    invalid = frame["state"].isin(["BULL+BEAR", "BEAR+BULL"])
+    if invalid.any():
+        raise AssertionError("Bull and bear states overlapped.")
+    if ((frame["bull_weight"] > 0) & (frame["bear_weight"] > 0)).any():
+        raise AssertionError("Bull and bear exposure overlapped.")
+
+
+def backtest_multi_pair(bull_dma: int, bear_dma: int, confirmation: int, bear_weight: float) -> pd.DataFrame:
+    """Combine independent sleeves; cross-family bull/bear exposure is allowed."""
+    frames = {
+        pair: backtest_pair(pair, bull_dma, bear_dma, confirmation, bear_weight)
+        for pair in PAIRS
+    }
+    for frame in frames.values():
+        validate_exclusivity(frame)
+    index = next(iter(frames.values())).index
+    out = pd.DataFrame({
+        "portfolio_return": sum(frame["portfolio_return"] for frame in frames.values()) / len(frames)
+    }, index=index)
+    out["portfolio_value"] = (1.0 + out["portfolio_return"]).cumprod()
+    out["running_max"] = out["portfolio_value"].cummax()
+    out["drawdown"] = out["portfolio_value"] / out["running_max"] - 1.0
+    for pair, frame in frames.items():
+        out[f"{pair}_state"] = frame["state"]
+        out[f"{pair}_bull_weight"] = frame["bull_weight"] / len(frames)
+        out[f"{pair}_bear_weight"] = frame["bear_weight"] / len(frames)
+    return out
     invalid = frame["state"].isin(["BULL+BEAR", "BEAR+BULL"])
     if invalid.any():
         raise AssertionError("Bull and bear states overlapped.")
@@ -273,6 +302,16 @@ def main() -> None:
                     }
                 )
 
+    combined_rows: list[dict[str, object]] = []
+    for bull_dma, bear_dma, confirmation, weight in HEADLINE_CONTROLS:
+        frame = backtest_multi_pair(bull_dma, bear_dma, confirmation, weight)
+        holdout = frame.loc["2023-01-01":"2026-09-25"]
+        row = summarize(holdout.assign(state="COMBINED"), "ALL_PAIRS", "holdout")
+        row.update({"bull_dma": bull_dma, "bear_dma": bear_dma, "confirmation": confirmation, "bear_weight": weight})
+        combined_rows.append(row)
+
+    pd.DataFrame(combined_rows).to_csv(DATA_DIR / "dma_bull_bear_switch_combined_holdout.csv", index=False)
+
     pd.DataFrame(all_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_matrix.csv", index=False
     )
@@ -287,7 +326,7 @@ def main() -> None:
     print("=== DMA BULL/CASH/BEAR SWITCH MATRIX ===")
     print(pd.DataFrame(all_rows).to_string(index=False))
     print("\n=== HEADLINE HOLDOUT CONTROLS ===")
-    print(pd.DataFrame(headline_rows).to_string(index=False))
+    print(pd.DataFrame(headline_rows).to_string(index=False))\n    print("\n=== COMBINED CROSS-FAMILY HOLDOUT CONTROLS ===")\n    print(pd.DataFrame(combined_rows).to_string(index=False))
 
 
 if __name__ == "__main__":
