@@ -1,0 +1,259 @@
+name: Options Research
+# Slow, optional options research. Kept separate so ETF research is never blocked by options replays.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: options-research-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  options-research:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            research/requirements.txt
+            requirements-dev.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+
+      - name: Compile research scripts
+        run: python -m py_compile research/*.py
+
+      - name: Build historical dataset
+        run: python research/build_historical_regime_dataset.py
+
+      - name: Run ETF prerequisite analyses
+        run: |
+          python research/backtest_etf001.py
+          python research/backtest_etf001_matrix.py
+          python research/analyze_etf001_cash_allocation.py
+          python research/analyze_etf001_robustness.py
+          python research/evaluate_etf001_matrix.py
+          python research/analyze_options_opportunity_windows.py
+          python research/evaluate_regime_candidates.py
+
+      - name: Download SPY historical option chains
+        run: |
+          mkdir -p data/options/spy
+          for year in $(seq 2010 2025); do
+            curl -L --fail --retry 3 --retry-delay 2               -o "data/options/spy/options_${year}.parquet"               "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
+          done
+          ls -lh data/options/spy
+
+      - name: Audit 0DTE dataset availability
+        run: python research/audit_0dte_dataset.py --options-source "data/options/spy/options_*.parquet"
+
+      - parallel:
+          - name: Replay OPTIONS-001 all-market baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill" --loss-credit-multiple 0
+              done
+          - name: Replay OPTIONS-001 broad-sideways baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill" --loss-credit-multiple 0
+              done
+          - name: Replay OPTIONS-001 turbulent-only baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill" --loss-credit-multiple 0
+              done
+
+      - parallel:
+          - name: Replay OPTIONS-001 account feasibility sensitivity — broad sideways
+            run: |
+              for nlv in 2000 5000 10000; do
+                for fill in conservative mid; do
+                  for loss_tag in loss2x nostop; do
+                    stem="options001_replay_broad_sideways_"$fill"_"$loss_tag
+                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
+                  done
+                done
+              done
+          - name: Replay OPTIONS-001 account feasibility sensitivity — turbulent only
+            run: |
+              for nlv in 2000 5000 10000; do
+                for fill in conservative mid; do
+                  for loss_tag in loss2x nostop; do
+                    stem="options001_replay_turbulent_only_"$fill"_"$loss_tag
+                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
+                  done
+                done
+              done
+
+      # OPTIONS-002 variants run in parallel. The replay itself groups quote
+      # rows once per entry date, avoiding the previous quadratic dataframe scan.
+      - parallel:
+          - name: Replay OPTIONS-002 ALL_DAYS conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model conservative
+          - name: Replay OPTIONS-002 ALL_DAYS mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model mid
+          - name: Replay OPTIONS-002 BROAD_SIDEWAYS conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative
+          - name: Replay OPTIONS-002 BROAD_SIDEWAYS mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid
+          - name: Replay OPTIONS-002 TURBULENT_ONLY conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model conservative
+          - name: Replay OPTIONS-002 TURBULENT_ONLY mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid
+
+      - parallel:
+          - name: Replay OPTIONS-001 defense — none conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense none --fill-model conservative
+          - name: Replay OPTIONS-001 defense — none mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense none --fill-model mid
+          - name: Replay OPTIONS-001 defense — roll-untested conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense roll-untested --fill-model conservative
+          - name: Replay OPTIONS-001 defense — roll-untested mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --defense roll-untested --fill-model mid
+
+      - parallel:
+          - name: Batch OPTIONS-002 account feasibility — ALL_DAYS conservative
+            run: python research/batch_account_feasibility_options002.py --regime all_days --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — ALL_DAYS mid
+            run: python research/batch_account_feasibility_options002.py --regime all_days --fill-model mid
+          - name: Batch OPTIONS-002 account feasibility — BROAD_SIDEWAYS conservative
+            run: python research/batch_account_feasibility_options002.py --regime broad_sideways --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — BROAD_SIDEWAYS mid
+            run: python research/batch_account_feasibility_options002.py --regime broad_sideways --fill-model mid
+          - name: Batch OPTIONS-002 account feasibility — TURBULENT_ONLY conservative
+            run: python research/batch_account_feasibility_options002.py --regime turbulent_only --fill-model conservative
+          - name: Batch OPTIONS-002 account feasibility — TURBULENT_ONLY mid
+            run: python research/batch_account_feasibility_options002.py --regime turbulent_only --fill-model mid
+
+      # The parallel action launches background processes. Wait for every
+      # canonical ledger before downstream steps consume their outputs. This
+      # is synchronization only; it does not alter any research calculation.
+      - name: Wait for OPTIONS-002 account ledgers
+        run: |
+          set -e
+          expected=54
+          for attempt in $(seq 1 120); do
+            count=$(find data/research -maxdepth 1 -type f -name 'options002_delta16_w2_*_account_*_risk_0.07.csv' | wc -l)
+            if [ "$count" -ge "$expected" ]; then
+              echo "OPTIONS-002 ledger gate satisfied: $count/$expected"
+              exit 0
+            fi
+            echo "Waiting for OPTIONS-002 ledgers: $count/$expected"
+            sleep 2
+          done
+          echo "Timed out waiting for OPTIONS-002 ledgers: $count/$expected"
+          exit 1
+      - name: Consolidate OPTIONS-002 capital ladder feasibility
+        run: python research/analyze_options002_capital_ladder.py
+
+      - name: Replay ETF-exit conditional options analysis
+        run: python research/analyze_options_during_etf_exits.py
+
+      - parallel:
+          - name: Evaluate ETF-exit switcher — broad sideways conservative
+            run: |
+              trades="data/research/options002_delta16_w2_broad_sideways_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_broad_sideways_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — broad sideways mid
+            run: |
+              trades="data/research/options002_delta16_w2_broad_sideways_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_broad_sideways_mid_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — turbulent only conservative
+            run: |
+              trades="data/research/options002_delta16_w2_turbulent_only_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_turbulent_only_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — turbulent only mid
+            run: |
+              trades="data/research/options002_delta16_w2_turbulent_only_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_turbulent_only_mid_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — all days conservative
+            run: |
+              trades="data/research/options002_delta16_w2_all_days_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_all_days_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — all days mid
+            run: |
+              trades="data/research/options002_delta16_w2_all_days_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_all_days_mid_"$(basename "$trades" .csv)".csv"
+
+      - name: Evaluate ETF-exit switcher chronological holdout gate
+        run: |
+          python research/analyze_etf_exit_switcher_holdout.py \
+            --input-glob "etf_exit_switcher_*_options002_delta16_w2_*.csv" \
+            --capital 5000 \
+            --minimum-option-days 20 \
+            --output "data/research/etf_exit_switcher_holdout_summary.csv"
+
+      - name: Print research summaries
+        run: |
+          echo "=== ETF OVERALL ==="
+          cat data/research/etf001_overall_summary.csv
+          echo "=== ETF BY REGIME (DMA) ==="
+          cat data/research/etf001_dma_regime_summary.csv
+          echo "=== ETF BY REGIME (DMA + VIX) ==="
+          cat data/research/etf001_dma_vix_regime_summary.csv
+          echo "=== ETF CASH-ALLOCATION SENSITIVITY ==="
+          cat data/research/etf001_cash_allocation_sensitivity.csv
+          echo "=== ETF CASH-ALLOCATION CONTROLS ==="
+          cat data/research/etf001_cash_allocation_sensitivity_controls.csv
+          echo "=== OPTIONS WINDOWS ==="
+          cat data/research/options_opportunity_summary.csv
+          echo "=== REGIME FREQUENCY ==="
+          cat data/research/regime_frequency_summary.csv
+          echo "=== OPTIONS CANDIDATE OPPORTUNITY ==="
+          cat data/research/options_opportunity_candidate_summary.csv
+          echo "=== REGIME CANDIDATE RESULTS ==="
+          cat data/research/regime_candidate_etf_results.csv
+          echo "=== REGIME CANDIDATE FREQUENCY ==="
+          cat data/research/regime_candidate_frequency.csv
+          echo "=== ACCOUNT FEASIBILITY SENSITIVITY ==="
+          for f in data/research/*_account_2000_summary.csv data/research/*_account_3000_summary.csv data/research/*_account_5000_summary.csv data/research/*_account_7500_summary.csv data/research/*_account_10000_summary.csv data/research/*_account_15000_summary.csv data/research/*_account_25000_summary.csv data/research/*_account_50000_summary.csv data/research/*_account_100000_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
+          echo "=== 0DTE DATASET AUDIT ==="
+          cat data/research/options001_0dte_dataset_audit.csv
+          echo "=== OPTIONS-002 ACCOUNT FEASIBILITY CAPITAL LADDER ==="
+          for f in data/research/options002_*_account_*_risk_*_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
+          echo "=== OPTIONS-002 NORMALIZED CAPITAL LADDER ==="
+          cat data/research/options002_capital_ladder_analysis.csv
+          echo "=== ETF-EXIT SWITCHER HOLDOUT ==="
+          cat data/research/etf_exit_switcher_holdout_summary.csv
+          echo "=== ETF-EXIT SWITCHER DAILY-PATH SUMMARIES ==="
+          for f in data/research/etf_exit_switcher_*_summary.csv; do
+            [ -f "$f" ] && { echo "=== $f ==="; cat "$f"; }
+          done
+          echo "=== DEFENSE CONTROL CONSERVATIVE ==="
+          cat data/research/options001_defense_summary_broad_sideways_conservative_none.csv
+          echo "=== DEFENSE CONTROL MID ==="
+          cat data/research/options001_defense_summary_broad_sideways_mid_none.csv
+          echo "=== ROLL UNTESTED CONSERVATIVE ==="
+          cat data/research/options001_defense_summary_broad_sideways_conservative_roll_untested.csv
+          echo "=== ROLL UNTESTED MID ==="
+          cat data/research/options001_defense_summary_broad_sideways_mid_roll_untested.csv
+
+      - name: Upload research artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-research-results
+          path: data/research/
+          if-no-files-found: error
+
