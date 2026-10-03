@@ -127,3 +127,10 @@ The next diagnostics are intentionally focused rather than another blind paramet
 - ETF-025 tests whether the walk-forward holdout improvement is unusually concentrated in its three observed activation dates by comparing them with deterministic random-date placebos.
 
 ETF-025 found that the small walk-forward holdout improvement was concentrated around a few activation dates, so it was followed by ETF-026 bearish event-archetype diagnostics and ETF-027 signal-transition diagnostics. ETF-027 found that bearish event starts are not characterized by a simple monotonic rise in the six family scores. A July 2024 activation pattern differed structurally from the 2022-12-28 false positive, but MACD fade alone was not sufficient. ETF-028 now stratifies the event population by pre-event trend/breadth context to test that distinction across the full historical sample. These remain diagnostics only; none promotes a trading rule.
+
+
+## ETF-029 context robustness — 2026-10-03
+
+ETF-029 adds a fixed robustness diagnostic around ETF-028. It repeats the bearish-event context classification at 3, 5, 10, 15, and 20 sessions before each event, using fixed non-overlapping healthy/bearish cutoffs of 1/3, 0.40, and 1/2. The experiment measures the same 20-session event outcome and does not optimize a trading rule or select a cutoff. Its purpose is to determine whether ETF-028 context differences survive reasonable changes in the pre-event observation point.
+
+Runner: `python research/backtest_etf029_context_robustness.py`.
