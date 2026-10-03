@@ -346,3 +346,18 @@ ETF-023/024's selected walk-forward inverse signal produced only one validation 
 ETF-025 compares those three frozen holdout dates with 20,000 deterministic random three-date placebo samples from the same 2023+ period, measuring forward 5/10/20/40-session benchmark returns. It does not change the candidate, threshold, retraining cadence, or portfolio accounting. The purpose is to quantify how unusual the observed event concentration is and to determine whether the apparent holdout advantage is plausibly explained by a handful of favorable dates.
 
 No ETF-025 result is being used for strategy selection until the diagnostic completes.
+
+
+### ETF-025 result
+
+ETF-025 completed successfully. The three frozen holdout activation dates from ETF-023/024 (July 9–11, 2024) were compared with 20,000 random three-date placebo samples from the same 2023+ period.
+
+The observed mean forward benchmark returns were:
+- 5 sessions: **-1.69%**, with 6.9% of placebo samples at or below the observed result.
+- 10 sessions: **-5.45%**, with 0.21% of placebo samples at or below it.
+- 20 sessions: **-11.05%**, with **0%** of the 20,000 placebo samples at or below it.
+- 40 sessions: **-7.74%**, with 0.29% of placebo samples at or below it.
+
+This materially strengthens the interpretation that the July 2024 cluster was not an ordinary random three-day sample. However, it does **not** establish that the model has a durable predictive edge: the selected signal still produced only three holdout activation dates, and the placebo test conditions on those already-selected dates rather than independently validating the model-selection process.
+
+The appropriate next step is therefore event-level analysis: identify what technical conditions were present around the successful 2024 transition, compare them with the 2022 false-positive event, and test whether those characteristics recur across earlier bearish episodes. No promotion decision is made from ETF-025 alone.
