@@ -127,6 +127,19 @@ def main() -> None:
     stress = pd.DataFrame(stress_rows)
     stress.to_csv(DATA_DIR / "dma_fallback_stress_2018_2025.csv", index=False)
 
+    annual_rows = []
+    for name, frame in artifacts.items():
+        for year, segment in frame.loc[START:END].groupby(frame.loc[START:END].index.year):
+            daily = segment["portfolio_return"].fillna(0.0)
+            annual_rows.append({
+                "strategy": name,
+                "year": int(year),
+                "return": float((1.0 + daily).prod() - 1.0),
+                "fallback_days": int(segment["fallback_held"].sum()),
+                "cash_days": int((~segment["target_held"] & ~segment["fallback_held"]).sum()),
+            })
+    pd.DataFrame(annual_rows).to_csv(DATA_DIR / "dma_fallback_annual_returns_2018_2025.csv", index=False)
+
     print("2018-2025 DMA fallback controls")
     print(summary.to_string(index=False))
     print("\nFixed stress windows")
