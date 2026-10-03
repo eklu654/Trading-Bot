@@ -237,3 +237,34 @@ Interpretation: **MACD + channel information appears capable of improving the ti
 The most important next refinement is therefore not another large blind parameter grid. It should examine which signal arrives first and whether that sequence consistently precedes sustained bearish periods: channel breakdown, MACD histogram deterioration/cross, momentum deterioration, breadth confirmation, VIX expansion, and eventual 200-DMA loss. Lead-time, false-trigger, and regime-by-regime diagnostics should be added before another selection grid.
 
 ETF-018 also exposed a runtime optimization opportunity. Its workflow now uses a lightweight data bootstrap containing only the 11 required ETFs/underlyings plus VIX instead of rebuilding the full historical research universe. This keeps focused signal experiments isolated from the slower full historical pipeline.
+
+
+## ETF-020 supervised technical-indicator synthesis
+
+The research is now moving from hand-authored indicator combinations toward a bounded machine-learning experiment. The motivation is the user's hypothesis that the inverse transition may require a large collection of weak technical signals whose interactions are difficult to encode manually.
+
+ETF-020 builds a broad ex-ante feature library across QQQ, SPY, SOXX, DIA, and IWM, including:
+- moving-average distance and slope across multiple horizons;
+- ROC/momentum across short, medium, and long horizons;
+- RSI;
+- multiple MACD parameterizations and histogram slope;
+- Bollinger-style channel position, width, and lower-band breaks;
+- Donchian channel position, lower-channel breaks, and drawdown from recent highs;
+- ATR-normalized movement and volatility;
+- stochastic oscillators;
+- ADX and directional-index spread;
+- volume/OBV-derived features where available;
+- VIX level, changes, z-scores, and rolling ranks;
+- cross-market breadth and dispersion features.
+
+The model is a deliberately small set of fixed HistGradientBoostingClassifier architectures rather than a massive hyperparameter search. It is trained only on 2010-2019 data. Validation (2020-2022) chooses the probability threshold and inverse allocation fraction; the 2023+ holdout is then inspected without using it for model selection.
+
+The target is a forward 20-session coordinated-market decline of at least 4% in the equal-weight QQQ/SPY/SOXX benchmark. This is a research target, not a claim that the model can forecast prices reliably.
+
+This architecture is important because it tests the user's core hypothesis directly: whether an AI model can synthesize many interacting indicators more effectively than a manually weighted score. It also protects against the most obvious failure mode of this approach—finding an apparently brilliant combination by searching the holdout period.
+
+ETF-020 uses the canonical ETF-001 portfolio ledger and preserves the same-underlying exclusivity rule: when the model activates the defensive side, the corresponding bull sleeve is removed before any inverse exposure is applied.
+
+A lightweight ETF-020 data bootstrap was added so this experiment does not rebuild the entire historical research universe. The focused workflow is therefore isolated from the slower full historical/options pipelines.
+
+The experiment is not yet a paper-trading candidate. A model would need to demonstrate chronological robustness, realistic transaction-cost resilience, stable behavior across market regimes, and account-level execution feasibility before being considered for paper trading.
