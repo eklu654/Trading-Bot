@@ -29,3 +29,5 @@ jobs:
         run: python backtest_etf021_multi_horizon_ml_diagnostics.py
 
 # Focused diagnostic workflow; no portfolio selection is performed here.
+
+# Retrigger after diagnostics syntax correction.
