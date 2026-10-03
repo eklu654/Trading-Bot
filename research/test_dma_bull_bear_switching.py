@@ -388,8 +388,8 @@ def main() -> None:
         states = frame[state_columns]
         transitions = pd.DataFrame(index=states.index)
         for pair in PAIRS:
-            prev = states[pair].shift(1).fillna("CASH")
-            curr = states[pair]
+            prev = states[f"{pair}_state"].shift(1).fillna("CASH")
+            curr = states[f"{pair}_state"]
             transitions[pair] = np.where(
                 prev.eq(curr), 0,
                 np.where(
@@ -399,6 +399,8 @@ def main() -> None:
                 ),
             )
         transaction_count = transitions.sum(axis=1)
+        # Keep gross transition counts alongside net performance so later
+        # rotation research can be compared on both return and turnover.
         for cost_bps in TRANSACTION_COST_BPS:
             gross = frame["portfolio_return"].fillna(0.0)
             net = gross - (transaction_count / len(PAIRS)) * (cost_bps / 10000.0)
