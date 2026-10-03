@@ -56,6 +56,9 @@ jobs:
       - name: Run ETF-006 inverse timing confirmation grid
         run: python research/backtest_etf006_inverse_timing_grid.py
 
+      - name: Run ETF-007 inverse timing oracle diagnostic
+        run: python research/backtest_etf007_oracle_timing_upper_bound.py
+
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
 
