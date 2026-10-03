@@ -165,27 +165,47 @@ jobs:
       - name: Replay ETF-exit conditional options analysis
         run: python research/analyze_options_during_etf_exits.py
 
-      - name: Replay OPTIONS-001 defense variants — broad sideways
-        run: |
-          echo "=== NO ADJUSTMENT DEFENSE CONTROL ==="
-          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
-          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
-          echo "=== ROLL UNTESTED ==="
-          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
-          python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
+      - parallel:
+          - name: OPTIONS-001 defense — none conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
+          - name: OPTIONS-001 defense — none mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
+          - name: OPTIONS-001 defense — roll-untested conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
+          - name: OPTIONS-001 defense — roll-untested mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
 
-      - name: Evaluate ETF-exit options switcher candidates
-        run: |
-          for candidate in broad_sideways turbulent_only all_days; do
-            for fill in conservative mid; do
-              trades="data/research/options002_delta16_w2_${candidate}_${fill}_account_5000_risk_0.07.csv"
-              [ -f "$trades" ] || continue
-              python research/evaluate_etf_exit_switcher.py \
-                --options-trades "$trades" \
-                --capital 5000 \
-                --output "data/research/etf_exit_switcher_${candidate}_${fill}_$(basename "$trades" .csv).csv"
-            done
-          done
+      - parallel:
+          - name: Evaluate ETF-exit switcher — broad sideways conservative
+            run: |
+              trades="data/research/options002_delta16_w2_broad_sideways_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_broad_sideways_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — broad sideways mid
+            run: |
+              trades="data/research/options002_delta16_w2_broad_sideways_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_broad_sideways_mid_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — turbulent only conservative
+            run: |
+              trades="data/research/options002_delta16_w2_turbulent_only_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_turbulent_only_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — turbulent only mid
+            run: |
+              trades="data/research/options002_delta16_w2_turbulent_only_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_turbulent_only_mid_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — all days conservative
+            run: |
+              trades="data/research/options002_delta16_w2_all_days_conservative_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_all_days_conservative_"$(basename "$trades" .csv)".csv"
+          - name: Evaluate ETF-exit switcher — all days mid
+            run: |
+              trades="data/research/options002_delta16_w2_all_days_mid_account_5000_risk_0.07.csv"
+              [ -f "$trades" ] || exit 0
+              python research/evaluate_etf_exit_switcher.py --options-trades "$trades" --capital 5000 --output "data/research/etf_exit_switcher_all_days_mid_"$(basename "$trades" .csv)".csv"
 
       - name: Evaluate ETF-exit switcher chronological holdout gate
         run: |
