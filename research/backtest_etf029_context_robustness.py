@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "research"
 FAMILIES = ("trend", "macd", "channel", "momentum", "volatility", "breadth")
 LAGS = (3, 5, 10, 15, 20)
-CUTOFFS = (1 / 3, 1 / 2, 2 / 3)
+CUTOFFS = (1 / 3, 0.40, 1 / 2)
 
 
 def classify(row: pd.Series, lag: int, cutoff: float) -> str:
