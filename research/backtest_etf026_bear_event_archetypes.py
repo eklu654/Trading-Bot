@@ -69,7 +69,7 @@ def main():
     rows=[]
     for d in dates:
         row={"event_date":d,"forward20":float(fwd.loc[d])}
-        for lag in (0,-5,-10):
+        for lag in (0,5,10):
             base=scores.shift(lag).reindex([d]).iloc[0]
             for fam in scores.columns:
                 row[f"{fam}_d{abs(lag)}"]=float(base[fam])
