@@ -6,8 +6,7 @@ much of its historical result survives changes in start date, era, path,
 transaction costs, and assumed future CAGR.
 
 All price-series comparisons use the same dynamically detected common period
-for TQQQ and QQQ.  TQQQ's launch date therefore determines the beginning of
-the empirical comparison rather than synthetic pre-launch data.
+for the direct TQQQ/QQQ/SOXL/SPXL controls. No synthetic pre-launch data is used.
 
 Run from repository root:
     python research/backtest_etf031_tqqq_robustness.py
@@ -70,7 +69,7 @@ def cagr(equity: pd.Series) -> float:
     return float(equity.iloc[-1] ** (1.0 / years) - 1.0)
 
 
-def summarize(ret: pd.Series, label: str, cost_bps: float = 0.0) -> dict[str, object]:
+def summarize(ret: pd.Series, label: str, cost_bps: float = 0.0, time_invested: float | None = None) -> dict[str, object]:
     ret = ret.dropna().astype(float)
     equity = equity_from_returns(ret)
     return {
@@ -86,6 +85,7 @@ def summarize(ret: pd.Series, label: str, cost_bps: float = 0.0) -> dict[str, ob
         "recovery_days": recovery_days(equity),
         "worst_day": ret.min(),
         "cost_bps": cost_bps,
+        "time_invested": time_invested,
     }
 
 
@@ -384,6 +384,7 @@ def main() -> None:
                 "max_drawdown",
                 "annualized_volatility",
                 "recovery_days",
+                "time_invested",
             ]
         ].to_string(index=False)
     )
