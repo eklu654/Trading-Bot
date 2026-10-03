@@ -186,7 +186,7 @@ def make_feature_matrix() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Dat
     for n in (5, 10, 20, 60, 252):
         vf[f"vix_chg{n}"] = vf["vix"].pct_change(n)
         vf[f"vix_z{n}"] = (vf["vix"] - vf["vix"].rolling(n).mean()) / vf["vix"].rolling(n).std()
-        vf[f"vix_rank{n}"] = vf["vix"].rolling(n, min_periods=max(20, n//2)).rank(pct=True)
+        vf[f"vix_rank{n}"] = vf["vix"].rolling(n, min_periods=max(5, min(20, n))).rank(pct=True)
 
     X = pd.concat(parts + [vf], axis=1)
     benchmark = close[["QQQ", "SPY", "SOXX"]].mean(axis=1)
