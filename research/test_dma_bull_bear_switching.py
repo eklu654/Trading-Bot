@@ -14,6 +14,7 @@ chronological train/validation/holdout procedures.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 import sys
 
@@ -55,25 +56,46 @@ HEADLINE_CONTROLS = (
 )
 
 
-def common_index(symbols: list[str]) -> pd.DatetimeIndex:
+@lru_cache(maxsize=None)
+def common_index(symbols: tuple[str, ...]) -> pd.DatetimeIndex:
     frames = [load(symbol)["adj_close"].rename(symbol) for symbol in symbols]
     frame = pd.concat(frames, axis=1).dropna()
     return frame.index[(frame.index >= START) & (frame.index <= END)]
 
 
+@lru_cache(maxsize=None)
+def pair_market_data(pair_name: str) -> tuple[pd.DatetimeIndex, pd.Series, pd.Series, pd.Series]:
+    """Cache the immutable per-family price/return inputs used by every control."""
+    spec = PAIRS[pair_name]
+    index = common_index((spec["benchmark"], spec["bull"], spec["bear"]))
+    benchmark = load(spec["benchmark"])["close"].reindex(index)
+    bull_ret = load(spec["bull"])["adj_close"].reindex(index).pct_change().fillna(0.0)
+    bear_ret = load(spec["bear"])["adj_close"].reindex(index).pct_change().fillna(0.0)
+    return index, benchmark, bull_ret, bear_ret
+
+
+@lru_cache(maxsize=None)
+def benchmark_dma(pair_name: str, dma: int) -> pd.Series:
+    """Precompute each benchmark DMA once and reuse it across configurations."""
+    index = pair_market_data(pair_name)[0]
+    benchmark = pair_market_data(pair_name)[1]
+    return benchmark.rolling(dma).mean()
+
+
+@lru_cache(maxsize=None)
 def benchmark_signals(
-    benchmark: str,
-    index: pd.DatetimeIndex,
+    pair_name: str,
     bull_dma: int,
     bear_dma: int,
     confirmation: int,
 ) -> tuple[pd.Series, pd.Series]:
-    price = load(benchmark)["close"].reindex(index)
-    bull_ma = price.rolling(bull_dma).mean()
-    bear_ma = price.rolling(bear_dma).mean()
+    """Cache the exact lagged signals for each family/configuration."""
+    index, benchmark, _, _ = pair_market_data(pair_name)
+    bull_ma = benchmark_dma(pair_name, bull_dma)
+    bear_ma = benchmark_dma(pair_name, bear_dma)
 
-    bull_candidate = (price.shift(1) >= bull_ma.shift(1)).fillna(False)
-    bear_candidate = (price.shift(1) <= bear_ma.shift(1)).fillna(False)
+    bull_candidate = (benchmark.shift(1) >= bull_ma.shift(1)).fillna(False)
+    bear_candidate = (benchmark.shift(1) <= bear_ma.shift(1)).fillna(False)
 
     bull_ready = bull_candidate.rolling(confirmation).sum().eq(confirmation)
     bear_ready = bear_candidate.rolling(confirmation).sum().eq(confirmation)
@@ -88,21 +110,15 @@ def backtest_pair(
     bear_weight: float,
 ) -> pd.DataFrame:
     spec = PAIRS[pair_name]
-    index = common_index([spec["benchmark"], spec["bull"], spec["bear"]])
-    benchmark = load(spec["benchmark"])["close"].reindex(index)
-    bull_price = load(spec["bull"])["adj_close"].reindex(index)
-    bear_price = load(spec["bear"])["adj_close"].reindex(index)
+    index, benchmark, bull_ret, bear_ret = pair_market_data(pair_name)
 
     bull_ready, bear_ready = benchmark_signals(
-        spec["benchmark"], index, bull_dma, bear_dma, confirmation
+        pair_name, bull_dma, bear_dma, confirmation
     )
 
     state = "CASH"
     states: list[str] = []
     returns: list[float] = []
-
-    bull_ret = bull_price.pct_change().fillna(0.0)
-    bear_ret = bear_price.pct_change().fillna(0.0)
 
     for i, date in enumerate(index):
         if i == 0:

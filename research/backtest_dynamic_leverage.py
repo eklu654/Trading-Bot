@@ -15,6 +15,7 @@ then chooses 0x/1x/2x/3x exposure from broad trend and VIX state.
 
 from __future__ import annotations
 
+from functools import lru_cache
 from pathlib import Path
 
 import numpy as np
@@ -37,7 +38,13 @@ VIX_MODERATE_PERCENTILE = 0.60
 VIX_HIGH_PERCENTILE = 0.80
 
 
+@lru_cache(maxsize=None)
 def load(symbol: str) -> pd.DataFrame:
+    """Load each research price file at most once per Python process.
+
+    The returned frame is treated as read-only by callers. Caching changes only
+    file-I/O overhead; the underlying historical observations are unchanged.
+    """
     path = DATA_DIR / f"{symbol.lower()}_daily.csv"
     return pd.read_csv(path, parse_dates=["Date"]).set_index("Date").sort_index()
 
