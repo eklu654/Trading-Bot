@@ -66,14 +66,6 @@ jobs:
       - name: Print ETF-031 lower-CAGR scenarios
         run: cat data/research/etf031_lower_future_cagr_scenarios.csv
 
-      - name: Report result to pull request
-        if: ${{ always() && github.event_name == 'pull_request' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          JOB_STATUS: ${{ job.status }}
-        run: |
-          gh pr comment "$PR_NUMBER" --body "ETF-031 workflow result: **$JOB_STATUS**. This report is emitted by the workflow itself so the result remains visible even when the Actions-run connector cannot enumerate the run."
 
       - name: Upload ETF-031 artifacts
         uses: actions/upload-artifact@v4
@@ -89,3 +81,12 @@ jobs:
             data/research/etf031_path_stress.csv
             data/research/etf031_lower_future_cagr_scenarios.csv
           if-no-files-found: error
+
+      - name: Report result to pull request
+        if: ${{ always() && github.event_name == 'pull_request' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          JOB_STATUS: ${{ job.status }}
+        run: |
+          gh pr comment "$PR_NUMBER" --body "ETF-031 workflow result: **$JOB_STATUS**. This report is emitted by the workflow itself so the result remains visible even when the Actions-run connector cannot enumerate the run."
