@@ -68,7 +68,19 @@ def test_static_hold_is_true_buy_and_hold(monkeypatch):
     assert np.allclose(result["portfolio_return"].to_numpy(), [0.0, 0.10, -0.10])
 
 
+def test_common_comparison_period_is_explicit():
+    import research.compare_leverage_benchmarks as comparison
+    assert comparison.COMMON_START == pd.Timestamp("2010-01-01")
+    assert comparison.COMMON_END == pd.Timestamp("2026-09-25")
+
+
 def test_2018_2025_comparison_period_is_explicit():
     import research.compare_leverage_benchmarks as comparison
     assert comparison.COMPARISON_START == pd.Timestamp("2018-01-01")
     assert comparison.COMPARISON_END == pd.Timestamp("2025-12-31")
+
+
+def test_dynamic_benchmark_common_period_is_explicit():
+    from research import backtest_dynamic_leverage as dynamic
+    assert dynamic.COMMON_START == pd.Timestamp("2010-01-01")
+    assert dynamic.COMMON_END == pd.Timestamp("2026-09-25")
