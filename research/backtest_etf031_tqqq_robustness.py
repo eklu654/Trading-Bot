@@ -27,7 +27,8 @@ DATA = ROOT / "data" / "research"
 STARTING_CAPITAL = 5000.0
 MA_WINDOW = 200
 COSTS_BPS = (0, 10, 25, 50)
-ROLLING_WINDOWS = {"5y": 1260, "10y": 2520}
+ROLLING_WINDOWS = {"1y": 252, "3y": 756, "5y": 1260, "10y": 2520}
+FORWARD_HORIZONS_YEARS = (5, 10, 20)
 SCENARIO_FRACTIONS = (0.0, 1 / 3, 0.5, 2 / 3, 1.0)
 
 
@@ -226,19 +227,20 @@ def path_permutation_stress(price: pd.Series, seed: int = 31031) -> pd.DataFrame
 
 
 def lower_future_cagr_scenarios(historical_cagr: float) -> pd.DataFrame:
-    years = max((pd.Timestamp("2026-09-25") - pd.Timestamp("2010-02-11")).days / 365.25, 1.0)
+    """Project fixed future horizons at fractions of the observed historical CAGR."""
     rows = []
     for fraction in SCENARIO_FRACTIONS:
         assumed = historical_cagr * fraction
-        final = STARTING_CAPITAL * (1.0 + assumed) ** years
-        rows.append(
-            {
-                "historical_cagr_fraction": fraction,
-                "assumed_future_cagr": assumed,
-                "years": years,
-                "ending_balance_5000": final,
-            }
-        )
+        for years in FORWARD_HORIZONS_YEARS:
+            final = STARTING_CAPITAL * (1.0 + assumed) ** years
+            rows.append(
+                {
+                    "historical_cagr_fraction": fraction,
+                    "assumed_future_cagr": assumed,
+                    "years": years,
+                    "ending_balance_5000": final,
+                }
+            )
     return pd.DataFrame(rows)
 
 
@@ -300,7 +302,18 @@ def main() -> None:
         ],
         ignore_index=True,
     )
+    # Compact worst rolling-period summary required by ETF-031.
+    rolling_summary = (
+        rolling.groupby(["strategy", "window"], as_index=False)
+        .agg(
+            worst_rolling_cagr=("cagr", "min"),
+            best_rolling_cagr=("cagr", "max"),
+            worst_rolling_drawdown=("max_drawdown", "min"),
+            best_rolling_drawdown=("max_drawdown", "max"),
+        )
+    )
     rolling.to_csv(DATA / "etf031_rolling_stats.csv", index=False)
+    rolling_summary.to_csv(DATA / "etf031_rolling_summary.csv", index=False)
 
     starts = start_date_sensitivity(tqqq)
     starts.to_csv(DATA / "etf031_start_date_sensitivity.csv", index=False)
@@ -338,6 +351,8 @@ def main() -> None:
             ]
         ].to_string(index=False)
     )
+    print("\n=== ETF-031 ROLLING SUMMARY ===")
+    print(rolling_summary.to_string(index=False))
     print("\n=== ETF-031 ERA SENSITIVITY ===")
     print(eras.to_string(index=False))
     print("\n=== ETF-031 PATH STRESS ===")
