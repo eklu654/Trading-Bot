@@ -25,3 +25,8 @@ jobs:
         run: python research/build_historical_regime_dataset.py
       - name: Run ETF-019 signal lead diagnostics
         run: python research/backtest_etf019_signal_lead_diagnostics.py
+      - name: Upload ETF-019 diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: etf019-signal-diagnostics
+          path: data/research/etf019_signal_*.csv
