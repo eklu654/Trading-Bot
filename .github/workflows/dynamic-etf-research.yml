@@ -38,36 +38,41 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            research/requirements.txt
+            requirements-dev.txt
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
       - name: Compile
         run: python -m py_compile research/backtest_dynamic_leverage.py research/compare_leverage_benchmarks.py research/build_historical_regime_dataset.py research/backtest_dynamic_etf_selection.py research/analyze_dynamic_performance.py research/analyze_stress_periods.py research/analyze_switch001_regimes.py research/analyze_regime_directional_opportunity.py research/backtest_dynamic_sizing.py research/test_dma_fallback_controls.py research/test_dma_reentry_confirmation.py research/test_dma_bull_bear_switching.py
       - name: Run dynamic benchmark unit tests
         run: python -m pytest -q tests/test_backtest_dynamic_leverage.py tests/test_dynamic_etf_selection.py tests/test_dynamic_sizing.py tests/test_dma_fallback_controls.py tests/test_dma_reentry_confirmation.py tests/test_dma_bull_bear_switching.py tests/test_analyze_switch001_regimes.py tests/test_analyze_regime_directional_opportunity.py
-      - name: Build historical market dataset
+      - name: Build historical market dataset once
         run: python research/build_historical_regime_dataset.py
-      - name: Analyze SWITCH-001 historical regime labels
-        run: python research/analyze_switch001_regimes.py
-      - name: Analyze regime-conditioned bull/bear opportunity
-        run: python research/analyze_regime_directional_opportunity.py
-      - name: Run deterministic dynamic leverage benchmark
-        run: python research/backtest_dynamic_leverage.py
-      - name: Compare deterministic leverage controls
-        run: python research/compare_leverage_benchmarks.py
+      - parallel:
+          - name: Analyze SWITCH-001 historical regime labels
+            run: python research/analyze_switch001_regimes.py
+          - name: Analyze regime-conditioned bull/bear opportunity
+            run: python research/analyze_regime_directional_opportunity.py
+          - name: Run deterministic dynamic leverage benchmark
+            run: python research/backtest_dynamic_leverage.py
+          - name: Compare deterministic leverage controls
+            run: python research/compare_leverage_benchmarks.py
+          - name: Run E2 dynamic ETF family selection
+            run: python research/backtest_dynamic_etf_selection.py
+          - name: Run E3 dynamic volatility sizing
+            run: python research/backtest_dynamic_sizing.py
+          - name: Run fixed DMA fallback controls
+            run: python research/test_dma_fallback_controls.py
+          - name: Run five-session DMA re-entry confirmation
+            run: python research/test_dma_reentry_confirmation.py
+          - name: Run family-level asymmetric bull cash bear DMA switching
+            run: python research/test_dma_bull_bear_switching.py
+          - name: Analyze fixed stress periods
+            run: python research/analyze_stress_periods.py
       - name: Analyze annual and rolling SPY-relative performance
         run: python research/analyze_dynamic_performance.py
-      - name: Run E2 dynamic ETF family selection
-        run: python research/backtest_dynamic_etf_selection.py
-      - name: Run E3 dynamic volatility sizing
-        run: python research/backtest_dynamic_sizing.py
-      - name: Run fixed DMA fallback controls
-        run: python research/test_dma_fallback_controls.py
-      - name: Run five-session DMA re-entry confirmation
-        run: python research/test_dma_reentry_confirmation.py
-      - name: Run asymmetric bull cash bear DMA switching
-        run: python research/test_dma_bull_bear_switching.py
-      - name: Analyze fixed stress periods
-        run: python research/analyze_stress_periods.py
       - name: Print SWITCH-001 regime summary
         run: cat data/research/switch001_regime_summary.csv
       - name: Print regime directional opportunity
