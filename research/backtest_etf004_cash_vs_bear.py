@@ -16,7 +16,16 @@ def main():
     u={x:load(x)["close"] for x in PAIRS}; common=pd.concat(u,axis=1).dropna()
     etf={t:load(t) for p in PAIRS.values() for t in p}; states={}
     for x,c in u.items():
-        ma=c.rolling(200,min_periods=200).mean(); above=(c>=ma).fillna(False); states[x]=above.rolling(5,min_periods=5).sum().fillna(0)>=1
+        ma=c.rolling(200,min_periods=200).mean(); above=(c>=ma).fillna(False)
+        current=False; streak=0; state=[]
+        for flag in above:
+            if bool(flag):
+                streak += 1
+                if streak >= 5: current=True
+            else:
+                streak = 0; current=False
+            state.append(current)
+        states[x]=pd.Series(state,index=c.index)
     rows=[]
     for mode in ("CASH","BEAR"):
         daily=[0.0]
