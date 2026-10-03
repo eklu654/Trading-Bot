@@ -11,6 +11,10 @@ on:
       - "research/build_historical_regime_dataset.py"
       - "research/requirements.txt"
 
+concurrency:
+  group: etf027-signal-transition-diagnostics-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   transitions:
     runs-on: ubuntu-latest
@@ -19,8 +23,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: research/requirements.txt
+      - name: Cache historical research dataset
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: etf-research-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-09-28
       - run: python -m pip install -r research/requirements.txt
-      - name: Build historical dataset
+      - name: Build historical dataset when cache is cold
         run: python research/build_historical_regime_dataset.py
       - name: Run ETF-027 transition diagnostics
         run: python research/backtest_etf027_signal_transition_diagnostics.py
