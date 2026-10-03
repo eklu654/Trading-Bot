@@ -51,7 +51,7 @@ jobs:
         run: python research/backtest_etf004_cash_vs_bear.py
 
       - name: Run ETF-005 transaction-cost sensitivity research
-        run: python research/backtest_etf005_cost_sensitivity.py
+        run: python research/backtest_etf005_costs.py
 
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
