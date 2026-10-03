@@ -84,7 +84,7 @@ def metrics(r):
 def main():
     under,raw,breadth,vix=inputs()
     bulls={n:bull_state(c) for n,c in under.items()}
-    idx=pd.concat([raw[x]["adj_close"] for x in raw],axis=1).index
+    idx=pd.concat([raw[x]["adj_close"] for x in raw],axis=1).dropna().index
     baseline=pd.Series(0.0,index=idx)
     for n,(b,_) in PAIRS.items():
         rb=raw[b]["adj_close"].reindex(idx).pct_change().fillna(0)
