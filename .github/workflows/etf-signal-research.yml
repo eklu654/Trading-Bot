@@ -8,6 +8,7 @@ on:
       - "research/backtest_etf011_partial_inverse.py"
       - "research/backtest_etf012_early_bear_override.py"
       - "research/backtest_etf013_absolute_vix_early_bear.py"
+      - "research/backtest_etf014_inverse_instrument_grid.py"
       - ".github/workflows/etf-signal-research.yml"
 
 jobs:
@@ -29,3 +30,5 @@ jobs:
         run: python research/backtest_etf012_early_bear_override.py
       - name: Run ETF-013 absolute VIX early bear override
         run: python research/backtest_etf013_absolute_vix_early_bear.py
+      - name: Run ETF-014 inverse instrument grid
+        run: python research/backtest_etf014_inverse_instrument_grid.py
