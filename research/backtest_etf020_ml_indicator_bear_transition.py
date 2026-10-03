@@ -66,6 +66,7 @@ def metrics(r: pd.Series) -> tuple[float, float, float, float, float]:
 
 
 def technicals(c: pd.Series, volume: pd.Series | None = None) -> pd.DataFrame:
+    global load_current_high, load_current_low
     x = pd.DataFrame(index=c.index)
     ret = c.pct_change()
 
@@ -170,7 +171,6 @@ def make_feature_matrix() -> tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Dat
     close = pd.concat({u: frames[u]["close"].reindex(idx).ffill() for u in BREADTH}, axis=1)
     high = pd.concat({u: frames[u]["high"].reindex(idx).ffill() for u in BREADTH}, axis=1)
     low = pd.concat({u: frames[u]["low"].reindex(idx).ffill() for u in BREADTH}, axis=1)
-    global load_current_high, load_current_low
     load_current_high = {u: high[u] for u in BREADTH}
     load_current_low = {u: low[u] for u in BREADTH}
 
