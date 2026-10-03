@@ -113,27 +113,12 @@ jobs:
                 done
               done
 
-      - parallel:
-          - name: Replay OPTIONS-002 ALL_DAYS conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 ALL_DAYS mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model mid --wing-width 2
-          - name: Replay OPTIONS-002 BROAD_SIDEWAYS conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 BROAD_SIDEWAYS mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --wing-width 2
-          - name: Replay OPTIONS-002 TURBULENT_ONLY conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 TURBULENT_ONLY mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid --wing-width 2
-          - name: OPTIONS-001 defense — none conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
-          - name: OPTIONS-001 defense — none mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
-          - name: OPTIONS-001 defense — roll-untested conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
-          - name: OPTIONS-001 defense — roll-untested mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
+      # The raw option chain is immutable. Materialize it once in DuckDB and
+      # reuse that exact table across all six OPTIONS-002 and four defense
+      # variants. This removes ten competing full-Parquet scans while keeping
+      # every row, fill rule, entry rule, and exit rule unchanged.
+      - name: Batch all historical option replays from one cached chain
+        run: python research/replay_options_batch.py --options-source "data/options/spy/options_*.parquet"
 
       - parallel:
           - name: Batch OPTIONS-002 account feasibility — ALL_DAYS conservative
