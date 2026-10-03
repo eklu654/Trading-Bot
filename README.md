@@ -171,3 +171,14 @@ This is not yet a selected production configuration. The next gate is parameter-
 
 
 The era-robustness pass completed: the 30% target / 20-session lookback / 20–30% drawdown-trigger cluster remained positive in all four calendar eras even at 25 bps costs. For example, V30/L20/DD20 had 25-bps era CAGRs of 9.41%, 0.26%, 8.62%, and 25.26% across 2010–2014, 2015–2019, 2020–2022, and 2023–2026; V30/L20/DD25 produced 8.26%, 1.50%, 8.17%, and 33.54%; V30/L20/DD30 produced 6.82%, 3.41%, 12.35%, and 33.83%. These are descriptive historical results and do not establish future performance. The cluster is therefore being carried forward as a robustness region rather than a single optimized parameter point.
+
+
+## $5,000 account replay and next-open execution — 2026-10-03
+
+The $5,000 account-feasibility replay completed successfully using whole-share positions, explicit residual cash, 0/10/25/50 bps transaction-cost stress, and chronological train/validation/holdout reporting. It now evaluates both the existing prior-close research convention and a causal next-open execution sensitivity.
+
+At 25 bps across the full 2010–2026 sample, the raw 250-DMA/top-2/5-session rotation produced 25.63% CAGR with prior-close execution and 23.61% with next-open execution, while maximum drawdown remained about 69%. The risk-overlay cluster remained materially less exposed: the V30/L20/DD20, DD25, and DD30 variants produced approximately 9.62%/11.12%/12.11% full-period CAGR with prior-close execution and 9.96%/11.93%/11.20% with next-open execution; corresponding full-period maximum drawdowns were roughly 39%–48%.
+
+The three V30/L20 variants remained positive across train, validation, and 2023+ holdout in the account replay under both execution sensitivities at 25 bps. These are historical implementation diagnostics, not forecasts or production selections. The $5,000 whole-share constraint is therefore not the primary blocker; portfolio drawdown and execution realism remain the key gates.
+
+Detailed methodology and results: [ETF family-rotation $5,000 account replay](docs/02-research/dma-family-rotation-5000-account-replay.md).
