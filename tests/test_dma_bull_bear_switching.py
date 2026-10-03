@@ -23,3 +23,9 @@ def test_portfolio_states_are_exclusive():
 def test_bear_weight_does_not_create_bull_overlap():
     assert '"bull_weight": [1.0 if s == "BULL" else 0.0 for s in states]' in SCRIPT
     assert '"bear_weight": [bear_weight if s == "BEAR" else 0.0 for s in states]' in SCRIPT
+
+
+def test_cross_family_exposure_is_allowed():
+    assert "backtest_multi_pair" in SCRIPT
+    assert "cross-family bull/bear exposure is allowed" in SCRIPT
+    assert 'out[f"{pair}_state"]' in SCRIPT
