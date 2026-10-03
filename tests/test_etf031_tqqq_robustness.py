@@ -8,6 +8,7 @@ from research.backtest_etf031_tqqq_robustness import (
     path_permutation_stress,
     recovery_days,
     summarize,
+    dma_next_open_returns,
 )
 
 
@@ -66,3 +67,20 @@ def test_summary_reports_time_invested_when_supplied():
     )
     result = summarize(ret, "synthetic", time_invested=0.5)
     assert np.isclose(result["time_invested"], 0.5)
+
+
+def test_dma_next_open_uses_open_to_open_execution():
+    dates = pd.date_range("2020-01-01", periods=205, freq="B")
+    close = pd.Series(np.linspace(100.0, 120.0, len(dates)), index=dates)
+    frame = pd.DataFrame(
+        {
+            "open": close - 0.5,
+            "close": close,
+            "adj_close": close,
+        },
+        index=dates,
+    )
+    result = dma_next_open_returns(frame, 0.0)
+    assert len(result) == len(frame) - 1
+    assert np.isfinite(result).all()
+    assert (result.iloc[-1] > 0)
