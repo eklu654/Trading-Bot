@@ -136,6 +136,16 @@ Before live deployment, the project must satisfy both economic and operational g
 - emergency-stop behavior;
 - and successful paper-soak operation.
 
+## Methodology correction — return-first re-audit
+
+A recurring interpretation error has been identified: large historical drawdown was sometimes treated as an implicit rejection criterion even when no explicit drawdown constraint had been established. That is corrected going forward.
+
+The project objective includes substantial absolute wealth creation. Drawdown, tail loss, recovery time, execution feasibility, and operational survivability remain important measurements, but none is an automatic veto. Defensive controls must be evaluated as explicit tradeoffs against terminal wealth rather than assumed to be improvements.
+
+The previously developed high-return leveraged strategies must therefore remain first-class research candidates. In particular, the DMA250/top-2/5-session family rotation and other earlier leveraged-ETF controls must be re-audited for terminal wealth, account survival, recovery behavior, execution sensitivity, cost sensitivity, chronological robustness, and parameter robustness before a lower-return risk overlay is allowed to replace them.
+
+See docs/02-research/return-first-strategy-re-audit-2026-10-03.md for the full corrected framework.
+
 ## Current research priorities
 
 1. Preserve the chronological holdout and do not tune against it.
