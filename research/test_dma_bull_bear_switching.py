@@ -211,6 +211,7 @@ def main() -> None:
             for confirmation in CONFIRMATIONS
             for weight in BEAR_WEIGHTS
         ]
+        configs.extend(HEADLINE_CONTROLS)
         configs.extend(
             (bull_dma, bear_dma, confirmation, 0.0)
             for bull_dma, bear_dma, confirmation, _ in HEADLINE_CONTROLS
