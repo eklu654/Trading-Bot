@@ -15,7 +15,6 @@ on:
       - "research/analyze_regime_directional_opportunity.py"
       - "research/test_dma_fallback_controls.py"
       - "research/test_dma_reentry_confirmation.py"
-      - "research/test_dma_bull_bear_switching.py"
       - "tests/test_dma_fallback_controls.py"
       - "tests/test_dma_reentry_confirmation.py"
       - "tests/test_dma_bull_bear_switching.py"
