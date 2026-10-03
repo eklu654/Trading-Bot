@@ -24,6 +24,8 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "research"
 OUTPUT_DIR = DATA_DIR
+COMMON_START = pd.Timestamp("2010-01-01")
+COMMON_END = pd.Timestamp("2026-09-25")
 
 FAMILIES = {
     "SPY": {0: None, 1: "SPY", 2: "SSO", 3: "SPXL"},
@@ -190,7 +192,7 @@ def main() -> None:
     result = backtest(features)
 
     splits = {
-        "full": result,
+        "full": result.loc[COMMON_START:COMMON_END],
         "train": result.loc[: "2019-12-31"],
         "validation": result.loc["2020-01-01":"2022-12-31"],
         "holdout": result.loc["2023-01-01":],
