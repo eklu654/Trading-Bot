@@ -5,7 +5,7 @@ on:
   push:
     paths:
       - "research/backtest_etf018_canonical_multisignal_transition.py"
-      - "research/build_historical_regime_dataset.py"
+      - "research/build_etf018_dataset.py"
       - ".github/workflows/etf018-multisignal-research.yml"
 
 concurrency:
@@ -21,6 +21,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r research/requirements.txt
-      - run: python research/build_historical_regime_dataset.py
+      - name: Build lightweight ETF-018 dataset
+        run: python research/build_etf018_dataset.py
       - name: Run ETF-018 canonical multi-signal transition research
         run: python research/backtest_etf018_canonical_multisignal_transition.py
