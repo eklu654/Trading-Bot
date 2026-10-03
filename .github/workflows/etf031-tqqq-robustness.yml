@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "research/backtest_etf031_tqqq_robustness.py"
+      - "research/etf031_supplemental_path_stress.py"
       - "tests/test_etf031_tqqq_robustness.py"
       - "research/test_dma_family_rotation.py"
       - "research/test_dma_family_rotation_risk_overlay.py"
@@ -13,6 +14,7 @@ on:
   push:
     paths:
       - "research/backtest_etf031_tqqq_robustness.py"
+      - "research/etf031_supplemental_path_stress.py"
       - "tests/test_etf031_tqqq_robustness.py"
       - ".github/workflows/etf031-tqqq-robustness.yml"
 
@@ -49,7 +51,9 @@ jobs:
         run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
 
       - name: Compile
-        run: python -m py_compile research/backtest_etf031_tqqq_robustness.py
+        run: |
+          python -m py_compile research/backtest_etf031_tqqq_robustness.py
+          python -m py_compile research/etf031_supplemental_path_stress.py
 
       - name: Run ETF-031 unit tests
         run: python -m pytest -q tests/test_etf031_tqqq_robustness.py
@@ -62,6 +66,9 @@ jobs:
       - name: Run ETF-031 robustness audit
         run: python research/backtest_etf031_tqqq_robustness.py
 
+      - name: Run ETF-031 supplemental path stress
+        run: python research/etf031_supplemental_path_stress.py
+
       - name: Print ETF-031 controls
         run: cat data/research/etf031_control_summary.csv
 
@@ -71,6 +78,10 @@ jobs:
       - name: Print ETF-031 lower-CAGR scenarios
         run: cat data/research/etf031_lower_future_cagr_scenarios.csv
 
+      - name: Print ETF-031 supplemental stress
+        run: |
+          cat data/research/etf031_individual_observation_stress.csv
+          cat data/research/etf031_severe_bear_recovery_stress.csv
 
       - name: Upload ETF-031 artifacts
         uses: actions/upload-artifact@v4
@@ -85,6 +96,8 @@ jobs:
             data/research/etf031_exceptional_year_removal.csv
             data/research/etf031_path_stress.csv
             data/research/etf031_lower_future_cagr_scenarios.csv
+            data/research/etf031_individual_observation_stress.csv
+            data/research/etf031_severe_bear_recovery_stress.csv
           if-no-files-found: error
 
       - name: Report result to pull request
