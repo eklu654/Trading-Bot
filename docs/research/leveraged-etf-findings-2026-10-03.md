@@ -310,3 +310,24 @@ The 21-session cadence produced a separate validation configuration at 0.65 with
 Event attribution also shows why the result must be treated cautiously. The selected model triggered on the 2022-12-28 session, which was a false positive for the following 20-session benchmark return (+11.79%). In the 2023+ holdout it triggered a three-session cluster on July 9-11, 2024; those sessions were followed by benchmark 20-session returns of approximately -11.15%, -13.31%, and -8.69%. The apparent holdout benefit is therefore concentrated in a very small number of events.
 
 Conclusion: walk-forward retraining remains a legitimate research direction, but the current inverse edge is too sparse to promote. The next promotion gate should require robustness across more bearish events and realistic transaction costs, not simply another small threshold/cadence grid.
+
+
+## ETF-024 walk-forward transaction-cost stress
+
+The validation-selected ETF-023 signal (63-session retraining, 0.60 threshold, 100% inverse sleeve allocation) was replayed with explicit turnover costs. Candidate turnover was 6.25x in validation and 16.25x in holdout versus 4.75x and 13.25x for the baseline.
+
+At **25 bps per unit turnover**:
+- Validation candidate: **20.73% annualized, Sharpe 0.721**
+- Validation baseline: **19.70%, Sharpe 0.696**
+- Holdout candidate: **23.79%, Sharpe 0.771**
+- Holdout baseline: **23.08%, Sharpe 0.755**
+
+At **50 bps**:
+- Validation candidate: **20.10%, Sharpe 0.706**
+- Validation baseline: **19.22%, Sharpe 0.685**
+- Holdout candidate: **22.45%, Sharpe 0.741**
+- Holdout baseline: **21.99%, Sharpe 0.730**
+
+At **100 bps**, the candidate's annualized return falls slightly below the baseline in holdout, although its Sharpe remains marginally higher. Thus the signal's advantage is not dependent on assuming zero costs, but the edge remains small and event-sparse.
+
+This strengthens the case for further research rather than promotion: the walk-forward inverse signal has now survived a basic cost stress, but its improvement is still concentrated in a handful of events and is not large enough to justify paper trading without a stronger robustness test.
