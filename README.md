@@ -118,6 +118,10 @@ See docs/02-research/account-feasibility-2000.md for the legacy $2,000 feasibili
 See docs/01-strategies/tastytrade-strategy.md for the current options methodology draft.
 
 
+## Common ETF benchmark period — 2026-10-03
+
+The deterministic ETF benchmark comparison now uses one common historical period for its primary full-period results: **2010-01-01 through 2026-09-25**. The separate **2018-01-01 through 2025-12-31** slice remains available for the requested technology/semiconductor-era comparison. This prevents strategies with different available histories from being compared on mismatched full-period windows.
+
 ## Research update — 2026-10-03
 
 The leveraged-ETF research has moved beyond the original 200-DMA/inverse-switch experiments. ETF-017 established the canonical-accounting inverse-overlay benchmark; ETF-018 showed that MACD/channel/momentum/breadth combinations can materially improve some validation periods but did not survive the 2023+ holdout. ETF-020 through ETF-024 then tested broad technical-indicator ML, walk-forward retraining, retraining cadence, and transaction-cost stress. The walk-forward signal produced only a small, event-sparse improvement, so it remains research-only.
