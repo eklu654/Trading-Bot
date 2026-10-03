@@ -30,8 +30,17 @@ END = "2026-09-27"
 # Stooq provides daily OHLCV history for these U.S. symbols.
 PRICE_SYMBOLS = [
     "TQQQ",
+    "SQQQ",
     "SPXL",
+    "SPXS",
     "SOXL",
+    "SOXS",
+    "UDOW",
+    "SDOW",
+    "DIA",
+    "TNA",
+    "TZA",
+    "IWM",
     "SPY",
     "QQQ",
     "SOXX",
