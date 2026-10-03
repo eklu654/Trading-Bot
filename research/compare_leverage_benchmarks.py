@@ -20,6 +20,7 @@ import pandas as pd
 from research.backtest_dynamic_leverage import build_features, backtest, load, MA_WINDOW
 
 OUTPUT_DIR = ROOT / "data" / "research"
+STARTING_CAPITAL = 5000.0
 COMPARISON_START = pd.Timestamp("2018-01-01")
 COMPARISON_END = pd.Timestamp("2025-12-31")
 
@@ -56,6 +57,7 @@ def summarize(frame: pd.DataFrame, label: str) -> dict[str, object]:
         "start": frame.index.min(),
         "end": frame.index.max(),
         "total_return": total,
+        "ending_balance_5000": STARTING_CAPITAL * equity.iloc[-1],
         "annualized_return": (1 + total) ** (1 / years) - 1,
         "annualized_volatility": vol,
         "sharpe": sharpe,
@@ -106,6 +108,8 @@ def main() -> None:
     print(full.to_string(index=False))
     print("\n2018-2025 comparison")
     print(period.to_string(index=False))
+    print("\n$5,000 2018-2025 ending balances")
+    print(period[["strategy", "ending_balance_5000"]].to_string(index=False))
     print("\nArtifacts:")
     print(OUTPUT_DIR / "leverage_strategy_comparison.csv")
     print(OUTPUT_DIR / "leverage_strategy_comparison_2018_2025.csv")
