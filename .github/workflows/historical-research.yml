@@ -6,7 +6,23 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "research/**"
+      - "research/requirements.txt"
+      - "research/build_historical_regime_dataset.py"
+      - "research/backtest_etf001.py"
+      - "research/backtest_etf001_matrix.py"
+      - "research/analyze_etf001_cash_allocation.py"
+      - "research/analyze_etf001_robustness.py"
+      - "research/evaluate_etf001_matrix.py"
+      - "research/backtest_etf002_directional_rotation.py"
+      - "research/backtest_etf003_bull_rotation.py"
+      - "research/backtest_etf004_cash_vs_bear.py"
+      - "research/backtest_etf005_costs.py"
+      - "research/backtest_etf006_inverse_timing_grid.py"
+      - "research/backtest_etf007_oracle_timing_upper_bound.py"
+      - "research/backtest_etf008_directional_signal.py"
+      - "research/backtest_etf009_multi_horizon_signal.py"
+      - "research/analyze_options_opportunity_windows.py"
+      - "research/evaluate_regime_candidates.py"
       - ".github/workflows/historical-research.yml"
 
 concurrency:
