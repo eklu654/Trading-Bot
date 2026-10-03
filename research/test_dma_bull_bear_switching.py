@@ -42,6 +42,7 @@ BULL_DMAS = (100, 150, 200, 250)
 BEAR_DMAS = (20, 30, 50, 75, 100)
 CONFIRMATIONS = (1, 5)
 BEAR_WEIGHTS = (0.25, 0.50, 0.75, 1.00)
+TRANSACTION_COST_BPS = (0, 10, 25, 50)
 
 HEADLINE_CONTROLS = (
     (200, 200, 1, 1.00),
@@ -377,6 +378,54 @@ def main() -> None:
         )
         combined_rows.append(row)
 
+
+    # Transaction-cost stress: one side for cash<->position, two sides for
+    # direct bull<->bear switches. Costs are applied to each family sleeve.
+    cost_rows: list[dict[str, object]] = []
+    for bull_dma, bear_dma, confirmation, weight in HEADLINE_CONTROLS:
+        frame = backtest_multi_pair(bull_dma, bear_dma, confirmation, weight)
+        state_columns = [f"{pair}_state" for pair in PAIRS]
+        states = frame[state_columns]
+        transitions = pd.DataFrame(index=states.index)
+        for pair in PAIRS:
+            prev = states[pair].shift(1).fillna("CASH")
+            curr = states[pair]
+            transitions[pair] = np.where(
+                prev.eq(curr), 0,
+                np.where(
+                    prev.isin(["BULL", "BEAR"]) & curr.isin(["BULL", "BEAR"]),
+                    2,
+                    1,
+                ),
+            )
+        transaction_count = transitions.sum(axis=1)
+        for cost_bps in TRANSACTION_COST_BPS:
+            gross = frame["portfolio_return"].fillna(0.0)
+            net = gross - (transaction_count / len(PAIRS)) * (cost_bps / 10000.0)
+            cost_frame = pd.DataFrame({"portfolio_return": net}, index=frame.index)
+            label = (
+                f"ALL_PAIRS_{bull_dma}DMA_BEAR{bear_dma}DMA_"
+                f"C{confirmation}_BEARW{weight:.2f}"
+            )
+            for split_name, segment in {
+                "full": cost_frame.loc["2010-01-01":"2026-09-25"],
+                "train": cost_frame.loc["2010-01-01":"2019-12-31"],
+                "validation": cost_frame.loc["2020-01-01":"2022-12-31"],
+                "holdout": cost_frame.loc["2023-01-01":"2026-09-25"],
+            }.items():
+                if segment.empty:
+                    continue
+                row = summarize(segment.assign(state="COMBINED"), label, split_name)
+                row.update({
+                    "bull_dma": bull_dma,
+                    "bear_dma": bear_dma,
+                    "confirmation": confirmation,
+                    "bear_weight": weight,
+                    "cost_bps_per_side": cost_bps,
+                    "transaction_count": int(transitions.loc[segment.index].sum().sum()),
+                })
+                cost_rows.append(row)
+
     # Equal-weight always-bull benchmark using the same five leveraged families.
     benchmark_rows: list[dict[str, object]] = []
     benchmark_daily = pd.DataFrame({pair: pair_market_data(pair)[2] for pair in PAIRS}).mean(axis=1)
@@ -394,6 +443,9 @@ def main() -> None:
     )
     pd.DataFrame(combined_split_rows + benchmark_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_combined_splits.csv", index=False
+    )
+    pd.DataFrame(cost_rows).to_csv(
+        DATA_DIR / "dma_bull_bear_switch_cost_stress.csv", index=False
     )
     pd.DataFrame(all_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_matrix.csv", index=False
@@ -413,6 +465,8 @@ def main() -> None:
     print(pd.DataFrame(combined_rows).to_string(index=False))
     print("\n=== COMBINED CROSS-FAMILY SPLITS + ALWAYS-BULL BENCHMARK ===")
     print(pd.DataFrame(combined_split_rows + benchmark_rows).to_string(index=False))
+    print("\n=== TRANSACTION-COST STRESS ===")
+    print(pd.DataFrame(cost_rows).to_string(index=False))
 
 
 if __name__ == "__main__":
