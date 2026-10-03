@@ -84,6 +84,27 @@ jobs:
         run: |
           cat data/research/etf031_individual_observation_stress.csv
           cat data/research/etf031_severe_bear_recovery_stress.csv
+      - name: Validate ETF-031 supplemental consistency
+        run: |
+          python - <<'PY'
+          import math
+          import pandas as pd
+
+          controls = pd.read_csv("data/research/etf031_control_summary.csv")
+          observation = pd.read_csv("data/research/etf031_individual_observation_stress.csv")
+          bear = pd.read_csv("data/research/etf031_severe_bear_recovery_stress.csv")
+
+          baseline = float(controls.loc[(controls["strategy"] == "TQQQ_buy_and_hold") & (controls["cost_bps"] == 0), "ending_balance_5000"].iloc[0])
+          supplemental = float(observation.loc[observation["scenario"] == "baseline", "ending_balance_5000"].iloc[0])
+          if not math.isclose(baseline, supplemental, rel_tol=1e-9, abs_tol=0.01):
+              raise SystemExit(f"Supplemental TQQQ baseline {supplemental} does not match ETF-031 control baseline {baseline}")
+
+          if bear["ending_balance_5000"].nunique() <= 1:
+              raise SystemExit("Severe-bear stress has no terminal-value sensitivity.")
+
+          print(f"Validated supplemental baseline: ${supplemental:,.2f}")
+          print("Validated severe-bear stress has path-sensitive terminal values.")
+          PY
 
       - name: Upload ETF-031 artifacts
         uses: actions/upload-artifact@v4
