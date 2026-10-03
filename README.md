@@ -193,3 +193,8 @@ The clearest confirmed case is the raw **DMA250/top-2/5-session family rotation*
 The audit preserves aggressive leveraged controls as first-class benchmarks and requires future drawdown-based rejection to be justified by an explicit survival, broker, operational, or predeclared risk constraint.
 
 Detailed audit: [Return-first drawdown re-audit](docs/02-research/return-first-drawdown-reaudit.md).
+
+
+## ETF-031 — TQQQ offensive benchmark robustness audit
+
+ETF-031 treats 100% TQQQ buy-and-hold as a first-class offensive benchmark rather than rejecting it because of drawdown alone. The audit uses the common empirical period available to the tested series and keeps the starting account at $5,000. It compares TQQQ buy-and-hold, QQQ buy-and-hold, TQQQ 200-DMA/cash, the frozen DMA-250/top-2/5-session family rotation, and the previously frozen V30/L20/DD20/25/30 overlays. It stresses 0/10/25/50 bps costs, rolling 5/10-year windows, start dates, calendar eras, removal of each calendar year, exact-return path sequencing, and lower future TQQQ CAGR scenarios including one-third of historical CAGR. ETF-031 is an audit rather than a parameter-selection sweep.
