@@ -123,7 +123,7 @@ ETF-014 tested whether 3x inverse products were the structural problem by compar
 - 2X: QID / SDS / SSG
 - LOW: PSQ / SH / SSG
 
-ProShares documents PSQ as -1x, QID/SDS as -2x, while SOXS is -3x and SSG is -2x. The semiconductor hedge is not perfectly benchmark-matched in the LOW profile because SSG tracks the Dow Jones U.S. Semiconductors Index rather than SOXX's exact benchmark. citeturn4search2turn3search0turn3search2
+ProShares documents PSQ as -1x, QID/SDS as -2x, while SOXS is -3x and SSG is -2x. The semiconductor hedge is not perfectly benchmark-matched in the LOW profile because SSG tracks the Dow Jones U.S. Semiconductors Index rather than SOXX's exact benchmark.
 
 The best validation result was the LOW profile with 50% sleeve allocation, score 3, one-session confirmation, VIX percentile 0.80, and breadth threshold 0.33:
 - Validation: 26.08% annualized, Sharpe 0.788, max DD -36.59%
