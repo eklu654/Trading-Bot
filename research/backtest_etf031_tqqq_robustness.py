@@ -333,6 +333,8 @@ def main() -> None:
             controls.append(summarize(stressed, f"RISK_V30_L20_DD{int(dd*100)}", cost, float(overlay["exposure"].mean())))
 
     summary = pd.DataFrame(controls)
+    summary["common_period_start"] = common_start
+    summary["common_period_end"] = common_end
     summary.to_csv(DATA / "etf031_control_summary.csv", index=False)
 
     rolling = pd.concat(
