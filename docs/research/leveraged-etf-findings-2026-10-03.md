@@ -295,3 +295,18 @@ Walk-forward predictive diagnostics improved validation ROC-AUC to **0.596**, bu
 However, the model activated on only **1 validation day and 3 holdout days** at the selected threshold. The small number of activations means the apparent portfolio improvement could be driven by a handful of observations rather than a durable predictive edge. It is therefore **not a paper-trading candidate** yet.
 
 Interpretation: walk-forward retraining is more interesting than the frozen ETF-020 model, but the current evidence still does not establish a robust inverse signal. The next test should stress retraining cadence, event attribution, and transaction costs rather than immediately increasing model complexity or searching a large parameter space.
+
+
+## ETF-023 walk-forward cadence sensitivity
+
+ETF-023 tested retraining every 21, 63, or 126 trading sessions with fixed probability thresholds. The validation-selected configuration remained the **63-session cadence / 0.60 threshold**, with 1 inverse activation day:
+- Validation: **21.36% annualized, Sharpe 0.736**
+- Baseline: **20.18%, Sharpe 0.708**
+- Holdout: **25.14% annualized, Sharpe 0.801**
+- Baseline holdout: **24.18%, Sharpe 0.779**
+
+The 21-session cadence produced a separate validation configuration at 0.65 with 6 activation days and Sharpe 0.730, while the 126-session cadence produced no activation at the tested thresholds. The selected 63-session result therefore was not uniquely supported by a broad cadence improvement.
+
+Event attribution also shows why the result must be treated cautiously. The selected model triggered on the 2022-12-28 session, which was a false positive for the following 20-session benchmark return (+11.79%). In the 2023+ holdout it triggered a three-session cluster on July 9-11, 2024; those sessions were followed by benchmark 20-session returns of approximately -11.15%, -13.31%, and -8.69%. The apparent holdout benefit is therefore concentrated in a very small number of events.
+
+Conclusion: walk-forward retraining remains a legitimate research direction, but the current inverse edge is too sparse to promote. The next promotion gate should require robustness across more bearish events and realistic transaction costs, not simply another small threshold/cadence grid.
