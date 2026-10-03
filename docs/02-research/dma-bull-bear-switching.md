@@ -57,7 +57,7 @@ No holdout metric is used to select a configuration.
 
 ## Combined cross-family testing
 
-The combined holdout experiment independently evaluates all five benchmark families and then combines their sleeve returns. Each family enforces its own bull/bear exclusivity rule, while opposite directional states across different families remain valid.
+The combined holdout experiment independently evaluates all five benchmark families and then combines their sleeve returns using an equal 20% weight per family. This equal-weight construction is a research control, not a production allocation decision. Each family enforces its own bull/bear exclusivity rule, while opposite directional states across different families remain valid.
 
 This specifically tests the portfolio behavior implied by the clarified constraint: one family can be bullish while another is bearish, without either position invalidating the other.
 
