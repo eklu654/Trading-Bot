@@ -326,7 +326,9 @@ def main() -> None:
     print("=== DMA BULL/CASH/BEAR SWITCH MATRIX ===")
     print(pd.DataFrame(all_rows).to_string(index=False))
     print("\n=== HEADLINE HOLDOUT CONTROLS ===")
-    print(pd.DataFrame(headline_rows).to_string(index=False))\n    print("\n=== COMBINED CROSS-FAMILY HOLDOUT CONTROLS ===")\n    print(pd.DataFrame(combined_rows).to_string(index=False))
+    print(pd.DataFrame(headline_rows).to_string(index=False))
+    print("\n=== COMBINED CROSS-FAMILY HOLDOUT CONTROLS ===")
+    print(pd.DataFrame(combined_rows).to_string(index=False))
 
 
 if __name__ == "__main__":
