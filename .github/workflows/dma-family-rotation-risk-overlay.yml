@@ -1,0 +1,50 @@
+name: DMA Family Rotation Risk Overlay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/backtest_dynamic_leverage.py"
+      - "research/build_historical_regime_dataset.py"
+      - "research/requirements.txt"
+      - ".github/workflows/dma-family-rotation-risk-overlay.yml"
+
+concurrency:
+  group: dma-family-rotation-risk-overlay-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  risk-overlay:
+    runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Cache historical research dataset
+        id: dataset-cache
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: dma-family-rotation-risk-overlay-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-10-03
+      - run: python -m pip install -r research/requirements.txt
+      - name: Build historical market dataset
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: python research/build_historical_regime_dataset.py
+      - name: Run risk overlay research
+        run: python research/test_dma_family_rotation_risk_overlay.py
+      - name: Upload risk overlay results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dma-family-rotation-risk-overlay-results
+          path: |
+            data/research/dma_family_rotation_risk_overlay_matrix.csv
+            data/research/dma_family_rotation_risk_overlay_cost_stress.csv
+            data/research/dma_family_rotation_risk_overlay_train_top15.csv
