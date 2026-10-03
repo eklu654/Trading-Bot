@@ -6,6 +6,7 @@ from research.backtest_etf031_tqqq_robustness import (
     equity_from_returns,
     max_drawdown,
     path_permutation_stress,
+    recovery_days,
     summarize,
 )
 
@@ -48,3 +49,11 @@ def test_cagr_requires_positive_terminal_equity():
         index=pd.date_range("2020-01-01", periods=2),
     )
     assert cagr(equity_from_returns(ret)) == 0.0
+
+
+def test_recovery_days_measures_trough_to_prior_peak():
+    equity = pd.Series(
+        [1.0, 1.2, 0.8, 0.9, 1.2],
+        index=pd.date_range("2020-01-01", periods=5, freq="D"),
+    )
+    assert recovery_days(equity) == 2
