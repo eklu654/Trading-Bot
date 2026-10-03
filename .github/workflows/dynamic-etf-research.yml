@@ -26,6 +26,11 @@ on:
       - "tests/test_dynamic_sizing.py"
       - ".github/workflows/dynamic-etf-research.yml"
 
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dynamic-etf-research:
     runs-on: ubuntu-latest
