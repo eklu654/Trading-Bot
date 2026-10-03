@@ -177,7 +177,7 @@ def main() -> None:
                     for split, segment in {
                         "train": stressed.loc["2010-01-01":"2019-12-31"],
                         "validation": stressed.loc["2020-01-01":"2022-12-31"],
-                        "holdout": stressed.loc["2023-01-01":"2026-09-25"],
+                        "holdout": stressed.loc["2023-01-01":END.strftime("%Y-%m-%d")],
                     }.items():
                         if segment.empty:
                             continue
