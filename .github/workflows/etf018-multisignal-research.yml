@@ -1,0 +1,26 @@
+name: ETF-018 Multi-Signal Transition Research
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtest_etf018_canonical_multisignal_transition.py"
+      - "research/build_historical_regime_dataset.py"
+      - ".github/workflows/etf018-multisignal-research.yml"
+
+concurrency:
+  group: etf018-multisignal-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  etf018:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r research/requirements.txt
+      - run: python research/build_historical_regime_dataset.py
+      - name: Run ETF-018 canonical multi-signal transition research
+        run: python research/backtest_etf018_canonical_multisignal_transition.py
