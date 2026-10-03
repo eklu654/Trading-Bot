@@ -21,6 +21,8 @@ from research.backtest_dynamic_leverage import build_features, backtest, load, M
 
 OUTPUT_DIR = ROOT / "data" / "research"
 STARTING_CAPITAL = 5000.0
+COMMON_START = pd.Timestamp("2010-01-01")
+COMMON_END = pd.Timestamp("2026-09-25")
 COMPARISON_START = pd.Timestamp("2018-01-01")
 COMPARISON_END = pd.Timestamp("2025-12-31")
 
@@ -93,7 +95,8 @@ def main() -> None:
         ]
         return pd.DataFrame(rows)
 
-    full = build_summary(strategies)
+    common_map = {label: frame.loc[COMMON_START:COMMON_END].copy() for label, frame in strategies.items()}
+    full = build_summary({label: frame for label, frame in common_map.items() if not frame.empty})
     full.to_csv(OUTPUT_DIR / "leverage_strategy_comparison.csv", index=False)
 
     start = COMPARISON_START
@@ -104,7 +107,7 @@ def main() -> None:
     period = build_summary({label: frame for label, frame in slice_map.items() if not frame.empty})
     period.to_csv(OUTPUT_DIR / "leverage_strategy_comparison_2018_2025.csv", index=False)
 
-    print("Full-period comparison")
+    print(f"Common-period comparison ({COMMON_START.date()} through {COMMON_END.date()})")
     print(full.to_string(index=False))
     print("\n2018-2025 comparison")
     print(period.to_string(index=False))
