@@ -126,7 +126,7 @@ jobs:
             run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model conservative --wing-width 2
           - name: Replay OPTIONS-002 TURBULENT_ONLY mid
             run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid --wing-width 2
-- name: OPTIONS-001 defense — none conservative
+          - name: OPTIONS-001 defense — none conservative
             run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
           - name: OPTIONS-001 defense — none mid
             run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
