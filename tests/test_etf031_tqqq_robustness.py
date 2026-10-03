@@ -57,3 +57,12 @@ def test_recovery_days_measures_trough_to_prior_peak():
         index=pd.date_range("2020-01-01", periods=5, freq="D"),
     )
     assert recovery_days(equity) == 2
+
+
+def test_summary_reports_time_invested_when_supplied():
+    ret = pd.Series(
+        [0.01, 0.0],
+        index=pd.date_range("2020-01-01", periods=2),
+    )
+    result = summarize(ret, "synthetic", time_invested=0.5)
+    assert np.isclose(result["time_invested"], 0.5)
