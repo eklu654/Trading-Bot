@@ -150,3 +150,12 @@ ETF-030 completed successfully. Across the tested eras, pre-event trend/breadth 
 ## Bull/cash/bear switching matrix — 2026-10-03
 
 The existing `research/test_dma_bull_bear_switching.py` matrix now has an automated GitHub Actions workflow. It tests benchmark-DMA switching among BULL, CASH, and BEAR states across SP500, NASDAQ100, semiconductors, Dow 30, and Russell 2000 families. The implementation enforces the hard per-family constraint that a family can never hold its bull and bear ETF simultaneously. Cross-family directional differences are permitted, so a portfolio can hold, for example, a Dow bull sleeve while a semiconductor sleeve is bearish. Results are split into full, train, validation, and 2023+ holdout views; the predefined headline controls are reported rather than selected from holdout performance.
+
+
+## Family-rotation risk-overlay research — 2026-10-03
+
+The current deterministic ETF research target is the frozen **250-DMA / top-2 / 5-session family rotation** candidate across SPXL, TQQQ, SOXL, UDOW, and TNA, with cash when no family qualifies. Its historical return profile is promising but its approximately 65–68% maximum drawdown is too large to treat as deployment-ready.
+
+The next gate therefore does not broaden the selector. The risk-overlay runner keeps that base candidate frozen and tests causal portfolio-level risk controls: prior-close realized-volatility targeting and a simple drawdown de-risking overlay. The matrix includes 20/60-session volatility windows, fixed volatility targets, drawdown thresholds, and 0/10/25/50 bps transaction-cost stress. Train/validation/holdout results are retained separately; holdout is not used for candidate selection.
+
+The purpose of this stage is to determine whether risk can be reduced without destroying the underlying family-rotation edge. A positive result would still require further walk-forward robustness, subperiod analysis, account-level replay at the canonical $5,000 starting balance, and paper trading before any live deployment.
