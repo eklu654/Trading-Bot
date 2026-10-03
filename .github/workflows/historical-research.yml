@@ -49,6 +49,9 @@ jobs:
         run: python research/backtest_etf007_oracle_timing_upper_bound.py
       - name: Run ETF-008 frozen ex-ante directional signal research
         run: python research/backtest_etf008_directional_signal.py
+      - name: Run ETF-009 multi-horizon directional signal research
+        run: python research/backtest_etf009_multi_horizon_signal.py
+
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
       - name: Analyze ETF-001 cash allocation sensitivity
