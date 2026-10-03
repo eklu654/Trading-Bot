@@ -7,6 +7,7 @@ on:
       - "research/backtest_etf031_tqqq_robustness.py"
       - "research/etf031_supplemental_path_stress.py"
       - "tests/test_etf031_tqqq_robustness.py"
+      - "tests/test_etf031_supplemental_path_stress.py"
       - "research/test_dma_family_rotation.py"
       - "research/test_dma_family_rotation_risk_overlay.py"
       - "research/build_historical_regime_dataset.py"
@@ -16,6 +17,7 @@ on:
       - "research/backtest_etf031_tqqq_robustness.py"
       - "research/etf031_supplemental_path_stress.py"
       - "tests/test_etf031_tqqq_robustness.py"
+      - "tests/test_etf031_supplemental_path_stress.py"
       - ".github/workflows/etf031-tqqq-robustness.yml"
 
 concurrency:
@@ -56,7 +58,7 @@ jobs:
           python -m py_compile research/etf031_supplemental_path_stress.py
 
       - name: Run ETF-031 unit tests
-        run: python -m pytest -q tests/test_etf031_tqqq_robustness.py
+        run: python -m pytest -q tests/test_etf031_tqqq_robustness.py tests/test_etf031_supplemental_path_stress.py
 
       - name: Build ETF-031 market dataset
         run: >-
