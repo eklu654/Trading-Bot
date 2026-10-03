@@ -1,6 +1,5 @@
 name: Historical Research
 # ETF-focused research pipeline. Options research is intentionally separated and manual-only.
-# Holdout gate fix: exclude generated summary ledgers from daily-path discovery.
 # Matrix split metrics are rebased independently before candidate evaluation.
 
 on:
@@ -17,11 +16,9 @@ concurrency:
 jobs:
   historical-research:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -30,50 +27,37 @@ jobs:
           cache-dependency-path: |
             research/requirements.txt
             requirements-dev.txt
-
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt
-
       - name: Compile research scripts
         run: python -m py_compile research/*.py
-
       - name: Build historical dataset
         run: python research/build_historical_regime_dataset.py
-
       - name: Run ETF-001 backtest
         run: python research/backtest_etf001.py
       - name: Run ETF-002 directional leveraged ETF rotation research
         run: python research/backtest_etf002_directional_rotation.py
-
       - name: Run ETF-003 bull-only and Dow-pivot rotation research
         run: python research/backtest_etf003_bull_rotation.py
-
       - name: Run ETF-004 cash versus bear-side fallback research
         run: python research/backtest_etf004_cash_vs_bear.py
-
       - name: Run ETF-005 transaction-cost sensitivity research
         run: python research/backtest_etf005_costs.py
-
       - name: Run ETF-006 inverse timing confirmation grid
         run: python research/backtest_etf006_inverse_timing_grid.py
-
       - name: Run ETF-007 inverse timing oracle diagnostic
         run: python research/backtest_etf007_oracle_timing_upper_bound.py
-
+      - name: Run ETF-008 frozen ex-ante directional signal research
+        run: python research/backtest_etf008_directional_signal.py
       - name: Run ETF-001 trend and hysteresis matrix
         run: python research/backtest_etf001_matrix.py
-
       - name: Analyze ETF-001 cash allocation sensitivity
         run: python research/analyze_etf001_cash_allocation.py
-
       - name: Evaluate ETF-001 local parameter robustness
         run: python research/analyze_etf001_robustness.py
-
       - name: Evaluate ETF-001 trend matrix on validation and holdout
         run: python research/evaluate_etf001_matrix.py
-
       - name: Analyze OPTIONS-001 opportunity windows
         run: python research/analyze_options_opportunity_windows.py
-
       - name: Evaluate regime candidates
         run: python research/evaluate_regime_candidates.py
