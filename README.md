@@ -182,3 +182,14 @@ At 25 bps across the full 2010–2026 sample, the raw 250-DMA/top-2/5-session ro
 The three V30/L20 variants remained positive across train, validation, and 2023+ holdout in the account replay under both execution sensitivities at 25 bps. These are historical implementation diagnostics, not forecasts or production selections. The $5,000 whole-share constraint is therefore not the primary blocker; portfolio drawdown and execution realism remain the key gates.
 
 Detailed methodology and results: [ETF family-rotation $5,000 account replay](docs/02-research/dma-family-rotation-5000-account-replay.md).
+
+
+## Return-first drawdown re-audit — 2026-10-03
+
+A retrospective audit was added after identifying a recurring interpretation error: large historical drawdown was sometimes given veto-level weight even when no explicit drawdown constraint had been established. The audit distinguishes genuine drawdown-driven deprioritization from candidates rejected for holdout failure, lost absolute return, transaction costs, accounting problems, or feasibility.
+
+The clearest confirmed case is the raw **DMA250/top-2/5-session family rotation**. At 25 bps and a $5,000 starting balance it ended around $217,586 under prior-close execution and $166,456 under next-open execution, versus roughly $22,825–$33,102 for the tested risk-overlay cluster. The raw strategy's roughly 69% maximum drawdown is therefore treated as a measured path characteristic and an explicit tradeoff, not an automatic rejection criterion.
+
+The audit preserves aggressive leveraged controls as first-class benchmarks and requires future drawdown-based rejection to be justified by an explicit survival, broker, operational, or predeclared risk constraint.
+
+Detailed audit: [Return-first drawdown re-audit](docs/02-research/return-first-drawdown-reaudit.md).
