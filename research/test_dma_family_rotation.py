@@ -27,7 +27,7 @@ from research.backtest_dynamic_leverage import load
 
 DATA_DIR = ROOT / "data" / "research"
 START = pd.Timestamp("2010-01-01")
-END = pd.Timestamp("2026-09-25")
+END = pd.Timestamp.now().normalize() + pd.Timedelta(days=1)
 
 FAMILIES = {
     "SP500": {"benchmark": "SPY", "bull": "SPXL"},
@@ -164,7 +164,7 @@ def main() -> None:
                 frame = backtest(dma, top_n, cadence)
                 label = f"ROTATE_DMA{dma}_TOP{top_n}_C{cadence}"
                 splits = {
-                    "full": frame.loc["2010-01-01":"2026-09-25"],
+                    "full": frame.loc["2010-01-01":END.strftime("%Y-%m-%d")],
                     "train": frame.loc["2010-01-01":"2019-12-31"],
                     "validation": frame.loc["2020-01-01":"2022-12-31"],
                     "holdout": frame.loc["2023-01-01":"2026-09-25"],
