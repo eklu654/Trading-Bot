@@ -7,7 +7,7 @@ from research import test_dma_bull_bear_switching as module
 
 
 def test_inverse_pairs_are_explicit():
-    assert '"SPXS"' in module.SCRIPT if hasattr(module, "SCRIPT") else module.PAIRS["SP500"]["bear"] == "SPXS"
+    assert module.PAIRS["SP500"]["bear"] == "SPXS"
     assert module.PAIRS["NASDAQ100"]["bear"] == "SQQQ"
     assert module.PAIRS["SEMICONDUCTORS"]["bear"] == "SOXS"
     assert module.PAIRS["DOW30"]["bear"] == "SDOW"
@@ -44,7 +44,10 @@ def test_cross_family_opposite_exposure_is_allowed(monkeypatch):
         state = "BULL" if i == 0 else "BEAR" if i == 1 else "CASH"
         frames[pair] = pd.DataFrame(
             {
-                "portfolio_return": [0.0, 0.01 if state == "BULL" else -0.01 if state == "BEAR" else 0.0],
+                "portfolio_return": [
+                    0.0,
+                    0.01 if state == "BULL" else -0.01 if state == "BEAR" else 0.0,
+                ],
                 "state": [state, state],
                 "bull_weight": [1.0 if state == "BULL" else 0.0] * 2,
                 "bear_weight": [0.50 if state == "BEAR" else 0.0] * 2,
