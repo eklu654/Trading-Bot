@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 
 from research.etf031_supplemental_path_stress import (
+    load_tqqq,
     remove_observation_stress,
     severe_bear_recovery_scenarios,
 )
@@ -14,6 +15,17 @@ def test_individual_observation_stress_preserves_baseline_case():
     baseline = result.loc[result["scenario"] == "baseline"].iloc[0]
     assert baseline["ending_balance_5000"] > 5000
     assert np.isfinite(baseline["cagr"])
+
+
+def test_load_tqqq_uses_common_etf031_period():
+    price = load_tqqq()
+    assert price.index.min() == pd.Timestamp("2010-03-11")
+    assert price.index.max() == min(
+        pd.read_csv("data/research/tqqq_daily.csv", parse_dates=["Date"])["Date"].max(),
+        pd.read_csv("data/research/qqq_daily.csv", parse_dates=["Date"])["Date"].max(),
+        pd.read_csv("data/research/soxl_daily.csv", parse_dates=["Date"])["Date"].max(),
+        pd.read_csv("data/research/spxl_daily.csv", parse_dates=["Date"])["Date"].max(),
+    )
 
 
 def test_severe_bear_recovery_has_requested_drawdowns():
