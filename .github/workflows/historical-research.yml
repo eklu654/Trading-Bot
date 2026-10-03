@@ -72,72 +72,6 @@ jobs:
         run: python research/audit_0dte_dataset.py --options-source "data/options/spy/options_*.parquet"
 
       - parallel:
-          - name: OPTIONS-001 defense — none conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
-          - name: OPTIONS-001 defense — none mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
-          - name: OPTIONS-001 defense — roll-untested conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
-          - name: OPTIONS-001 defense — roll-untested mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
-
-      - parallel:
-          - name: Replay OPTIONS-001 all-market baseline plus no-stop benchmark
-            run: |
-              for fill in conservative mid; do
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill"
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill" --loss-credit-multiple 0
-              done
-          - name: Replay OPTIONS-001 broad-sideways baseline plus no-stop benchmark
-            run: |
-              for fill in conservative mid; do
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill"
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill" --loss-credit-multiple 0
-              done
-          - name: Replay OPTIONS-001 turbulent-only baseline plus no-stop benchmark
-            run: |
-              for fill in conservative mid; do
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill"
-                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill" --loss-credit-multiple 0
-              done
-
-      - parallel:
-          - name: Replay OPTIONS-001 account feasibility sensitivity — broad sideways
-            run: |
-              for nlv in 2000 5000 10000; do
-                for fill in conservative mid; do
-                  for loss_tag in loss2x nostop; do
-                    stem="options001_replay_broad_sideways_"$fill"_"$loss_tag
-                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
-                  done
-                done
-              done
-          - name: Replay OPTIONS-001 account feasibility sensitivity — turbulent only
-            run: |
-              for nlv in 2000 5000 10000; do
-                for fill in conservative mid; do
-                  for loss_tag in loss2x nostop; do
-                    stem="options001_replay_turbulent_only_"$fill"_"$loss_tag
-                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
-                  done
-                done
-              done
-
-      - parallel:
-          - name: Replay OPTIONS-002 ALL_DAYS conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 ALL_DAYS mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model mid --wing-width 2
-          - name: Replay OPTIONS-002 BROAD_SIDEWAYS conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 BROAD_SIDEWAYS mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --wing-width 2
-          - name: Replay OPTIONS-002 TURBULENT_ONLY conservative
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model conservative --wing-width 2
-          - name: Replay OPTIONS-002 TURBULENT_ONLY mid
-            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid --wing-width 2
-
-      - parallel:
           - name: Replay OPTIONS-002 account feasibility — ALL_DAYS
             run: |
               for nlv in 2000 3000 5000 7500 10000 15000 25000 50000 100000; do
@@ -269,4 +203,70 @@ jobs:
         with:
           name: historical-research-results
           path: data/research/
-          if-no-files-found: error
+          if-no-files-found: error      - parallel:
+          - name: Replay OPTIONS-002 ALL_DAYS conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model conservative --wing-width 2
+          - name: Replay OPTIONS-002 ALL_DAYS mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model mid --wing-width 2
+          - name: Replay OPTIONS-002 BROAD_SIDEWAYS conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --wing-width 2
+          - name: Replay OPTIONS-002 BROAD_SIDEWAYS mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --wing-width 2
+          - name: Replay OPTIONS-002 TURBULENT_ONLY conservative
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model conservative --wing-width 2
+          - name: Replay OPTIONS-002 TURBULENT_ONLY mid
+            run: python research/replay_options002.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model mid --wing-width 2
+
+      - parallel:
+          - name: OPTIONS-001 defense — none conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
+          - name: OPTIONS-001 defense — none mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
+          - name: OPTIONS-001 defense — roll-untested conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
+          - name: OPTIONS-001 defense — roll-untested mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
+
+      - parallel:
+          - name: Replay OPTIONS-001 all-market baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate ALL_DAYS --fill-model "$fill" --loss-credit-multiple 0
+              done
+          - name: Replay OPTIONS-001 broad-sideways baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model "$fill" --loss-credit-multiple 0
+              done
+          - name: Replay OPTIONS-001 turbulent-only baseline plus no-stop benchmark
+            run: |
+              for fill in conservative mid; do
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill"
+                python research/replay_options001.py --options-source "data/options/spy/options_*.parquet" --candidate TURBULENT_ONLY --fill-model "$fill" --loss-credit-multiple 0
+              done
+
+      - parallel:
+          - name: Replay OPTIONS-001 account feasibility sensitivity — broad sideways
+            run: |
+              for nlv in 2000 5000 10000; do
+                for fill in conservative mid; do
+                  for loss_tag in loss2x nostop; do
+                    stem="options001_replay_broad_sideways_"$fill"_"$loss_tag
+                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
+                  done
+                done
+              done
+          - name: Replay OPTIONS-001 account feasibility sensitivity — turbulent only
+            run: |
+              for nlv in 2000 5000 10000; do
+                for fill in conservative mid; do
+                  for loss_tag in loss2x nostop; do
+                    stem="options001_replay_turbulent_only_"$fill"_"$loss_tag
+                    python research/account_feasibility_replay.py --input "data/research/"$stem"_candidates.csv" --outcomes "data/research/"$stem"_candidate_outcomes.csv" --marks "data/research/"$stem"_candidate_marks.csv" --starting-nlv "$nlv" --max-bpr-pct 0.50 --output "data/research/"$stem"_account_"$nlv".csv"
+                  done
+                done
+              done
+
+
