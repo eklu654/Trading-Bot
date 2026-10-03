@@ -382,7 +382,11 @@ def main() -> None:
     # Transaction-cost stress: one side for cash<->position, two sides for
     # direct bull<->bear switches. Costs are applied to each family sleeve.
     cost_rows: list[dict[str, object]] = []
-    for bull_dma, bear_dma, confirmation, weight in HEADLINE_CONTROLS:
+    cost_controls = list(HEADLINE_CONTROLS) + [
+        (bull_dma, bear_dma, confirmation, 0.0)
+        for bull_dma, bear_dma, confirmation, _ in HEADLINE_CONTROLS
+    ]
+    for bull_dma, bear_dma, confirmation, weight in cost_controls:
         frame = backtest_multi_pair(bull_dma, bear_dma, confirmation, weight)
         state_columns = [f"{pair}_state" for pair in PAIRS]
         states = frame[state_columns]
