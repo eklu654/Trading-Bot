@@ -25,3 +25,8 @@ jobs:
         run: python research/build_historical_regime_dataset.py
       - name: Run ETF-025 event concentration placebo
         run: python research/backtest_etf025_event_placebo.py
+      - name: Upload ETF-025 results
+        uses: actions/upload-artifact@v4
+        with:
+          name: etf025-event-placebo
+          path: data/research/etf025_event_placebo_results.csv
