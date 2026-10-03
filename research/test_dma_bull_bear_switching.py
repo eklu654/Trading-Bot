@@ -301,7 +301,25 @@ def main() -> None:
         frame = backtest_multi_pair(bull_dma, bear_dma, confirmation, weight)
         holdout = frame.loc["2023-01-01":"2026-09-25"]
         row = summarize(holdout.assign(state="COMBINED"), "ALL_PAIRS", "holdout")
-        row.update({"bull_dma": bull_dma, "bear_dma": bear_dma, "confirmation": confirmation, "bear_weight": weight})
+        state_columns = [f"{pair}_state" for pair in PAIRS]
+        state_matrix = holdout[state_columns]
+        row.update(
+            {
+                "bull_dma": bull_dma,
+                "bear_dma": bear_dma,
+                "confirmation": confirmation,
+                "bear_weight": weight,
+                "bull_family_days": int((state_matrix == "BULL").sum().sum()),
+                "bear_family_days": int((state_matrix == "BEAR").sum().sum()),
+                "cash_family_days": int((state_matrix == "CASH").sum().sum()),
+                "mixed_direction_days": int(
+                    (
+                        (state_matrix == "BULL").any(axis=1)
+                        & (state_matrix == "BEAR").any(axis=1)
+                    ).sum()
+                ),
+            }
+        )
         combined_rows.append(row)
 
     pd.DataFrame(combined_rows).to_csv(DATA_DIR / "dma_bull_bear_switch_combined_holdout.csv", index=False)
