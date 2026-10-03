@@ -51,6 +51,18 @@ def max_drawdown(equity: pd.Series) -> float:
     return float((equity / peak - 1.0).min())
 
 
+def recovery_days(equity: pd.Series) -> int:
+    """Calendar days from the worst drawdown trough to recovery of its prior peak."""
+    running_peak = equity.cummax()
+    drawdown = equity / running_peak - 1.0
+    trough = drawdown.idxmin()
+    peak_before = running_peak.loc[trough]
+    recovered = equity.loc[trough:][equity.loc[trough:] >= peak_before]
+    if recovered.empty:
+        return -1
+    return int((recovered.index[0] - trough).days)
+
+
 def cagr(equity: pd.Series) -> float:
     if len(equity) < 2 or equity.iloc[-1] <= 0:
         return np.nan
@@ -71,6 +83,7 @@ def summarize(ret: pd.Series, label: str, cost_bps: float = 0.0) -> dict[str, ob
         "cagr": cagr(equity),
         "annualized_volatility": ret.std(ddof=1) * np.sqrt(252),
         "max_drawdown": max_drawdown(equity),
+        "recovery_days": recovery_days(equity),
         "worst_day": ret.min(),
         "cost_bps": cost_bps,
     }
@@ -245,12 +258,20 @@ def lower_future_cagr_scenarios(historical_cagr: float) -> pd.DataFrame:
 
 
 def main() -> None:
-    tqqq = load("TQQQ")
-    qqq = load("QQQ")
-    common_start = max(tqqq.index.min(), qqq.index.min())
-    common_end = min(tqqq.index.max(), qqq.index.max())
-    tqqq = tqqq.loc[common_start:common_end]
-    qqq = qqq.loc[common_start:common_end]
+    # Use one common empirical range across the direct offensive ETF controls.
+    # This prevents inception-date differences from making the comparisons
+    # look better simply because one ETF gets a longer history.
+    prices = {symbol: load(symbol) for symbol in ("TQQQ", "QQQ", "SOXL", "SPXL")}
+    common_start = max(series.index.min() for series in prices.values())
+    common_end = min(series.index.max() for series in prices.values())
+    prices = {
+        symbol: series.loc[common_start:common_end]
+        for symbol, series in prices.items()
+    }
+    tqqq = prices["TQQQ"]
+    qqq = prices["QQQ"]
+    soxl = prices["SOXL"]
+    spxl = prices["SPXL"]
 
     controls = []
     for cost in COSTS_BPS:
@@ -272,6 +293,20 @@ def main() -> None:
             summarize(
                 dma_returns(tqqq, cost),
                 "TQQQ_200DMA_cash",
+                cost,
+            )
+        )
+        controls.append(
+            summarize(
+                buy_hold_returns(soxl, cost),
+                "SOXL_buy_and_hold",
+                cost,
+            )
+        )
+        controls.append(
+            summarize(
+                buy_hold_returns(spxl, cost),
+                "SPXL_buy_and_hold",
                 cost,
             )
         )
@@ -348,6 +383,7 @@ def main() -> None:
                 "ending_balance_5000",
                 "max_drawdown",
                 "annualized_volatility",
+                "recovery_days",
             ]
         ].to_string(index=False)
     )
