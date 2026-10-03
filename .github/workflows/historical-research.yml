@@ -149,6 +149,24 @@ jobs:
           - name: Batch OPTIONS-002 account feasibility — TURBULENT_ONLY mid
             run: python research/batch_account_feasibility_options002.py --regime turbulent_only --fill-model mid
 
+      # The parallel action launches background processes. Wait for every
+      # canonical ledger before downstream steps consume their outputs. This
+      # is synchronization only; it does not alter any research calculation.
+      - name: Wait for OPTIONS-002 account ledgers
+        run: |
+          set -e
+          expected=54
+          for attempt in $(seq 1 120); do
+            count=$(find data/research -maxdepth 1 -type f -name 'options002_delta16_w2_*_account_*_risk_0.07.csv' | wc -l)
+            if [ "$count" -ge "$expected" ]; then
+              echo "OPTIONS-002 ledger gate satisfied: $count/$expected"
+              exit 0
+            fi
+            echo "Waiting for OPTIONS-002 ledgers: $count/$expected"
+            sleep 2
+          done
+          echo "Timed out waiting for OPTIONS-002 ledgers: $count/$expected"
+          exit 1
       - name: Consolidate OPTIONS-002 capital ladder feasibility
         run: python research/analyze_options002_capital_ladder.py
 
