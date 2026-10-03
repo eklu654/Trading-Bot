@@ -6,6 +6,7 @@ on:
     paths:
       - "research/backtest_etf010_bear_gate.py"
       - "research/backtest_etf011_partial_inverse.py"
+      - "research/backtest_etf012_early_bear_override.py"
       - ".github/workflows/etf-signal-research.yml"
 
 jobs:
@@ -23,3 +24,5 @@ jobs:
 
       - name: Run ETF-011 partial inverse overlay
         run: python research/backtest_etf011_partial_inverse.py
+      - name: Run ETF-012 early bear override
+        run: python research/backtest_etf012_early_bear_override.py
