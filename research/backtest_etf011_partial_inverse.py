@@ -99,7 +99,7 @@ def confirmed_bear(score, threshold, confirm, vp, breadth, under_name):
     raw = s >= threshold
     # Confirmation is based only on consecutive end-of-day bear signals.
     run = raw.astype(int).groupby((~raw).cumsum()).cumsum()
-    return (run >= confirm).shift(1).fillna(False)
+    return (run >= confirm).shift(1).fillna(False).astype(bool)
 
 
 def metrics(r):
