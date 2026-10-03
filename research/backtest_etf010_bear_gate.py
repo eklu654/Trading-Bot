@@ -98,7 +98,7 @@ def metrics(r):
 
 def replay(features,raw,score_threshold,confirm,vix_pct,breadth):
     states={n:state_series(f,score_threshold,confirm,vix_pct,breadth) for n,f in features.items()}
-    idx=pd.concat([raw[x]["adj_close"] for x in raw],axis=1).index
+    idx=pd.concat([raw[x]["adj_close"] for x in raw],axis=1).dropna().index
     daily=pd.Series(0.0,index=idx)
     for n,(bull,bear) in PAIRS.items():
         rb=raw[bull]["adj_close"].reindex(idx).pct_change()
