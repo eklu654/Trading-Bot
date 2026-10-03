@@ -219,12 +219,6 @@ def backtest_multi_pair(bull_dma: int, bear_dma: int, confirmation: int, bear_we
         out[f"{pair}_bull_weight"] = frame["bull_weight"] / len(frames)
         out[f"{pair}_bear_weight"] = frame["bear_weight"] / len(frames)
     return out
-    invalid = frame["state"].isin(["BULL+BEAR", "BEAR+BULL"])
-    if invalid.any():
-        raise AssertionError("Bull and bear states overlapped.")
-    if ((frame["bull_weight"] > 0) & (frame["bear_weight"] > 0)).any():
-        raise AssertionError("Bull and bear exposure overlapped.")
-
 
 def main() -> None:
     all_rows: list[dict[str, object]] = []
