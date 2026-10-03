@@ -92,18 +92,12 @@ def main():
         results.append(row)
 
     out=pd.DataFrame(results)
-    base_returns=pd.Series(0.0,index=idx)
-    # ETF-001-equivalent 3-sleeve bull baseline for consistent comparison.
-    for u in ("QQQ","SPY","SOXX"):
-        c=under[u]; ma=c.rolling(200).mean(); raw=(c>=ma).fillna(False).astype(bool)
-        runs=raw.astype(int).groupby((~raw).cumsum()).cumsum()
-        state=(runs>=5).astype(bool).shift(1).fillna(False).astype(bool)
-        p=etf[u]
-        for i in range(1,len(idx)):
-            prev,date=idx[i-1],idx[i]
-            if bool(state.reindex(idx).loc[prev]) and prev in p.index and date in p.index:
-                base_returns.loc[date]+=0.25*float(p.loc[date]/p.loc[prev]-1)
-    base={split:metrics(base_returns.loc[a:z]) for split,(a,z) in SPLITS.items()}
+    # Use the canonical ETF-001 implementation for an exact benchmark.
+    from research.backtest_etf001 import backtest, load_prices, load_vix
+    canonical_prices = load_prices()
+    canonical_vix = load_vix()
+    canonical = backtest(canonical_prices, canonical_vix, use_vix_overlay=False, cash_allocation=0.25)
+    base={split:metrics(canonical.loc[a:z]["portfolio_return"]) for split,(a,z) in SPLITS.items()}
     for split,m in base.items():
         for k,v in m.items(): out[f"baseline_{k}_{split}"]=v
 
@@ -114,17 +108,18 @@ def main():
 
     eligible=out[(out.validation_sharpe_delta>=0)&(out.train_sharpe_delta>=0)].copy()
     ranked=eligible.sort_values(["min_train_validation_sharpe","min_train_validation_return"],ascending=False)
-    if ranked.empty:
-        ranked=out.sort_values(["min_train_validation_sharpe","min_train_validation_return"],ascending=False)
     out.to_csv(DATA/"etf016_consistency_gated_bull_selection.csv",index=False)
     print("=== ETF-016 BASELINES ===")
     print(pd.DataFrame([{"split":s,**base[s]} for s in base]).to_string(index=False))
     print("\n=== ETF-016 CONSISTENCY-GATED CANDIDATES ===")
     print(ranked.head(20)[["score","confirm","top_n","annualized_return_train","sharpe_train","annualized_return_validation","sharpe_validation","max_drawdown_validation","min_train_validation_sharpe","min_train_validation_return","validation_sharpe_delta","train_sharpe_delta"]].to_string(index=False))
-    keys=ranked.head(10)[["score","confirm","top_n"]]
-    hold=out.merge(keys,on=["score","confirm","top_n"])
     print("\n=== ETF-016 HOLDOUT FOR FROZEN CANDIDATES ===")
-    print(hold[["score","confirm","top_n","annualized_return_holdout","sharpe_holdout","max_drawdown_holdout","ending_value_5000_holdout"]].sort_values(["sharpe_holdout","annualized_return_holdout"],ascending=False).to_string(index=False))
+    if ranked.empty:
+        print("NO CANDIDATE PASSED BOTH TRAIN AND VALIDATION BASELINE SHARPE GATES.")
+    else:
+        keys=ranked.head(10)[["score","confirm","top_n"]]
+        hold=out.merge(keys,on=["score","confirm","top_n"])
+        print(hold[["score","confirm","top_n","annualized_return_holdout","sharpe_holdout","max_drawdown_holdout","ending_value_5000_holdout"]].sort_values(["sharpe_holdout","annualized_return_holdout"],ascending=False).to_string(index=False))
 
 
 if __name__=="__main__":
