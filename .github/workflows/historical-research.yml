@@ -72,6 +72,16 @@ jobs:
         run: python research/audit_0dte_dataset.py --options-source "data/options/spy/options_*.parquet"
 
       - parallel:
+          - name: OPTIONS-001 defense — none conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
+          - name: OPTIONS-001 defense — none mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
+          - name: OPTIONS-001 defense — roll-untested conservative
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
+          - name: OPTIONS-001 defense — roll-untested mid
+            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
+
+      - parallel:
           - name: Replay OPTIONS-001 all-market baseline plus no-stop benchmark
             run: |
               for fill in conservative mid; do
@@ -164,16 +174,6 @@ jobs:
 
       - name: Replay ETF-exit conditional options analysis
         run: python research/analyze_options_during_etf_exits.py
-
-      - parallel:
-          - name: OPTIONS-001 defense — none conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense none
-          - name: OPTIONS-001 defense — none mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense none
-          - name: OPTIONS-001 defense — roll-untested conservative
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model conservative --defense roll-untested
-          - name: OPTIONS-001 defense — roll-untested mid
-            run: python research/replay_options001_defense.py --options-source "data/options/spy/options_*.parquet" --candidate BROAD_SIDEWAYS --fill-model mid --defense roll-untested
 
       - parallel:
           - name: Evaluate ETF-exit switcher — broad sideways conservative
