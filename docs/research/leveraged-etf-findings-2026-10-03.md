@@ -161,3 +161,48 @@ Candidate directions:
 - and only then revisiting a defensive inverse sleeve if a signal survives a true chronological holdout.
 
 No candidate becomes a paper-trading strategy until it survives validation, holdout, transaction-cost analysis, and account-level execution feasibility.
+
+
+## ETF-017 canonical accounting correction
+A research-integrity audit found that ETF-011 through ETF-014 used a separate replay/accounting path from canonical ETF-001. Their exploratory results should therefore not be used as promotion evidence.
+
+ETF-001/ETF-005 canonical accounting gives the current baseline approximately:
+- Train: 18.18% annualized, Sharpe 0.794, max DD -37.35%
+- Validation: 20.18% annualized, Sharpe 0.708, max DD -32.82%
+- Holdout: 24.18% annualized, Sharpe 0.779, max DD -36.99%
+
+ETF-017 rebuilt the most promising ETF-012 early-bear override using the canonical accounting: common bull-underlying calendar, adjusted-close total returns, next-session execution, 25% sleeves, and 25% permanent cash.
+
+The best validation configuration was:
+- 25% of each sleeve in inverse exposure
+- bear score 6
+- one-session confirmation
+- VIX percentile 0.60
+- breadth threshold 0.33
+
+It produced:
+- Validation: 19.40% annualized, Sharpe 0.681, max DD -36.50%
+- Baseline: 20.18% annualized, Sharpe 0.708, max DD -32.82%
+
+The validation-selected configuration therefore failed to improve either return or Sharpe. The corresponding holdout result was about 23.24% annualized and Sharpe 0.756 versus the baseline's 24.18% and 0.779.
+
+ETF-017 is now the authoritative inverse-overlay result. The earlier ETF-011–014 headline improvements are retained only as exploratory diagnostics and must not be cited as evidence that inverse exposure works.
+
+## ETF-015 / ETF-016 bull-side selection
+ETF-015 tested raw and volatility-adjusted momentum across TQQQ, SPXL, SOXL, UDOW, and TNA. The best validation-only configuration reached about 33.30% annualized and Sharpe 0.874, but its validation-selected holdout fell to about 40.44% annualized and Sharpe 0.992, below the canonical ETF-001/ETF-005 holdout baseline.
+
+ETF-016 added a stricter consistency gate requiring a candidate to beat the baseline Sharpe on both training and validation before it could be frozen. **No candidate passed both gates.** No holdout result was therefore accepted as a selected strategy.
+
+This is useful evidence against repeatedly searching a large parameter grid and selecting the single best validation winner: the strongest-looking validation configurations can still fail the next period. Time-ordered walk-forward/holdout discipline is therefore being tightened rather than relaxed.
+
+## Current strategy-research status
+The current evidence does not support promoting:
+- inverse ETF switching,
+- partial inverse exposure,
+- early bear overrides,
+- lower-leverage inverse substitutes,
+- or the tested bull momentum rotation variants.
+
+The strongest defensible baseline remains the canonical ETF-001 family with cash as the default defensive state, pending further bull-side research and cost/robustness validation.
+
+The next experiments should use the canonical accounting framework from the start. No exploratory replay with a different portfolio ledger should be used to select a production strategy.
