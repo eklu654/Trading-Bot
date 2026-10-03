@@ -14,6 +14,7 @@ on:
       - "research/test_dma_fallback_controls.py"
       - "research/test_dma_reentry_confirmation.py"
       - "tests/test_dma_fallback_controls.py"
+      - "tests/test_dma_reentry_confirmation.py"
       - "tests/test_dynamic_etf_selection.py"
       - "research/backtest_dynamic_sizing.py"
       - "tests/test_dynamic_sizing.py"
