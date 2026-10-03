@@ -109,6 +109,11 @@ def backtest_pair(
     confirmation: int,
     bear_weight: float,
 ) -> pd.DataFrame:
+    """Run one family/configuration with numpy state transitions.
+
+    The transition rules are identical to the original implementation; this
+    version avoids repeated pandas iloc/scalar construction inside the hot loop.
+    """
     spec = PAIRS[pair_name]
     index, benchmark, bull_ret, bear_ret = pair_market_data(pair_name)
 
@@ -116,51 +121,57 @@ def backtest_pair(
         pair_name, bull_dma, bear_dma, confirmation
     )
 
-    state = "CASH"
-    states: list[str] = []
-    returns: list[float] = []
+    bull_signal = bull_ready.to_numpy(dtype=bool)
+    bear_signal = bear_ready.to_numpy(dtype=bool)
+    bull_returns = bull_ret.to_numpy(dtype=float)
+    bear_returns = bear_ret.to_numpy(dtype=float)
+    n = len(index)
 
-    for i, date in enumerate(index):
-        if i == 0:
-            states.append(state)
-            returns.append(0.0)
-            continue
+    # Integer states: 0=CASH, 1=BULL, 2=BEAR.
+    state_codes = np.zeros(n, dtype=np.int8)
+    portfolio_returns = np.zeros(n, dtype=float)
 
-        if state == "BULL":
-            if bool(bear_ready.iloc[i]):
-                state = "BEAR"
-            elif not bool(bull_ready.iloc[i]):
-                state = "CASH"
-        elif state == "BEAR":
-            if bool(bull_ready.iloc[i]):
-                state = "BULL"
-            elif not bool(bear_ready.iloc[i]):
-                state = "CASH"
-        else:
-            if bool(bull_ready.iloc[i]) and not bool(bear_ready.iloc[i]):
-                state = "BULL"
-            elif bool(bear_ready.iloc[i]) and not bool(bull_ready.iloc[i]):
-                state = "BEAR"
+    state = 0
+    for i in range(1, n):
+        bull = bull_signal[i]
+        bear = bear_signal[i]
 
-        if state == "BULL":
-            daily = float(bull_ret.iloc[i])
-        elif state == "BEAR":
-            daily = float(bear_ret.iloc[i]) * bear_weight
-        else:
-            daily = 0.0
+        if state == 1:  # BULL
+            if bear:
+                state = 2
+            elif not bull:
+                state = 0
+        elif state == 2:  # BEAR
+            if bull:
+                state = 1
+            elif not bear:
+                state = 0
+        else:  # CASH
+            if bull and not bear:
+                state = 1
+            elif bear and not bull:
+                state = 2
 
-        states.append(state)
-        returns.append(daily)
+        state_codes[i] = state
+        if state == 1:
+            portfolio_returns[i] = bull_returns[i]
+        elif state == 2:
+            portfolio_returns[i] = bear_returns[i] * bear_weight
+
+    states = np.empty(n, dtype=object)
+    states[state_codes == 0] = "CASH"
+    states[state_codes == 1] = "BULL"
+    states[state_codes == 2] = "BEAR"
 
     out = pd.DataFrame(
         {
-            "benchmark": benchmark,
-            "portfolio_return": returns,
+            "benchmark": benchmark.to_numpy(),
+            "portfolio_return": portfolio_returns,
             "state": states,
-            "bull_ready": bull_ready,
-            "bear_ready": bear_ready,
-            "bull_weight": [1.0 if s == "BULL" else 0.0 for s in states],
-            "bear_weight": [bear_weight if s == "BEAR" else 0.0 for s in states],
+            "bull_ready": bull_signal,
+            "bear_ready": bear_signal,
+            "bull_weight": np.where(state_codes == 1, 1.0, 0.0),
+            "bear_weight": np.where(state_codes == 2, bear_weight, 0.0),
         },
         index=index,
     )
@@ -170,7 +181,6 @@ def backtest_pair(
     out["bull_symbol"] = spec["bull"]
     out["bear_symbol"] = spec["bear"]
     return out
-
 
 def summarize(frame: pd.DataFrame, label: str, split: str) -> dict[str, object]:
     if frame.empty:
