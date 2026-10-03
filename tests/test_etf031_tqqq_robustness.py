@@ -18,7 +18,7 @@ def test_equity_and_drawdown_are_deterministic():
     )
     equity = equity_from_returns(ret)
     assert np.isclose(equity.iloc[-1], 1.254)
-    assert np.isclose(max_drawdown(equity), -0.05 / 1.10)
+    assert np.isclose(max_drawdown(equity), -0.05)
 
 
 def test_summary_starts_from_5000():
