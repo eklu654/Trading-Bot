@@ -7,7 +7,7 @@ shared observable technical characteristics with earlier sustained declines.
 Events are defined ex ante as benchmark forward 20-session return <= -4%.
 For each event, record six interpretable signal-family scores on the event date
 and 5/10 sessions earlier. Also report the 2022-12-28 false-positive date and
-the July 2024 cluster explicitly.
+the July 2024 cluster explicitly, even when a date is not an event start.
 """
 from __future__ import annotations
 from pathlib import Path
@@ -59,25 +59,41 @@ def build():
     return out,benchmark,fwd
 
 
+def score_row(scores, fwd, d, label=None):
+    row={"event_date":d,"forward20":float(fwd.loc[d]) if pd.notna(fwd.loc[d]) else np.nan}
+    if label is not None:
+        row["label"]=label
+    for lag in (0,5,10):
+        base=scores.shift(lag).reindex([d]).iloc[0]
+        for fam in scores.columns:
+            row[f"{fam}_d{lag}"]=float(base[fam]) if pd.notna(base[fam]) else np.nan
+    return row
+
+
 def main():
     scores,bench,fwd=build()
     events=fwd<=EVENT_THRESHOLD
+
     # De-cluster consecutive qualifying dates so one selloff does not dominate
     # the event count. The first qualifying day starts an event.
     starts=events & ~events.shift(1).fillna(False)
     dates=starts[starts].index
-    rows=[]
-    for d in dates:
-        row={"event_date":d,"forward20":float(fwd.loc[d])}
-        for lag in (0,5,10):
-            base=scores.shift(lag).reindex([d]).iloc[0]
-            for fam in scores.columns:
-                row[f"{fam}_d{abs(lag)}"]=float(base[fam])
-        rows.append(row)
+    rows=[score_row(scores,fwd,d) for d in dates]
     event_frame=pd.DataFrame(rows)
     event_frame.to_csv(DATA/"etf026_bear_event_archetypes.csv",index=False)
 
-    selected=event_frame[event_frame.event_date.isin(DATES_OF_INTEREST)].copy()
+    # Keep the explicitly requested comparison dates regardless of whether they
+    # are event starts. This is necessary for the 2022-12-28 false positive and
+    # all three July 2024 activation dates to appear in the diagnostic.
+    labels={
+        pd.Timestamp("2022-12-28"):"2022-12-28 false positive",
+        pd.Timestamp("2024-07-09"):"2024-07-09 activation",
+        pd.Timestamp("2024-07-10"):"2024-07-10 activation",
+        pd.Timestamp("2024-07-11"):"2024-07-11 activation",
+    }
+    selected=pd.DataFrame([score_row(scores,fwd,d,labels[d]) for d in DATES_OF_INTEREST if d in scores.index])
+    selected["qualifies_as_bear_event"] = selected["forward20"] <= EVENT_THRESHOLD
+    selected["is_event_start"] = selected["event_date"].isin(set(dates))
     selected.to_csv(DATA/"etf026_events_of_interest.csv",index=False)
 
     summary=[]
