@@ -65,7 +65,6 @@ def common_index(symbols: tuple[str, ...]) -> pd.DatetimeIndex:
 
 @lru_cache(maxsize=None)
 def pair_market_data(pair_name: str) -> tuple[pd.DatetimeIndex, pd.Series, pd.Series, pd.Series]:
-    """Cache the immutable per-family price/return inputs used by every control."""
     spec = PAIRS[pair_name]
     index = common_index((spec["benchmark"], spec["bull"], spec["bear"]))
     benchmark = load(spec["benchmark"])["close"].reindex(index)
@@ -76,9 +75,7 @@ def pair_market_data(pair_name: str) -> tuple[pd.DatetimeIndex, pd.Series, pd.Se
 
 @lru_cache(maxsize=None)
 def benchmark_dma(pair_name: str, dma: int) -> pd.Series:
-    """Precompute each benchmark DMA once and reuse it across configurations."""
-    index = pair_market_data(pair_name)[0]
-    benchmark = pair_market_data(pair_name)[1]
+    index, benchmark, _, _ = pair_market_data(pair_name)
     return benchmark.rolling(dma).mean()
 
 
@@ -89,8 +86,7 @@ def benchmark_signals(
     bear_dma: int,
     confirmation: int,
 ) -> tuple[pd.Series, pd.Series]:
-    """Cache the exact lagged signals for each family/configuration."""
-    index, benchmark, _, _ = pair_market_data(pair_name)
+    _, benchmark, _, _ = pair_market_data(pair_name)
     bull_ma = benchmark_dma(pair_name, bull_dma)
     bear_ma = benchmark_dma(pair_name, bear_dma)
 
@@ -109,14 +105,8 @@ def backtest_pair(
     confirmation: int,
     bear_weight: float,
 ) -> pd.DataFrame:
-    """Run one family/configuration with numpy state transitions.
-
-    The transition rules are identical to the original implementation; this
-    version avoids repeated pandas iloc/scalar construction inside the hot loop.
-    """
     spec = PAIRS[pair_name]
     index, benchmark, bull_ret, bear_ret = pair_market_data(pair_name)
-
     bull_ready, bear_ready = benchmark_signals(
         pair_name, bull_dma, bear_dma, confirmation
     )
@@ -136,17 +126,17 @@ def backtest_pair(
         bull = bull_signal[i]
         bear = bear_signal[i]
 
-        if state == 1:  # BULL
+        if state == 1:
             if bear:
                 state = 2
             elif not bull:
                 state = 0
-        elif state == 2:  # BEAR
+        elif state == 2:
             if bull:
                 state = 1
             elif not bear:
                 state = 0
-        else:  # CASH
+        else:
             if bull and not bear:
                 state = 1
             elif bear and not bull:
@@ -182,6 +172,7 @@ def backtest_pair(
     out["bear_symbol"] = spec["bear"]
     return out
 
+
 def summarize(frame: pd.DataFrame, label: str, split: str) -> dict[str, object]:
     if frame.empty:
         return {"strategy": label, "split": split, "observations": 0}
@@ -215,9 +206,7 @@ def summarize(frame: pd.DataFrame, label: str, split: str) -> dict[str, object]:
     }
 
 
-
 def validate_exclusivity(frame: pd.DataFrame) -> None:
-    """Validate that one underlying never holds both sides at once."""
     invalid = frame["state"].isin(["BULL+BEAR", "BEAR+BULL"])
     if invalid.any():
         raise AssertionError("Bull and bear states overlapped.")
@@ -225,8 +214,9 @@ def validate_exclusivity(frame: pd.DataFrame) -> None:
         raise AssertionError("Bull and bear exposure overlapped.")
 
 
-def backtest_multi_pair(bull_dma: int, bear_dma: int, confirmation: int, bear_weight: float) -> pd.DataFrame:
-    """Combine independent sleeves; cross-family bull/bear exposure is allowed."""
+def backtest_multi_pair(
+    bull_dma: int, bear_dma: int, confirmation: int, bear_weight: float
+) -> pd.DataFrame:
     frames = {
         pair: backtest_pair(pair, bull_dma, bear_dma, confirmation, bear_weight)
         for pair in PAIRS
@@ -234,9 +224,15 @@ def backtest_multi_pair(bull_dma: int, bear_dma: int, confirmation: int, bear_we
     for frame in frames.values():
         validate_exclusivity(frame)
     index = next(iter(frames.values())).index
-    out = pd.DataFrame({
-        "portfolio_return": sum(frame["portfolio_return"] for frame in frames.values()) / len(frames)
-    }, index=index)
+    out = pd.DataFrame(
+        {
+            "portfolio_return": sum(
+                frame["portfolio_return"] for frame in frames.values()
+            )
+            / len(frames)
+        },
+        index=index,
+    )
     out["portfolio_value"] = (1.0 + out["portfolio_return"]).cumprod()
     out["running_max"] = out["portfolio_value"].cummax()
     out["drawdown"] = out["portfolio_value"] / out["running_max"] - 1.0
@@ -245,6 +241,7 @@ def backtest_multi_pair(bull_dma: int, bear_dma: int, confirmation: int, bear_we
         out[f"{pair}_bull_weight"] = frame["bull_weight"] / len(frames)
         out[f"{pair}_bear_weight"] = frame["bear_weight"] / len(frames)
     return out
+
 
 def main() -> None:
     all_rows: list[dict[str, object]] = []
@@ -322,11 +319,22 @@ def main() -> None:
                     }
                 )
 
+    # Combined results intentionally include both bear-enabled and no-bear
+    # controls. This is the direct test of whether inverse exposure adds value
+    # beyond the corresponding bull/cash rule.
     combined_rows: list[dict[str, object]] = []
-    for bull_dma, bear_dma, confirmation, weight in HEADLINE_CONTROLS:
+    combined_controls = list(HEADLINE_CONTROLS) + [
+        (bull_dma, bear_dma, confirmation, 0.0)
+        for bull_dma, bear_dma, confirmation, _ in HEADLINE_CONTROLS
+    ]
+    for bull_dma, bear_dma, confirmation, weight in combined_controls:
         frame = backtest_multi_pair(bull_dma, bear_dma, confirmation, weight)
         holdout = frame.loc["2023-01-01":"2026-09-25"]
-        row = summarize(holdout.assign(state="COMBINED"), "ALL_PAIRS", "holdout")
+        label = (
+            f"ALL_PAIRS_{bull_dma}DMA_BEAR{bear_dma}DMA_"
+            f"C{confirmation}_BEARW{weight:.2f}"
+        )
+        row = summarize(holdout.assign(state="COMBINED"), label, "holdout")
         state_columns = [f"{pair}_state" for pair in PAIRS]
         state_matrix = holdout[state_columns]
         row.update(
@@ -335,6 +343,7 @@ def main() -> None:
                 "bear_dma": bear_dma,
                 "confirmation": confirmation,
                 "bear_weight": weight,
+                "bear_enabled": bool(weight > 0),
                 "bull_family_days": int((state_matrix == "BULL").sum().sum()),
                 "bear_family_days": int((state_matrix == "BEAR").sum().sum()),
                 "cash_family_days": int((state_matrix == "CASH").sum().sum()),
@@ -348,8 +357,9 @@ def main() -> None:
         )
         combined_rows.append(row)
 
-    pd.DataFrame(combined_rows).to_csv(DATA_DIR / "dma_bull_bear_switch_combined_holdout.csv", index=False)
-
+    pd.DataFrame(combined_rows).to_csv(
+        DATA_DIR / "dma_bull_bear_switch_combined_holdout.csv", index=False
+    )
     pd.DataFrame(all_rows).to_csv(
         DATA_DIR / "dma_bull_bear_switch_matrix.csv", index=False
     )
@@ -357,8 +367,7 @@ def main() -> None:
         DATA_DIR / "dma_bull_bear_switch_annual_returns.csv", index=False
     )
     pd.DataFrame(headline_rows).to_csv(
-        DATA_DIR / "dma_bull_bear_switch_headline_holdout.csv",
-        index=False,
+        DATA_DIR / "dma_bull_bear_switch_headline_holdout.csv", index=False
     )
 
     print("=== DMA BULL/CASH/BEAR SWITCH MATRIX ===")
