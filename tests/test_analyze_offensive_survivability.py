@@ -29,3 +29,12 @@ def test_severe_drawdown_breach():
     row=summary.iloc[0]
     assert row.worst_rolling_drawdown<=-.9
     assert row.dd_breach_80pct>0
+
+
+def test_terminal_summary_reports_5000_ending_balance():
+    idx=pd.date_range("2020-01-01",periods=3,freq="B")
+    ret=pd.Series([0.0,0.10,0.10],index=idx)
+    row=m.terminal_summary(ret,"TEST")
+    assert np.isclose(row["terminal_multiple"],1.21)
+    assert np.isclose(row["ending_balance_5000"],6050.0)
+    assert row["max_drawdown"]==0.0
