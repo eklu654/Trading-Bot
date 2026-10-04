@@ -24,7 +24,7 @@ For the next-open model, the prior close supplies the signal, the next session's
 
 The replay completed successfully. The whole-share constraint did not prevent the strategies from being implemented with a $5,000 account.
 
-At **25 bps** transaction cost, full-period account replay results were:
+At **25 bps** transaction cost, full-period account replay results should be regenerated over the updated 2010-03-12 → 2026-10-02 period before using the historical dollar figures below as current headline results.
 
 | Strategy | Execution | Ending equity | CAGR | Max drawdown |
 |---|---|---:|---:|---:|
