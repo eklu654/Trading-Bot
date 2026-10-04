@@ -1,44 +1,108 @@
 name: TQQQ Fixed Partial OOS Stitched
+
 on:
   workflow_dispatch:
-  pull_request:
-    branches: ["main"]
-  push:
-    branches: ["main"]
-    paths:
-      - research/test_tqqq_fixed_partial_oos_stitched.py
-      - .github/workflows/tqqq-fixed-partial-oos-stitched.yml
+
 permissions:
   contents: read
+
 jobs:
   fixed:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       PYTHONPATH: .
+      PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
-      - uses: actions/setup-python@v5
-        with: {python-version: "3.12"}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            research/requirements.txt
+            requirements-dev.txt
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r research/requirements.txt -r requirements-dev.txt
+
       - name: Build canonical TQQQ snapshot
         run: |
+          set -euo pipefail
+          git cat-file -e 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py
           git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py > research/_frozen_etf031_dataset_builder.py
+          trap 'rm -f research/_frozen_etf031_dataset_builder.py' EXIT
           python research/_frozen_etf031_dataset_builder.py --symbols TQQQ
-          rm research/_frozen_etf031_dataset_builder.py
-      # Keep this push-triggered path active so a corrected research run can be executed
-      # without requiring the user to manually dispatch GitHub Actions.
+          test -s data/research/tqqq_daily.csv
+
+      - name: Validate canonical dataset
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+
+          path = Path("data/research/tqqq_daily.csv")
+          df = pd.read_csv(path, parse_dates=["Date"])
+          if len(df) != 4167:
+              raise SystemExit(f"Expected exactly 4167 TQQQ observations, got {len(df)}")
+          if df["Date"].min() != pd.Timestamp("2010-03-11"):
+              raise SystemExit(f"Unexpected first date: {df['Date'].min()}")
+          if df["Date"].max() != pd.Timestamp("2026-10-02"):
+              raise SystemExit(f"Unexpected last date: {df['Date'].max()}")
+          required = {"Date", "open", "close", "adj_close"}
+          missing = required - set(df.columns)
+          if missing:
+              raise SystemExit(f"Missing required columns: {sorted(missing)}")
+          if df[list(required - {"Date"})].isna().any().any():
+              raise SystemExit("Canonical TQQQ dataset contains missing price values")
+          print(f"Validated canonical TQQQ dataset: {len(df)} rows, {df['Date'].min().date()} through {df['Date'].max().date()}")
+
       - name: Run fixed partial OOS research
-        run: python research/test_tqqq_fixed_partial_oos_stitched.py
-      - name: Upload results
+        run: |
+          set -euo pipefail
+          python research/test_tqqq_fixed_partial_oos_stitched.py
+          test -s data/research/tqqq_fixed_partial_oos_stitched.csv
+          test -s data/research/tqqq_fixed_partial_oos_stitched_windows.csv
+
+      - name: Validate research outputs
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+
+          summary = Path("data/research/tqqq_fixed_partial_oos_stitched.csv")
+          windows = Path("data/research/tqqq_fixed_partial_oos_stitched_windows.csv")
+          s = pd.read_csv(summary)
+          w = pd.read_csv(windows)
+
+          if len(s) != 40:
+              raise SystemExit(f"Expected 40 strategy rows, got {len(s)}")
+          if len(w) != 160:
+              raise SystemExit(f"Expected 160 window rows, got {len(w)}")
+          if s["stitched_final"].isna().any() or s["stitched_cagr"].isna().any() or s["stitched_dd"].isna().any():
+              raise SystemExit("Summary contains missing result values")
+          if w["ending_equity"].isna().any():
+              raise SystemExit("Window results contain missing ending equity values")
+          print(f"Validated research outputs: {len(s)} strategies and {len(w)} stitched window observations")
+          print("\nTop 10 strategies by stitched final equity:")
+          print(s.sort_values("stitched_final", ascending=False).head(10).to_string(index=False))
+          PY
+
+      - name: Upload research artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: tqqq-fixed-partial-oos-stitched
           path: |
+            data/research/tqqq_daily.csv
             data/research/tqqq_fixed_partial_oos_stitched.csv
             data/research/tqqq_fixed_partial_oos_stitched_windows.csv
-          if-no-files-found: error
+          if-no-files-found: warn
+          retention-days: 30
