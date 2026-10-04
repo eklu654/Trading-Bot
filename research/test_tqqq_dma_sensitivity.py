@@ -14,6 +14,7 @@ Clean apples-to-apples control matrix:
 - Every DMA/confirmation combination is evaluated over the same full period.
 
 The matrix is deliberately broad enough to test whether the earlier 5-session rule is actually robust rather than assumed.
+# Research trigger: force a fresh full-period validation after the re-entry-grid test fix.
 """
 
 from __future__ import annotations
