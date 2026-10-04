@@ -77,6 +77,7 @@ jobs:
           python research/test_dma_reentry_confirmation.py &
           pids+=($!)
           python research/test_dma_bull_bear_switching.py &
+          pids+=($!)
           python research/test_tqqq_dma_sensitivity.py &
           pids+=($!)
           python research/analyze_stress_periods.py &
