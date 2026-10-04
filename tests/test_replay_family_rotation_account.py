@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pandas as pd
+import pytest
 
 from research.replay_family_rotation_account import (
     STARTING_BALANCE,
@@ -30,5 +31,5 @@ def test_recovery_metric_uses_calendar_days_and_dollar_drawdown():
     assert result["max_recovery_days"] == 8.0
     assert result["current_underwater_days"] == 1
     assert result["ending_equity"] == 5500.0
-    assert result["total_return"] == 0.1
+    assert result["total_return"] == pytest.approx(0.1)
     assert STARTING_BALANCE == 5000.0
