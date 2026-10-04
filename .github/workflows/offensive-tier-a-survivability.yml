@@ -37,3 +37,4 @@ jobs:
           path: |
             data/research/offensive_tier_a_rolling_summary.csv
             data/research/offensive_tier_a_rolling_detail.csv
+            data/research/offensive_tier_a_terminal_summary.csv
