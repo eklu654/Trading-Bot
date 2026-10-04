@@ -159,6 +159,19 @@ See docs/02-research/return-first-strategy-re-audit-2026-10-03.md for the full c
 No candidate is promoted by this document.
 
 
+## 2026-10-04 — Tier-A path-survivability analysis in progress
+
+A dedicated reproducible workflow now evaluates the frozen Tier-A controls on the same empirical period using overlapping 1-, 3-, 5-, and 10-year rolling windows. It reports worst/best rolling CAGR, worst/best internal drawdown, and rolling-window breach incidence at 50%, 60%, 70%, and 80% drawdown thresholds, plus negative-CAGR and sub-10%-CAGR incidence.
+
+The control set is:
+- TQQQ buy-and-hold
+- SOXL buy-and-hold
+- SPXL buy-and-hold
+- TQQQ 200-DMA/next-open
+- frozen DMA250/top-2/cadence-5 family rotation
+
+This is a descriptive robustness gate, not a parameter optimization. Rolling windows overlap and therefore are not independent statistical samples.
+
 ## 2026-10-04 — Return-first unified control gate
 
 ETF-031 and the $5,000 family-rotation account replay are now the controlling offensive-ETF evidence through **2026-10-02**. The research-tests suite remains green after the endpoint/data-integrity corrections.
