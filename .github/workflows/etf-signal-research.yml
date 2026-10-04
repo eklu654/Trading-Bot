@@ -11,6 +11,10 @@ on:
       - "research/backtest_etf014_inverse_instrument_grid.py"
       - ".github/workflows/etf-signal-research.yml"
 
+concurrency:
+  group: etf-signal-research-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   signal-research:
     runs-on: ubuntu-latest
