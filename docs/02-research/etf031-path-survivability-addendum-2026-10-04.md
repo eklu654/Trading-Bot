@@ -50,21 +50,21 @@ The same ETF-031 artifact tested every calendar-year start from 2010 through 202
 | 2010 | $1,558,429 | 41.44% |
 | 2011 | $1,060,731 | 40.53% |
 | 2012 | $1,140,735 | 44.52% |
-| 2013 | $724,077 | 43.61% |
-| 2014 | $338,001 | 39.18% |
-| 2015 | $212,? | 37.57% |
-| 2016 | $191,? | 40.37% |
-| 2017 | $157,? | 42.46% |
-| 2018 | $70,? | 35.27% |
-| 2019 | $90,? | 45.37% |
-| 2020 | $37,? | 34.79% |
-| 2021 | $19,? | 26.86% |
-| 2022 | $9,? | 15.62% |
-| 2023 | $50,? | 85.03% |
-| 2024 | $17,? | 57.11% |
-| 2025 | $10,? | 52.50% |
+| 2013 | $724,146 | 43.61% |
+| 2014 | $338,146 | 39.18% |
+| 2015 | $211,965 | 37.57% |
+| 2016 | $190,997 | 40.37% |
+| 2017 | $157,197 | 42.46% |
+| 2018 | $70,229 | 35.27% |
+| 2019 | $90,750 | 45.37% |
+| 2020 | $37,506 | 34.79% |
+| 2021 | $19,597 | 26.86% |
+| 2022 | $9,954 | 15.62% |
+| 2023 | $50,110 | 85.03% |
+| 2024 | $17,311 | 57.11% |
+| 2025 | $10,449 | 52.50% |
 
-The artifact's exact dollar values should be retained in machine-readable CSV rather than rounded/retyped here. The key conclusion is that CAGR remained positive for every tested calendar-year start, but terminal wealth varied enormously because the remaining horizon and entry regime differed.
+CAGR remained positive for every tested calendar-year start, but terminal wealth varied enormously because the remaining horizon and entry regime differed.
 
 ## Era evidence
 
