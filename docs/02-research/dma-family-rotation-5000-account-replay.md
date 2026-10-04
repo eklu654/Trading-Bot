@@ -1,4 +1,4 @@
-# ETF family-rotation $5,000 account replay — 2026-10-03
+# ETF family-rotation $5,000 account replay — 2026-10-04
 
 ## Purpose
 
@@ -22,56 +22,57 @@ For the next-open model, the prior close supplies the signal, the next session's
 
 ## Results
 
-The replay completed successfully. The whole-share constraint did not prevent the strategies from being implemented with a $5,000 account.
+The replay was regenerated after discovering that the shared CI yfinance snapshot stopped at 2026-09-25. A pinned endpoint patch was added for the five leveraged family ETFs and their five benchmark ETFs for 2026-09-28 through 2026-10-02, using published daily OHLC/adjusted-close data. The replay now reaches **2026-10-02 under both execution models**.
 
-At **25 bps** transaction cost, full-period account replay results were:
+At **25 bps** transaction cost:
 
-| Strategy | Execution | Ending equity | CAGR | Max drawdown |
+| Strategy | Execution | Ending equity | CAGR | Max DD | Max dollar DD | Minimum equity | Max recovery |
+|---|---|---:|---:|---:|---:|---:|---:|
+| BASE_ROTATE_DMA250_TOP2_C5 | prior close | $228,285 | 25.96% | -68.62% | -$143,072 | $2,032 | 913 days |
+| BASE_ROTATE_DMA250_TOP2_C5 | next open | $176,531 | 24.02% | -69.91% | -$101,452 | $2,374 | 873 days |
+| RISK_V30_L20_DD20 | prior close | $23,294 | 9.74% | -38.94% | -$6,117 | $3,214 | 1,052 days |
+| RISK_V30_L20_DD20 | next open | $24,622 | 10.11% | -38.99% | -$7,031 | $3,477 | 1,052 days |
+| RISK_V30_L20_DD25 | prior close | $29,187 | 11.24% | -41.27% | -$6,468 | $3,185 | 1,043 days |
+| RISK_V30_L20_DD25 | next open | $33,039 | 12.08% | -42.22% | -$7,572 | $3,455 | 980 days |
+| RISK_V30_L20_DD30 | prior close | $33,781 | 12.23% | -43.65% | -$8,177 | $3,003 | 1,080 days |
+| RISK_V30_L20_DD30 | next open | $29,642 | 11.35% | -47.48% | -$7,247 | $3,151 | 990 days |
+
+The raw family rotation therefore retains dramatically more historical terminal wealth than the risk overlays, while also carrying materially larger drawdown and dollar-loss exposure.
+
+At **0 bps**, the raw family rotation ends at approximately **$377,251 prior-close / $291,682 next-open**. At **50 bps**, it still ends at approximately **$137,744 / $106,542** respectively. The result remains positive under all modeled cost levels.
+
+## Chronological behavior at 25 bps
+
+| Strategy | Execution | Train CAGR | Validation CAGR | Holdout CAGR |
 |---|---|---:|---:|---:|
-| BASE_ROTATE_DMA250_TOP2_C5 | prior close | $217,586 | 25.63% | -68.62% |
-| BASE_ROTATE_DMA250_TOP2_C5 | next open | $166,456 | 23.61% | -69.91% |
-| RISK_V30_L20_DD20 | prior close | $22,825 | 9.62% | -38.94% |
-| RISK_V30_L20_DD20 | next open | $24,038 | 9.96% | -38.99% |
-| RISK_V30_L20_DD25 | prior close | $28,599 | 11.12% | -41.27% |
-| RISK_V30_L20_DD25 | next open | $32,254 | 11.93% | -42.22% |
-| RISK_V30_L20_DD30 | prior close | $33,102 | 12.11% | -43.65% |
-| RISK_V30_L20_DD30 | next open | $28,948 | 11.20% | -47.48% |
+| BASE_ROTATE_DMA250_TOP2_C5 | prior close | 15.49% | 76.80% | 175.27% |
+| BASE_ROTATE_DMA250_TOP2_C5 | next open | 18.99% | 66.70% | 158.98% |
+| RISK_V30_L20_DD20 | prior close | 4.54% | 25.59% | 50.30% |
+| RISK_V30_L20_DD20 | next open | 5.62% | 28.68% | 53.06% |
+| RISK_V30_L20_DD25 | prior close | 4.63% | 25.33% | 59.68% |
+| RISK_V30_L20_DD25 | next open | 5.98% | 29.56% | 65.56% |
+| RISK_V30_L20_DD30 | prior close | 4.94% | 31.36% | 66.08% |
+| RISK_V30_L20_DD30 | next open | 4.72% | 24.25% | 60.83% |
 
-The risk overlays therefore materially reduce the historical drawdown of the raw family-rotation strategy, but the remaining drawdowns are still substantial. The $5,000 account constraint itself is not the dominant problem; portfolio risk remains the important gate.
-
-## Chronological split behavior
-
-At 25 bps, the three 30%/20-session overlay variants remained positive in each chronological split under both execution sensitivities.
-
-For example, the **next-open** model produced:
-
-| Strategy | Train CAGR | Validation CAGR | Holdout CAGR | Full CAGR |
-|---|---:|---:|---:|---:|
-| RISK_V30_L20_DD20 | 5.62% | 28.68% | 52.46% | 9.96% |
-| RISK_V30_L20_DD25 | 5.98% | 29.59% | 64.98% | 11.93% |
-| RISK_V30_L20_DD30 | 4.72% | 24.27% | 60.26% | 11.20% |
-
-These split results are descriptive historical observations. In particular, the very strong 2023+ holdout should not be treated as an expected future return or used to select among the variants.
+These are descriptive chronological results. The 2023–2026 holdout is particularly strong and must not be interpreted as an expected future CAGR or used as a post-hoc selection target.
 
 ## Execution-model finding
 
-The next-open sensitivity is important because executing at the prior close is an idealized convention.
+The next-open model now uses the same final date as the prior-close model. On all non-final sessions it executes at the adjusted open and measures through the following adjusted open. On the final session, it executes at that day's adjusted open and marks the position at that day's adjusted close. This avoids dropping the terminal observation while preserving causal execution.
 
-For the base strategy, moving from prior-close to next-open execution reduced the full-period 25-bps CAGR from **25.63% to 23.61%** and increased maximum drawdown from **-68.62% to -69.91%**.
+At 25 bps, moving from prior-close to next-open execution reduces the raw family-rotation ending balance from **$228,285 to $176,531** and CAGR from **25.96% to 24.02%**, while maximum drawdown changes from **-68.62% to -69.91%**.
 
-For the risk-overlay cluster, next-open execution did not eliminate the observed risk reduction. At 25 bps, full-period CAGRs remained about **9.96%–11.93%**, while maximum drawdowns ranged from approximately **-39% to -47%**.
+## Endpoint provenance
 
-This supports continuing the risk-overlay branch, but it does **not** establish a production configuration.
+The shared CI market-data builder was observed to return 2026-09-25 as its latest row despite an updated requested endpoint. The replay therefore applies the committed endpoint patch:
 
-## Cost sensitivity
+- leveraged ETFs: SPXL, TQQQ, SOXL, UDOW, TNA;
+- benchmarks: SPY, QQQ, SOXX, DIA, IWM;
+- dates: 2026-09-28 through 2026-10-02;
+- adjusted close equals close for these supplied rows;
+- source: published StockAnalysis daily history pages using S&P Global Market Intelligence data.
 
-The full-period next-open account replay also remained positive at 50 bps for all three overlay variants:
-
-- V30/L20/DD20: 7.11% CAGR, -41.59% max drawdown;
-- V30/L20/DD25: 8.97% CAGR, -44.88% max drawdown;
-- V30/L20/DD30: 8.21% CAGR, -49.81% max drawdown.
-
-The positive result under high modeled costs is useful as a friction check, but it does not model bid/ask spread variability, partial fills, market impact, trading halts, broker outages, or overnight execution gaps beyond the open-price sensitivity.
+The patch is intentionally explicit and version-controlled so the replay cannot silently regress to the 2026-09-25 endpoint.
 
 ## Research gate status
 
