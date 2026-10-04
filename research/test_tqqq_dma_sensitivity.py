@@ -6,13 +6,14 @@ Clean apples-to-apples control matrix:
 - Adjusted-close daily returns.
 - Prior-session signal, next-session execution.
 - Exit below the selected DMA.
-- Re-enter only after five consecutive prior sessions above the DMA.
+- Re-entry confirmation is tested as a variable: immediate/0, 1, 3, 5, 10, 15, or 20 confirmation sessions.
 - Cash earns 0%.
-- Primary DMA windows: 100/125/150/175/200/225/250/300.
+- DMA windows: 100/125/150/175/200/225/250/300.
+- Re-entry confirmations: 0/1/3/5/10/15/20 sessions.
 - Buy-and-hold is the no-signal control.
+- Every DMA/confirmation combination is evaluated over the same full period.
 
-A 200-DMA immediate-reentry control is also reported for reconciliation with
-earlier 200-DMA research.
+The matrix is deliberately broad enough to test whether the earlier 5-session rule is actually robust rather than assumed.
 """
 
 from __future__ import annotations
@@ -32,7 +33,7 @@ DATA_DIR = ROOT / "data" / "research"
 SYMBOL = "TQQQ"
 START_CAPITAL = 5000.0
 DMA_WINDOWS = (100, 125, 150, 175, 200, 225, 250, 300)
-CONFIRM_SESSIONS = 5
+REENTRY_CONFIRMATIONS = (0, 1, 3, 5, 10, 15, 20)
 START = pd.Timestamp("2010-01-01")
 END = pd.Timestamp("2099-12-31")
 
@@ -57,7 +58,7 @@ def run_dma(price: pd.Series, dma_window: int, confirm_sessions: int) -> pd.Data
         else:
             if prior_above:
                 streak += 1
-                if streak >= confirm_sessions:
+                if streak >= max(1, confirm_sessions):
                     active = True
             else:
                 streak = 0
@@ -129,21 +130,15 @@ def main() -> None:
     rows.append(summarize(run_buy_hold(price), "TQQQ buy-and-hold", None))
 
     for window in DMA_WINDOWS:
-        rows.append(
-            summarize(
-                run_dma(price, window, CONFIRM_SESSIONS),
-                f"TQQQ {window}-DMA + 5-session re-entry",
-                window,
+        for confirm in REENTRY_CONFIRMATIONS:
+            label = "immediate" if confirm == 0 else f"{confirm}-session"
+            rows.append(
+                summarize(
+                    run_dma(price, window, confirm),
+                    f"TQQQ {window}-DMA + {label} re-entry",
+                    window,
+                )
             )
-        )
-
-    rows.append(
-        summarize(
-            run_dma(price, 200, 1),
-            "TQQQ 200-DMA + immediate re-entry",
-            200,
-        )
-    )
 
     summary = pd.DataFrame(rows)
     summary["final_balance_rank"] = summary["final_balance"].rank(
@@ -154,11 +149,12 @@ def main() -> None:
     ).astype(int)
 
     summary.to_csv(DATA_DIR / "tqqq_dma_sensitivity_2010_latest.csv", index=False)
-    primary = summary[
-        (summary["strategy"] == "TQQQ buy-and-hold")
-        | (summary["confirmation_sessions"] == CONFIRM_SESSIONS)
-    ].copy()
-    primary.to_csv(DATA_DIR / "tqqq_dma_sensitivity_primary.csv", index=False)
+    summary.to_csv(DATA_DIR / "tqqq_dma_sensitivity_primary.csv", index=False)
+
+    matrix = summary[summary["strategy"] != "TQQQ buy-and-hold"].pivot(
+        index="dma", columns="confirmation_sessions", values="final_balance"
+    )
+    matrix.to_csv(DATA_DIR / "tqqq_dma_reentry_final_balance_matrix.csv")
 
     print("=== TQQQ DMA SENSITIVITY: 2010-LATEST ===")
     print(summary.to_string(index=False))
