@@ -162,4 +162,20 @@ The next research pass should build a return-first re-audit table across the his
 
 The raw high-return candidates should be preserved as first-class controls rather than replaced by risk overlays before this comparison is complete.
 
-This document does not select a production strategy. It corrects the interpretation framework so that future research does not repeat the same mistake.
+This document does not select a production strategy. It corrects the interpretation framework so that future research does not repeat the same mistake.## 2026-10-04 TQQQ DMA-grid update
+
+The corrected TQQQ DMA × re-entry experiment tested 56 combinations rather than assuming the earlier 5-session rule. The current authoritative grid uses the common TQQQ period **2010-03-11 → 2026-10-02**.
+
+| Strategy | Ending $5k | CAGR | Max DD |
+|---|---:|---:|---:|
+| TQQQ buy-and-hold | **$1,558,429** | **41.44%** | -81.66% |
+| TQQQ 250-DMA + 10-session | **$400,921** | **30.31%** | -48.70% |
+| TQQQ 250-DMA + 5-session | **$368,356** | **29.64%** | -49.73% |
+| TQQQ 225-DMA + immediate | **$357,051** | **29.40%** | -49.96% |
+| TQQQ 200-DMA + 3-session | **$329,908** | **28.78%** | -48.14% |
+| TQQQ 200-DMA + immediate | **$329,963** | **28.78%** | -50.01% |
+| TQQQ 200-DMA + 5-session | **$278,890** | **27.48%** | -48.14% |
+
+This is the authoritative return-first comparison for the grid. The earlier 5-session rule is not a universal optimum: within the 200-DMA family, 3-session confirmation produces materially more terminal wealth than 5-session confirmation at the same measured maximum drawdown. The grid leader is 250-DMA + 10-session under the prior-close research convention, but that result now requires causal next-open validation.
+
+
