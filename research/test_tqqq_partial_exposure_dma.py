@@ -47,8 +47,8 @@ DISTANCE_GRID = (0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.10, 0.15, 0.20)
 EXPOSURES = (0.0, 0.25, 0.50, 0.75)
 THRESHOLD_TUPLES = tuple(combinations(DISTANCE_GRID, 3))
 WEIGHT_TUPLES = tuple(
-    w for w in product(EXPOSURES, repeat=3)
-    if w[0] >= w[1] >= w[2]
+    w for w in product(EXPOSURES, repeat=4)
+    if w[0] >= w[1] >= w[2] >= w[3]
 )
 
 def price_frame() -> pd.DataFrame:
@@ -107,6 +107,7 @@ def evaluate_weights(
         "w1_pct": None if weights is None else weights[0] * 100,
         "w2_pct": None if weights is None else weights[1] * 100,
         "w3_pct": None if weights is None else weights[2] * 100,
+        "w4_pct": None if weights is None else weights[3] * 100,
         "start": frame.index[0],
         "end": frame.index[-1],
         "observations": len(frame),
@@ -144,13 +145,13 @@ def run_partial(frame: pd.DataFrame, dma: int, thresholds: tuple[float, ...], we
     # Above DMA is always 100%.
     out[valid & (d >= 0.0)] = 1.0
 
-    # Below DMA: three increasingly severe zones. The final weight is the
-    # severe-tail exposure (often 0% cash in the example profile).
+    # Below DMA: four increasingly severe zones.
     lower = -np.array(thresholds)
     masks = (
         valid & (d < 0.0) & (d >= lower[0]),
         valid & (d < lower[0]) & (d >= lower[1]),
-        valid & (d < lower[1]),
+        valid & (d < lower[1]) & (d >= lower[2]),
+        valid & (d < lower[2]),
     )
     for mask, weight in zip(masks, weights):
         out[mask] = weight
@@ -198,6 +199,9 @@ def main() -> None:
 
     controls = result[result["strategy"].str.contains("buy-and-hold|binary", regex=True)].copy()
     partial = result[result["strategy"].str.contains("partial")].copy()
+    expected_partial = len(DMAS) * len(THRESHOLD_TUPLES) * len(WEIGHT_TUPLES)
+    if len(partial) != expected_partial:
+        raise RuntimeError(f"Expected {expected_partial} partial rows, found {len(partial)}")
 
     result.to_csv(OUT / "tqqq_partial_exposure_dma_full_matrix.csv", index=False)
     controls.to_csv(OUT / "tqqq_partial_exposure_dma_controls.csv", index=False)
@@ -236,7 +240,7 @@ def main() -> None:
     print("\n=== CONTROLS ===")
     print(controls[["strategy","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
     print("\n=== TOP 20 PARTIAL BY FINAL BALANCE ===")
-    print(top_wealth.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
+    print(top_wealth.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","w4_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
     print("\n=== TOP 20 PARTIAL BY BALANCED RANK ===")
     print(top_balanced.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
 
