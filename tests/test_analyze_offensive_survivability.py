@@ -5,6 +5,14 @@ import numpy as np
 p=Path(__file__).parents[1]/"research"/"analyze_offensive_survivability.py"
 s=importlib.util.spec_from_file_location("m",p); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)
 
+def test_buy_hold_accepts_numeric_series():
+    idx=pd.date_range("2020-01-01",periods=3,freq="B")
+    price=pd.Series([100.0,110.0,121.0],index=idx)
+    ret=m.buy_hold_returns(price)
+    assert ret.iloc[0]==0.0
+    assert np.isclose((1+ret).prod(),1.21)
+
+
 def test_windows_and_positive_path():
     idx=pd.date_range("2010-01-01",periods=2600,freq="B")
     ret=pd.Series(.0005,index=idx)
