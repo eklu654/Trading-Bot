@@ -159,7 +159,29 @@ See docs/02-research/return-first-strategy-re-audit-2026-10-03.md for the full c
 No candidate is promoted by this document.
 
 
-## 2026-10-04 — Tier-A path-survivability analysis in progress
+## 2026-10-04 — Tier-A path-survivability analysis completed
+
+The Tier-A rolling survivability workflow completed successfully as GitHub Actions run **37182850500**. The frozen control set was evaluated over **2010-03-11 → 2026-10-02** using overlapping 1-, 3-, 5-, and 10-year windows.
+
+The results materially sharpen the current control comparison:
+
+- **TQQQ buy-and-hold:** 41.44% full-period CAGR, $1,558,429 from $5,000, -81.66% max DD; worst rolling CAGR was -81.15% over 1 year, -11.25% over 3 years, +5.66% over 5 years.
+- **SOXL buy-and-hold:** 40.30% CAGR, $1,363,182, -90.46% max DD; worst 5-year rolling CAGR was -3.76%.
+- **SPXL buy-and-hold:** 29.01% CAGR, $339,693, -76.86% max DD; worst 5-year rolling CAGR was -4.54%.
+- **TQQQ 200-DMA/next-open:** 32.12% CAGR, $504,212, -48.14% max DD; worst rolling CAGR was -39.03% over 1 year, -5.48% over 3 years, and +12.96% over 5 years. No observed 1-, 3-, 5-, or 10-year window breached a 50% drawdown in this artifact.
+- **DMA250/top-2/5 family rotation:** 29.85% direct-control CAGR, $378,052, -67.40% max DD; 80.13% of observed 3-year windows breached 50% drawdown.
+
+These statistics are overlapping-window path diagnostics, not independent statistical samples. They do not select a production strategy.
+
+The dedicated rolling artifact therefore changes the immediate research question from "does drawdown matter?" to "which return-preserving control provides the best survivability under explicitly defined operational constraints?"
+
+## 2026-10-04 — Causal TQQQ DMA/re-entry follow-up launched
+
+The prior TQQQ DMA/re-entry grid was deliberately based on a simplified prior-session/next-session return convention. Because **TQQQ 200-DMA/next-open** is now a major control, a second frozen experiment has been added: the same 8 DMA windows × 7 re-entry confirmations, but with state changes executed at the next session's open.
+
+The new matrix tests **0/1/3/5/10/15/20-session re-entry confirmation** across **100/125/150/175/200/225/250/300 DMA**, with **0/10/25/50 bps** turnover-cost stress. This prevents either the 5-session rule or the prior-close execution convention from becoming an untested assumption.
+
+The workflow is currently running as GitHub Actions run **37184126854**. Its results must be compared directly with the prior-close grid before any DMA/re-entry configuration is treated as a leading candidate.
 
 A dedicated reproducible workflow now evaluates the frozen Tier-A controls on the same empirical period using overlapping 1-, 3-, 5-, and 10-year rolling windows. It reports worst/best rolling CAGR, worst/best internal drawdown, and rolling-window breach incidence at 50%, 60%, 70%, and 80% drawdown thresholds, plus negative-CAGR and sub-10%-CAGR incidence.
 
