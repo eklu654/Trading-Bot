@@ -26,3 +26,9 @@ def test_no_result_dependent_parameter_search():
     # The matrix is fully predeclared; no optimizer/model selection is used.
     assert "scipy" not in SCRIPT.lower()
     assert "sklearn" not in SCRIPT.lower()
+
+
+def test_fourth_tier_is_persisted_and_counted():
+    assert '"w4_pct":' in SCRIPT
+    assert 'product(EXPOSURES, repeat=4)' in SCRIPT
+    assert 'w[0] >= w[1] >= w[2] >= w[3]' in SCRIPT
