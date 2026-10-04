@@ -85,8 +85,8 @@ The five-family always-bull benchmark also produced substantially higher histori
 
 The current $5,000 DMA250/top-2/5-session family rotation account replay is especially important:
 
-- 25 bps, prior-close execution: approximately $228,285 ending equity from $5,000, 25.63% CAGR, -68.62% max drawdown.
-- 25 bps, next-open execution: approximately $176,531 ending equity, 23.61% CAGR, -69.91% max drawdown.
+- 25 bps, prior-close execution: approximately $228,285 ending equity from $5,000, 25.96% CAGR, -68.62% max drawdown.
+- 25 bps, next-open execution: approximately $176,531 ending equity, 24.02% CAGR, -69.91% max drawdown.
 - V30/L20/DD20 overlay, 25 bps: approximately $23,294 prior-close and $24,622 next-open.
 - V30/L20/DD25 overlay, 25 bps: approximately $29,187 prior-close and $33,039 next-open.
 - V30/L20/DD30 overlay, 25 bps: approximately $33,781 prior-close and $29,642 next-open.
