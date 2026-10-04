@@ -58,7 +58,7 @@ These are descriptive chronological results. The 2023–2026 holdout is particul
 
 ## Execution-model finding
 
-The next-open model now uses the same final date as the prior-close model. On all non-final sessions it executes at the adjusted open and measures through the following adjusted open. On the final session, it executes at that day's adjusted open and marks the position at that day's adjusted close. This avoids dropping the terminal observation while preserving causal execution.
+The next-open model now uses the same final date as the prior-close model. On each session after the initial signal-observation session, it executes at that day's adjusted open using the prior close signal. On non-final sessions it measures through the following adjusted open. On the final session, it marks the newly executed position at that day's adjusted close because no following open exists. This preserves the terminal observation while remaining causal.
 
 At 25 bps, moving from prior-close to next-open execution reduces the raw family-rotation ending balance from **$228,285 to $176,531** and CAGR from **25.96% to 24.02%**, while maximum drawdown changes from **-68.62% to -69.91%**.
 
