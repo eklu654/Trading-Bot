@@ -228,3 +228,52 @@ The final comparison should preserve **aggressive offensive controls, baseline c
 
 No candidate should be eliminated merely because its drawdown is uncomfortable.
 
+
+
+## 2026-10-04 TQQQ DMA-grid update
+
+The corrected TQQQ DMA × re-entry experiment has now tested 56 combinations rather than assuming the earlier 5-session rule.
+
+On the common TQQQ-only period 2010-02-11 → 2026-10-02:
+
+| Strategy | Ending $5k | CAGR | Max DD |
+|---|---:|---:|---:|
+| TQQQ buy-and-hold | $1,974,071 | 43.24% | -81.66% |
+| TQQQ 225-DMA + immediate | $380,012 | 29.73% | -49.96% |
+| TQQQ 200-DMA + 3-session | $369,948 | 29.52% | -48.14% |
+| TQQQ 200-DMA + 5-session | $306,150 | 28.06% | -48.14% |
+
+This is important for the return-first audit because the earlier 5-session rule was not validated as a robust universal choice. In the 200-DMA family, 3-session confirmation produced approximately $369.9k versus $306.1k for 5 sessions, with the same measured maximum drawdown. The broader grid also shows that long confirmation periods can materially destroy terminal wealth.
+
+The strongest new TQQQ challengers should therefore be preserved as first-class controls rather than selecting 5 sessions by convention.
+
+## 2026-10-04 bull/bear switching update
+
+The corrected bull/bear artifact is now available after fixing a CI race in which the bull/bear process was launched in the background but not added to the workflow's PID wait list.
+
+The full-period bull/bear matrix confirms that inverse exposure is not automatically a superior defense. Among bear-enabled configurations, the strongest terminal result in the tested matrix was approximately:
+
+- SEMICONDUCTORS 150-DMA / bear 50-DMA / 5-session / 25% bear allocation: **~$330,348 from $5,000**
+- CAGR: **28.83%**
+- Max DD: **-76.15%**
+
+That remains far below the TQQQ buy-and-hold control over its own full period and carries a substantially larger drawdown than the leading TQQQ DMA challengers.
+
+The combined 2023-2026 holdout also shows that the strongest bear-enabled configurations do not establish a general superiority over bull-only controls. In particular, the bear-enabled 200-DMA/bear-50-DMA/5-session all-family configuration had 12.82% holdout CAGR in the earlier documented cost analysis, while the corresponding no-bear control was materially stronger.
+
+**Current conclusion:** bull/bear switching remains a valid defensive challenger, but its rejection is supported by return/robustness/cost evidence rather than by drawdown alone.
+
+## Revised research priority
+
+The immediate comparison set should now preserve:
+
+1. TQQQ buy-and-hold;
+2. TQQQ 225-DMA + immediate;
+3. TQQQ 200-DMA + 3-session;
+4. TQQQ 200-DMA + 5-session;
+5. TQQQ 200-DMA/next-open;
+6. frozen family rotation;
+7. bull/bear switching;
+8. explicit risk overlays.
+
+The next gate is common-period survivability and execution/cost sensitivity across this set, not another assumption-driven rejection based on maximum drawdown alone.
