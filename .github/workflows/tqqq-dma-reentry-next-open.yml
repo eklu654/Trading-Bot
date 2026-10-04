@@ -1,0 +1,46 @@
+name: TQQQ DMA Re-entry Next-Open Sensitivity
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/test_tqqq_dma_reentry_next_open.py"
+      - ".github/workflows/tqqq-dma-reentry-next-open.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  next-open-grid:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt
+      - name: Run causal next-open 56-cell grid
+        run: PYTHONPATH=. python research/test_tqqq_dma_reentry_next_open.py
+      - name: Validate artifact
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          p = "data/research/tqqq_dma_reentry_next_open.csv"
+          df = pd.read_csv(p)
+          expected = 4 * 8 * 7
+          if len(df) != expected:
+              raise SystemExit(f"Expected {expected} rows, found {len(df)}")
+          if df[["final_balance","cagr","max_drawdown"]].isna().any().any():
+              raise SystemExit("Non-finite headline result found.")
+          print(df.sort_values(["cost_bps","final_balance"], ascending=[True,False]).groupby("cost_bps").head(5).to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-dma-reentry-next-open
+          path: data/research/tqqq_dma_reentry_next_open.csv
+          if-no-files-found: error
