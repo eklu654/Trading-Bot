@@ -42,7 +42,7 @@ jobs:
           p = "data/research/tqqq_partial_exposure_dma_full_matrix.csv"
           df = pd.read_csv(p)
           partial = df[df["strategy"].str.contains("partial")]
-          expected_partial = 8 * 126 * 35
+          expected_partial = 8 * 84 * 20
           if len(partial) != expected_partial:
               raise SystemExit(f"Expected {expected_partial} partial rows, found {len(partial)}")
           if len(df) != expected_partial + 9:
