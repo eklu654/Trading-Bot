@@ -6,8 +6,9 @@ def test_partial_grid_is_systematic():
     assert "DMAS = (100, 125, 150, 175, 200, 225, 250, 300)" in SCRIPT
     assert "DISTANCE_GRID = (0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.10, 0.15, 0.20)" in SCRIPT
     assert "THRESHOLD_TUPLES = tuple(combinations(DISTANCE_GRID, 3))" in SCRIPT
+    assert "product(EXPOSURES, repeat=4)" in SCRIPT
     assert "WEIGHT_TUPLES = tuple(" in SCRIPT
-    assert "w[0] >= w[1] >= w[2]" in SCRIPT
+    assert "w[0] >= w[1] >= w[2] >= w[3]" in SCRIPT
     assert "INITIAL = 5000.0" in SCRIPT
     assert "EXPECTED_OBSERVATIONS = 4167" in SCRIPT
 
