@@ -8,7 +8,7 @@ This is the corrected two-dimensional TQQQ trend-control test. It exists specifi
 
 - Starting capital: **$5,000**
 - Instrument: **TQQQ**
-- Period: **2010-02-11 → 2026-10-02** for every row in this matrix
+- Period: **2010-03-11 → 2026-10-02** for every row in this matrix
 - Adjusted-close daily returns
 - Prior-session signal with next-session return
 - Exit when the prior close is below the selected DMA
@@ -23,14 +23,14 @@ This is an apples-to-apples comparison **within the TQQQ experiment**. The later
 
 | Strategy | Ending $5k | CAGR | Max DD |
 |---|---:|---:|---:|
-| TQQQ buy-and-hold | **$1,974,071** | **43.24%** | -81.66% |
-| 225-DMA + immediate | **$380,012** | **29.73%** | -49.96% |
-| 200-DMA + 3-session | **$369,948** | **29.52%** | **-48.14%** |
-| 200-DMA + immediate | **$365,195** | **29.42%** | -50.01% |
-| 250-DMA + 5-session | **$329,475** | **28.62%** | -49.73% |
-| 250-DMA + 10-session | **$317,101** | **28.33%** | **-48.70%** |
-| 200-DMA + 5-session | **$306,150** | **28.06%** | **-48.14%** |
-| 300-DMA + 5-session | **$299,329** | **27.88%** | -53.47% |
+| TQQQ buy-and-hold | **$1,558,429** | **41.44%** | -81.66% |
+| 225-DMA + immediate | **$357,051** | **29.40%** | -49.96% |
+| 200-DMA + 3-session | **$329,908** | **28.78%** | **-48.14%** |
+| 200-DMA + immediate | **$329,963** | **28.78%** | -50.01% |
+| 250-DMA + 5-session | **$368,356** | **29.64%** | -49.73% |
+| 250-DMA + 10-session | **$400,921** | **30.31%** | **-48.70%** |
+| 200-DMA + 5-session | **$278,890** | **27.48%** | **-48.14%** |
+| 300-DMA + 5-session | **$331,574** | **28.82%** | -53.47% |
 
 ## What the grid proves
 
