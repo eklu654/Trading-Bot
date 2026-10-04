@@ -16,7 +16,7 @@ def test_exact_period_and_controls_are_frozen():
     assert 'START = pd.Timestamp("2010-03-11")' in SCRIPT
     assert 'END = pd.Timestamp("2026-10-02")' in SCRIPT
     assert '"TQQQ buy-and-hold"' in SCRIPT
-    assert '"TQQQ 200-DMA binary"' in SCRIPT
+    assert 'f"TQQQ {dma}-DMA binary"' in SCRIPT
     assert '"tqqq_partial_exposure_dma_full_matrix.csv"' in SCRIPT
 
 def test_no_result_dependent_parameter_search():
