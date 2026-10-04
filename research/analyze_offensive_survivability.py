@@ -1,4 +1,7 @@
-"""Common rolling survivability audit for frozen Tier-A offensive controls."""
+"""Common rolling survivability audit for frozen Tier-A offensive controls.
+
+Buy-and-hold benchmarks operate on the numeric adjusted-close series explicitly.
+"""
 from pathlib import Path
 import pandas as pd
 import numpy as np
