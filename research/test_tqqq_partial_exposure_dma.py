@@ -238,7 +238,7 @@ def main() -> None:
     print("\n=== TOP 20 PARTIAL BY FINAL BALANCE ===")
     print(top_wealth.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
     print("\n=== TOP 20 PARTIAL BY BALANCED RANK ===")
-    print(top_balanced.head(20)[["dma","t1_pct","t2_pct","t3_pct","t4_pct","w1_pct","w2_pct","w3_pct","w4_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
+    print(top_balanced.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
 
 if __name__ == "__main__":
     main()
