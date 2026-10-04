@@ -13,6 +13,7 @@ DATA=ROOT/"data"/"research"
 START=pd.Timestamp("2010-03-11"); END=pd.Timestamp("2026-10-02")
 WINDOWS={"1y":252,"3y":756,"5y":1260,"10y":2520}
 THRESHOLDS=(-.50,-.60,-.70,-.80)
+INITIAL_BALANCE=5000.0
 
 def buy_hold_returns(price,cost_bps=0):
     ret=price.pct_change().fillna(0.0)
@@ -40,6 +41,25 @@ def cagr(eq):
 
 def max_dd(eq):
     return float((eq/eq.cummax()-1).min())
+
+def terminal_summary(ret, label, initial_balance=INITIAL_BALANCE):
+    ret=ret.fillna(0).astype(float)
+    eq=(1+ret).cumprod()
+    terminal_multiple=float(eq.iloc[-1])
+    total_return=terminal_multiple-1.0
+    years=max((eq.index[-1]-eq.index[0]).days/365.25,1/365.25)
+    return {
+        "strategy":label,
+        "start":eq.index[0],
+        "end":eq.index[-1],
+        "days":int((eq.index[-1]-eq.index[0]).days),
+        "terminal_multiple":terminal_multiple,
+        "total_return":total_return,
+        "cagr":float(terminal_multiple**(1/years)-1),
+        "max_drawdown":max_dd(eq),
+        "ending_balance_5000":initial_balance*terminal_multiple,
+    }
+
 
 def rolling(ret,label):
     ret=ret.fillna(0).astype(float); details=[]; summaries=[]
@@ -70,14 +90,19 @@ def main():
       "TQQQ_200DMA_next_open":dma_next_open_returns(frame,0),
       "BASE_ROTATE_DMA250_TOP2_C5":family_rotation_backtest(250,2,5)["portfolio_return"].loc[START:END],
     }
-    ds=[]; ss=[]
+    ds=[]; ss=[]; terminal=[]
     for label,ret in controls.items():
         d,s=rolling(ret,label)
-        ds.append(d); ss.append(s)
+        ds.append(d); ss.append(s); terminal.append(terminal_summary(ret,label))
     summary=pd.concat(ss,ignore_index=True); detail=pd.concat(ds,ignore_index=True)
+    terminal_df=pd.DataFrame(terminal)
     summary["common_period_start"]=START; summary["common_period_end"]=END
+    terminal_df["common_period_start"]=START; terminal_df["common_period_end"]=END
     summary.to_csv(DATA/"offensive_tier_a_rolling_summary.csv",index=False)
     detail.to_csv(DATA/"offensive_tier_a_rolling_detail.csv",index=False)
+    terminal_df.to_csv(DATA/"offensive_tier_a_terminal_summary.csv",index=False)
     print(summary.to_string(index=False))
+    print("\\nTerminal wealth summary:")
+    print(terminal_df.to_string(index=False))
 
 if __name__=="__main__": main()
