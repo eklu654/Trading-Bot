@@ -135,11 +135,29 @@ def replay_open(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
     ).set_index("date")
 
 
+def _max_recovery_days(equity: pd.Series) -> float:
+    """Longest completed peak-to-recovery interval in calendar days."""
+    values = equity.to_numpy(dtype=float)
+    dates = equity.index
+    peak = values[0]
+    peak_date = dates[0]
+    max_days = 0.0
+    for value, date in zip(values[1:], dates[1:]):
+        if value >= peak:
+            max_days = max(max_days, (date - peak_date).days)
+            peak = value
+            peak_date = date
+    return float(max_days)
+
+
 def summary(frame, label, cost, execution, split):
     eq = frame.equity
     years = max((eq.index[-1] - eq.index[0]).days / 365.25, 1 / 365.25)
-    dd = eq / eq.cummax() - 1
+    running_peak = eq.cummax()
+    dollar_dd = eq - running_peak
+    dd = eq / running_peak - 1
     daily = eq.pct_change().dropna()
+    last_peak_dates = eq.index[running_peak == running_peak.iloc[-1]]
     return {
         "strategy": label,
         "execution": execution,
@@ -151,7 +169,14 @@ def summary(frame, label, cost, execution, split):
         "total_return": eq.iloc[-1] / STARTING_BALANCE - 1,
         "cagr": (eq.iloc[-1] / STARTING_BALANCE) ** (1 / years) - 1,
         "max_drawdown": dd.min(),
+        "max_dollar_drawdown": dollar_dd.min(),
         "minimum_equity": eq.min(),
+        "max_recovery_days": _max_recovery_days(eq),
+        "current_underwater_days": (
+            (eq.index[-1] - last_peak_dates[-1]).days
+            if eq.iloc[-1] < running_peak.iloc[-1]
+            else 0
+        ),
         "worst_observed_period": daily.min() if not daily.empty else np.nan,
         "average_cash": frame.cash.mean(),
         "annualized_turnover": frame.turnover.mean() * 252,
