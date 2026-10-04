@@ -32,3 +32,7 @@ def test_fourth_tier_is_persisted_and_counted():
     assert '"w4_pct":' in SCRIPT
     assert 'product(EXPOSURES, repeat=4)' in SCRIPT
     assert 'w[0] >= w[1] >= w[2] >= w[3]' in SCRIPT
+
+
+def test_overnight_and_intraday_returns_are_compounded():
+    assert "(1.0 + prev_w * overnight) * (1.0 + target_weights * intraday) - 1.0" in SCRIPT
