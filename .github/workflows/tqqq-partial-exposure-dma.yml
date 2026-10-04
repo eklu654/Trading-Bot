@@ -31,8 +31,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r research/requirements.txt -r requirements-dev.txt
-      - name: Build canonical historical dataset
-        run: python research/build_historical_regime_dataset.py
+      - name: Build canonical historical dataset from frozen ETF-031 builder
+        run: |
+          git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py > research/_frozen_etf031_dataset_builder.py
+          python research/_frozen_etf031_dataset_builder.py --symbols SPY SPXL QQQ TQQQ SOXX SOXL DIA UDOW IWM TNA
+          rm research/_frozen_etf031_dataset_builder.py
       - name: Run systematic partial-exposure matrix
         run: python research/test_tqqq_partial_exposure_dma.py
       - name: Validate exact-period artifact
@@ -54,6 +57,16 @@ jobs:
           controls = df[df["strategy"].str.contains("buy-and-hold|binary", regex=True)]
           if len(controls) != 9:
               raise SystemExit("Missing expected direct controls.")
+          # These are the frozen ETF-031 headline controls. A mismatch means
+          # the data snapshot has changed and the partial-exposure results must
+          # not be compared with the established controls.
+          bh = float(controls.loc[controls["strategy"] == "TQQQ buy-and-hold", "final_balance"].iloc[0])
+          dma200 = float(controls.loc[controls["strategy"] == "TQQQ 200-DMA binary", "final_balance"].iloc[0])
+          if abs(bh - 1558429.0110026195) > 0.01:
+              raise SystemExit(f"Frozen TQQQ buy-and-hold control mismatch: {bh}")
+          if abs(dma200 - 504212.4901155498) > 0.01:
+              raise SystemExit(f"Frozen 200-DMA control mismatch: {dma200}")
+          print("Frozen ETF-031 controls verified.")
           print("Rows:", len(df))
           print("Top 20 partial candidates by final balance:")
           print(partial.sort_values("final_balance", ascending=False).head(20).to_string(index=False))
