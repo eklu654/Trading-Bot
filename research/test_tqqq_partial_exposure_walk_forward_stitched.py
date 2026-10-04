@@ -6,7 +6,7 @@ DMAS=(100,125,150,175,200,225,250,300); GRID=(.005,.01,.02,.03,.05,.075,.10,.15,
 THRESHOLDS=tuple(itertools.combinations(GRID,3)); WEIGHTS=tuple(w for w in itertools.product(EXP,repeat=4) if w[0]>=w[1]>=w[2]>=w[3])
 def frame():
  x=pd.read_csv(DATA/"tqqq_daily.csv",parse_dates=["Date"]).set_index("Date").sort_index().loc["2010-03-11":"2026-10-02"].copy()
- if len(x)!=4167: raise RuntimeError(len(x))
+ if len(x)!=4167: raise RuntimeError(f"Expected 4167 observations, got {len(x)}")
  x["adj_open"]=x["open"]*x["adj_close"]/x["close"]; return x
 def exposure(x,dma,t,w):
  ma=x.adj_close.rolling(dma).mean().shift(1); d=x.adj_close.shift(1)/ma-1; a=np.zeros(len(x)); v=ma.notna().to_numpy(); z=d.to_numpy(); a[v&(z>=0)]=1
@@ -14,6 +14,7 @@ def exposure(x,dma,t,w):
  for m,q in zip(ms,w): a[m]=q
  return a
 def daily_returns(x,a):
+ if len(x)!=len(a): raise ValueError("Exposure length must match dataframe length")
  oo=(x.adj_open/x.adj_close.shift(1)-1).fillna(0).to_numpy(); ii=(x.adj_close/x.adj_open-1).fillna(0).to_numpy(); p=np.roll(a,1); p[0]=0
  r=(1+p*oo)*(1+a*ii)-1; r[0]=0; return r
 def matrix(x):
@@ -32,25 +33,19 @@ def main():
   for obj,lim in (("WEALTH",None),("DD50",-0.5),("DD60",-0.6)):
    q=choose(m,lim); selected.append((obj,int(q.dma),(q.t1,q.t2,q.t3),(q.w1,q.w2,q.w3,q.w4)))
  strategies=[("BUY_AND_HOLD",None),("200DMA_BINARY",(200,(0.005,0.01,0.02),(0,0,0,0)))]
- for i,(obj,dma,t,w) in enumerate(selected):
-  strategies.append((f"WF_{obj}",(dma,t,w)))
- rows=[]; stitched=[]
+ for obj,dma,t,w in selected: strategies.append((f"WF_{obj}",(dma,t,w)))
+ full_returns={}
  for label,params in strategies:
-  equity=INITIAL; peak=INITIAL; maxdd=0; details=[]
-  for wi,(name,start,end,_) in enumerate(WINDOWS):
-   test=x.loc[start:end]
-   if label=="BUY_AND_HOLD": a=np.ones(len(test))
-   else:
-    if label=="200DMA_BINARY": dma,t,w=params
-    else: dma,t,w=params
-    full=exposure(x,dma,t,w); a=full[x.index.get_indexer(test.index)]
-   r=daily_returns(test,a); eq=equity*np.cumprod(1+r); equity=float(eq[-1]); peak=max(peak,float(eq.max())); maxdd=min(maxdd,float((eq/np.maximum.accumulate(np.r_[peak,eq[:-1]])[1:]-1).min()))
-   details.append((name,equity))
-  years=(pd.Timestamp("2026-10-02")-pd.Timestamp("2019-01-01")).days/365.25
-  cagr=(equity/INITIAL)**(1/years)-1
-  rows.append((label,equity,cagr,maxdd))
-  stitched.extend((label,n,e) for n,e in details)
- pd.DataFrame(rows,columns=["strategy","stitched_final","stitched_cagr","stitched_dd"]).to_csv(DATA/"tqqq_partial_exposure_walk_forward_stitched.csv",index=False)
- pd.DataFrame(stitched,columns=["strategy","window","ending_equity"]).to_csv(DATA/"tqqq_partial_exposure_walk_forward_stitched_windows.csv",index=False)
- print(pd.DataFrame(rows,columns=["strategy","stitched_final","stitched_cagr","stitched_dd"]).to_string(index=False))
+  a=np.ones(len(x)) if label=="BUY_AND_HOLD" else exposure(x,*params)
+  full_returns[label]=daily_returns(x,a)
+ rows=[]; stitched=[]
+ for label,_ in strategies:
+  equity=INITIAL; peak=INITIAL; maxdd=0.0; details=[]; r_full=full_returns[label]
+  for name,start,end,_ in WINDOWS:
+   mask=(x.index>=pd.Timestamp(start))&(x.index<=pd.Timestamp(end)); r=r_full[mask]; eq=equity*np.cumprod(1+r); equity=float(eq[-1])
+   running_peak=np.maximum.accumulate(np.r_[peak,eq])[1:]; maxdd=min(maxdd,float((eq/running_peak-1).min())); peak=max(peak,float(eq.max())); details.append((name,equity))
+  years=(pd.Timestamp("2026-10-02")-pd.Timestamp("2019-01-01")).days/365.25; cagr=(equity/INITIAL)**(1/years)-1
+  rows.append((label,equity,cagr,maxdd)); stitched.extend((label,n,e) for n,e in details)
+ result=pd.DataFrame(rows,columns=["strategy","stitched_final","stitched_cagr","stitched_dd"]); result.to_csv(DATA/"tqqq_partial_exposure_walk_forward_stitched.csv",index=False)
+ pd.DataFrame(stitched,columns=["strategy","window","ending_equity"]).to_csv(DATA/"tqqq_partial_exposure_walk_forward_stitched_windows.csv",index=False); print(result.to_string(index=False))
 if __name__=="__main__": main()
