@@ -25,8 +25,11 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
-      - run: python -m pip install -r requirements-dev.txt
+      - run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
       - run: PYTHONPATH=. pytest -q tests/test_analyze_offensive_survivability.py
+      - run: >-
+          PYTHONPATH=. python research/build_historical_regime_dataset.py --symbols
+          SPY SPXL QQQ TQQQ SOXX SOXL DIA UDOW IWM TNA
       - run: PYTHONPATH=. python research/analyze_offensive_survivability.py
       - uses: actions/upload-artifact@v4
         with:
