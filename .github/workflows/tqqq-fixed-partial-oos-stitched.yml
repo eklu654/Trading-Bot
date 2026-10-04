@@ -28,6 +28,8 @@ jobs:
           git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py > research/_frozen_etf031_dataset_builder.py
           python research/_frozen_etf031_dataset_builder.py --symbols TQQQ
           rm research/_frozen_etf031_dataset_builder.py
+      # Keep this push-triggered path active so a corrected research run can be executed
+      # without requiring the user to manually dispatch GitHub Actions.
       - name: Run fixed partial OOS research
         run: python research/test_tqqq_fixed_partial_oos_stitched.py
       - name: Upload results
