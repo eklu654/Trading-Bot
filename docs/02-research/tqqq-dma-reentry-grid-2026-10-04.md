@@ -38,23 +38,23 @@ This is an apples-to-apples comparison **within the TQQQ experiment**. The later
 
 For 200-DMA:
 
-- immediate/0: **$365,195**, -50.01% DD
-- 1-session: **$365,195**, -50.01% DD
-- 3-session: **$369,948**, **-48.14% DD**
-- 5-session: **$306,150**, **-48.14% DD**
-- 10-session: **$158,114**, -50.62% DD
-- 15-session: **$114,603**, -52.11% DD
-- 20-session: **$75,443**, -49.10% DD
+- immediate/0: **$329,963**, -50.01% DD
+- 1-session: **$329,963**, -50.01% DD
+- 3-session: **$329,908**, **-48.14% DD**
+- 5-session: **$278,890**, **-48.14% DD**
+- 10-session: **$144,147**, -50.62% DD
+- 15-session: **$100,526**, -52.11% DD
+- 20-session: **$70,834**, -49.10% DD
 
 Thus 5 sessions is clearly not something we should have assumed. In this sample, **3 sessions dominates 5 sessions for the 200-DMA configuration** on both terminal wealth and maximum drawdown.
 
 ### 2. The best terminal-wealth trend configuration was 225-DMA with immediate re-entry
 
-It produced about **$380k from $5k**, with a **49.96% maximum drawdown**.
+The strongest terminal-wealth configuration was **250-DMA + 10-session re-entry**, producing about **$400.9k from $5k** with a **48.70% maximum drawdown**.
 
-The 200-DMA/3-session configuration was extremely close at about **$370k**, while improving maximum drawdown to **48.14%**.
+The 250-DMA + 5-session configuration produced about **$368.4k** with **49.73%** drawdown, while the 200-DMA + 3-session configuration produced about **$329.9k** with **48.14%** drawdown.
 
-This makes the 200-DMA/3-session configuration a particularly important challenger because it is near the terminal-wealth frontier while having the best drawdown observed in the top group.
+This makes the 250-DMA/10-session configuration the current terminal-wealth leader among the tested DMA controls, while 200-DMA/3-session remains an important lower-drawdown challenger.
 
 ### 3. Re-entry delay has a highly nonlinear effect
 
@@ -62,9 +62,9 @@ Longer confirmation is not monotonically safer or better.
 
 Examples:
 
-- 200-DMA: 3 sessions → **$370k**, 5 → **$306k**, 10 → **$158k**, 20 → **$75k**.
-- 250-DMA: immediate → **$204k**, 5 → **$329k**, 10 → **$317k**, 20 → **$196k**.
-- 150-DMA: immediate → **$254k**, 3 → **$152k**, 10 → **$109k**.
+- 200-DMA: 3 sessions → **$330k**, 5 → **$279k**, 10 → **$144k**, 20 → **$71k**.
+- 250-DMA: immediate → **$196k**, 5 → **$368k**, 10 → **$401k**, 20 → **$188k**.
+- 150-DMA: immediate → **$252k**, 3 → **$150k**, 10 → **$108k**.
 
 Therefore re-entry timing interacts strongly with the DMA window. It must be optimized/researched jointly, not independently.
 
@@ -74,7 +74,7 @@ The implementation records 0 as immediate and 1 as one-session confirmation, but
 
 ### 5. Buy-and-hold remains the terminal-wealth control
 
-On this TQQQ-specific period, buy-and-hold turns **$5,000 into approximately $1.974 million**, versus roughly $380k for the strongest DMA configuration. The DMA controls therefore sacrifice substantial historical terminal wealth in exchange for substantially lower maximum drawdown.
+On this TQQQ-specific period, buy-and-hold turns **$5,000 into approximately $1.558 million**, versus roughly $401k for the strongest DMA configuration. The DMA controls therefore sacrifice substantial historical terminal wealth in exchange for substantially lower maximum drawdown.
 
 That does **not** mean buy-and-hold should automatically be selected. It means the defensive value of the DMA exit must be evaluated explicitly against the wealth sacrificed.
 
@@ -82,10 +82,10 @@ That does **not** mean buy-and-hold should automatically be selected. It means t
 
 The most interesting TQQQ candidates emerging from this grid are:
 
-1. **225-DMA + immediate/1-session**
-2. **200-DMA + 3-session**
-3. **250-DMA + 5-session**
-4. **250-DMA + 10-session**
+1. **250-DMA + 10-session**
+2. **250-DMA + 5-session**
+3. **225-DMA + immediate/1-session**
+4. **200-DMA + 3-session**
 5. **200-DMA + 5-session**
 
 The next test should not blindly select #1 by terminal wealth. The candidates should be subjected to the same return-first survivability analysis already applied to the broader controls: drawdown frequency, minimum equity, dollar drawdown, recovery duration, start-date/rolling robustness, execution sensitivity, and cost sensitivity.
