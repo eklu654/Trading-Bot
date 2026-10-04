@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: ["main"]
 
+# Keep only the newest validation run for a given branch/PR. Rapid research
+# commits otherwise waste runners on superseded revisions.
+concurrency:
+  group: research-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   tests:
     runs-on: ubuntu-latest
