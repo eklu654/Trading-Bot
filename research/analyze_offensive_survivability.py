@@ -3,7 +3,6 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 from research.backtest_dynamic_leverage import load
-from research.backtest_etf031_tqqq_robustness import buy_hold_returns, dma_next_open_returns
 from research.test_dma_family_rotation import backtest as family_rotation_backtest
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -11,6 +10,26 @@ DATA=ROOT/"data"/"research"
 START=pd.Timestamp("2010-03-11"); END=pd.Timestamp("2026-10-02")
 WINDOWS={"1y":252,"3y":756,"5y":1260,"10y":2520}
 THRESHOLDS=(-.50,-.60,-.70,-.80)
+
+def buy_hold_returns(price,cost_bps=0):
+    ret=price.pct_change().fillna(0.0)
+    if len(ret): ret.iloc[0]-=cost_bps/10000.0
+    return ret
+
+def dma_next_open_returns(frame,cost_bps=0):
+    adj_open=frame["open"].astype(float)*(frame["adj_close"].astype(float)/frame["close"].astype(float))
+    adj_close=frame["adj_close"].astype(float)
+    ma=adj_close.rolling(200).mean()
+    held=(adj_close.shift(1)>=ma.shift(1)).fillna(False)
+    prev=held.shift(1).fillna(False)
+    entry=held & ~prev; holding=held & prev; exit_=~held & prev
+    out=pd.Series(0.0,index=frame.index)
+    out.loc[entry]=adj_close.loc[entry]/adj_open.loc[entry]-1
+    out.loc[holding]=adj_close.loc[holding]/adj_close.shift(1).loc[holding]-1
+    out.loc[exit_]=adj_open.loc[exit_]/adj_close.shift(1).loc[exit_]-1
+    turnover=held.astype(float).diff().abs().fillna(held.astype(float))
+    return out-turnover*(cost_bps/10000.0)
+
 
 def cagr(eq):
     years=max((eq.index[-1]-eq.index[0]).days/365.25,1/365.25)
