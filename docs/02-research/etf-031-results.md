@@ -20,6 +20,7 @@ At 0 bps:
 | Frozen family rotation | $378,052 | 29.85% | -67.40% | 57.22% | 354 |
 | SPXL buy-and-hold | $339,693 | 29.01% | -76.86% | 51.02% | 291 |
 | TQQQ 200-DMA/cash | $329,962 | 28.78% | -50.01% | 42.80% | 105 |
+| TQQQ 200-DMA/next-open execution | $504,211 | 32.12% | -48.14% | 43.47% | 164 |
 | QQQ buy-and-hold | $91,390 | 19.18% | -35.12% | 20.67% | 405 |
 
 At 50 bps, TQQQ buy-and-hold still ends at approximately $1.551M with a 41.40% CAGR.
@@ -29,7 +30,7 @@ At 50 bps, TQQQ buy-and-hold still ends at approximately $1.551M with a 41.40% C
 - Every tested calendar-year start from 2010 through 2025 produced a positive CAGR; measured range: 15.62% to 85.03%.
 - The 2020–2022 era produced -8.53% CAGR and an -81.66% maximum drawdown.
 - Worst rolling CAGR was -81.15% over 1 year, -11.25% over 3 years, +5.66% over 5 years, and +25.34% over 10 years.
-- Path permutation preserved the terminal return distribution while producing materially different drawdowns.
+- Path permutation preserved the terminal return distribution while producing materially different drawdowns; adverse return ordering can reach a -100% path drawdown despite the same terminal multiple, underscoring the importance of path risk for leveraged buy-and-hold.
 - Removing 2022 produces a 55.46% CAGR and approximately $7.45M from $5,000; this is a sensitivity result, not a forecast.
 - Fixed future-CAGR scenarios were calculated separately from the historical result. One-third of the observed 41.44% CAGR is 13.81%, which compounds $5,000 to approximately $9,549 / $18,235 / $66,506 over 5 / 10 / 20 years.
 
