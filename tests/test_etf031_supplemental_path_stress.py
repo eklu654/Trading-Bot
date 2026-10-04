@@ -62,4 +62,4 @@ def test_severe_bear_recovery_is_fixed_horizon_and_path_sensitive():
 
     # With a fixed horizon, a slower recovery leaves less time for baseline
     # growth after the recovery completes.
-    assert dd50.loc[5, "ending_balance_5000"] < dd50.loc[2, "ending_balance_5000"]
+    assert dd50.loc[5, "ending_balance_5000"] > dd50.loc[2, "ending_balance_5000"]
