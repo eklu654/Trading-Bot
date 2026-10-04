@@ -86,7 +86,12 @@ def evaluate_weights(
     prev_w[0] = 0.0
     overnight = frame["adj_open"].to_numpy() / frame["adj_close"].shift(1).to_numpy() - 1.0
     intraday = frame["adj_close"].to_numpy() / frame["adj_open"].to_numpy() - 1.0
-    daily = prev_w * np.nan_to_num(overnight, nan=0.0) + target_weights * np.nan_to_num(intraday, nan=0.0)
+    overnight = np.nan_to_num(overnight, nan=0.0)
+    intraday = np.nan_to_num(intraday, nan=0.0)
+    # Overnight and intraday sleeves compound sequentially. The previous
+    # implementation added the two returns, which omitted the cross-term and
+    # caused even 100% TQQQ buy-and-hold to diverge from adjusted close-to-close.
+    daily = (1.0 + prev_w * overnight) * (1.0 + target_weights * intraday) - 1.0
     daily[0] = 0.0
 
     equity = INITIAL * np.cumprod(1.0 + daily)
