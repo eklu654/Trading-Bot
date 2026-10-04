@@ -19,7 +19,7 @@ Authoritative return-first comparison for the current leveraged-ETF research. Ag
 | **SOXL buy-and-hold** | **$1,363,182** | **40.30%** | -90.46% | 1,230 |
 | **SPXL buy-and-hold** | **$339,693** | **29.01%** | -76.86% | 291 |
 | **TQQQ 200-DMA/cash** | **$329,962** | **28.78%** | -50.01% | 105 |
-| **TQQQ 200-DMA/next-open** | **$504,212** | **32.12%** | -48.14% | 164 |
+| **TQQQ 200-DMA/next-open** | **$504,212** | **32.12%** | -48.14% | 162 |
 | **Frozen DMA250/top-2/5 family rotation** | **$378,052** | **29.85%** | -67.40% | 354 |
 | QQQ buy-and-hold | $91,390 | 19.18% | -35.12% | 405 |
 
