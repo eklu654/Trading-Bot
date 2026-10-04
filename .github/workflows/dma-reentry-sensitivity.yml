@@ -1,0 +1,93 @@
+name: dma-reentry-sensitivity
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/test_tqqq_dma_sensitivity.py"
+      - "research/backtest_dynamic_leverage.py"
+      - ".github/workflows/dma-reentry-sensitivity.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  run-dma-sensitivity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install research dependencies
+        run: python -m pip install --upgrade pip && python -m pip install -r research/requirements.txt
+
+      - name: Download TQQQ adjusted-close history
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import yfinance as yf
+          import pandas as pd
+
+          out = Path("data/research/tqqq_daily.csv")
+          out.parent.mkdir(parents=True, exist_ok=True)
+
+          df = yf.download(
+              "TQQQ",
+              start="2010-01-01",
+              end=(pd.Timestamp.utcnow().normalize() + pd.Timedelta(days=1)).strftime("%Y-%m-%d"),
+              auto_adjust=False,
+              progress=False,
+              actions=False,
+          )
+
+          if df.empty:
+              raise SystemExit("No TQQQ history returned by yfinance.")
+
+          if isinstance(df.columns, pd.MultiIndex):
+              df.columns = df.columns.get_level_values(0)
+
+          required = {"Adj Close"}
+          missing = required - set(df.columns)
+          if missing:
+              raise SystemExit(f"Missing required columns: {sorted(missing)}")
+
+          result = pd.DataFrame({
+              "Date": pd.to_datetime(df.index).tz_localize(None),
+              "adj_close": pd.to_numeric(df["Adj Close"], errors="coerce"),
+          }).dropna()
+
+          if result.empty:
+              raise SystemExit("TQQQ adjusted-close history is empty after cleaning.")
+
+          result.to_csv(out, index=False)
+          print(f"Wrote {len(result):,} rows from {result['Date'].min().date()} through {result['Date'].max().date()}")
+          PY
+
+      - name: Run complete DMA/re-entry grid
+        run: |
+          PYTHONPATH=. python research/test_tqqq_dma_sensitivity.py
+          python - <<'PY'
+          import pandas as pd
+          p = "data/research/tqqq_dma_sensitivity_2010_latest.csv"
+          df = pd.read_csv(p)
+          row = df[(df["dma"] == 250) & (df["confirmation_sessions"] == 0)]
+          if len(row) != 1:
+              raise SystemExit("250-DMA immediate-reentry result missing or duplicated.")
+          print("\n=== 250-DMA + IMMEDIATE RE-ENTRY ===")
+          print(row.to_string(index=False))
+          PY
+
+      - name: Upload research artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-dma-reentry-sensitivity
+          path: |
+            data/research/tqqq_dma_sensitivity_2010_latest.csv
+            data/research/tqqq_dma_sensitivity_primary.csv
+            data/research/tqqq_dma_reentry_final_balance_matrix.csv
+          if-no-files-found: error
