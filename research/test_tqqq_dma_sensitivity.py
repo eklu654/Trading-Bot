@@ -2,7 +2,7 @@
 
 Clean apples-to-apples control matrix:
 - $5,000 starting balance.
-- First common TQQQ trading session in 2010 through latest available data.
+- ETF-031 common-control period: 2010-03-11 through latest available data.
 - Adjusted-close daily returns.
 - Prior-session signal, next-session execution.
 - Exit below the selected DMA.
@@ -35,7 +35,7 @@ SYMBOL = "TQQQ"
 START_CAPITAL = 5000.0
 DMA_WINDOWS = (100, 125, 150, 175, 200, 225, 250, 300)
 REENTRY_CONFIRMATIONS = (0, 1, 3, 5, 10, 15, 20)
-START = pd.Timestamp("2010-01-01")
+START = pd.Timestamp("2010-03-11")
 END = pd.Timestamp("2099-12-31")
 
 
