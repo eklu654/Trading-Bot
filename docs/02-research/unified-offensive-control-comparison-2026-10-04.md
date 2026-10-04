@@ -84,6 +84,14 @@ Before choosing a paper-trading candidate, compare Tier-A controls on:
 
 Do not run another broad parameter sweep until these controls have been characterized consistently.
 
+## Path-survivability evidence update
+
+The ETF-031 frozen artifact has now been extended with rolling-window path diagnostics for TQQQ buy-and-hold. These show that severe drawdowns are not an isolated single-event statistic: for example, **57.30% of observed 3-year windows breached a 50% internal drawdown, 38.01% breached 60%, and 20.78% breached 70%**. The corresponding 5-year incidences were 67.23%, 56.71%, and 37.17%. These are overlapping-window diagnostics, not independent samples or time-under-water percentages.
+
+The same analysis found a worst 1-year rolling CAGR of **-81.15%**, worst 3-year CAGR of **-11.25%**, and worst 5-year CAGR of **+5.66%**. This reinforces the need to evaluate terminal wealth and path survivability together.
+
+See `docs/02-research/etf031-path-survivability-addendum-2026-10-04.md`.
+
 ## Decision principle
 
 **Maximize robust wealth subject to predeclared survivability and operational constraints.**
