@@ -92,6 +92,59 @@ The same analysis found a worst 1-year rolling CAGR of **-81.15%**, worst 3-year
 
 See `docs/02-research/etf031-path-survivability-addendum-2026-10-04.md`.
 
+
+## Tier-A path survivability — completed 2026-10-04
+
+The dedicated Tier-A rolling audit completed successfully on GitHub Actions run **37182850500**. The artifact covers **2010-03-11 → 2026-10-02** and evaluates overlapping 1-, 3-, 5-, and 10-year windows. This is a descriptive path audit; the overlapping windows are not independent samples.
+
+### Worst rolling CAGR
+
+| Strategy | 1y | 3y | 5y | 10y |
+|---|---:|---:|---:|---:|
+| TQQQ buy-and-hold | -81.15% | -11.25% | +5.66% | +25.34% |
+| SOXL buy-and-hold | -87.42% | -39.81% | -3.76% | +15.02% |
+| SPXL buy-and-hold | -60.91% | -15.56% | -4.54% | +14.28% |
+| TQQQ 200-DMA/next-open | -39.03% | -5.48% | +12.96% | +21.90% |
+| DMA250/top-2/5 family rotation | -63.05% | -10.83% | -0.05% | +11.73% |
+
+### Rolling drawdown breach incidence
+
+| Strategy | Window | >=50% DD | >=60% DD | >=70% DD | >=80% DD |
+|---|---|---:|---:|---:|---:|
+| TQQQ buy-and-hold | 1y | 26.84% | 12.67% | 5.23% | 1.43% |
+| TQQQ buy-and-hold | 3y | 57.30% | 38.01% | 20.78% | 16.41% |
+| TQQQ buy-and-hold | 5y | 67.23% | 56.71% | 37.17% | 34.22% |
+| TQQQ buy-and-hold | 10y | 100.00% | 100.00% | 65.59% | 60.38% |
+| SOXL buy-and-hold | 1y | 52.48% | 40.12% | 22.80% | 13.56% |
+| SOXL buy-and-hold | 3y | 94.90% | 83.59% | 55.54% | 48.21% |
+| SPXL buy-and-hold | 1y | 21.99% | 8.38% | 6.10% | 0.00% |
+| SPXL buy-and-hold | 3y | 56.89% | 35.81% | 21.78% | 0.00% |
+| TQQQ 200-DMA/next-open | 1y | 0.00% | 0.00% | 0.00% | 0.00% |
+| TQQQ 200-DMA/next-open | 3y | 0.00% | 0.00% | 0.00% | 0.00% |
+| DMA250/top-2/5 family rotation | 1y | 31.36% | 12.36% | 0.00% | 0.00% |
+| DMA250/top-2/5 family rotation | 3y | 80.13% | 59.70% | 0.00% | 0.00% |
+
+The key result is that **TQQQ 200-DMA/next-open is not merely lower in terminal wealth than TQQQ buy-and-hold; it has a radically different path profile in this audit**. No observed rolling window breached 50% drawdown for the 1-, 3-, 5-, or 10-year windows, while its worst 5-year CAGR remained +12.96%.
+
+The raw family rotation has substantially more path risk than the TQQQ 200-DMA/next-open control despite lower full-period terminal wealth. Its 3-year windows breached 50% drawdown in 80.13% of observations and 60% in 59.70%.
+
+### Negative-CAGR incidence
+
+| Strategy | 1y | 3y | 5y | 10y |
+|---|---:|---:|---:|---:|
+| TQQQ buy-and-hold | 17.16% | 3.69% | 0.00% | 0.00% |
+| SOXL buy-and-hold | 32.46% | 13.34% | 0.89% | 0.00% |
+| SPXL buy-and-hold | 22.42% | 1.47% | 0.07% | 0.00% |
+| TQQQ 200-DMA/next-open | 24.00% | 1.23% | 0.00% | 0.00% |
+| DMA250/top-2/5 family rotation | 34.58% | 3.99% | 0.03% | 0.00% |
+
+This creates an important distinction: the 200-DMA control eliminates the observed severe drawdown breaches but does **not** eliminate poor short-horizon outcomes. Its worst 1-year rolling CAGR was still -39.03%.
+
+### Research implication
+
+The current evidence makes **TQQQ 200-DMA/next-open the most important defensive control to compare directly against the newly tested DMA/re-entry grid**, while TQQQ buy-and-hold remains the wealth benchmark. The next-open execution sensitivity is therefore being tested across the full 56-cell DMA/re-entry matrix rather than assuming that the prior-close grid's 250-DMA/10-session leader survives execution realism.
+
+
 ## Decision principle
 
 **Maximize robust wealth subject to predeclared survivability and operational constraints.**
