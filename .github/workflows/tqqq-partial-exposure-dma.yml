@@ -64,14 +64,25 @@ jobs:
           # ETF-031 artifact is retained as a reference, but Yahoo can revise
           # historical adjusted prices between runs, so a snapshot drift must
           # be recorded rather than silently mixing two datasets.
-          from research.backtest_etf031_tqqq_robustness import (
-              load_frame,
-              buy_hold_returns,
-              dma_next_open_returns,
+          frame = pd.read_csv("data/research/tqqq_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()
+          frame = frame.loc[pd.Timestamp("2010-03-11"):pd.Timestamp("2026-10-02")]
+          independent_bh = 5000.0 * float(frame["adj_close"].iloc[-1] / frame["adj_close"].iloc[0])
+
+          adjusted_open = frame["open"].astype(float) * (
+              frame["adj_close"].astype(float) / frame["close"].astype(float)
           )
-          frame = load_frame("TQQQ").loc[pd.Timestamp("2010-03-11"):pd.Timestamp("2026-10-02")]
-          independent_bh = 5000.0 * (1.0 + buy_hold_returns(frame["adj_close"], 0)).prod()
-          independent_dma200 = 5000.0 * (1.0 + dma_next_open_returns(frame, 0)).prod()
+          adjusted_close = frame["adj_close"].astype(float)
+          ma = adjusted_close.rolling(200).mean()
+          held = (adjusted_close.shift(1) >= ma.shift(1)).fillna(False)
+          previous_held = held.shift(1).fillna(False)
+          entry_day = held & ~previous_held
+          holding_day = held & previous_held
+          exit_day = ~held & previous_held
+          dma_ret = pd.Series(0.0, index=frame.index)
+          dma_ret.loc[entry_day] = adjusted_close.loc[entry_day] / adjusted_open.loc[entry_day] - 1.0
+          dma_ret.loc[holding_day] = adjusted_close.loc[holding_day] / adjusted_close.shift(1).loc[holding_day] - 1.0
+          dma_ret.loc[exit_day] = adjusted_open.loc[exit_day] / adjusted_close.shift(1).loc[exit_day] - 1.0
+          independent_dma200 = 5000.0 * float((1.0 + dma_ret).prod())
           bh = float(controls.loc[controls["strategy"] == "TQQQ buy-and-hold", "final_balance"].iloc[0])
           dma200 = float(controls.loc[controls["strategy"] == "TQQQ 200-DMA binary", "final_balance"].iloc[0])
           if abs(bh - independent_bh) > 0.01:
