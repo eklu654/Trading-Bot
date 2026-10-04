@@ -172,8 +172,8 @@ def main() -> None:
                 run_dma_binary(frame, dma),
                 f"TQQQ {dma}-DMA binary",
                 dma,
-                (0.0, 0.0, 0.0, 0.0),
                 (0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0, 0.0),
             )
         )
 
