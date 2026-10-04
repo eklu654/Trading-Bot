@@ -10,6 +10,7 @@ on:
       - "research/test_dma_family_rotation.py"
       - "research/build_historical_regime_dataset.py"
       - "research/requirements.txt"
+      - "data/research/family_rotation_endpoint_patch_2026-10-02.csv"
       - ".github/workflows/dma-family-rotation-5000-account-replay.yml"
 
 concurrency:
