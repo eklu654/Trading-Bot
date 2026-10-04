@@ -15,6 +15,7 @@ on:
       - "research/analyze_regime_directional_opportunity.py"
       - "research/test_dma_fallback_controls.py"
       - "research/test_dma_reentry_confirmation.py"
+      - "research/test_tqqq_dma_sensitivity.py"
       - "tests/test_dma_fallback_controls.py"
       - "tests/test_dma_reentry_confirmation.py"
       - "tests/test_dma_bull_bear_switching.py"
@@ -129,6 +130,7 @@ jobs:
             data/research/dma_bull_bear_switch_combined_holdout.csv
             data/research/tqqq_dma_sensitivity_primary.csv
             data/research/tqqq_dma_sensitivity_2010_latest.csv
+            data/research/tqqq_dma_reentry_final_balance_matrix.csv
             data/research/dynamic_sizing_e3_summary.csv
             data/research/dynamic_sizing_e3_annual_returns.csv
             data/research/dynamic_etf_selection_split_summary.csv
