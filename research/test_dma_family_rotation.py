@@ -164,10 +164,10 @@ def main() -> None:
                 frame = backtest(dma, top_n, cadence)
                 label = f"ROTATE_DMA{dma}_TOP{top_n}_C{cadence}"
                 splits = {
-                    "full": frame.loc["2010-01-01":"2026-09-25"],
+                    "full": frame.loc["2010-01-01":"2026-10-02"],
                     "train": frame.loc["2010-01-01":"2019-12-31"],
                     "validation": frame.loc["2020-01-01":"2022-12-31"],
-                    "holdout": frame.loc["2023-01-01":"2026-09-25"],
+                    "holdout": frame.loc["2023-01-01":"2026-10-02"],
                 }
                 for split, segment in splits.items():
                     if not segment.empty:
@@ -177,7 +177,7 @@ def main() -> None:
                     for split, segment in {
                         "train": stressed.loc["2010-01-01":"2019-12-31"],
                         "validation": stressed.loc["2020-01-01":"2022-12-31"],
-                        "holdout": stressed.loc["2023-01-01":"2026-09-25"],
+                        "holdout": stressed.loc["2023-01-01":"2026-10-02"],
                     }.items():
                         if segment.empty:
                             continue
@@ -196,10 +196,10 @@ def main() -> None:
     )
     control["turnover"] = 0.0
     for split, segment in {
-        "full": control.loc["2010-01-01":"2026-09-25"],
+        "full": control.loc["2010-01-01":"2026-10-02"],
         "train": control.loc["2010-01-01":"2019-12-31"],
         "validation": control.loc["2020-01-01":"2022-12-31"],
-        "holdout": control.loc["2023-01-01":"2026-09-25"],
+        "holdout": control.loc["2023-01-01":"2026-10-02"],
     }.items():
         rows.append(summarize(segment, "ALL_FAMILIES_ALWAYS_BULL", split))
 
@@ -210,7 +210,7 @@ def main() -> None:
         for split, segment in {
             "train": single.loc["2010-01-01":"2019-12-31"],
             "validation": single.loc["2020-01-01":"2022-12-31"],
-            "holdout": single.loc["2023-01-01":"2026-09-25"],
+            "holdout": single.loc["2023-01-01":"2026-10-02"],
         }.items():
             rows.append(summarize(segment, f"ALWAYS_BULL_{name}", split))
 
