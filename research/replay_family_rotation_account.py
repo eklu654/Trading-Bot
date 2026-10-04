@@ -27,6 +27,7 @@ from research.backtest_dynamic_leverage import load
 from research.test_dma_family_rotation_risk_overlay import base_weights, build_overlay
 
 DATA_DIR = ROOT / "data" / "research"
+ENDPOINT_PATCH = DATA_DIR / "family_rotation_endpoint_patch_2026-10-02.csv"
 STARTING_BALANCE = 5000.0
 COSTS = (0, 10, 25, 50)
 CANDIDATES = (
@@ -41,6 +42,43 @@ SPLITS = {
     "validation": ("2020-01-01", "2022-12-31"),
     "holdout": ("2023-01-01", "2026-10-02"),
 }
+
+
+def apply_family_endpoint_patch() -> None:
+    """Append the independently sourced 2026-09-28..2026-10-02 family endpoint.
+
+    The CI yfinance snapshot used by the shared historical builder currently
+    stops at 2026-09-25. This explicit patch keeps the account replay aligned
+    with the validated ETF-031 endpoint without silently fabricating prices.
+    """
+    if not ENDPOINT_PATCH.exists():
+        raise FileNotFoundError(f"Missing endpoint patch: {ENDPOINT_PATCH}")
+
+    patch = pd.read_csv(ENDPOINT_PATCH, parse_dates=["Date"])
+    required = {"symbol", "Date", "open", "high", "low", "close", "adj_close"}
+    missing = required.difference(patch.columns)
+    if missing:
+        raise ValueError(f"Endpoint patch missing columns: {sorted(missing)}")
+
+    for symbol in patch["symbol"].unique():
+        path = DATA_DIR / f"{symbol.lower()}_daily.csv"
+        frame = pd.read_csv(path, parse_dates=["Date"])
+        rows = patch.loc[patch["symbol"] == symbol].copy()
+        rows["symbol"] = symbol
+        rows = rows[["Date", "open", "high", "low", "close", "adj_close", "symbol"]]
+        frame = pd.concat([frame, rows], ignore_index=True)
+        frame = frame.drop_duplicates(subset=["Date"], keep="last").sort_values("Date")
+        frame.to_csv(path, index=False)
+
+    expected = pd.Timestamp("2026-10-02")
+    for symbol in patch["symbol"].unique():
+        path = DATA_DIR / f"{symbol.lower()}_daily.csv"
+        frame = pd.read_csv(path, parse_dates=["Date"])
+        actual = frame["Date"].max()
+        if actual < expected:
+            raise RuntimeError(
+                f"{symbol} endpoint is {actual.date()}, expected at least {expected.date()}"
+            )
 
 
 def prices_for(names, idx):
@@ -185,6 +223,7 @@ def summary(frame, label, cost, execution, split):
 
 
 def main():
+    apply_family_endpoint_patch()
     base_w, returns = base_weights()
     prices = prices_for(base_w.columns, base_w.index)
     rows = []
