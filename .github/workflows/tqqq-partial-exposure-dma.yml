@@ -1,0 +1,73 @@
+name: TQQQ Partial Exposure DMA Research
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/test_tqqq_partial_exposure_dma.py"
+      - "tests/test_tqqq_partial_exposure_dma.py"
+      - ".github/workflows/tqqq-partial-exposure-dma.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tqqq-partial-exposure-dma
+  cancel-in-progress: true
+
+jobs:
+  partial-exposure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: .
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt -r requirements-dev.txt
+      - name: Build canonical historical dataset
+        run: python research/build_historical_regime_dataset.py
+      - name: Run systematic partial-exposure matrix
+        run: python research/test_tqqq_partial_exposure_dma.py
+      - name: Validate exact-period artifact
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          p = "data/research/tqqq_partial_exposure_dma_full_matrix.csv"
+          df = pd.read_csv(p)
+          partial = df[df["strategy"].str.contains("partial")]
+          expected_partial = 8 * 126 * 35
+          if len(partial) != expected_partial:
+              raise SystemExit(f"Expected {expected_partial} partial rows, found {len(partial)}")
+          if len(df) != expected_partial + 9:
+              raise SystemExit(f"Expected {expected_partial + 9} total rows, found {len(df)}")
+          if set(df["observations"].astype(int)) != {4167}:
+              raise SystemExit("Not every result uses exactly 4,167 observations.")
+          if set(df["start"].str[:10]) != {"2010-03-11"} or set(df["end"].str[:10]) != {"2026-10-02"}:
+              raise SystemExit("Period endpoints are not frozen to 2010-03-11 -> 2026-10-02.")
+          controls = df[df["strategy"].isin(["TQQQ buy-and-hold", "TQQQ 200-DMA binary"])]
+          if len(controls) != 9:
+              raise SystemExit("Missing expected direct controls.")
+          print("Rows:", len(df))
+          print("Top 20 partial candidates by final balance:")
+          print(partial.sort_values("final_balance", ascending=False).head(20).to_string(index=False))
+          print("\nControls:")
+          print(controls[["strategy","final_balance","cagr","max_drawdown"]].to_string(index=False))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-partial-exposure-dma
+          path: |
+            data/research/tqqq_partial_exposure_dma_full_matrix.csv
+            data/research/tqqq_partial_exposure_dma_controls.csv
+            data/research/tqqq_partial_exposure_top_wealth.csv
+            data/research/tqqq_partial_exposure_top_drawdown.csv
+            data/research/tqqq_partial_exposure_top_balanced.csv
+            data/research/tqqq_partial_exposure_dma_summary.csv
+          if-no-files-found: error
