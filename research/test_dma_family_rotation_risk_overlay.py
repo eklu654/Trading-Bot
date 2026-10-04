@@ -144,10 +144,10 @@ def apply_costs(frame: pd.DataFrame, cost_bps: int) -> pd.DataFrame:
 
 def splits(frame: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return {
-        "full": frame.loc["2010-01-01":"2026-09-25"],
+        "full": frame.loc["2010-01-01":"2026-10-02"],
         "train": frame.loc["2010-01-01":"2019-12-31"],
         "validation": frame.loc["2020-01-01":"2022-12-31"],
-        "holdout": frame.loc["2023-01-01":"2026-09-25"],
+        "holdout": frame.loc["2023-01-01":"2026-10-02"],
     }
 
 
