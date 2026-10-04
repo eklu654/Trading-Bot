@@ -1,4 +1,4 @@
-# Return-First Strategy Re-Audit — 2026-10-03
+# Return-First Strategy Re-Audit — 2026-10-04
 
 ## Purpose
 
@@ -92,6 +92,28 @@ The current $5,000 DMA250/top-2/5-session family rotation account replay is espe
 - V30/L20/DD30 overlay, 25 bps: approximately $33,102 prior-close and $28,948 next-open.
 
 The overlays therefore demonstrate a large historical reduction in drawdown, but also a very large reduction in terminal wealth. Neither outcome should be dismissed.
+## Current validated common-period evidence
+
+ETF-031 now provides the authoritative direct-control endpoint of **2010-03-11 through 2026-10-02**, with a $5,000 starting balance:
+
+| Strategy | Ending balance | CAGR | Max DD |
+|---|---:|---:|---:|
+| TQQQ buy-and-hold | $1,558,429 | 41.44% | -81.66% |
+| SOXL buy-and-hold | $1,363,181 | 40.30% | -90.46% |
+| Frozen family rotation | $378,052 | 29.85% | -67.40% |
+| SPXL buy-and-hold | $339,693 | 29.01% | -76.86% |
+| TQQQ 200-DMA/cash | $329,962 | 28.78% | -50.01% |
+| TQQQ 200-DMA/next-open | $504,211 | 32.12% | -48.14% |
+| QQQ buy-and-hold | $91,390 | 19.18% | -35.12% |
+
+These are the current common-period benchmark figures. The earlier 2018–2025 figures remain useful as historical research context, but they must not be mixed with the 2010–2026 headline comparison.
+
+The evidence materially reinforces the return-first correction: the highest historical terminal-wealth controls also carry very large drawdowns, while the next-open TQQQ 200-DMA control demonstrates that a materially lower drawdown can coexist with substantially lower terminal wealth. Neither dimension is sufficient by itself.
+
+The **$5,000 whole-share family-rotation account replay** has now been corrected in the repository to use the updated **2010-03-12 → 2026-10-02** endpoint and to report dollar drawdown, minimum equity, recovery duration, current underwater duration, execution sensitivity, and cost stress. Its regenerated CI artifact is the authoritative source for those account-level figures; until that artifact completes, the older $217,586/$166,456 replay figures below must be treated as superseded rather than current headline results.
+
+The overlays therefore remain a separate explicit tradeoff study: they may materially reduce drawdown, but any wealth sacrificed must be measured against a concrete survival or operational benefit rather than assumed to be beneficial.
+
 
 ## What the re-audit must answer
 
