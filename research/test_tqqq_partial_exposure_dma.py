@@ -10,10 +10,10 @@ The experiment is deliberately systematic rather than hand-picked:
 - Adjusted-close / split-distribution-adjusted price frame.
 - Prior-close signal; portfolio state changes at the next session open.
 - Above DMA: 100% TQQQ.
-- Below DMA: four distance zones, with exposure chosen from every monotone
-  75/50/25/0% tier combination.
+- Below DMA: three distance zones plus a severe tail zone, with exposure chosen
+  from every monotone 75/50/25/0% tier combination.
 - DMA windows: 100/125/150/175/200/225/250/300.
-- Distance thresholds: every ordered 4-threshold combination from the
+- Distance thresholds: every ordered 3-threshold combination from the
   predeclared grid 0.5%, 1%, 2%, 3%, 5%, 7.5%, 10%, 15%, 20%.
 - No parameter is selected before seeing the full matrix.
 
@@ -45,10 +45,10 @@ EXPECTED_OBSERVATIONS = 4167
 DMAS = (100, 125, 150, 175, 200, 225, 250, 300)
 DISTANCE_GRID = (0.005, 0.01, 0.02, 0.03, 0.05, 0.075, 0.10, 0.15, 0.20)
 EXPOSURES = (0.0, 0.25, 0.50, 0.75)
-THRESHOLD_TUPLES = tuple(combinations(DISTANCE_GRID, 4))
+THRESHOLD_TUPLES = tuple(combinations(DISTANCE_GRID, 3))
 WEIGHT_TUPLES = tuple(
-    w for w in product(EXPOSURES, repeat=4)
-    if w[0] >= w[1] >= w[2] >= w[3]
+    w for w in product(EXPOSURES, repeat=3)
+    if w[0] >= w[1] >= w[2]
 )
 
 def price_frame() -> pd.DataFrame:
@@ -104,11 +104,9 @@ def evaluate_weights(
         "t1_pct": None if thresholds is None else thresholds[0] * 100,
         "t2_pct": None if thresholds is None else thresholds[1] * 100,
         "t3_pct": None if thresholds is None else thresholds[2] * 100,
-        "t4_pct": None if thresholds is None else thresholds[3] * 100,
         "w1_pct": None if weights is None else weights[0] * 100,
         "w2_pct": None if weights is None else weights[1] * 100,
         "w3_pct": None if weights is None else weights[2] * 100,
-        "w4_pct": None if weights is None else weights[3] * 100,
         "start": frame.index[0],
         "end": frame.index[-1],
         "observations": len(frame),
@@ -146,16 +144,16 @@ def run_partial(frame: pd.DataFrame, dma: int, thresholds: tuple[float, ...], we
     # Above DMA is always 100%.
     out[valid & (d >= 0.0)] = 1.0
 
-    # Below DMA: four increasingly severe zones.
+    # Below DMA: three increasingly severe zones. The final weight is the
+    # severe-tail exposure (often 0% cash in the example profile).
     lower = -np.array(thresholds)
-    for i in range(4):
-        if i == 0:
-            mask = valid & (d < 0.0) & (d >= lower[0])
-        elif i < 3:
-            mask = valid & (d < lower[i - 1]) & (d >= lower[i])
-        else:
-            mask = valid & (d < lower[2])
-        out[mask] = weights[i]
+    masks = (
+        valid & (d < 0.0) & (d >= lower[0]),
+        valid & (d < lower[0]) & (d >= lower[1]),
+        valid & (d < lower[1]),
+    )
+    for mask, weight in zip(masks, weights):
+        out[mask] = weight
     return out
 
 def main() -> None:
@@ -173,8 +171,8 @@ def main() -> None:
                 run_dma_binary(frame, dma),
                 f"TQQQ {dma}-DMA binary",
                 dma,
-                (0.0, 0.0, 0.0, 0.0),
-                (0.0, 0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0),
+                (0.0, 0.0, 0.0),
             )
         )
 
@@ -238,7 +236,7 @@ def main() -> None:
     print("\n=== CONTROLS ===")
     print(controls[["strategy","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
     print("\n=== TOP 20 PARTIAL BY FINAL BALANCE ===")
-    print(top_wealth.head(20)[["dma","t1_pct","t2_pct","t3_pct","t4_pct","w1_pct","w2_pct","w3_pct","w4_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
+    print(top_wealth.head(20)[["dma","t1_pct","t2_pct","t3_pct","w1_pct","w2_pct","w3_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
     print("\n=== TOP 20 PARTIAL BY BALANCED RANK ===")
     print(top_balanced.head(20)[["dma","t1_pct","t2_pct","t3_pct","t4_pct","w1_pct","w2_pct","w3_pct","w4_pct","final_balance","cagr","max_drawdown","avg_tqqq_exposure"]].to_string(index=False))
 
