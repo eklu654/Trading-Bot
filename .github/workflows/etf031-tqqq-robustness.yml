@@ -96,6 +96,21 @@ jobs:
 
           baseline = float(controls.loc[(controls["strategy"] == "TQQQ_buy_and_hold") & (controls["cost_bps"] == 0), "ending_balance_5000"].iloc[0])
           supplemental = float(observation.loc[observation["scenario"] == "baseline", "ending_balance_5000"].iloc[0])
+
+          common_start = controls["common_period_start"].iloc[0]
+          common_end = controls["common_period_end"].iloc[0]
+          direct = controls[controls["strategy"].isin([
+              "TQQQ_buy_and_hold",
+              "QQQ_buy_and_hold",
+              "SOXL_buy_and_hold",
+              "SPXL_buy_and_hold",
+              "TQQQ_200DMA_cash",
+              "TQQQ_200DMA_next_open",
+          ])]
+          if not (direct["start"] == common_start).all() or not (direct["end"] == common_end).all():
+              raise SystemExit("A direct ETF control does not use the exact ETF-031 common empirical date range.")
+          if not (direct["observations"] == direct["observations"].iloc[0]).all():
+              raise SystemExit("A direct ETF control has a different observation count.")
           if not math.isclose(baseline, supplemental, rel_tol=1e-9, abs_tol=0.01):
               raise SystemExit(f"Supplemental TQQQ baseline {supplemental} does not match ETF-031 control baseline {baseline}")
 
