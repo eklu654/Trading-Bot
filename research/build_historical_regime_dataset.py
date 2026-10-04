@@ -25,7 +25,7 @@ DATA_DIR = ROOT / "data" / "research"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 START = "2010-01-01"
-END = "2026-09-27"
+END = "2026-10-03"
 
 # Stooq provides daily OHLCV history for these U.S. symbols.
 PRICE_SYMBOLS = [
@@ -59,7 +59,7 @@ def read_price(symbol: str) -> pd.DataFrame:
     frame = yf.download(
         symbol,
         start=START,
-        end="2026-09-28",
+        end=END,
         auto_adjust=False,
         progress=False,
         actions=False,
