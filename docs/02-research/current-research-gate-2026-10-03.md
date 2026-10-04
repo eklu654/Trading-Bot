@@ -157,3 +157,25 @@ See docs/02-research/return-first-strategy-re-audit-2026-10-03.md for the full c
 7. Run the paper soak before considering any live autonomous deployment.
 
 No candidate is promoted by this document.
+
+
+## 2026-10-04 — Return-first unified control gate
+
+ETF-031 and the $5,000 family-rotation account replay are now the controlling offensive-ETF evidence through **2026-10-02**. The research-tests suite remains green after the endpoint/data-integrity corrections.
+
+The authoritative direct-control comparison is now:
+
+- TQQQ buy-and-hold: **$1,558,429**, 41.44% CAGR, -81.66% max DD.
+- SOXL buy-and-hold: **$1,363,182**, 40.30% CAGR, -90.46% max DD.
+- TQQQ 200-DMA/next-open: **$504,212**, 32.12% CAGR, -48.14% max DD.
+- Frozen DMA250/top-2/5 family rotation: **$378,052**, 29.85% CAGR, -67.40% max DD.
+- SPXL buy-and-hold: **$339,693**, 29.01% CAGR, -76.86% max DD.
+- TQQQ 200-DMA/cash: **$329,962**, 28.78% CAGR, -50.01% max DD.
+
+At 25 bps in the whole-share $5,000 family replay, the raw family rotation ends at **$228,285 prior-close / $176,531 next-open**, while DD20/DD25/DD30 overlays finish approximately $23k–$34k. This confirms a large wealth-versus-drawdown tradeoff rather than an automatic case for the defensive overlays.
+
+The previous 2026-09-25 offensive dollar figures are superseded. See docs/02-research/unified-offensive-control-comparison-2026-10-04.md for the single current comparison and docs/02-research/dma-family-rotation-5000-account-replay.md for account-level execution details.
+
+### Current gate
+
+Do not select a production strategy yet. The next gate is **path survivability + chronological robustness + execution realism + operational paper-readiness** for the Tier-A offensive controls. The project should maximize robust wealth subject to predeclared survivability and operational constraints, rather than minimizing drawdown or maximizing historical CAGR without constraints.
