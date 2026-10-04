@@ -27,7 +27,7 @@ from research.backtest_dynamic_leverage import load
 
 DATA_DIR = ROOT / "data" / "research"
 START = pd.Timestamp("2010-01-01")
-END = pd.Timestamp("2026-09-25")
+END = pd.Timestamp("2026-10-02")
 
 FAMILIES = {
     "SP500": {"benchmark": "SPY", "bull": "SPXL"},
