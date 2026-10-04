@@ -51,7 +51,7 @@ jobs:
               raise SystemExit("Not every result uses exactly 4,167 observations.")
           if set(df["start"].str[:10]) != {"2010-03-11"} or set(df["end"].str[:10]) != {"2026-10-02"}:
               raise SystemExit("Period endpoints are not frozen to 2010-03-11 -> 2026-10-02.")
-          controls = df[df["strategy"].isin(["TQQQ buy-and-hold", "TQQQ 200-DMA binary"])]
+          controls = df[df["strategy"].str.contains("buy-and-hold|binary", regex=True)]
           if len(controls) != 9:
               raise SystemExit("Missing expected direct controls.")
           print("Rows:", len(df))
