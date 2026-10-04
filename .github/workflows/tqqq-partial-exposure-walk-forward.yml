@@ -1,0 +1,41 @@
+name: TQQQ Partial Exposure Walk-Forward
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/test_tqqq_partial_exposure_walk_forward.py"
+      - ".github/workflows/tqqq-partial-exposure-walk-forward.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  walk-forward:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt -r requirements-dev.txt
+      - name: Build canonical TQQQ snapshot
+        run: |
+          git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py > research/_frozen_etf031_dataset_builder.py
+          python research/_frozen_etf031_dataset_builder.py --symbols TQQQ
+          rm research/_frozen_etf031_dataset_builder.py
+      - name: Run walk-forward research
+        run: python research/test_tqqq_partial_exposure_walk_forward.py
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-partial-exposure-walk-forward
+          path: data/research/tqqq_partial_exposure_walk_forward.csv
+          if-no-files-found: error
