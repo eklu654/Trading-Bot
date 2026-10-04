@@ -153,19 +153,23 @@ def replay_open(targets: pd.DataFrame, prices, cost_bps: int) -> pd.DataFrame:
     shares = pd.Series(0.0, index=targets.columns)
     rows = []
 
-    for i in range(1, len(idx) - 1):
+    for i in range(1, len(idx)):
         date = idx[i]
-        next_date = idx[i + 1]
         open_prices = pd.Series(
             {name: float(prices[name].loc[date, "adj_open"]) for name in targets.columns}
         )
-        next_open = pd.Series(
-            {name: float(prices[name].loc[next_date, "adj_open"]) for name in targets.columns}
-        )
+        if i + 1 < len(idx):
+            next_prices = pd.Series(
+                {name: float(prices[name].loc[idx[i + 1], "adj_open"]) for name in targets.columns}
+            )
+        else:
+            next_prices = pd.Series(
+                {name: float(prices[name].loc[date, "adj_close"]) for name in targets.columns}
+            )
         cash, shares, turnover = _trade_to_target(
             cash, shares, targets.loc[date], open_prices, cost_bps
         )
-        equity_end = cash + float((shares * next_open).sum())
+        equity_end = cash + float((shares * next_prices).sum())
         rows.append((date, equity_end, turnover, cash))
 
     return pd.DataFrame(
