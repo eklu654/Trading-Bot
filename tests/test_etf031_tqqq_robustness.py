@@ -69,7 +69,7 @@ def test_summary_reports_time_invested_when_supplied():
     assert np.isclose(result["time_invested"], 0.5)
 
 
-def test_dma_next_open_uses_open_to_open_execution():
+def test_dma_next_open_uses_next_open_without_dropping_final_date():
     dates = pd.date_range("2020-01-01", periods=205, freq="B")
     close = pd.Series(np.linspace(100.0, 120.0, len(dates)), index=dates)
     frame = pd.DataFrame(
@@ -81,6 +81,25 @@ def test_dma_next_open_uses_open_to_open_execution():
         index=dates,
     )
     result = dma_next_open_returns(frame, 0.0)
-    assert len(result) == len(frame) - 1
+    assert len(result) == len(frame)
+    assert result.index[-1] == dates[-1]
     assert np.isfinite(result).all()
     assert (result.iloc[-1] > 0)
+
+
+def test_dma_next_open_excludes_entry_gap_and_captures_exit_gap():
+    dates = pd.date_range("2020-01-01", periods=202, freq="B")
+    close = pd.Series(100.0, index=dates)
+    # Make the 200-DMA signal turn on after the warmup, with a large
+    # overnight gap that must not be captured on the entry day.
+    close.iloc[199:] = [100.0, 100.0, 120.0]
+    open_ = close.copy()
+    open_.iloc[200] = 110.0
+    open_.iloc[201] = 120.0
+    frame = pd.DataFrame({"open": open_, "close": close, "adj_close": close}, index=dates)
+
+    result = dma_next_open_returns(frame, 0.0)
+
+    # Signal on the final day is based on the prior close, so the final day
+    # is an entry at 120 open and has zero open-to-close return.
+    assert np.isclose(result.iloc[-1], 0.0)
