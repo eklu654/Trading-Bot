@@ -53,6 +53,7 @@ def matrix(x):
 
 def choose(m,limit):
     q=m if limit is None else m[m.dd>=limit]
+    if q.empty: raise RuntimeError(f"No candidate satisfies DD limit {limit}")
     return q.sort_values(["final","cagr","dd"],ascending=[False,False,False]).iloc[0]
 
 def main():
@@ -63,11 +64,18 @@ def main():
         for objective,limit in (("WEALTH",None),("DD50",-0.50),("DD60",-0.60)):
             row=choose(train,limit)
             t=(row.t1,row.t2,row.t3); w=(row.w1,row.w2,row.w3,row.w4)
-            final,cagr,dd,avg=metrics(test,exposure(test,int(row.dma),t,w))
+            full_a=exposure(x,int(row.dma),t,w)
+            test_a=full_a[x.index.get_indexer(test.index)]
+            final,cagr,dd,avg=metrics(test,test_a)
             out.append({"window":name,"objective":objective,"dma":int(row.dma),"t1_pct":row.t1*100,"t2_pct":row.t2*100,"t3_pct":row.t3*100,"w1_pct":row.w1*100,"w2_pct":row.w2*100,"w3_pct":row.w3*100,"w4_pct":row.w4*100,"train_final":row.final,"train_dd":row.dd,"test_final":final,"test_cagr":cagr,"test_dd":dd,"test_avg_exposure":avg})
-        for label,a in (("BUY_AND_HOLD",np.ones(len(test))),("200DMA_BINARY",exposure(test,200,(.005,.01,.02),(0,0,0,0)))):
+        binary_full=exposure(x,200,(.005,.01,.02),(0,0,0,0))
+        binary_test=binary_full[x.index.get_indexer(test.index)]
+        for label,a in (("BUY_AND_HOLD",np.ones(len(test))),("200DMA_BINARY",binary_test)):
             final,cagr,dd,avg=metrics(test,a)
             out.append({"window":name,"objective":label,"test_final":final,"test_cagr":cagr,"test_dd":dd,"test_avg_exposure":avg})
-    pd.DataFrame(out).to_csv(DATA/"tqqq_partial_exposure_walk_forward.csv",index=False)
-    print(pd.DataFrame(out).to_string(index=False))
-if __name__=="__main__": main()
+    result=pd.DataFrame(out)
+    result.to_csv(DATA/"tqqq_partial_exposure_walk_forward.csv",index=False)
+    print(result.to_string(index=False))
+
+if __name__=="__main__":
+    main()
