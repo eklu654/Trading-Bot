@@ -157,7 +157,8 @@ def summary(frame, label, cost, execution, split):
     dollar_dd = eq - running_peak
     dd = eq / running_peak - 1
     daily = eq.pct_change().dropna()
-    last_peak_dates = eq.index[running_peak == running_peak.iloc[-1]]
+    peak_mask = eq.eq(running_peak.iloc[-1]).to_numpy()
+    last_peak_date = eq.index[peak_mask][-1]
     return {
         "strategy": label,
         "execution": execution,
@@ -173,7 +174,7 @@ def summary(frame, label, cost, execution, split):
         "minimum_equity": eq.min(),
         "max_recovery_days": _max_recovery_days(eq),
         "current_underwater_days": (
-            (eq.index[-1] - last_peak_dates[-1]).days
+            (eq.index[-1] - last_peak_date).days
             if eq.iloc[-1] < running_peak.iloc[-1]
             else 0
         ),
