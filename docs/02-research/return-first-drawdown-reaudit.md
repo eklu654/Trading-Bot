@@ -234,7 +234,7 @@ No candidate should be eliminated merely because its drawdown is uncomfortable.
 
 The corrected TQQQ DMA × re-entry experiment has now tested 56 combinations rather than assuming the earlier 5-session rule.
 
-On the common TQQQ-only period 2010-02-11 → 2026-10-02:
+On the common TQQQ-only control period 2010-03-11 → 2026-10-02:
 
 | Strategy | Ending $5k | CAGR | Max DD |
 |---|---:|---:|---:|
@@ -243,7 +243,7 @@ On the common TQQQ-only period 2010-02-11 → 2026-10-02:
 | TQQQ 200-DMA + 3-session | $369,948 | 29.52% | -48.14% |
 | TQQQ 200-DMA + 5-session | $306,150 | 28.06% | -48.14% |
 
-This is important for the return-first audit because the earlier 5-session rule was not validated as a robust universal choice. In the 200-DMA family, 3-session confirmation produced approximately $369.9k versus $306.1k for 5 sessions, with the same measured maximum drawdown. The broader grid also shows that long confirmation periods can materially destroy terminal wealth.
+This is important for the return-first audit because the earlier 5-session rule was not validated as a robust universal choice. In the 200-DMA family, 3-session confirmation produced approximately $329.9k versus $278.9k for 5 sessions, with the same measured maximum drawdown. The overall grid leader was instead 250-DMA + 10-session re-entry at approximately $400.9k. The broader grid also shows that long confirmation periods can materially destroy terminal wealth.
 
 The strongest new TQQQ challengers should therefore be preserved as first-class controls rather than selecting 5 sessions by convention.
 
