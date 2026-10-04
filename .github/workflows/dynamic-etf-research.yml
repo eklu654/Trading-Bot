@@ -49,9 +49,9 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt -r requirements-dev.txt
       - name: Compile
-        run: python -m py_compile research/backtest_dynamic_leverage.py research/compare_leverage_benchmarks.py research/build_historical_regime_dataset.py research/backtest_dynamic_etf_selection.py research/analyze_dynamic_performance.py research/analyze_stress_periods.py research/analyze_switch001_regimes.py research/analyze_regime_directional_opportunity.py research/backtest_dynamic_sizing.py research/test_dma_fallback_controls.py research/test_dma_reentry_confirmation.py research/test_dma_bull_bear_switching.py
+        run: python -m py_compile research/backtest_dynamic_leverage.py research/compare_leverage_benchmarks.py research/build_historical_regime_dataset.py research/backtest_dynamic_etf_selection.py research/analyze_dynamic_performance.py research/analyze_stress_periods.py research/analyze_switch001_regimes.py research/analyze_regime_directional_opportunity.py research/backtest_dynamic_sizing.py research/test_dma_fallback_controls.py research/test_dma_reentry_confirmation.py research/test_dma_bull_bear_switching.py research/test_tqqq_dma_sensitivity.py
       - name: Run dynamic benchmark unit tests
-        run: python -m pytest -q tests/test_backtest_dynamic_leverage.py tests/test_dynamic_etf_selection.py tests/test_dynamic_sizing.py tests/test_dma_fallback_controls.py tests/test_dma_reentry_confirmation.py tests/test_dma_bull_bear_switching.py tests/test_analyze_switch001_regimes.py tests/test_analyze_regime_directional_opportunity.py
+        run: python -m pytest -q tests/test_backtest_dynamic_leverage.py tests/test_dynamic_etf_selection.py tests/test_dynamic_sizing.py tests/test_dma_fallback_controls.py tests/test_dma_reentry_confirmation.py tests/test_dma_bull_bear_switching.py tests/test_analyze_switch001_regimes.py tests/test_analyze_regime_directional_opportunity.py tests/test_tqqq_dma_sensitivity.py
       - name: Build historical market dataset once
         run: python research/build_historical_regime_dataset.py
       - name: Run parallel research analyses
@@ -76,6 +76,7 @@ jobs:
           python research/test_dma_reentry_confirmation.py &
           pids+=($!)
           python research/test_dma_bull_bear_switching.py &
+          python research/test_tqqq_dma_sensitivity.py &
           pids+=($!)
           python research/analyze_stress_periods.py &
           pids+=($!)
@@ -126,6 +127,8 @@ jobs:
             data/research/dma_bull_bear_switch_annual_returns.csv
             data/research/dma_bull_bear_switch_headline_holdout.csv
             data/research/dma_bull_bear_switch_combined_holdout.csv
+            data/research/tqqq_dma_sensitivity_primary.csv
+            data/research/tqqq_dma_sensitivity_2010_latest.csv
             data/research/dynamic_sizing_e3_summary.csv
             data/research/dynamic_sizing_e3_annual_returns.csv
             data/research/dynamic_etf_selection_split_summary.csv
