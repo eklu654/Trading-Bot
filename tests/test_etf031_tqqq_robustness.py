@@ -87,19 +87,17 @@ def test_dma_next_open_uses_next_open_without_dropping_final_date():
     assert (result.iloc[-1] > 0)
 
 
-def test_dma_next_open_excludes_entry_gap_and_captures_exit_gap():
-    dates = pd.date_range("2020-01-01", periods=202, freq="B")
-    close = pd.Series(100.0, index=dates)
-    # Make the 200-DMA signal turn on after the warmup, with a large
-    # overnight gap that must not be captured on the entry day.
-    close.iloc[199:] = [100.0, 100.0, 120.0]
-    open_ = close.copy()
-    open_.iloc[200] = 110.0
-    open_.iloc[201] = 120.0
+def test_dma_next_open_excludes_entry_gap_and_captures_exit_gap(monkeypatch):
+    import research.backtest_etf031_tqqq_robustness as audit
+
+    monkeypatch.setattr(audit, "MA_WINDOW", 2)
+    dates = pd.date_range("2020-01-01", periods=5, freq="B")
+    close = pd.Series([100.0, 100.0, 90.0, 90.0, 120.0], index=dates)
+    open_ = pd.Series([99.0, 99.0, 110.0, 89.0, 120.0], index=dates)
     frame = pd.DataFrame({"open": open_, "close": close, "adj_close": close}, index=dates)
 
     result = dma_next_open_returns(frame, 0.0)
 
-    # Signal on the final day is based on the prior close, so the final day
-    # is an entry at 120 open and has zero open-to-close return.
+    # The signal turns on at the final date from the prior close. The large
+    # overnight gap into today's open must not be captured on entry.
     assert np.isclose(result.iloc[-1], 0.0)
