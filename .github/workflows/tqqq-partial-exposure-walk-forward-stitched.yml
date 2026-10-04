@@ -1,0 +1,32 @@
+name: TQQQ Partial Exposure Walk-Forward Stitched
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - research/test_tqqq_partial_exposure_walk_forward_stitched.py
+      - .github/workflows/tqqq-partial-exposure-walk-forward-stitched.yml
+jobs:
+  stitched:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.txt
+          python -m pip install -r research/requirements.txt
+      - name: Build canonical TQQQ snapshot
+        run: |
+          git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_etf031_dataset.py > /tmp/build_etf031_dataset.py
+          python /tmp/build_etf031_dataset.py --symbols TQQQ
+      - name: Run stitched research
+        run: python research/test_tqqq_partial_exposure_walk_forward_stitched.py
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-partial-exposure-walk-forward-stitched
+          path: |
+            data/research/tqqq_partial_exposure_walk_forward_stitched.csv
+            data/research/tqqq_partial_exposure_walk_forward_stitched_windows.csv
