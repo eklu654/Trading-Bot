@@ -61,9 +61,9 @@ def main():
     idx=idx[(idx>=START)&(idx<=END)]
     frame=pd.read_csv(DATA/"tqqq_daily.csv",parse_dates=["Date"]).set_index("Date").sort_index().loc[START:END]
     controls={
-      "TQQQ_buy_and_hold":buy_hold_returns(prices["TQQQ"].loc[idx],0),
-      "SOXL_buy_and_hold":buy_hold_returns(prices["SOXL"].loc[idx],0),
-      "SPXL_buy_and_hold":buy_hold_returns(prices["SPXL"].loc[idx],0),
+      "TQQQ_buy_and_hold":buy_hold_returns(prices["TQQQ"]["adj_close"].loc[idx],0),
+      "SOXL_buy_and_hold":buy_hold_returns(prices["SOXL"]["adj_close"].loc[idx],0),
+      "SPXL_buy_and_hold":buy_hold_returns(prices["SPXL"]["adj_close"].loc[idx],0),
       "TQQQ_200DMA_next_open":dma_next_open_returns(frame,0),
       "BASE_ROTATE_DMA250_TOP2_C5":family_rotation_backtest(250,2,5)["portfolio_return"].loc[START:END],
     }
