@@ -1,5 +1,7 @@
 # Common-Period Offensive ETF Audit — 2026-10-03
 
+> **Endpoint update:** This document contains the earlier 2026-09-25 snapshot. ETF-031 has since established a newer validated common endpoint of **2010-03-11 → 2026-10-02** for TQQQ/QQQ/SOXL/SPXL comparisons. Do not use the older dollar figures below as the current headline benchmark; use `docs/02-research/etf-031-results.md` instead. The family-rotation replay is also being regenerated through 2026-10-02.
+
 ## Research rule
 
 All headline comparisons use the same available historical endpoint: **2010-01-04 through 2026-09-25**, or the later common start date forced by the instruments in a particular portfolio. No 2018-2025 result should be compared directly with a 2010-present result.
