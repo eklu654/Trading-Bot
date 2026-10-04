@@ -37,3 +37,5 @@ def main():
  pd.DataFrame(windows,columns=["strategy","dma","below_exposure","window","ending_equity"]).to_csv(DATA/"tqqq_fixed_partial_oos_stitched_windows.csv",index=False)
  print(out.to_string(index=False))
 if __name__=="__main__": main()
+
+# CI trigger: execute the corrected stitched partial-exposure research.
