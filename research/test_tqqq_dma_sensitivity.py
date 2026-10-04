@@ -154,7 +154,10 @@ def main() -> None:
     ).astype(int)
 
     summary.to_csv(DATA_DIR / "tqqq_dma_sensitivity_2010_latest.csv", index=False)
-    primary = summary[summary["confirmation_sessions"] == CONFIRM_SESSIONS].copy()
+    primary = summary[
+        (summary["strategy"] == "TQQQ buy-and-hold")
+        | (summary["confirmation_sessions"] == CONFIRM_SESSIONS)
+    ].copy()
     primary.to_csv(DATA_DIR / "tqqq_dma_sensitivity_primary.csv", index=False)
 
     print("=== TQQQ DMA SENSITIVITY: 2010-LATEST ===")
