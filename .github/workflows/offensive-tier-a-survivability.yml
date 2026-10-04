@@ -1,0 +1,36 @@
+name: Offensive Tier-A Survivability
+
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/analyze_offensive_survivability.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/backtest_dynamic_leverage.py"
+      - "research/backtest_etf031_tqqq_robustness.py"
+      - "data/research/**"
+      - ".github/workflows/offensive-tier-a-survivability.yml"
+
+concurrency:
+  group: offensive-tier-a-survivability-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  survivability:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --upgrade pip
+      - run: python -m pip install -r requirements-dev.txt
+      - run: PYTHONPATH=. pytest -q tests/test_analyze_offensive_survivability.py
+      - run: PYTHONPATH=. python research/analyze_offensive_survivability.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: offensive-tier-a-survivability
+          path: |
+            data/research/offensive_tier_a_rolling_summary.csv
+            data/research/offensive_tier_a_rolling_detail.csv
