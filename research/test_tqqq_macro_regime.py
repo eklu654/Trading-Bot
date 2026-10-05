@@ -66,13 +66,13 @@ def fred_csv(series_id: str) -> pd.DataFrame:
 def download_macro() -> pd.DataFrame:
     frames = [fred_csv(series_id) for series_id in FRED.values()]
     macro = pd.concat(frames, axis=1).sort_index()
+    macro.columns = list(FRED.keys())
 
-    # Conservative information-availability rule:
-    # a month's observation is not allowed to affect the next month's
-    # decisions. This is intentionally a full-month lag and therefore
-    # avoids pretending the observation was known on its observation date.
+    # Conservative information-availability rule: each month's observation
+    # becomes usable only in the following month. Exact release-date/vintage
+    # reconstruction remains a later validation requirement.
     macro = macro.resample("MS").last()
-    macro["available_date"] = macro.index + pd.offsets.MonthBegin(2)
+    macro["available_date"] = macro.index + pd.offsets.MonthBegin(1)
 
     macro["unrate_3m"] = macro["unrate"].rolling(3).mean()
     macro["unrate_12m_low"] = macro["unrate_3m"].rolling(12).min()
@@ -80,7 +80,7 @@ def download_macro() -> pd.DataFrame:
         macro["unrate_3m"] - macro["unrate_12m_low"] >= 0.30
     )
 
-    macro["indpro_6m"] = macro["indpro"].pct_change(6)
+    macro["indpro_6m"] = macro["indpro"].pct_change(6, fill_method=None)
     macro["activity_stress"] = macro["indpro_6m"] <= -0.01
 
     macro["credit_3m_change"] = macro["credit"] - macro["credit"].shift(3)
@@ -107,24 +107,23 @@ def download_macro() -> pd.DataFrame:
         & (macro["labor_stress"] | macro["credit_stress"])
     )
 
-    # Persistence/hysteresis.
-    det_run = raw_det.astype(int).groupby(
-        (~raw_det).cumsum()
-    ).cumsum()
-    crisis_run = raw_crisis.astype(int).groupby(
-        (~raw_crisis).cumsum()
-    ).cumsum()
-
-    state = pd.Series("STRUCTURAL_EXPANSION", index=macro.index)
-    state[det_run >= 2] = "MACRO_DETERIORATION"
-    state[crisis_run >= 2] = "MACRO_CRISIS"
-
-    # Recovery requires three consecutive months without the deterioration
-    # threshold before returning to expansion.
-    safe = ~raw_det
-    safe_run = safe.astype(int).groupby((~safe).cumsum()).cumsum()
-    state.loc[(state != "STRUCTURAL_EXPANSION") & (safe_run < 3)] = np.nan
-    state = state.ffill().fillna("STRUCTURAL_EXPANSION")
+    # Persistence/hysteresis implemented as an explicit state machine.
+    states = []
+    current = "STRUCTURAL_EXPANSION"
+    det_run = 0
+    crisis_run = 0
+    safe_run = 0
+    for is_det, is_crisis in zip(raw_det, raw_crisis):
+        det_run = det_run + 1 if is_det else 0
+        crisis_run = crisis_run + 1 if is_crisis else 0
+        safe_run = safe_run + 1 if not is_det else 0
+        if crisis_run >= 2:
+            current = "MACRO_CRISIS"
+        elif det_run >= 2:
+            current = "MACRO_DETERIORATION"
+        elif current != "STRUCTURAL_EXPANSION" and safe_run >= 3:
+            current = "STRUCTURAL_EXPANSION"
+        states.append(current)
 
     macro["state"] = state
     macro["decision_date"] = macro["available_date"]
