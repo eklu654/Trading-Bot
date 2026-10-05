@@ -127,8 +127,13 @@ def easing_type(first_cut: pd.Timestamp | None) -> str | None:
     if first_cut is None:
         return None
     horizon = first_cut + pd.DateOffset(months=12)
+    # Treat easing as crisis-oriented only when a recession begins soon after
+    # the cut. A recession many months later can be an unrelated shock (for
+    # example, the COVID recession after the 2019 precautionary cuts).
     crisis = any(
-        (start >= first_cut) and (start <= horizon)
+        (start >= first_cut)
+        and (start <= horizon)
+        and ((start - first_cut).days <= 180)
         for start in RECESSION_STARTS
     )
     return "CRISIS_EASING" if crisis else "BENIGN_EASING"
