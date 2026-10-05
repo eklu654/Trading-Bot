@@ -20,7 +20,7 @@ Market state is independently frozen:
 - **ABOVE_DMA:** QQQ adjusted close is at/above its 200-day moving average.
 - **BELOW_DMA:** QQQ adjusted close is below its 200-day moving average.
 
-The study is descriptive. It does not claim that Fed policy causes the observed returns.
+The study is descriptive. It does not claim that Fed policy causes the observed returns. The Fed layer is a permanent research component of the strategy architecture; this study determines which monetary-policy dimensions and interactions are useful, not whether the Fed layer should exist.
 
 ## What this tests
 
@@ -41,6 +41,10 @@ The workflow produces:
 - `tqqq_fed_dma_event_observations.csv` — forward 3/6/12-month QQQ returns for each state/date.
 - `tqqq_fed_dma_event_summary.csv` — grouped means, medians, and positive-return frequency.
 
+## Calendar lookback
+
+The trailing 12-month target-rate change is calculated against the most recent available FRED observation on or before the exact date one calendar year earlier. A fixed `shift(365)` is deliberately not used because FRED's policy-rate series does not guarantee one observation per calendar day.
+
 ## Guardrails
 
 - No parameter search.
@@ -52,8 +56,8 @@ The workflow produces:
 
 ## Interpretation
 
-This is intentionally a **falsification gate**.
+This is a **Fed-model discovery study**, not a go/no-go test for the Fed layer.
 
-If Fed state does not materially improve separation after DMA is known, stop adding Fed complexity to the trading architecture.
+The Fed layer remains in the architecture regardless of whether this particular four-state classifier adds enough separation. A weak result means we need a better representation of monetary policy — for example policy direction, cumulative tightening, time since the last hike, restrictive-policy persistence, easing context, or interaction with financial/economic stress — rather than that interest rates are irrelevant.
 
-If it does, freeze the classifier and only then test a small, predeclared Fed-state × DMA exposure family against the full historical sequence, with terminal balance as the primary objective.
+If the frozen state shows useful separation, freeze the useful components and test a small, predeclared Fed-state × DMA exposure family against the full historical sequence, with terminal balance as the primary objective. If it does not, continue researching the Fed transmission mechanism before adding trading parameters.
