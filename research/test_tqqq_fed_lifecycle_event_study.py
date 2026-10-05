@@ -132,9 +132,9 @@ def easing_type(first_cut: pd.Timestamp | None) -> str | None:
     if first_cut is None:
         return None
     horizon = first_cut + pd.DateOffset(months=12)
-    # Treat easing as crisis-oriented only when a recession begins soon after
-    # the cut. A recession many months later can be an unrelated shock (for
-    # example, the COVID recession after the 2019 precautionary cuts).
+    # Treat easing as crisis-oriented only when a recession begins within
+    # roughly six months of the first cut. This is a deliberately narrow
+    # descriptive classification, not a live signal.
     crisis = any(
         (start >= first_cut)
         and (start <= horizon)
@@ -213,6 +213,16 @@ def build_daily_states(
                 .sum()
             ),
             "easing_classification": phase_label,
+            "recession_start_within_6m_of_first_cut": (
+                any(
+                    (first_cut is not None)
+                    and (start >= first_cut)
+                    and (start <= first_cut + pd.DateOffset(months=6))
+                    for start in RECESSION_STARTS
+                )
+                if first_cut is not None
+                else False
+            ),
         })
 
         eligible_start = first_hike - pd.DateOffset(days=365)
