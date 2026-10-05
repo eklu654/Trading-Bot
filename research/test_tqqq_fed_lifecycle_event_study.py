@@ -113,12 +113,17 @@ def cycle_dates(
 ) -> tuple[pd.Timestamp, pd.Timestamp, pd.Timestamp | None]:
     window = fed.loc[start:end]
     hikes = window.index[window["action"].eq("HIKE")]
-    cuts = window.index[window["action"].eq("CUT")]
     if len(hikes) == 0:
         raise RuntimeError(f"No hikes found for {start} to {end}.")
     first_hike = hikes[0]
     final_hike = hikes[-1]
-    later_cuts = cuts[cuts > final_hike]
+
+    # The cycle window ends at the known final hike window. Search the full
+    # Fed history for the first subsequent cut so later hikes/cuts outside the
+    # tightening cycle cannot accidentally redefine the cycle boundary.
+    later_cuts = fed.index[
+        (fed.index > final_hike) & fed["action"].eq("CUT")
+    ]
     first_cut = later_cuts[0] if len(later_cuts) else None
     return first_hike, final_hike, first_cut
 
