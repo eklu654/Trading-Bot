@@ -7,7 +7,7 @@ DMAS=(100,125,150,175,200,225,250,300); BELOW=(0,.25,.5,.75,1.0)
 
 def frame():
  x=pd.read_csv(DATA/"tqqq_daily.csv",parse_dates=["Date"]).set_index("Date").sort_index().loc["2010-03-11":"2026-10-02"].copy()
- if len(x)!=4167: raise RuntimeError(f"Expected 4167 observations, got {len(x)}")
+ if len(x)!=4186: raise RuntimeError(f"Expected 4186 observations, got {len(x)}")
  x["adj_open"]=x["open"]*x["adj_close"]/x["close"]; return x
 
 def returns(x,dma,below):
