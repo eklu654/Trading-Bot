@@ -221,7 +221,10 @@ def evaluate(
 
 
 def make_weights(frame: pd.DataFrame) -> dict[str, np.ndarray]:
-    close = frame["synthetic_tqqq_close"]
+    # DMA signals must be based on the underlying QQQ series, not the
+    # synthetic leveraged path. Using synthetic TQQQ here would create a
+    # materially different signal and invalidates the comparison.
+    close = frame["adj_close"]
     out: dict[str, np.ndarray] = {
         "SYNTHETIC_TQQQ_BUY_AND_HOLD": np.ones(len(frame)),
         "SYNTHETIC_TQQQ_200DMA_100_IMMEDIATE_NEXT_OPEN": target_weights(close, 200, 0.0, 0),
