@@ -13,7 +13,7 @@ Lifecycle phases:
 - RESTRICTIVE_PAUSE: after that 365-day lag through the first cut, if any.
 - BENIGN_EASING / CRISIS_EASING: first 365 days after the first cut, split
   retrospectively according to whether an NBER recession begins within the
-  following 12 months.
+  following 6 months.
 
 Each lifecycle phase is crossed with QQQ 200-DMA state:
 - ABOVE_DMA
