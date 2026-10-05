@@ -176,6 +176,7 @@ def apply_macro_states(
 
     # State becomes usable only on the conservative availability date.
     usable = macro[["decision_date", "state"]].dropna().copy()
+    usable = usable.reset_index(drop=True)
     usable = usable.sort_values("decision_date")
 
     daily = pd.DataFrame(index=out.index)
