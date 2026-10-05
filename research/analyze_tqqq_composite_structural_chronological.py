@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from test_tqqq_composite_structural_defense import (
+from research.test_tqqq_composite_structural_defense import (
     build_composite_frame,
     composite_weights,
 )
