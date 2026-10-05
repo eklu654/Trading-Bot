@@ -50,12 +50,15 @@ jobs:
 
           path = Path("data/research/tqqq_daily.csv")
           df = pd.read_csv(path, parse_dates=["Date"])
-          if len(df) != 4186:
-              raise SystemExit(f"Expected exactly 4186 TQQQ observations, got {len(df)}")
-          if df["Date"].min() != pd.Timestamp("2010-03-11"):
-              raise SystemExit(f"Unexpected first date: {df['Date'].min()}")
+          if len(df) < 4186:
+              raise SystemExit(f"Canonical TQQQ snapshot is too short: {len(df)} rows")
+          if df["Date"].min() > pd.Timestamp("2010-03-11"):
+              raise SystemExit(f"Canonical snapshot lacks the required warmup history: {df['Date'].min()}")
           if df["Date"].max() != pd.Timestamp("2026-10-02"):
               raise SystemExit(f"Unexpected last date: {df['Date'].max()}")
+          research_period = df.loc[(df["Date"] >= pd.Timestamp("2010-03-11")) & (df["Date"] <= pd.Timestamp("2026-10-02"))]
+          if len(research_period) != 4186:
+              raise SystemExit(f"Expected exactly 4186 observations in the frozen research period, got {len(research_period)}")
           required = {"Date", "open", "close", "adj_close"}
           missing = required - set(df.columns)
           if missing:
