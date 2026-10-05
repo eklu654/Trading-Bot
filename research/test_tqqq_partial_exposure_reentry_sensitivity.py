@@ -8,7 +8,12 @@ INITIAL = 5000.0
 DATA_START = pd.Timestamp("2010-03-11")
 START = pd.Timestamp("2019-01-01")
 END = pd.Timestamp("2026-10-02")
-WINDOWS = (("2018","2019-01-01","2020-12-31"),("2020","2021-01-01","2022-12-31"),("2022","2023-01-01","2024-12-31"),("2024","2025-01-01","2026-10-02"))
+WINDOWS = (
+    ("2018", "2019-01-01", "2020-12-31"),
+    ("2020", "2021-01-01", "2022-12-31"),
+    ("2022", "2023-01-01", "2024-12-31"),
+    ("2024", "2025-01-01", "2026-10-02"),
+)
 EXPECTED = 4167
 DMAS = (100, 125, 150, 175, 200, 225, 250, 300)
 BELOW = (0.0, 0.25, 0.50, 0.75, 1.0)
@@ -55,7 +60,10 @@ def evaluate(x, dma, below, confirm, cost_bps):
     overnight = np.nan_to_num((x["adj_open"] / x["adj_close"].shift(1) - 1).to_numpy(), nan=0.0)
     intraday = np.nan_to_num((x["adj_close"] / x["adj_open"] - 1).to_numpy(), nan=0.0)
     daily = (1 + prev * overnight) * (1 + target * intraday) - 1
+    turnover = np.abs(target - prev)
+    daily -= turnover * (cost_bps / 10000.0)
     daily[0] = 0.0
+
     equity = INITIAL
     peak = INITIAL
     maxdd = 0.0
@@ -67,36 +75,46 @@ def evaluate(x, dma, below, confirm, cost_bps):
             maxdd = min(maxdd, float((eq / running - 1).min()))
             equity = float(eq[-1])
             peak = max(peak, float(eq.max()))
-    years = (pd.Timestamp("2026-10-02") - pd.Timestamp("2019-01-01")).days / 365.25
+
+    years = (END - START).days / 365.25
     return {
         "strategy": f"DMA{dma}_BELOW{int(below*100)}_CONFIRM{confirm}",
         "dma": dma,
         "below_exposure": below,
-        "confirmation_sessions": confirm,\n        "cost_bps": cost_bps,
+        "confirmation_sessions": confirm,
+        "cost_bps": cost_bps,
         "final_balance": equity,
         "cagr": (equity / INITIAL) ** (1 / years) - 1,
         "max_drawdown": maxdd,
-        "avg_exposure": float(target[(x.index >= START)].mean()),
-        "position_changes": int(np.count_nonzero(np.diff(target[(x.index >= START)]))),
+        "avg_exposure": float(target[x.index >= START].mean()),
+        "position_changes": int(np.count_nonzero(np.diff(target[x.index >= START]))),
     }
 
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
     x = load_frame()
-    rows = [evaluate(x, dma, below, confirm) for dma in DMAS for below in BELOW for confirm in CONFIRM]
+    rows = [
+        evaluate(x, dma, below, confirm, cost)
+        for dma in DMAS
+        for below in BELOW
+        for confirm in CONFIRM
+        for cost in COSTS_BPS
+    ]
     out = pd.DataFrame(rows)
-    bh = evaluate(x, 200, 1.0, 0)
+    bh = evaluate(x, 200, 1.0, 0, 0)
     bh["strategy"] = "BUY_AND_HOLD"
     controls = pd.DataFrame([bh])
-    out["wealth_rank"] = out["final_balance"].rank(ascending=False, method="min").astype(int)
-    out["drawdown_rank"] = out["max_drawdown"].rank(ascending=False, method="min").astype(int)
+    out["wealth_rank"] = out.groupby("cost_bps")["final_balance"].rank(ascending=False, method="min").astype(int)
+    out["drawdown_rank"] = out.groupby("cost_bps")["max_drawdown"].rank(ascending=False, method="min").astype(int)
     out.to_csv(DATA / "tqqq_partial_exposure_reentry_sensitivity.csv", index=False)
     controls.to_csv(DATA / "tqqq_partial_exposure_reentry_control.csv", index=False)
+
     print(controls.to_string(index=False))
-    print(out.sort_values("final_balance", ascending=False).head(30).to_string(index=False))
-    print("\nBest non-buy-and-hold strategy by confirmation:")
-    partial = out[out.below_exposure < 1]
-    print(partial.sort_values(["confirmation_sessions", "final_balance"], ascending=[True, False]).groupby("confirmation_sessions").head(10).to_string(index=False))
+    for cost in COSTS_BPS:
+        partial = out[out.below_exposure < 1]
+        top = partial[partial.cost_bps == cost].sort_values("final_balance", ascending=False).head(10)
+        print(f"\n=== TOP @ {cost} BPS ===")
+        print(top[["dma","below_exposure","confirmation_sessions","final_balance","cagr","max_drawdown","avg_exposure"]].to_string(index=False))
 
 if __name__ == "__main__":
     main()
