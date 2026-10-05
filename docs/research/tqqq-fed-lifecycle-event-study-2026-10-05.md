@@ -18,7 +18,7 @@ For each completed tightening cycle:
    exists.
 6. BENIGN_EASING / CRISIS_EASING — first 365 days after the first post-cycle
    cut, classified retrospectively according to whether an NBER recession
-   begins within the following 12 months.
+   begins within the following 6 months.
 
 The final-hike and recession labels are historical research classifications,
 not proposed live signals.
