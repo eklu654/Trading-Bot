@@ -51,11 +51,14 @@ FRED_SERIES = {
 # Published by the Federal Reserve in its financial-conditions research.
 # These are descriptive cycle labels, not optimized from market outcomes.
 CYCLES = [
-    ("1994-02-01", "1995-03-01", "1994-95"),
-    ("1999-07-01", "2000-07-01", "1999-2000"),
-    ("2004-06-01", "2006-08-01", "2004-06"),
-    ("2015-12-01", "2018-07-01", "2015-18"),
-    ("2022-03-01", END, "2022-present"),
+    # Search windows are intentionally broad enough to capture the actual
+    # first and final hike dates. The event study derives those dates from
+    # observed Fed actions rather than treating a month label as an action.
+    ("1994-02-01", "1995-03-31", "1994-95"),
+    ("1999-06-01", "2000-07-31", "1999-2000"),
+    ("2004-06-01", "2006-08-31", "2004-06"),
+    ("2015-12-01", "2019-01-31", "2015-18"),
+    ("2022-03-01", "2023-08-31", "2022-23"),
 ]
 
 
