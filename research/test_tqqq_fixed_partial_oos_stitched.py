@@ -30,7 +30,7 @@ def main():
     mask=(x.index>=pd.Timestamp(start))&(x.index<=pd.Timestamp(end)); eq=equity*np.cumprod(1+r[mask]); equity=float(eq[-1])
     running=np.maximum.accumulate(np.r_[peak,eq])[1:]; maxdd=min(maxdd,float((eq/running-1).min())); peak=max(peak,float(eq.max()))
     windows.append((label,dma,below,name,equity))
-   years=(pd.Timestamp("2026-10-02")-pd.Timestamp("2019-01-01")).days/365.25
+   years=(pd.Timestamp("2026-10-02")-pd.Timestamp("2018-01-01")).days/365.25
    rows.append((label,dma,below,equity,(equity/INITIAL)**(1/years)-1,maxdd))
  out=pd.DataFrame(rows,columns=["strategy","dma","below_exposure","stitched_final","stitched_cagr","stitched_dd"]).sort_values("stitched_final",ascending=False)
  out.to_csv(DATA/"tqqq_fixed_partial_oos_stitched.csv",index=False)
