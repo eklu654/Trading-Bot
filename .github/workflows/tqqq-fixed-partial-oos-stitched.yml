@@ -31,11 +31,25 @@ jobs:
             exit 0
           fi
           echo "$fingerprint" > .research-state/tqqq-fixed-partial-oos.fingerprint
+        if: steps.completion.outputs.skip != 'true'
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Check completion marker
+        id: completion
+        run: |
+          set -euo pipefail
+          fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
+          if [ -f .research-state/tqqq-fixed-partial-oos.fingerprint ] && [ "$(cat .research-state/tqqq-fixed-partial-oos.fingerprint)" = "$fingerprint" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Fixed TQQQ research already completed for this exact code fingerprint."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+        if: steps.completion.outputs.skip != 'true'
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -45,11 +59,13 @@ jobs:
             research/requirements.txt
             requirements-dev.txt
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r research/requirements.txt -r requirements-dev.txt
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Build canonical TQQQ snapshot
         run: |
           set -euo pipefail
@@ -59,6 +75,7 @@ jobs:
           python research/_frozen_etf031_dataset_builder.py --symbols TQQQ
           test -s data/research/tqqq_daily.csv
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Validate canonical dataset
         run: |
           python - <<'PY'
@@ -84,6 +101,7 @@ jobs:
               raise SystemExit("Canonical TQQQ dataset contains missing price values")
           print(f"Validated canonical TQQQ dataset: {len(df)} rows, {df['Date'].min().date()} through {df['Date'].max().date()}")
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Run fixed partial OOS research
         run: |
           set -euo pipefail
@@ -91,6 +109,7 @@ jobs:
           test -s data/research/tqqq_fixed_partial_oos_stitched.csv
           test -s data/research/tqqq_fixed_partial_oos_stitched_windows.csv
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Validate research outputs
         run: |
           python - <<'PY'
@@ -115,6 +134,7 @@ jobs:
           print(s.sort_values("stitched_final", ascending=False).head(10).to_string(index=False))
           PY
 
+        if: steps.completion.outputs.skip != 'true'
       - name: Upload research artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -128,7 +148,7 @@ jobs:
           retention-days: 30
 
       - name: Record successful completion
-        if: success()
+        if: success() && steps.completion.outputs.skip != 'true'
         run: |
           set -euo pipefail
           fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
