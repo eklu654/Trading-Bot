@@ -24,7 +24,7 @@ Use the Federal Reserve's published cycle boundaries:
 - 1999-07 to 2000-07
 - 2004-06 to 2006-08
 - 2015-12 to 2018-07
-- 2022-03 to present
+- 2022-03 to the final hike in July 2023 (treated as a completed tightening cycle for this event study)
 
 The Federal Reserve identifies these cycles in its financial-conditions research.
 
@@ -52,3 +52,8 @@ The Federal Reserve identifies these cycles in its financial-conditions research
 After the event study passes validation, classify daily/monthly monetary states from information available at the time and cross them with the existing DMA/partial-exposure family.
 
 The eventual comparison remains terminal balance first, with CAGR and drawdown as diagnostics.
+
+
+## Implementation status
+
+The next-stage frozen Fed-state × DMA event study is now implemented separately in `research/test_tqqq_fed_dma_event_study.py` so the original descriptive cycle study remains unchanged.
