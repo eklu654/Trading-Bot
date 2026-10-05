@@ -94,3 +94,36 @@ continuing to tune DMA parameters.
 If it materially improves the tradeoff, freeze the exact rule and validate it
 chronologically on separated training/validation/holdout periods before any
 production consideration.
+
+## First full-history result
+
+The frozen family completed successfully.
+
+| Strategy | Final balance | CAGR | Max drawdown |
+|---|---:|---:|---:|
+| BUY_AND_HOLD | $66,247 | 49.59% | -99.96% |
+| FED_PAUSED_DMA_STICKY_0 | $3,706,234 | 73.11% | -98.13% |
+| FED_PAUSED_DMA_STICKY_25 | $1,917,262 | 69.01% | -98.97% |
+| FED_PAUSED_DMA_STICKY_50 | $788,528 | 63.65% | -99.55% |
+| FED_PAUSED_DMA_STICKY_75 | $257,311 | 57.14% | -99.84% |
+
+The rule materially improved terminal wealth on the synthetic full-history
+path, especially at 0% defense exposure, but it did **not** solve leveraged
+survivability: maximum drawdown remained approximately 98%.
+
+The family also produced repeated short-lived exits during 2016 because the
+QQQ 200-DMA condition repeatedly crossed while the Fed remained paused. That
+is a concrete indication that the simple sticky state is not sufficiently
+stable for production use.
+
+**Classification: PROMISING HISTORICAL SIGNAL, REJECTED AS A STANDALONE
+PRODUCTION CONTROL.**
+
+The result is valuable because it validates the research hypothesis that
+contemporaneous monetary-policy state can identify a dangerous post-tightening
+environment when combined with market trend. It is not sufficient by itself
+because it does not provide acceptable drawdown protection and is vulnerable
+to choppy reactivation.
+
+The next test therefore combines this Fed signal with the broader macro
+regime rather than tuning the DMA trigger or re-entry delay.
