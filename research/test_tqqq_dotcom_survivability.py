@@ -37,7 +37,7 @@ OUT = ROOT / "data" / "research"
 INITIAL = 5000.0
 START = "1999-03-10"
 END = "2026-10-03"
-DMAS = (200, 225, 250)
+DMAS = tuple(range(100, 301, 25))
 
 
 def download_qqq() -> pd.DataFrame:
@@ -221,53 +221,21 @@ def evaluate(
 
 
 def make_weights(frame: pd.DataFrame) -> dict[str, np.ndarray]:
-    # DMA signals must be based on the underlying QQQ series, not the
-    # synthetic leveraged path. Using synthetic TQQQ here would create a
-    # materially different signal and invalidates the comparison.
+    # Signals are deliberately based on QQQ adjusted close. This avoids
+    # allowing the synthetic leverage path itself to distort the DMA signal.
     close = frame["adj_close"]
     out: dict[str, np.ndarray] = {
         "SYNTHETIC_TQQQ_BUY_AND_HOLD": np.ones(len(frame)),
-        "SYNTHETIC_TQQQ_200DMA_100_IMMEDIATE_NEXT_OPEN": target_weights(close, 200, 0.0, 0),
-        "SYNTHETIC_TQQQ_200DMA_100_3SESSION_NEXT_OPEN": target_weights(close, 200, 0.0, 3),
-        "SYNTHETIC_TQQQ_225DMA_100_IMMEDIATE_NEXT_OPEN": target_weights(close, 225, 0.0, 0),
-        "SYNTHETIC_TQQQ_250DMA_100_10SESSION_NEXT_OPEN": target_weights(close, 250, 0.0, 10),
-        # Partial-exposure control from the completed family:
-        "SYNTHETIC_TQQQ_225DMA_50_IMMEDIATE_NEXT_OPEN": target_weights(close, 225, 0.5, 0),
     }
+
+    for dma in DMAS:
+        for exposure in EXPOSURES:
+            pct = int(round(exposure * 100))
+            label = (
+                f"SYNTHETIC_TQQQ_{dma}DMA_{pct}_"
+                "IMMEDIATE_NEXT_OPEN"
+            )
+            out[label] = target_weights(close, dma, exposure)
+
     return out
 
-
-def main() -> None:
-    OUT.mkdir(parents=True, exist_ok=True)
-    raw = download_qqq()
-    frame = build_synthetic(raw)
-
-    rows = []
-    paths = []
-    for label, weights in make_weights(frame).items():
-        row, path = evaluate(frame, weights, label)
-        rows.append(row)
-        paths.append(path)
-
-    summary = pd.DataFrame(rows)
-    path_frame = pd.concat(paths, ignore_index=True)
-
-    summary.to_csv(OUT / "tqqq_dotcom_survivability_summary.csv", index=False)
-    path_frame.to_csv(OUT / "tqqq_dotcom_survivability_paths.csv", index=False)
-    frame[["close", "adj_close", "synthetic_tqqq_close"]].to_csv(
-        OUT / "qqq_synthetic_tqqq_history.csv"
-    )
-
-    # Dedicated dot-com era slice for easy inspection.
-    dotcom = path_frame[
-        (path_frame["Date"] >= "2000-01-01")
-        & (path_frame["Date"] <= "2003-12-31")
-    ].copy()
-    dotcom.to_csv(OUT / "tqqq_dotcom_survivability_dotcom_slice.csv", index=False)
-
-    print(summary.to_string(index=False))
-    print(f"\nArtifacts written to {OUT}")
-
-
-if __name__ == "__main__":
-    main()
