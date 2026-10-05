@@ -32,7 +32,7 @@ jobs:
       - name: Compile
         run: python -m py_compile research/analyze_tqqq_composite_structural_chronological.py
       - name: Run chronological robustness report
-        run: PYTHONPATH=research python research/analyze_tqqq_composite_structural_chronological.py
+        run: PYTHONPATH=. python research/analyze_tqqq_composite_structural_chronological.py
       - name: Upload research artifact
         uses: actions/upload-artifact@v4
         with:
