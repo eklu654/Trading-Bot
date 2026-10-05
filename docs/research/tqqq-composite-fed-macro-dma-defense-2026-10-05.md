@@ -149,3 +149,66 @@ study of the frozen composite, followed by targeted investigation of which
 specific economic/credit dimension can distinguish true structural breaks
 from ordinary modern corrections. No further DMA parameter search is
 justified.
+
+## Chronological robustness result
+
+The frozen rule was then evaluated without changing any parameters across three
+fixed periods.
+
+### 1999–2009
+
+The 0% defense variant produced a +21.68% CAGR with -80.13% maximum drawdown,
+versus -31.89% CAGR and -99.96% drawdown for buy-and-hold.
+
+This confirms that the composite can materially change the catastrophic
+pre-2010 path.
+
+### 2010–2019
+
+Buy-and-hold produced a 44.27% CAGR.
+
+The composite variants produced:
+
+- 75%: 42.94% CAGR;
+- 50%: 41.49%;
+- 25%: 39.93%;
+- 0%: 38.27%.
+
+All had the same approximately -57.92% maximum drawdown as buy-and-hold.
+
+Therefore the composite did **not** improve the modern risk/return tradeoff in
+this period; it simply reduced exposure and sacrificed wealth.
+
+### 2020–2026
+
+Buy-and-hold produced a 44.09% CAGR with -80.79% maximum drawdown.
+
+The composite variants produced:
+
+- 75%: 36.99% CAGR;
+- 50%: 28.91%;
+- 25%: 20.09%;
+- 0%: 10.74%.
+
+Again, maximum drawdown was essentially unchanged for the 25%–75% variants,
+while the 0% variant was worse at -85.89%.
+
+## Robustness classification
+
+**CLASSIFICATION: HISTORICALLY EFFECTIVE, MODERN-ERA OVER-DEFENSIVE.**
+
+The composite is not yet a strategy candidate.
+
+The research has now answered an important question: the Fed + macro + DMA
+architecture can recognize the dot-com-style structural break, but the current
+macro classifier does not distinguish that environment cleanly enough from
+modern conditions. It therefore pays too much opportunity cost after 2010
+without delivering incremental drawdown protection.
+
+This is exactly the kind of result the holdout gate was intended to expose.
+
+The Fed layer remains in the architecture. The next research should not search
+more exposure percentages or DMA lengths. Instead, it should identify which
+economic/financial dimension is genuinely distinctive in structural failures
+such as 2000–2002 and 2007–2009 while avoiding unnecessary defense during
+modern bull-market corrections.
