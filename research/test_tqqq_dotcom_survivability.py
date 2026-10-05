@@ -38,6 +38,7 @@ INITIAL = 5000.0
 START = "1999-03-10"
 END = "2026-10-03"
 DMAS = tuple(range(100, 301, 25))
+EXPOSURES = (0.0, 0.25, 0.50, 0.75, 1.0)
 
 
 def download_qqq() -> pd.DataFrame:
@@ -239,3 +240,57 @@ def make_weights(frame: pd.DataFrame) -> dict[str, np.ndarray]:
 
     return out
 
+
+
+def main() -> None:
+    OUT.mkdir(parents=True, exist_ok=True)
+    raw = download_qqq()
+    frame = build_synthetic(raw)
+
+    rows = []
+    paths = []
+    for label, weights in make_weights(frame).items():
+        row, path = evaluate(frame, weights, label)
+        rows.append(row)
+        paths.append(path)
+
+    summary = pd.DataFrame(rows).sort_values(
+        ["final_balance", "strategy"], ascending=[False, True]
+    )
+    path_frame = pd.concat(paths, ignore_index=True)
+
+    summary.to_csv(OUT / "tqqq_dotcom_survivability_summary.csv", index=False)
+    path_frame.to_csv(OUT / "tqqq_dotcom_survivability_paths.csv", index=False)
+    frame[["close", "adj_close", "synthetic_tqqq_close"]].to_csv(
+        OUT / "qqq_synthetic_tqqq_history.csv"
+    )
+
+    dotcom = path_frame[
+        (path_frame["Date"] >= "2000-01-01")
+        & (path_frame["Date"] <= "2003-12-31")
+    ].copy()
+    dotcom.to_csv(
+        OUT / "tqqq_dotcom_survivability_dotcom_slice.csv", index=False
+    )
+
+    print(
+        summary[
+            [
+                "strategy",
+                "final_balance",
+                "cagr",
+                "max_drawdown",
+                "minimum_equity",
+                "avg_exposure",
+            ]
+        ].to_string(index=False)
+    )
+    print(
+        f"Tested {len(summary)} strategies across "
+        f"{len(DMAS)} DMAs and {len(EXPOSURES)} exposure levels."
+    )
+    print(f"Artifacts written to {OUT}")
+
+
+if __name__ == "__main__":
+    main()
