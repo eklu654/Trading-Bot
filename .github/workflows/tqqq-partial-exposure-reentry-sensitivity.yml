@@ -66,7 +66,7 @@ jobs:
           python - <<'PY'
           import pandas as pd
           x=pd.read_csv("data/research/tqqq_partial_exposure_reentry_sensitivity.csv")
-          assert len(x)==200, len(x)
+          assert len(x)==1000, len(x)
           assert x.final_balance.notna().all()
           assert x.max_drawdown.notna().all()
           print(x.sort_values("final_balance",ascending=False).head(20).to_string(index=False))
