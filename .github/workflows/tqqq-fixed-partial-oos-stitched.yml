@@ -141,6 +141,7 @@ jobs:
         run: |
           set -euo pipefail
           fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
+          mkdir -p .research-state
           printf '%s\n' "$fingerprint" > .research-state/tqqq-fixed-partial-oos.fingerprint
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
