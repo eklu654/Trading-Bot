@@ -95,6 +95,8 @@ def download_qqq() -> pd.DataFrame:
 def build_daily_states(fed: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFrame:
     daily = qqq.copy()
     daily["dma_200"] = daily["close"].rolling(200, min_periods=200).mean()
+    qqq_ret = daily["close"].pct_change().fillna(0.0)
+    daily["synthetic_tqqq"] = (1.0 + 3.0 * qqq_ret).clip(lower=0.0).cumprod()
     daily["dma_state"] = np.where(
         daily["close"] >= daily["dma_200"], "ABOVE_DMA", "BELOW_DMA"
     )
@@ -164,6 +166,9 @@ def event_table(frame: pd.DataFrame) -> pd.DataFrame:
                 "return_3m": forward_return(frame["close"], date, 3),
                 "return_6m": forward_return(frame["close"], date, 6),
                 "return_12m": forward_return(frame["close"], date, 12),
+                "synthetic_tqqq_return_3m": forward_return(frame["synthetic_tqqq"], date, 3),
+                "synthetic_tqqq_return_6m": forward_return(frame["synthetic_tqqq"], date, 6),
+                "synthetic_tqqq_return_12m": forward_return(frame["synthetic_tqqq"], date, 12),
             }
         )
     return pd.DataFrame(rows)
@@ -181,6 +186,9 @@ def summarize(events: pd.DataFrame) -> pd.DataFrame:
             mean_12m=("return_12m", "mean"),
             median_12m=("return_12m", "median"),
             pct_positive_12m=("return_12m", lambda x: float((x > 0).mean())),
+            mean_tqqq_12m=("synthetic_tqqq_return_12m", "mean"),
+            median_tqqq_12m=("synthetic_tqqq_return_12m", "median"),
+            pct_positive_tqqq_12m=("synthetic_tqqq_return_12m", lambda x: float((x > 0).mean())),
         )
         .reset_index()
     )
