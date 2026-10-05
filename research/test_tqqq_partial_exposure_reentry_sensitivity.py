@@ -13,6 +13,7 @@ EXPECTED = 4167
 DMAS = (100, 125, 150, 175, 200, 225, 250, 300)
 BELOW = (0.0, 0.25, 0.50, 0.75, 1.0)
 CONFIRM = (0, 1, 3, 5, 10)
+COSTS_BPS = (0, 5, 10, 25, 50)
 
 def load_frame():
     x = pd.read_csv(DATA / "tqqq_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()
@@ -47,7 +48,7 @@ def target_weights(close, dma, below, confirm):
             out[i] = below
     return out
 
-def evaluate(x, dma, below, confirm):
+def evaluate(x, dma, below, confirm, cost_bps):
     target = target_weights(x["adj_close"], dma, below, confirm)
     prev = np.roll(target, 1)
     prev[0] = 0.0
@@ -71,7 +72,7 @@ def evaluate(x, dma, below, confirm):
         "strategy": f"DMA{dma}_BELOW{int(below*100)}_CONFIRM{confirm}",
         "dma": dma,
         "below_exposure": below,
-        "confirmation_sessions": confirm,
+        "confirmation_sessions": confirm,\n        "cost_bps": cost_bps,
         "final_balance": equity,
         "cagr": (equity / INITIAL) ** (1 / years) - 1,
         "max_drawdown": maxdd,
