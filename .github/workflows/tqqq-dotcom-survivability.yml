@@ -39,3 +39,5 @@ jobs:
             data/research/tqqq_dotcom_survivability_paths.csv
             data/research/tqqq_dotcom_survivability_dotcom_slice.csv
             data/research/qqq_synthetic_tqqq_history.csv
+
+# Research rerun marker: independently reproduce 100-DMA result.
