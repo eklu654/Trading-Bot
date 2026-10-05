@@ -1,0 +1,41 @@
+name: TQQQ Macro-Regime Baseline Research
+
+on:
+  push:
+    paths:
+      - "research/test_tqqq_macro_regime.py"
+      - ".github/workflows/tqqq-macro-regime.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: tqqq-macro-regime
+  cancel-in-progress: false
+
+jobs:
+  macro-regime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile
+        run: python -m py_compile research/test_tqqq_macro_regime.py
+      - name: Run macro-regime baseline
+        run: python research/test_tqqq_macro_regime.py
+      - name: Upload research artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-macro-regime-baseline
+          path: |
+            data/research/tqqq_macro_regime_baseline_summary.csv
+            data/research/tqqq_macro_regime_baseline_paths.csv
+            data/research/tqqq_macro_regime_macro_features.csv
+            data/research/tqqq_macro_regime_daily_states.csv
