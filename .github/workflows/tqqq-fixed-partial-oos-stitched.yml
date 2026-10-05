@@ -21,17 +21,6 @@ jobs:
       PYTHONPATH: .
       PYTHONUNBUFFERED: "1"
     steps:
-      - name: Check completion marker
-        run: |
-          set -euo pipefail
-          mkdir -p .research-state
-          fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
-          if [ -f .research-state/tqqq-fixed-partial-oos.fingerprint ] && [ "$(cat .research-state/tqqq-fixed-partial-oos.fingerprint)" = "$fingerprint" ]; then
-            echo "Fixed TQQQ research already completed for this exact code fingerprint."
-            exit 0
-          fi
-          echo "$fingerprint" > .research-state/tqqq-fixed-partial-oos.fingerprint
-        if: steps.completion.outputs.skip != 'true'
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -136,7 +125,7 @@ jobs:
 
         if: steps.completion.outputs.skip != 'true'
       - name: Upload research artifacts
-        if: always()
+        if: success() && steps.completion.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: tqqq-fixed-partial-oos-stitched
