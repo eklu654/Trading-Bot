@@ -1,0 +1,68 @@
+name: TQQQ Partial Exposure Full History
+on:
+  workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - research/test_tqqq_partial_exposure_full_history.py
+      - .github/workflows/tqqq-partial-exposure-full-history.yml
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONPATH: .
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt -r requirements-dev.txt
+      - name: Build TQQQ snapshot
+        run: |
+          set -euo pipefail
+          git show 645f332bb95ad39de046378ec6262122f4c7d7cc:research/build_historical_regime_dataset.py > research/_frozen_etf031_dataset_builder.py
+          trap 'rm -f research/_frozen_etf031_dataset_builder.py' EXIT
+          python research/_frozen_etf031_dataset_builder.py --symbols TQQQ
+      - name: Validate full history
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          x=pd.read_csv("data/research/tqqq_daily.csv",parse_dates=["Date"])
+          x=x.loc[(x.Date>=pd.Timestamp("2010-02-11"))&(x.Date<=pd.Timestamp("2026-10-02"))]
+          assert len(x) >= 4180, len(x)
+          assert x.Date.min()==pd.Timestamp("2010-02-11"), x.Date.min()
+          assert x.Date.max()==pd.Timestamp("2026-10-02"), x.Date.max()
+          print(f"validated {len(x)} observations: {x.Date.min().date()} through {x.Date.max().date()}")
+          PY
+      - name: Run full-history sweep
+        run: python research/test_tqqq_partial_exposure_full_history.py
+      - name: Validate outputs
+        run: |
+          python - <<'PY'
+          import pandas as pd
+          x=pd.read_csv("data/research/tqqq_partial_exposure_full_history.csv")
+          assert len(x)==200, len(x)
+          assert x.final_balance.notna().all()
+          assert x.cagr.notna().all()
+          assert x.max_drawdown.notna().all()
+          print(x[x.cost_bps==0].sort_values("final_balance",ascending=False).head(20).to_string(index=False))
+          PY
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-partial-exposure-full-history
+          path: |
+            data/research/tqqq_daily.csv
+            data/research/tqqq_partial_exposure_full_history.csv
+            data/research/tqqq_partial_exposure_full_history_control.csv
+          if-no-files-found: error
+          retention-days: 30
