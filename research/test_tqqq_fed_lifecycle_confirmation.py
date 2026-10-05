@@ -100,13 +100,14 @@ def build_states(fed: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFrame:
     a["net_change_12m"] = a["target_rate"] - past
 
     # Days since most recent hike, using only past/current Fed actions.
-    hike_dates = a.index[a["action"].eq("HIKE")]
-    latest_hike = pd.Series(pd.NaT, index=a.index, dtype="datetime64[ns]")
-    if len(hike_dates):
-        idx = a.index.searchsorted(hike_dates, side="right") - 1
-        valid = idx >= 0
-        latest_hike.iloc[valid] = hike_dates.to_numpy()[idx[valid]]
-    a["days_since_hike"] = (a.index - latest_hike).days
+    # Forward-filling the hike dates avoids mixing positions in the full
+    # daily Fed index with positions in the much shorter hike-date index.
+    latest_hike = pd.Series(
+        a.index.where(a["action"].eq("HIKE")),
+        index=a.index,
+        dtype="datetime64[ns]",
+    ).ffill()
+    a["days_since_hike"] = (a.index - latest_hike).dt.days
 
     usable = a.reset_index().rename(columns={"index": "date"})
     base = daily.reset_index().rename(columns={daily.index.name or "Date": "date"})
