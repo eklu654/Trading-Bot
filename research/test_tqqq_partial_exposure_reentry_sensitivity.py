@@ -79,3 +79,23 @@ def evaluate(x, dma, below, confirm):
         "position_changes": int(np.count_nonzero(np.diff(target[(x.index >= START)]))),
     }
 
+def main():
+    DATA.mkdir(parents=True, exist_ok=True)
+    x = load_frame()
+    rows = [evaluate(x, dma, below, confirm) for dma in DMAS for below in BELOW for confirm in CONFIRM]
+    out = pd.DataFrame(rows)
+    bh = evaluate(x, 200, 1.0, 0)
+    bh["strategy"] = "BUY_AND_HOLD"
+    controls = pd.DataFrame([bh])
+    out["wealth_rank"] = out["final_balance"].rank(ascending=False, method="min").astype(int)
+    out["drawdown_rank"] = out["max_drawdown"].rank(ascending=False, method="min").astype(int)
+    out.to_csv(DATA / "tqqq_partial_exposure_reentry_sensitivity.csv", index=False)
+    controls.to_csv(DATA / "tqqq_partial_exposure_reentry_control.csv", index=False)
+    print(controls.to_string(index=False))
+    print(out.sort_values("final_balance", ascending=False).head(30).to_string(index=False))
+    print("\nBest non-buy-and-hold strategy by confirmation:")
+    partial = out[out.below_exposure < 1]
+    print(partial.sort_values(["confirmation_sessions", "final_balance"], ascending=[True, False]).groupby("confirmation_sessions").head(10).to_string(index=False))
+
+if __name__ == "__main__":
+    main()
