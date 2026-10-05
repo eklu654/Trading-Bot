@@ -344,3 +344,38 @@ It must also demonstrate:
 - no holdout tuning;
 - and a clear improvement over the existing TQQQ 200-DMA control or buy-and-hold tradeoff.
 
+
+
+## Baseline implementation added
+
+The first executable baseline is now implemented in `research/test_tqqq_macro_regime.py`
+with an automated GitHub Actions workflow at
+`.github/workflows/tqqq-macro-regime.yml`.
+
+The first pass intentionally uses a small four-dimension classifier rather than
+an indicator soup:
+
+- labor deterioration;
+- industrial-production deterioration;
+- Baa-vs-10Y credit-spread stress;
+- 10Y-vs-3M curve inversion.
+
+It requires two consecutive monthly observations for deterioration and three
+consecutive safe months for recovery. Crisis requires at least three stressed
+dimensions including labor or credit stress.
+
+Because exact historical release-vintage reconstruction is not yet implemented,
+the baseline applies a conservative one-full-month availability lag to monthly
+FRED observations. This makes the first pass intentionally less optimistic than
+using observation dates directly. Exact release-date/vintage reconstruction is
+a required follow-up before any production conclusion.
+
+The baseline compares:
+
+- BUY_AND_HOLD;
+- MACRO_LIGHT: 75% TQQQ in deterioration, 25% in crisis;
+- MACRO_MEDIUM: 50% TQQQ in deterioration, 0% in crisis;
+- MACRO_HARD: 25% TQQQ in deterioration, 0% in crisis.
+
+These defense levels are frozen research controls, not optimized candidates.
+The resulting workflow artifacts are the authoritative next evidence to inspect.
