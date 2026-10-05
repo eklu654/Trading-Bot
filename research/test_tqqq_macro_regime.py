@@ -125,7 +125,7 @@ def download_macro() -> pd.DataFrame:
             current = "STRUCTURAL_EXPANSION"
         states.append(current)
 
-    macro["state"] = state
+    macro["state"] = states
     macro["decision_date"] = macro["available_date"]
     return macro
 
