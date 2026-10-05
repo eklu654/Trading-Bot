@@ -59,7 +59,7 @@ def evaluate(x, dma, below, confirm):
     peak = INITIAL
     maxdd = 0.0
     for _, begin, end in WINDOWS:
-        mask = (x.index >= pd.Timestamp(begin)) & (x.index < pd.Timestamp(end))
+        mask = (x.index >= pd.Timestamp(begin)) & (x.index <= pd.Timestamp(end))
         eq = equity * np.cumprod(1 + daily[mask])
         if len(eq):
             running = np.maximum.accumulate(np.r_[peak, eq])[1:]
