@@ -24,6 +24,42 @@ jobs:
       - name: Build historical dataset
         run: python research/build_historical_regime_dataset.py
 
+      - name: Validate historical dataset
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+
+          path = Path("data/research/historical_regime_dataset.csv")
+          if not path.exists():
+              raise SystemExit(f"Historical dataset was not generated: {path}")
+
+          frame = pd.read_csv(path, parse_dates=["Date"])
+          required = {"Date", "regime", "decision_regime", "vix"}
+          missing = sorted(required - set(frame.columns))
+          if missing:
+              raise SystemExit(f"Historical dataset is missing required columns: {missing}")
+          if frame.empty:
+              raise SystemExit("Historical dataset is empty")
+          if frame["Date"].duplicated().any():
+              raise SystemExit("Historical dataset contains duplicate dates")
+
+          first_date = frame["Date"].min().date()
+          last_date = frame["Date"].max().date()
+          rows = len(frame)
+
+          # Validate structural/chronological invariants rather than a stale
+          # hard-coded row count. New trading sessions must not break CI.
+          if first_date > pd.Timestamp("2010-03-01").date():
+              raise SystemExit(f"Historical dataset starts unexpectedly late: {first_date}")
+          if last_date < pd.Timestamp("2026-01-01").date():
+              raise SystemExit(f"Historical dataset ends unexpectedly early: {last_date}")
+          if rows < 4000:
+              raise SystemExit(f"Historical dataset is unexpectedly small: {rows} rows")
+
+          print(f"Historical dataset validation passed: {rows} rows, {first_date} through {last_date}")
+          PY
+
       - name: Download SPY historical option chains
         run: |
           mkdir -p data/options/spy
