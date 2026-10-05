@@ -236,7 +236,7 @@ def make_weights(frame: pd.DataFrame) -> dict[str, np.ndarray]:
                 f"SYNTHETIC_TQQQ_{dma}DMA_{pct}_"
                 "IMMEDIATE_NEXT_OPEN"
             )
-            out[label] = target_weights(close, dma, exposure)
+            out[label] = target_weights(close, dma, exposure, 0)
 
     return out
 
