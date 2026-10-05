@@ -1,0 +1,40 @@
+name: Fed Gated Macro Quorum
+
+on:
+  push:
+    paths:
+      - "research/test_tqqq_fed_gated_macro_quorum.py"
+      - "research/test_tqqq_fed_lifecycle_sticky.py"
+      - "research/test_tqqq_macro_regime.py"
+      - ".github/workflows/tqqq-fed-gated-macro-quorum.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: tqqq-fed-gated-macro-quorum
+  cancel-in-progress: false
+
+jobs:
+  gated-quorum:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile
+        run: python -m py_compile research/test_tqqq_fed_gated_macro_quorum.py
+      - name: Run gated quorum
+        working-directory: research
+        run: python test_tqqq_fed_gated_macro_quorum.py
+      - name: Upload research artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-fed-gated-macro-quorum
+          path: data/research/tqqq_fed_gated_macro_quorum_summary.csv
