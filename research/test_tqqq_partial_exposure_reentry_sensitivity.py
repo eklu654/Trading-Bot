@@ -8,7 +8,7 @@ INITIAL = 5000.0
 DATA_START = pd.Timestamp("2010-03-11")
 START = pd.Timestamp("2018-01-01")
 END = pd.Timestamp("2026-10-02")
-WINDOWS = (("2018","2018-01-01","2019-01-01"),("2020","2019-01-01","2021-01-01"),("2022","2021-01-01","2023-01-01"),("2024","2023-01-01","2026-10-03"))
+WINDOWS = (("2018","2018-01-01","2021-01-01"),("2020","2021-01-01","2023-01-01"),("2022","2023-01-01","2025-01-01"),("2024","2025-01-01","2026-10-03"))
 EXPECTED = 4167
 DMAS = (100, 125, 150, 175, 200, 225, 250, 300)
 BELOW = (0.0, 0.25, 0.50, 0.75, 1.0)
@@ -66,7 +66,7 @@ def evaluate(x, dma, below, confirm):
             maxdd = min(maxdd, float((eq / running - 1).min()))
             equity = float(eq[-1])
             peak = max(peak, float(eq.max()))
-    years = (pd.Timestamp("2026-10-02") - pd.Timestamp("2019-01-01")).days / 365.25
+    years = (pd.Timestamp("2026-10-02") - pd.Timestamp("2018-01-01")).days / 365.25
     return {
         "strategy": f"DMA{dma}_BELOW{int(below*100)}_CONFIRM{confirm}",
         "dma": dma,
