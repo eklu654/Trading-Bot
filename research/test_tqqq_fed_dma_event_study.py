@@ -110,7 +110,7 @@ def build_daily_states(fed: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFrame:
         actions["action"].eq("CUT").astype(int).rolling("90D").sum()
     )
     actions["net_change_12m"] = (
-        actions["target_rate"] - actions["target_rate"].shift(252)
+        actions["target_rate"] - actions["target_rate"].shift(365)
     )
 
     usable = actions.reset_index().rename(columns={"index": "date"})
