@@ -106,3 +106,46 @@ chronologically defensible.
 If the composite still leaves catastrophic drawdowns, the next step should
 focus on whether the economic/credit regime can identify the structural break
 earlier, rather than adding more arbitrary price thresholds.
+
+## First full-history result
+
+The frozen composite completed successfully.
+
+| Strategy | Final balance | CAGR | Max drawdown |
+|---|---:|---:|---:|
+| BUY_AND_HOLD | $39,448 | 7.78% | -99.96% |
+| COMPOSITE_STRUCTURAL_0 | $2,317,044 | 24.94% | -85.89% |
+| COMPOSITE_STRUCTURAL_25 | $1,871,567 | 23.98% | -89.31% |
+| COMPOSITE_STRUCTURAL_50 | $886,184 | 20.66% | -97.38% |
+| COMPOSITE_STRUCTURAL_75 | $245,459 | 15.17% | -99.53% |
+
+The 0% and 25% defense variants are a substantial improvement over
+buy-and-hold on this synthetic full-history path. However, the result is not
+yet a production candidate because the same frozen rule gives up meaningful
+wealth during the modern period.
+
+Chronological slices of the frozen rule show:
+
+- 1999–2009: the 0% defense variant strongly improves the catastrophic
+  dot-com path.
+- 2010–2019: all composite variants trail buy-and-hold while providing no
+  additional maximum-drawdown reduction.
+- 2020–2026: the composite remains substantially below buy-and-hold in CAGR;
+  only the more aggressive 75% defense approaches the modern-period wealth
+  benchmark, while the drawdown remains dominated by the underlying leveraged
+  exposure.
+
+This means the composite has demonstrated **historical structural
+recognition**, but not yet the required modern-era opportunity-cost discipline.
+
+**Classification: PROMISING, NOT YET ROBUST.**
+
+The important finding is that the Fed layer and macro layer add information
+when combined with market trend, but the current macro classifier is still too
+broad/late and the defense can remain active during modern expansion periods.
+
+The next research gate should therefore be a chronological holdout/robustness
+study of the frozen composite, followed by targeted investigation of which
+specific economic/credit dimension can distinguish true structural breaks
+from ordinary modern corrections. No further DMA parameter search is
+justified.
