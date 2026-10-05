@@ -22,11 +22,11 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from test_tqqq_fed_paused_dma_sticky import (
+from research.test_tqqq_fed_paused_dma_sticky import (
     build_daily_states as build_fed_states,
     download_fed,
 )
-from test_tqqq_macro_regime import (
+from research.test_tqqq_macro_regime import (
     apply_macro_states,
     build_synthetic,
     download_macro,
