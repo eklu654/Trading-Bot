@@ -8,18 +8,14 @@ A sticky TQQQ defense can arm only when all three conditions are true:
 Each macro dimension uses the existing frozen 2-month entry / 3-month recovery
 logic and conservative next-month availability mapping. No thresholds are tuned.
 Once armed, defense persists until QQQ closes back above 200 DMA.
-
-This tests whether Fed tightening lifecycle becomes materially more useful when
-paired with evidence that monetary restriction is actually transmitting into
-the economy/markets.
 """
 from __future__ import annotations
 from pathlib import Path
-import numpy as np
 import pandas as pd
 
 from test_tqqq_fed_lifecycle_sticky import load_data
-from test_tqqq_macro_regime import download_macro, dimension_signal, map_to_daily
+from test_tqqq_macro_regime import download_macro
+from analyze_tqqq_macro_dimension_attribution import dimension_signal
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
@@ -29,7 +25,6 @@ DEFENSIVE_EXPOSURES = (0.0, 0.5)
 
 def run(f: pd.DataFrame, macro: pd.DataFrame, dim: str, defensive: float):
     macro_state = dimension_signal(macro, (dim,), 1)
-    # Use the same conservative availability rule as the frozen macro work.
     available = pd.DataFrame({
         "date": macro_state.index + pd.offsets.MonthBegin(1),
         "state": macro_state.values,
