@@ -161,16 +161,32 @@ def evaluate(
     peak = np.maximum.accumulate(equity)
     dd = equity / peak - 1.0
 
-    peak_idx = int(np.argmax(equity))
-    trough_idx = int(np.argmin(equity))
-    peak_value = float(equity[peak_idx])
-    trough_value = float(equity[trough_idx])
-
-    recovery_idx = None
-    if peak_idx <= trough_idx:
+    # Formal dot-com crash metrics are computed on the fixed 2000-01-01
+    # through 2002-12-31 window. The crash peak is the highest equity reached
+    # in that window before the window trough; recovery means returning to
+    # that exact pre-trough peak. This avoids the old bug where a later,
+    # unrelated global peak could be mislabeled as the peak before the trough.
+    crash_mask = (frame.index >= "2000-01-01") & (frame.index <= "2002-12-31")
+    crash_idx = np.flatnonzero(crash_mask)
+    if len(crash_idx):
+        crash_equity = equity[crash_idx]
+        trough_rel = int(np.argmin(crash_equity))
+        trough_idx = int(crash_idx[trough_rel])
+        pre_trough_idx = crash_idx[: trough_rel + 1]
+        peak_rel = int(np.argmax(equity[pre_trough_idx]))
+        peak_idx = int(pre_trough_idx[peak_rel])
+        peak_value = float(equity[peak_idx])
+        trough_value = float(equity[trough_idx])
+        recovery_idx = None
         after = np.flatnonzero(equity[trough_idx:] >= peak_value)
         if len(after):
             recovery_idx = trough_idx + int(after[0])
+    else:
+        peak_idx = int(np.argmax(equity))
+        trough_idx = int(np.argmin(equity))
+        peak_value = float(equity[peak_idx])
+        trough_value = float(equity[trough_idx])
+        recovery_idx = None
 
     initial_recovery = np.flatnonzero(equity >= INITIAL)
     initial_recovery_idx = int(initial_recovery[0]) if len(initial_recovery) else None
@@ -187,14 +203,18 @@ def evaluate(
         "cagr": (final / INITIAL) ** (1.0 / years) - 1.0,
         "max_drawdown": float(dd.min()),
         "minimum_equity": float(equity.min()),
-        "trough_date": frame.index[trough_idx].date().isoformat(),
-        "trough_balance": trough_value,
-        "peak_before_trough_date": frame.index[peak_idx].date().isoformat(),
+        "dotcom_peak_date": frame.index[peak_idx].date().isoformat(),
+        "dotcom_peak_balance": peak_value,
+        "dotcom_trough_date": frame.index[trough_idx].date().isoformat(),
+        "dotcom_trough_balance": trough_value,
+        "dotcom_peak_to_trough_drawdown": (
+            trough_value / peak_value - 1.0
+        ),
         "initial_recovery_date": (
             frame.index[initial_recovery_idx].date().isoformat()
             if initial_recovery_idx is not None else None
         ),
-        "peak_recovery_date": (
+        "dotcom_peak_recovery_date": (
             frame.index[recovery_idx].date().isoformat()
             if recovery_idx is not None else None
         ),
@@ -202,8 +222,10 @@ def evaluate(
             int((frame.index[initial_recovery_idx] - frame.index[0]).days)
             if initial_recovery_idx is not None else None
         ),
-        "days_peak_to_trough": int((frame.index[trough_idx] - frame.index[peak_idx]).days),
-        "days_peak_to_recovery": (
+        "days_dotcom_peak_to_trough": int(
+            (frame.index[trough_idx] - frame.index[peak_idx]).days
+        ),
+        "days_dotcom_peak_to_recovery": (
             int((frame.index[recovery_idx] - frame.index[peak_idx]).days)
             if recovery_idx is not None else None
         ),
