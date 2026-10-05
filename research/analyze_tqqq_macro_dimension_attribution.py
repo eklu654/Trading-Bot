@@ -173,3 +173,6 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+# Research execution marker: run frozen macro-dimension attribution.
