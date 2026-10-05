@@ -119,12 +119,15 @@ def target_weights(
             continue
 
         if close[i] >= ma_np[i]:
-            if not active:
+            if reentry_sessions == 0:
+                active = True
+                above_count = 1
+            elif not active:
                 above_count += 1
-                if above_count > reentry_sessions:
+                if above_count >= reentry_sessions:
                     active = True
             else:
-                above_count = reentry_sessions + 1
+                above_count = reentry_sessions
         else:
             active = False
             above_count = 0
@@ -138,13 +141,21 @@ def evaluate(
     weights: np.ndarray,
     label: str,
 ) -> tuple[dict[str, object], pd.DataFrame]:
-    qqq_ret = frame["adj_close"].pct_change().fillna(0.0).to_numpy()
-    # Daily-reset leveraged return.
-    levered = np.clip(1.0 + 3.0 * qqq_ret, 0.0, None) - 1.0
+    # Reconstruct the same next-open execution convention used by the
+    # modern TQQQ research: the prior target carries the overnight move and
+    # the current target applies to the intraday move.
+    overnight = (
+        frame["adj_open"] / frame["adj_close"].shift(1) - 1.0
+    ).fillna(0.0).to_numpy()
+    intraday = (
+        frame["adj_close"] / frame["adj_open"] - 1.0
+    ).fillna(0.0).to_numpy()
+    overnight_3x = np.clip(1.0 + 3.0 * overnight, 0.0, None) - 1.0
+    intraday_3x = np.clip(1.0 + 3.0 * intraday, 0.0, None) - 1.0
 
     prev_w = np.roll(weights, 1)
     prev_w[0] = 0.0
-    daily = prev_w * levered
+    daily = (1.0 + prev_w * overnight_3x) * (1.0 + weights * intraday_3x) - 1.0
     equity = INITIAL * np.cumprod(1.0 + daily)
     peak = np.maximum.accumulate(equity)
     dd = equity / peak - 1.0
@@ -213,12 +224,12 @@ def make_weights(frame: pd.DataFrame) -> dict[str, np.ndarray]:
     close = frame["synthetic_tqqq_close"]
     out: dict[str, np.ndarray] = {
         "SYNTHETIC_TQQQ_BUY_AND_HOLD": np.ones(len(frame)),
-        "SYNTHETIC_TQQQ_200DMA_100_IMMEDIATE": target_weights(close, 200, 0.0, 0),
-        "SYNTHETIC_TQQQ_200DMA_100_3SESSION": target_weights(close, 200, 0.0, 3),
-        "SYNTHETIC_TQQQ_225DMA_100_IMMEDIATE": target_weights(close, 225, 0.0, 0),
-        "SYNTHETIC_TQQQ_250DMA_100_10SESSION": target_weights(close, 250, 0.0, 10),
+        "SYNTHETIC_TQQQ_200DMA_100_IMMEDIATE_NEXT_OPEN": target_weights(close, 200, 0.0, 0),
+        "SYNTHETIC_TQQQ_200DMA_100_3SESSION_NEXT_OPEN": target_weights(close, 200, 0.0, 3),
+        "SYNTHETIC_TQQQ_225DMA_100_IMMEDIATE_NEXT_OPEN": target_weights(close, 225, 0.0, 0),
+        "SYNTHETIC_TQQQ_250DMA_100_10SESSION_NEXT_OPEN": target_weights(close, 250, 0.0, 10),
         # Partial-exposure control from the completed family:
-        "SYNTHETIC_TQQQ_225DMA_50_IMMEDIATE": target_weights(close, 225, 0.5, 0),
+        "SYNTHETIC_TQQQ_225DMA_50_IMMEDIATE_NEXT_OPEN": target_weights(close, 225, 0.5, 0),
     }
     return out
 
