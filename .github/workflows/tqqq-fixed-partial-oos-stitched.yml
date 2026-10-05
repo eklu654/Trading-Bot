@@ -50,8 +50,8 @@ jobs:
 
           path = Path("data/research/tqqq_daily.csv")
           df = pd.read_csv(path, parse_dates=["Date"])
-          if len(df) != 4167:
-              raise SystemExit(f"Expected exactly 4167 TQQQ observations, got {len(df)}")
+          if len(df) != 4186:
+              raise SystemExit(f"Expected exactly 4186 TQQQ observations, got {len(df)}")
           if df["Date"].min() != pd.Timestamp("2010-03-11"):
               raise SystemExit(f"Unexpected first date: {df['Date'].min()}")
           if df["Date"].max() != pd.Timestamp("2026-10-02"):
