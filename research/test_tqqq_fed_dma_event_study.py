@@ -109,9 +109,15 @@ def build_daily_states(fed: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFrame:
     actions["cut_90d"] = (
         actions["action"].eq("CUT").astype(int).rolling("90D").sum()
     )
-    actions["net_change_12m"] = (
-        actions["target_rate"] - actions["target_rate"].shift(365)
-    )
+    # Use an exact calendar-year lookback rather than a fixed number of
+    # observations. FRED's target-rate series is not guaranteed to have one
+    # row per calendar day, so shift(365) would not mean 12 calendar months.
+    lookback_dates = actions.index - pd.DateOffset(years=1)
+    positions = actions.index.searchsorted(lookback_dates, side="right") - 1
+    past_rates = np.full(len(actions), np.nan, dtype=float)
+    valid = positions >= 0
+    past_rates[valid] = actions["target_rate"].to_numpy()[positions[valid]]
+    actions["net_change_12m"] = actions["target_rate"] - past_rates
 
     usable = actions.reset_index().rename(columns={"index": "date"})
     base = daily.reset_index().rename(columns={daily.index.name or "Date": "date"})
