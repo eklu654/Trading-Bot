@@ -15,7 +15,6 @@ import pandas as pd
 
 from test_tqqq_fed_lifecycle_sticky import load_data
 from test_tqqq_macro_regime import download_macro
-from analyze_tqqq_macro_dimension_attribution import dimension_signal
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
@@ -23,8 +22,29 @@ DIMENSIONS = ("labor_stress", "activity_stress", "credit_stress", "curve_stress"
 DEFENSIVE_EXPOSURES = (0.0, 0.5)
 
 
+def dimension_signal(macro: pd.DataFrame, dim: str) -> pd.Series:
+    raw = macro[dim].fillna(False)
+    states = []
+    active = False
+    stress_run = 0
+    safe_run = 0
+    for value in raw:
+        if value:
+            stress_run += 1
+            safe_run = 0
+        else:
+            stress_run = 0
+            safe_run += 1
+        if not active and stress_run >= 2:
+            active = True
+        elif active and safe_run >= 3:
+            active = False
+        states.append(active)
+    return pd.Series(states, index=macro.index, dtype=bool)
+
+
 def run(f: pd.DataFrame, macro: pd.DataFrame, dim: str, defensive: float):
-    macro_state = dimension_signal(macro, (dim,), 1)
+    macro_state = dimension_signal(macro, dim)
     available = pd.DataFrame({
         "date": macro_state.index + pd.offsets.MonthBegin(1),
         "state": macro_state.values,
@@ -72,10 +92,11 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     f = load_data()
     macro = download_macro()
-    rows = []
-    for dim in DIMENSIONS:
-        for defensive in DEFENSIVE_EXPOSURES:
-            rows.append(run(f, macro, dim, defensive))
+    rows = [
+        run(f, macro, dim, defensive)
+        for dim in DIMENSIONS
+        for defensive in DEFENSIVE_EXPOSURES
+    ]
     out = pd.DataFrame(rows)
     out.to_csv(OUT / "tqqq_fed_macro_transmission_confirmation_summary.csv", index=False)
     print("\nFED PAUSE + 200DMA + FROZEN MACRO TRANSMISSION")
