@@ -2,6 +2,8 @@ name: TQQQ Fixed Partial OOS Stitched
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "1,6,11,16,21,26,31,36,41,46,51,56 * * * *"
   push:
     branches: ["main"]
     paths:
@@ -9,7 +11,7 @@ on:
       - ".github/workflows/tqqq-fixed-partial-oos-stitched.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fixed:
@@ -19,6 +21,16 @@ jobs:
       PYTHONPATH: .
       PYTHONUNBUFFERED: "1"
     steps:
+      - name: Check completion marker
+        run: |
+          set -euo pipefail
+          mkdir -p .research-state
+          fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
+          if [ -f .research-state/tqqq-fixed-partial-oos.fingerprint ] && [ "$(cat .research-state/tqqq-fixed-partial-oos.fingerprint)" = "$fingerprint" ]; then
+            echo "Fixed TQQQ research already completed for this exact code fingerprint."
+            exit 0
+          fi
+          echo "$fingerprint" > .research-state/tqqq-fixed-partial-oos.fingerprint
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -114,3 +126,15 @@ jobs:
             data/research/tqqq_fixed_partial_oos_stitched_windows.csv
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Record successful completion
+        if: success()
+        run: |
+          set -euo pipefail
+          fingerprint="$(sha256sum research/test_tqqq_fixed_partial_oos_stitched.py .github/workflows/tqqq-fixed-partial-oos-stitched.yml | sha256sum | cut -d" " -f1)"
+          printf '%s\n' "$fingerprint" > .research-state/tqqq-fixed-partial-oos.fingerprint
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .research-state/tqqq-fixed-partial-oos.fingerprint
+          git diff --cached --quiet || git commit -m "ci: mark fixed TQQQ research complete"
+          git push
