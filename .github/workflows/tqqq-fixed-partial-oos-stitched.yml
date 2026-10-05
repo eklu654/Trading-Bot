@@ -2,6 +2,11 @@ name: TQQQ Fixed Partial OOS Stitched
 
 on:
   workflow_dispatch:
+  push:
+    branches: ["main"]
+    paths:
+      - "research/test_tqqq_fixed_partial_oos_stitched.py"
+      - ".github/workflows/tqqq-fixed-partial-oos-stitched.yml"
 
 permissions:
   contents: read
