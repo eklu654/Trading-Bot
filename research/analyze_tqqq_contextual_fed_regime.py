@@ -131,7 +131,7 @@ def auc_walk(df,features,target):
 
 def main():
  OUT.mkdir(parents=True,exist_ok=True); x,e=build(); e.to_csv(OUT/"tqqq_contextual_fed_exit_episodes.csv")
- fed2=[c for c in e.columns if c.endswith("_504") or c in ["tightening_6m","easing_6m"]]
+ fed2=[c for c in e.columns if c.endswith("_504") or c.endswith("_5040") or c in ["tightening_6m","easing_6m"]]
  fed5=[c for c in e.columns if c.endswith("_1260") or c in ["tightening_6m","easing_6m"]]
  fed10=[c for c in e.columns if c.endswith("_2520") or c in ["tightening_6m","easing_6m"]]
  market=["ret5","ret20","ret60","gap","dma_slope20","rv20","vix_chg20"]
