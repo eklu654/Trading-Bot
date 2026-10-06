@@ -382,3 +382,39 @@ The following question is now substantially answered:
 
 The research should therefore move back to the **core 100-DMA strategy itself**, rather than adding a second predictive layer merely because it has measurable classification power.
 
+
+
+## Synthetic-vs-actual TQQQ validation — October 6, 2026
+
+The canonical 100-DMA strategy was run from actual TQQQ inception through October 2026 using both:
+
+1. synthetic daily-reset 3× QQQ, and
+2. actual TQQQ adjusted OHLC.
+
+This was a validation test, not an optimization.
+
+| Series | Ending balance | CAGR | Max drawdown |
+|---|---:|---:|---:|
+| Synthetic 3× QQQ, 100-DMA | $171.77M | 87.53% | −35.38% |
+| **Actual TQQQ, 100-DMA** | **$54.26M** | **74.96%** | **−35.38%** |
+| Synthetic buy-and-hold | $4.79M | 51.17% | −80.27% |
+| Actual TQQQ buy-and-hold | $2.10M | 43.85% | −81.66% |
+
+### Interpretation
+
+This is a strong qualitative validation of the strategy:
+
+- The 100-DMA strategy dramatically outperformed actual TQQQ buy-and-hold.
+- The maximum drawdowns are nearly identical between synthetic and actual implementations.
+- The synthetic proxy materially overstates terminal wealth, so the **$128B full-history figure should not be interpreted as a realistic dollar forecast** for a real TQQQ account.
+- The important historical conclusion survives the validation: **trend defense, not raw 3× exposure, is responsible for most of the survivability advantage.**
+
+The synthetic series remains useful for pre-TQQQ historical research because it lets us study the 2000 and 2008 environments. But whenever we make claims about expected real-world wealth after 2010, actual TQQQ should be treated as the more conservative validation reference.
+
+### Research implication
+
+The project should keep the synthetic series for long-history regime analysis while maintaining a separate actual-TQQQ validation track. Future strategy candidates should ideally pass both:
+
+- long-history synthetic survivability test, and
+- actual-TQQQ post-inception validation.
+
