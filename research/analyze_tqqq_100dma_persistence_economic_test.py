@@ -72,7 +72,7 @@ def episodes(x):
 def model_for(prior):
     y=(prior.flat_days>=20).astype(int)
     if len(prior)<30 or y.nunique()<2: return None
-    m=make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),LogisticRegression(max_iter=2000))
+    m=make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),LogisticRegression(max_iter=2000,class_weight="balanced"))
     m.fit(prior[FEATURES],y); return m
 
 def simulate(x, ep):
