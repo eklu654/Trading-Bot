@@ -224,3 +224,73 @@ The next test should compare **persistent vs. short 100-DMA exits** using only i
 
 The objective is classification of persistence, not another parameter sweep.
 
+
+
+## Market-state persistence result — October 6, 2026
+
+The next frozen descriptive pass added market-state measurements at each exit:
+
+- distance of QQQ below/above its 100-DMA
+- 20-day DMA slope
+- 5-, 20-, and 60-day QQQ returns
+- 20-day realized QQQ volatility
+
+These variables were compared with three episode outcomes across the same 160 episodes: return to re-entry, worst interim buy-and-hold return, and time spent defensive.
+
+### Market state is substantially stronger than Fed state
+
+The strongest relationships with **worst interim return** were:
+
+| Exit feature | Pearson | Spearman |
+|---|---:|---:|
+| 20-day realized volatility | **-0.387** | -0.245 |
+| Distance from 100-DMA | **+0.324** | +0.285 |
+| 60-day QQQ return | +0.155 | +0.156 |
+| 20-day DMA slope | +0.133 | +0.165 |
+| 20-day return | -0.061 | -0.044 |
+| 5-day return | -0.056 | -0.066 |
+
+For comparison, the strongest Fed relationship with worst interim return was only **-0.123** for the Fed target level; the strongest yield-curve relationship was **+0.093 Pearson / +0.249 Spearman** for the 20-day 2s10s change.
+
+The duration relationships are also notable:
+
+- Distance from the 100-DMA vs. defensive duration: **-0.255 Pearson / -0.403 Spearman**
+- Realized volatility vs. defensive duration: **+0.266 Pearson / +0.173 Spearman**
+- 60-day QQQ return vs. defensive duration: **-0.178 Pearson / -0.189 Spearman**
+
+These are descriptive relationships, not optimized thresholds.
+
+### What this changes
+
+We now have evidence for a much more specific hypothesis:
+
+> **The important information may arrive after the 100-DMA exit, in the market's state at the break, rather than in the Fed's policy state.**
+
+A severe break tends to have characteristics such as:
+
+- a larger gap below the DMA,
+- elevated realized volatility,
+- weaker medium-term momentum,
+- and a more negative DMA slope.
+
+That gives us a plausible way to distinguish a genuine regime break from a shallow whipsaw **without making the Fed responsible for predicting the break itself**.
+
+The Fed layer remains valuable as context, but the evidence now strongly favors investigating a **market-state persistence classifier** before attempting any Fed-driven adaptive exit rule.
+
+## Next research gate: persistence classification
+
+The next experiment should remain descriptive/out-of-sample rather than become another DMA parameter sweep.
+
+The candidate task is:
+
+1. Freeze the 100-DMA exit.
+2. Use only information available at the exit.
+3. Predict whether the defensive episode will be short/whipsaw-like or persistent/severe.
+4. Use time-based holdouts rather than random train/test splits.
+5. Compare a market-state-only model against:
+   - Fed-only context
+   - market-state + Fed context
+6. Judge whether Fed context adds incremental information after market state is known.
+
+Only if the combined model produces stable out-of-sample improvement should we consider using macro context to modify re-entry behavior.
+
