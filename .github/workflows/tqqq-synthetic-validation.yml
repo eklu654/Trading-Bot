@@ -1,0 +1,24 @@
+name: TQQQ Synthetic Validation
+on:
+  push:
+    paths:
+      - "research/validate_tqqq_synthetic_vs_actual.py"
+      - ".github/workflows/tqqq-synthetic-validation.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install -r research/requirements.txt
+      - run: python -m py_compile research/validate_tqqq_synthetic_vs_actual.py
+      - run: python research/validate_tqqq_synthetic_vs_actual.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-synthetic-validation
+          path: |
+            data/research/tqqq_100dma_synthetic_vs_actual_equity.csv
+            data/research/tqqq_100dma_synthetic_vs_actual_summary.csv
