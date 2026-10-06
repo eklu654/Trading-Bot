@@ -40,7 +40,7 @@ def evaluate(ep, features, label):
     for fold,(train,test) in enumerate(splitter.split(X),1):
         if y.iloc[train].nunique()<2 or y.iloc[test].nunique()<2:
             continue
-        model=make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),LogisticRegression(max_iter=2000,class_weight="balanced"))
+        model=make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),LogisticRegression(max_iter=2000))
         model.fit(X.iloc[train],y.iloc[train])
         p=model.predict_proba(X.iloc[test])[:,1]
         rows.append({"model":label,"fold":fold,"train_episodes":len(train),"test_episodes":len(test),
