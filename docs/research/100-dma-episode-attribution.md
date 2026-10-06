@@ -294,3 +294,36 @@ The candidate task is:
 
 Only if the combined model produces stable out-of-sample improvement should we consider using macro context to modify re-entry behavior.
 
+
+
+## Out-of-sample persistence classifier — final gate
+
+A chronological logistic-regression test was then run against the predeclared **20-trading-day** persistence boundary. There were 29 persistent episodes out of 160.
+
+Five chronological expanding-window folds were used. No random split, parameter sweep, or future information was used.
+
+| Model | Mean ROC-AUC | Median ROC-AUC | Mean Brier |
+|---|---:|---:|---:|
+| Fed/macro only | 0.570 | 0.580 | 0.142 |
+| Market state only | **0.689** | **0.717** | **0.134** |
+| Market + Fed/macro | 0.685 | 0.693 | 0.141 |
+
+The market-only model won the mean and median ROC-AUC comparison. Adding Fed/macro variables did **not** improve discrimination; it slightly reduced mean AUC from 0.689 to 0.685.
+
+The fold results are not uniformly strong: the earliest two market-only folds were near random (0.51 and 0.51), while later folds were much stronger (0.81, 0.90, 0.72). That instability is important and prevents us from treating 0.689 as a production-ready predictive edge.
+
+### Research conclusion
+
+This is now a sufficiently strong evidence boundary to stop treating the Fed as a candidate primary control variable for the 100-DMA defense.
+
+**We are not discarding the Fed layer.** We are classifying its role:
+
+- **Primary:** market trend / price-state information.
+- **Secondary context:** Fed policy and macro regime.
+- **Not currently justified:** using Fed state to override the market signal or materially improve re-entry decisions.
+- **Still worth retaining:** explanatory attribution, regime labeling, and future tests where the Fed may interact with a different strategy family.
+
+Most importantly, the research has now moved beyond "which DMA is best?" toward the more important question: **when the 100-DMA breaks, can the market's state tell us whether that break is likely to persist?**
+
+The current evidence says that question is substantially more promising than trying to predict the break from the Fed alone.
+
