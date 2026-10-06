@@ -1,0 +1,21 @@
+name: TQQQ Frozen Regime Strategy Test
+on:
+  push:
+    paths:
+      - "research/backtest_tqqq_frozen_regime_strategy.py"
+      - ".github/workflows/tqqq-frozen-regime-strategy.yml"
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: python research/backtest_tqqq_frozen_regime_strategy.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-frozen-regime-results
+          path: data/research/tqqq_frozen_regime_*.csv
