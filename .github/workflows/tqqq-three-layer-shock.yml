@@ -1,0 +1,25 @@
+name: TQQQ Three-Layer Shock Backtest
+on:
+  push:
+    paths:
+      - "research/backtest_tqqq_three_layer_shock.py"
+      - ".github/workflows/tqqq-three-layer-shock.yml"
+  workflow_dispatch:
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pandas numpy yfinance
+      - name: Run three-layer backtest
+        run: python research/backtest_tqqq_three_layer_shock.py
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-three-layer-shock-results
+          path: data/research/tqqq_three_layer_*.csv
