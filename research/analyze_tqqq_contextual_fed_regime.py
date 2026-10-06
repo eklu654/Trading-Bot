@@ -150,7 +150,24 @@ def main():
  e["state_financial_stress"]=e.nfci_chg_13w>0.25
  state_cols=["state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress"]
  e["state_count"]=e[state_cols].sum(axis=1)
+ # Frozen qualitative regime taxonomy; fixed hierarchy, not fitted to returns.
+ def classify_state(r):
+  if r.vix_chg20 >= 1.0:
+   return "acute_shock"
+  if r.fed_chg_126 > 0 and r.curve_10y3m < 0:
+   return "structural_tightening"
+  if r.cpi_yoy > 0.04 and r.fed_chg_126 > 0:
+   return "inflation_liquidity_tightening"
+  if (r.unrate_chg_6m > 0.5) or (r.baa_chg_3m > 0.25) or (r.nfci_chg_13w > 0.25):
+   return "economic_credit_deterioration"
+  if r.fed_chg_126 > 0:
+   return "monetary_tightening"
+  return "normal_mixed"
+ e["regime_state"]=e.apply(classify_state,axis=1)
+ e["regime_danger"]=e["regime_state"].isin(["acute_shock","structural_tightening","inflation_liquidity_tightening","economic_credit_deterioration"])
  e.groupby("state_count").agg(n=("persistent20","size"),persistent20_rate=("persistent20","mean"),severe50_rate=("severe50","mean")).reset_index().to_csv(OUT/"tqqq_contextual_macro_state_counts.csv",index=False)
+ e.groupby("regime_state").agg(n=("persistent20","size"),persistent20_n=("persistent20","sum"),persistent20_rate=("persistent20","mean"),severe50_n=("severe50","sum"),severe50_rate=("severe50","mean"),avg_duration=("duration","mean"),avg_ret60=("ret60","mean")).reset_index().to_csv(OUT/"tqqq_contextual_regime_states.csv",index=False)
+ e.assign(era=pd.cut(e.index.year,[1998,2006,2018,2030],labels=["1999-2006","2007-2018","2019-2026"])).groupby(["era","regime_danger"],observed=True).agg(n=("persistent20","size"),persistent20_rate=("persistent20","mean"),severe50_rate=("severe50","mean")).reset_index().to_csv(OUT/"tqqq_contextual_regime_era_stability.csv",index=False)
  dates=["2000-09-25","2002-03-12","2008-08-29","2020-03-06","2022-04-05"]
  cols=["fed","fed_pct_504","fed_z_504","fed_min_dist_504","fed_pct_1260","fed_z_1260","fed_min_dist_1260","fed_pct_2520","fed_z_2520","fed_min_dist_2520","fed_chg_126","fed_chg_252","cpi_yoy","unrate_chg_6m","curve_10y3m","baa_chg_3m","nfci_chg_13w","state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress","state_count","ret60","gap","dma_slope20","duration","persistent20","severe50"]
  e.loc[[d for d in dates if d in e.index],cols].to_csv(OUT/"tqqq_contextual_fed_examples.csv")
