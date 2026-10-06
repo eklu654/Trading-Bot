@@ -34,4 +34,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: tqqq-100dma-macro-episode-context
-          path: data/research/tqqq_100dma_macro_episode_attribution.csv
+          path: |
+            data/research/tqqq_100dma_macro_episode_attribution.csv
+            data/research/tqqq_100dma_macro_episode_duration_summary.csv
