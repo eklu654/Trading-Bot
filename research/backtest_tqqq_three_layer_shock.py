@@ -102,22 +102,32 @@ def build():
         x[f"{name}_equity"],x[f"{name}_dd"],x[f"{name}_daily"]=equity(sig)
     return x
 
-def metrics(z):
+def window_metrics(z):
     years=(z.index[-1]-z.index[0]).days/365.2425
-    out={}
+    out={"start":str(z.index[0].date()),"end":str(z.index[-1].date())}
     for n in ["base","conditioned","three_layer"]:
-        eq=z[f"{n}_equity"]; out[f"{n}_final"]=float(eq.iloc[-1]); out[f"{n}_cagr"]=float((eq.iloc[-1]/INITIAL)**(1/years)-1); out[f"{n}_dd"]=float(z[f"{n}_dd"].min())
+        daily=z[f"{n}_daily"].fillna(0).to_numpy()
+        eq=INITIAL*np.cumprod(1+daily)
+        dd=eq/np.maximum.accumulate(eq)-1
+        out[f"{n}_final"]=float(eq[-1])
+        out[f"{n}_cagr"]=float((eq[-1]/INITIAL)**(1/years)-1)
+        out[f"{n}_dd"]=float(dd.min())
     return out
 
 def stress_2020(x):
     z=x.loc["2020-01-01":"2020-12-31"].copy()
-    highrate=((z.fed_target*0)+5.0)
-    veto=(z.adj_close<z.dma)&(highrate>RATE_THRESHOLD)&(z.ret60>=0)
-    sig=np.where(z.base_signal==1,1.0,np.where(veto,1.0,0.0))
-    w=sig; prev=np.roll(w,1); prev[0]=0
-    daily=(1+prev*z.on3.to_numpy())*(1+w*z.in3.to_numpy())-1
-    eq=INITIAL*np.cumprod(1+daily)
-    return {"high_rate_conditioned_2020_final":float(eq[-1]),"min_dd":float((eq/np.maximum.accumulate(eq)-1).min()),"mar06_signal":float(sig[np.where(z.index>=pd.Timestamp("2020-03-06"))[0][0]])}
+    veto=(z.adj_close<z.dma)&(z.ret60>=0)
+    cond=np.where(z.base_signal==1,1.0,np.where(veto,1.0,0.0))
+    three=np.where(z.base_signal==1,1.0,np.where(veto & ~z.shock,1.0,0.0))
+    rows={}
+    for name,sig in [("conditioned",cond),("three_layer",three)]:
+        prev=np.roll(sig,1); prev[0]=0
+        daily=(1+prev*z.on3.to_numpy())*(1+sig*z.in3.to_numpy())-1
+        eq=INITIAL*np.cumprod(1+daily); dd=eq/np.maximum.accumulate(eq)-1
+        rows[f"high_rate_{name}_2020_final"]=float(eq[-1])
+        rows[f"high_rate_{name}_2020_max_dd"]=float(dd.min())
+        rows[f"high_rate_{name}_mar06_signal"]=float(sig[np.where(z.index>=pd.Timestamp("2020-03-06"))[0][0]])
+    return rows
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True); x=build()
@@ -128,7 +138,7 @@ def main():
         z=x.loc[a:b]
         if z.empty: continue
         r={"window":n,"start":str(z.index[0].date()),"end":str(z.index[-1].date())}
-        r.update({k: v for k,v in metrics(z).items()})
+        r.update(window_metrics(z))
         r["veto_days"]=int(z.veto.sum()); r["shock_days"]=int(z.shock.sum()); r["veto_shock_overlap"]=int((z.veto&z.shock).sum())
         rows.append(r)
     pd.DataFrame(rows).to_csv(OUT/"tqqq_three_layer_shock_windows.csv",index=False)
