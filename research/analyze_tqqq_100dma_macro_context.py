@@ -199,6 +199,8 @@ def fed_context(dates: pd.DatetimeIndex) -> pd.DataFrame:
         while start > 0 and signs[start - 1] == current_sign:
             start -= 1
         cycle = prior.iloc[start:]
+        cycle_peak = float(cycle.target.max())
+        cycle_trough = float(cycle.target.min())
         rows.append({
             "Date": date,
             "fed_target": float(latest.target),
@@ -206,6 +208,10 @@ def fed_context(dates: pd.DatetimeIndex) -> pd.DataFrame:
             "fed_cycle_net_change": float(cycle.change.sum()),
             "days_since_fed_move": int((date - latest.date).days),
             "fed_moves_in_cycle": int(len(cycle)),
+            "fed_cycle_peak_target": cycle_peak,
+            "fed_cycle_trough_target": cycle_trough,
+            "fed_distance_from_cycle_peak": float(latest.target - cycle_peak),
+            "fed_distance_from_cycle_trough": float(latest.target - cycle_trough),
         })
     return pd.DataFrame(rows).set_index("Date")
 
@@ -246,6 +252,10 @@ def extract_episodes(frame: pd.DataFrame) -> pd.DataFrame:
             "fed_cycle_net_change": float(frame.loc[exit_date, "fed_cycle_net_change"]),
             "days_since_fed_move": float(frame.loc[exit_date, "days_since_fed_move"]),
             "fed_moves_in_cycle": int(frame.loc[exit_date, "fed_moves_in_cycle"]),
+            "fed_cycle_peak_target": float(frame.loc[exit_date, "fed_cycle_peak_target"]),
+            "fed_cycle_trough_target": float(frame.loc[exit_date, "fed_cycle_trough_target"]),
+            "fed_distance_from_cycle_peak": float(frame.loc[exit_date, "fed_distance_from_cycle_peak"]),
+            "fed_distance_from_cycle_trough": float(frame.loc[exit_date, "fed_distance_from_cycle_trough"]),
             "curve_2s10s_at_exit": float(frame.loc[exit_date, "curve_2s10s"]),
             "curve_change_20d_at_exit": float(frame.loc[exit_date, "curve_change_20d"]),
         })
