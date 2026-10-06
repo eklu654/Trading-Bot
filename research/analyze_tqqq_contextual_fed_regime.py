@@ -150,7 +150,7 @@ def main():
  e["state_financial_stress"]=e.nfci_chg_13w>0.25
  state_cols=["state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress"]
  e["state_count"]=e[state_cols].sum(axis=1)
- e.groupby("state_count").agg(n=("date","size"),persistent20_rate=("persistent20","mean"),severe50_rate=("severe50","mean")).reset_index().to_csv(OUT/"tqqq_contextual_macro_state_counts.csv",index=False)
+ e.groupby("state_count").agg(n=("persistent20","size"),persistent20_rate=("persistent20","mean"),severe50_rate=("severe50","mean")).reset_index().to_csv(OUT/"tqqq_contextual_macro_state_counts.csv",index=False)
  dates=["2000-09-25","2002-03-12","2008-08-29","2020-03-06","2022-04-05"]
  cols=["fed","fed_pct_504","fed_z_504","fed_min_dist_504","fed_pct_1260","fed_z_1260","fed_min_dist_1260","fed_pct_2520","fed_z_2520","fed_min_dist_2520","fed_chg_126","fed_chg_252","cpi_yoy","unrate_chg_6m","curve_10y3m","baa_chg_3m","nfci_chg_13w","state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress","state_count","ret60","gap","dma_slope20","duration","persistent20","severe50"]
  e.loc[[d for d in dates if d in e.index],cols].to_csv(OUT/"tqqq_contextual_fed_examples.csv")
