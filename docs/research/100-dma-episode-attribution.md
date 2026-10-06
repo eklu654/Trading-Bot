@@ -327,3 +327,58 @@ Most importantly, the research has now moved beyond "which DMA is best?" toward 
 
 The current evidence says that question is substantially more promising than trying to predict the break from the Fed alone.
 
+
+
+## Economic-value gate: persistence-informed re-entry — October 6, 2026
+
+The persistence classifier was finally tested as an actual trading control rather than only as a statistical classifier.
+
+Predeclared rule:
+
+- Keep the frozen 100-DMA / 0%-below-DMA exit.
+- Train only on prior completed episodes.
+- Use market-state features only.
+- Use class-balanced logistic regression.
+- If predicted persistence probability is at least 50%, require five consecutive closes at/above the 100-DMA before re-entry.
+- Otherwise use the original immediate re-entry rule.
+
+The canonical accounting was explicitly matched to the existing 100-DMA backtest, and the baseline reproduced the independently verified **$128.314B** ending balance.
+
+Result:
+
+| Strategy | Ending balance | CAGR | Max drawdown |
+|---|---:|---:|---:|
+| 100-DMA immediate re-entry | **$128.314B** | **85.88%** | **−45.97%** |
+| Walk-forward persistence adaptive | **$20.320B** | **73.84%** | **−45.97%** |
+
+The adaptive strategy therefore retained the same maximum drawdown but sacrificed roughly **84% of terminal wealth**.
+
+### Classification of this research family
+
+**REJECT as a trading control.**
+
+The persistence model has statistical information (market-only chronological mean AUC about 0.689), but that information does not translate into improved portfolio performance under the tested re-entry rule. The opportunity cost of delaying re-entry overwhelms the benefit of avoiding some whipsaws.
+
+This is an important distinction:
+
+> Predicting that an exit will persist is not equivalent to knowing when it is safe to re-enter.
+
+The current evidence therefore supports keeping **immediate re-entry** as the canonical 100-DMA behavior.
+
+We should not respond to this result by randomly trying different probability cutoffs or confirmation lengths. That would reopen an optimization family without a strong theoretical reason.
+
+### Research family status
+
+The following question is now substantially answered:
+
+> Can macro or market-state classification improve the frozen 100-DMA strategy by deciding when an exit is likely to persist?
+
+**Answer: not with the tested approach.**
+
+- Fed-only classifier: weak.
+- Market-state classifier: materially stronger statistically.
+- Market + Fed classifier: no incremental improvement.
+- Market-state classifier used to delay re-entry: materially worse economically.
+
+The research should therefore move back to the **core 100-DMA strategy itself**, rather than adding a second predictive layer merely because it has measurable classification power.
+
