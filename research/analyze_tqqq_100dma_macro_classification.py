@@ -59,22 +59,29 @@ def main() -> None:
         "curve_2s10s_at_exit",
         "curve_change_20d_at_exit",
     ]
+    targets = {
+        "episode_return": "bh_return_to_reentry",
+        "worst_interim_return": "bh_worst_return_during_episode",
+        "flat_trading_days": "flat_trading_days",
+    }
     correlations = []
     for col in numeric:
         x = pd.to_numeric(ep[col], errors="coerce")
-        y = ep["bh_return_to_reentry"]
-        mask = x.notna() & y.notna()
-        if mask.sum() >= 3:
-            correlations.append(
-                {
-                    "feature": col,
-                    "episodes": int(mask.sum()),
-                    "pearson_corr_with_episode_return": float(x[mask].corr(y[mask])),
-                    "spearman_corr_with_episode_return": float(
-                        x[mask].rank().corr(y[mask].rank())
-                    ),
-                }
-            )
+        for target_name, target_col in targets.items():
+            y = pd.to_numeric(ep[target_col], errors="coerce")
+            mask = x.notna() & y.notna()
+            if mask.sum() >= 3:
+                correlations.append(
+                    {
+                        "feature": col,
+                        "target": target_name,
+                        "episodes": int(mask.sum()),
+                        "pearson_corr": float(x[mask].corr(y[mask])),
+                        "spearman_corr": float(
+                            x[mask].rank().corr(y[mask].rank())
+                        ),
+                    }
+                )
     corr = pd.DataFrame(correlations)
 
     # Crisis-era sanity table: major episodes should remain visible regardless of policy state.
@@ -101,7 +108,7 @@ def main() -> None:
 
     print("\nPOLICY-STATE SUMMARY")
     print(state.to_string(index=False))
-    print("\nFEATURE CORRELATIONS WITH EPISODE BUY-AND-HOLD RETURN")
+    print("\nFEATURE CORRELATIONS WITH EPISODE OUTCOMES")
     print(corr.to_string(index=False))
     print("\nMAJOR LOSS EPISODES (<= -50% WORST INTERIM RETURN)")
     print(major.to_string(index=False))
