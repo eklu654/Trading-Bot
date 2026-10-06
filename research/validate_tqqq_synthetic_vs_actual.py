@@ -17,7 +17,9 @@ def dl(ticker):
     if isinstance(x.columns,pd.MultiIndex): x.columns=x.columns.get_level_values(0)
     x=x.rename(columns={"Open":"open","Close":"close","Adj Close":"adj_close"})
     x.index=pd.to_datetime(x.index).tz_localize(None); x.index.name="Date"
-    return x.sort_index().dropna(subset=["open","close","adj_close"])
+    x=x.sort_index().dropna(subset=["open","close","adj_close"])
+    x["adj_open"]=x.open*x.adj_close/x.close
+    return x
 
 def synthetic(q):
     x=q.copy(); x["adj_open"]=x.open*x.adj_close/x.close
