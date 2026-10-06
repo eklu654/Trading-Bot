@@ -1,4 +1,5 @@
 name: TQQQ 100-DMA Macro Classification
+# Frozen descriptive episode analysis; market-state features are included.
 
 on:
   push:
