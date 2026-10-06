@@ -6,6 +6,7 @@ on:
     paths:
       - "research/analyze_tqqq_100dma_macro_context.py"
       - "research/analyze_tqqq_100dma_macro_classification.py"
+      - "research/analyze_tqqq_100dma_persistence_classifier.py"
       - ".github/workflows/tqqq-100dma-macro-classification.yml"
       - "research/requirements.txt"
   workflow_dispatch:
@@ -36,6 +37,8 @@ jobs:
         run: python research/analyze_tqqq_100dma_macro_context.py
       - name: Classify macro context
         run: python research/analyze_tqqq_100dma_macro_classification.py
+      - name: Evaluate chronological persistence models
+        run: python research/analyze_tqqq_100dma_persistence_classifier.py
       - name: Upload research artifact
         uses: actions/upload-artifact@v4
         with:
@@ -46,3 +49,5 @@ jobs:
             data/research/tqqq_100dma_macro_policy_state_summary.csv
             data/research/tqqq_100dma_macro_feature_correlations.csv
             data/research/tqqq_100dma_macro_major_loss_episodes.csv
+            data/research/tqqq_100dma_persistence_timeseries_cv.csv
+            data/research/tqqq_100dma_persistence_timeseries_cv_summary.csv
