@@ -173,7 +173,7 @@ def fred_daily(series: str) -> pd.Series:
     url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
     with urlopen(url, timeout=30) as response:
         raw = response.read().decode("utf-8")
-    data = pd.read_csv(StringIO(raw), parse_dates=["DATE"]).set_index("DATE")
+    data = pd.read_csv(StringIO(raw), parse_dates=["observation_date"]).set_index("observation_date")
     values = pd.to_numeric(data[series], errors="coerce").replace(".", np.nan)
     values.index.name = "Date"
     return values.rename(series)
