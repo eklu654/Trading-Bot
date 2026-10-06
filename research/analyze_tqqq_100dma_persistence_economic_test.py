@@ -79,12 +79,12 @@ def simulate(x, ep):
     ep_by_exit={r.exit_date:r for _,r in ep.iterrows()}
     base_active=(x.adj_close>=x.dma).astype(float).fillna(0.0)
     base_active.iloc[:DMA-1]=0.0
-    adaptive=np.zeros(len(x)); pending=None; above=0
+    adaptive=np.zeros(len(x)); pending=None; above=0; decisions=[]
     for i,d in enumerate(x.index):
         if d in ep_by_exit:
             r=ep_by_exit[d]; prior=ep[ep.exit_date<d]; m=model_for(prior)
             p=float(m.predict_proba(pd.DataFrame([r])[FEATURES])[:,1][0]) if m else 0.0
-            pending=(p>=0.50); above=0; adaptive[i]=0.0; continue
+            pending=(p>=0.50); above=0; adaptive[i]=0.0; decisions.append({"exit_date":d,"predicted_persistent":bool(pending),"probability":p,"baseline_reentry":r.baseline_reentry}); continue
         if i<DMA-1 or np.isnan(x.dma.iloc[i]): adaptive[i]=0.0; continue
         if pending is None:
             adaptive[i]=1.0 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0.0
@@ -99,6 +99,7 @@ def simulate(x, ep):
         prev=np.roll(active,1); prev[0]=0.0
         daily=(1+prev*x.overnight_3x.to_numpy())*(1+active*x.intraday_3x.to_numpy())-1
         return INITIAL*np.cumprod(1+daily)
+    pd.DataFrame(decisions).to_csv(OUT/"tqqq_100dma_persistence_reentry_decisions.csv",index=False)
     return pd.DataFrame({"baseline":equity(base_active.to_numpy()),"adaptive":equity(adaptive)},index=x.index)
 
 def main():
