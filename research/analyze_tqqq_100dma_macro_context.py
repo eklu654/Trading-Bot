@@ -262,21 +262,51 @@ def extract_episodes(frame: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def duration_bucket(days: int) -> str:
+    if days <= 4:
+        return "0-4_days"
+    if days <= 19:
+        return "5-19_days"
+    if days <= 59:
+        return "20-59_days"
+    return "60+_days"
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     frame = add_macro(build_path(download_qqq()))
     ep = extract_episodes(frame)
+    ep["duration_bucket"] = ep.flat_trading_days.map(duration_bucket)
     ep.to_csv(OUT / "tqqq_100dma_macro_episode_attribution.csv", index=False)
+
+    bucket = (
+        ep.groupby("duration_bucket", sort=False)
+        .agg(
+            episodes=("exit_date", "size"),
+            negative_bh_return_rate=("bh_return_to_reentry", lambda x: float((x < 0).mean())),
+            median_bh_return_to_reentry=("bh_return_to_reentry", "median"),
+            median_worst_interim_return=("bh_worst_return_during_episode", "median"),
+            median_fed_target=("fed_target_at_exit", "median"),
+            median_fed_cycle_net_change=("fed_cycle_net_change", "median"),
+            median_days_since_fed_move=("days_since_fed_move", "median"),
+            median_curve_2s10s=("curve_2s10s_at_exit", "median"),
+        )
+        .reset_index()
+    )
+    bucket.to_csv(OUT / "tqqq_100dma_macro_episode_duration_summary.csv", index=False)
 
     print("\n100-DMA MACRO EPISODE ATTRIBUTION")
     cols = [
         "exit_date", "reentry_date", "flat_trading_days", "bh_return_to_reentry",
         "fed_target_at_exit", "fed_cycle_direction", "fed_cycle_net_change",
         "days_since_fed_move", "curve_2s10s_at_exit", "curve_change_20d_at_exit",
+        "fed_cycle_peak_target", "fed_distance_from_cycle_peak", "duration_bucket",
     ]
     print(ep[cols].to_string(index=False))
     print("\nEPISODE COUNTS BY FED CYCLE")
     print(ep.groupby("fed_cycle_direction").size().to_string())
+    print("\nEPISODE DURATION SUMMARY")
+    print(bucket.to_string(index=False))
     print("\nEPISODES WITH NEGATIVE BUY-AND-HOLD RETURN")
     print(float((ep.bh_return_to_reentry < 0).mean()))
     print(f"\nEpisodes analyzed: {len(ep)}")
