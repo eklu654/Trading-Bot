@@ -71,7 +71,7 @@ def download(t):
  return x.sort_index().dropna()
 
 def build():
- q=download("QQQ"); v=download("^VIX")[["Close"]].rename(columns={"Close":"vix"})
+ q=download("QQQ"); v=download("^VIX")[["close"]].rename(columns={"close":"vix"})
  x=q.join(v,how="left"); x.vix=x.vix.ffill(); x["fed"]=fed_series(x.index)
  x["dma"]=x.adj_close.rolling(100).mean(); x["gap"]=x.adj_close/x.dma-1
  x["ret5"]=x.adj_close/x.adj_close.shift(5)-1; x["ret20"]=x.adj_close/x.adj_close.shift(20)-1
