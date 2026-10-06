@@ -1,0 +1,21 @@
+name: TQQQ Contextual Fed Regime Research
+on:
+  push:
+    paths:
+      - "research/analyze_tqqq_contextual_fed_regime.py"
+      - ".github/workflows/tqqq-contextual-fed-regime.yml"
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance scikit-learn
+      - run: python research/analyze_tqqq_contextual_fed_regime.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-contextual-fed-regime-results
+          path: data/research/tqqq_contextual_fed_*.csv
