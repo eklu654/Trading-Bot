@@ -79,12 +79,13 @@ def build():
  x["dma_slope20"]=x.dma/x.dma.shift(20)-1
  x["rv20"]=x.adj_close.pct_change().rolling(20).std()*np.sqrt(252)
  x["vix_chg20"]=x.vix/x.vix.shift(20)-1
+ x["tqqq_ret"]=x.adj_close.pct_change()*3
  # Context-relative Fed features. Rolling windows contain only information available at the break.
- for w in (252*5,252*10):
-  x[f"fed_pct_{w}"]=x.fed.rolling(w,min_periods=252).rank(pct=True)
-  x[f"fed_z_{w}"]=(x.fed-x.fed.rolling(w,min_periods=252).mean())/x.fed.rolling(w,min_periods=252).std()
-  x[f"fed_min_dist_{w}"]=x.fed-x.fed.rolling(w,min_periods=252).min()
-  x[f"fed_max_dist_{w}"]=x.fed.rolling(w,min_periods=252).max()-x.fed
+ for w in (252*2,252*5,252*10):
+  x[f"fed_pct_{w}"]=x.fed.rolling(w,min_periods=w).rank(pct=True)
+  x[f"fed_z_{w}"]=(x.fed-x.fed.rolling(w,min_periods=w).mean())/x.fed.rolling(w,min_periods=w).std()
+  x[f"fed_min_dist_{w}"]=x.fed-x.fed.rolling(w,min_periods=w).min()
+  x[f"fed_max_dist_{w}"]=x.fed.rolling(w,min_periods=w).max()-x.fed
  for d in (63,126,252):
   x[f"fed_chg_{d}"]=x.fed-x.fed.shift(d)
  x["tightening_6m"]=(x.fed-x.fed.shift(126)>0).astype(float)
@@ -99,33 +100,35 @@ def build():
   end=pos
   while end+1<len(x) and below.iloc[end+1]: end+=1
   dur=end-pos+1
-  path=(x.adj_close.iloc[pos:end+1]/x.adj_close.iloc[pos]-1).min()
+  path=(1+x.tqqq_ret.iloc[pos+1:end+1].fillna(0)).cumprod().sub(1).min() if end>pos else 0.0
   r=x.loc[d].copy(); r["date"]=d; r["duration"]=dur; r["persistent20"]=int(dur>=20); r["severe50"]=int(path<=-.5)
   rows.append(r)
  return x,pd.DataFrame(rows).set_index("date")
 
 def auc_walk(df,features,target):
  d=df.dropna(subset=[target]).copy()
+ d=d.loc[d[features].notna().any(axis=1)]
  X=d[features]; y=d[target]
  if len(d)<30 or y.nunique()<2:return np.nan
- vals=[]
+ preds=[]; truth=[]
  for tr,te in TimeSeriesSplit(n_splits=5).split(X):
   if y.iloc[tr].nunique()<2 or y.iloc[te].nunique()<2: continue
-  m=make_pipeline(SimpleImputer(strategy="median"),LogisticRegression(max_iter=3000))
-  m.fit(X.iloc[tr],y.iloc[tr]); p=m.predict_proba(X.iloc[te])[:,1]
-  vals.append(roc_auc_score(y.iloc[te],p))
- return float(np.mean(vals)) if vals else np.nan
+  m=make_pipeline(SimpleImputer(strategy="median",add_indicator=True),LogisticRegression(max_iter=3000))
+  m.fit(X.iloc[tr],y.iloc[tr]); preds.extend(m.predict_proba(X.iloc[te])[:,1]); truth.extend(y.iloc[te])
+ return float(roc_auc_score(truth,preds)) if len(set(truth))==2 else np.nan
 
 def main():
  OUT.mkdir(parents=True,exist_ok=True); x,e=build(); e.to_csv(OUT/"tqqq_contextual_fed_exit_episodes.csv")
- fed=[c for c in e.columns if c.startswith("fed_") or c.endswith("_6m")]
+ fed2=[c for c in e.columns if c.endswith("_504") or c in ["tightening_6m","easing_6m"]]
+ fed5=[c for c in e.columns if c.endswith("_1260") or c in ["tightening_6m","easing_6m"]]
+ fed10=[c for c in e.columns if c.endswith("_2520") or c in ["tightening_6m","easing_6m"]]
  market=["ret5","ret20","ret60","gap","dma_slope20","rv20","vix_chg20"]
  rows=[]
- for label,features in [("fed_context",fed),("market",market),("fed_plus_market",fed+market)]:
-  rows.append({"model":label,"persistent20_auc":auc_walk(e,features,"persistent20"),"severe50_auc":auc_walk(e,features,"severe50"),"n":len(e)})
+ for label,features in [("fed_2y",fed2),("fed_5y",fed5),("fed_10y",fed10),("market",market),("fed_2y_plus_market",fed2+market),("fed_5y_plus_market",fed5+market),("fed_10y_plus_market",fed10+market)]:
+  rows.append({"model":label,"persistent20_auc":auc_walk(e,features,"persistent20"),"severe50_auc":auc_walk(e,features,"severe50"),"n":int(e[features].notna().all(axis=1).sum())})
  pd.DataFrame(rows).to_csv(OUT/"tqqq_contextual_fed_auc.csv",index=False)
- # Era snapshots at representative 100-DMA breaks, to directly expose context-relative rates.
  dates=["2000-09-25","2002-03-12","2008-08-29","2020-03-06","2022-04-05"]
- e.loc[[d for d in dates if d in e.index],["fed","fed_pct_1260","fed_pct_2520","fed_z_1260","fed_z_2520","fed_min_dist_1260","fed_chg_126","fed_chg_252","ret60","gap","dma_slope20","duration","persistent20","severe50"]].to_csv(OUT/"tqqq_contextual_fed_examples.csv")
+ cols=["fed","fed_pct_504","fed_z_504","fed_min_dist_504","fed_pct_1260","fed_z_1260","fed_min_dist_1260","fed_pct_2520","fed_z_2520","fed_min_dist_2520","fed_chg_126","fed_chg_252","ret60","gap","dma_slope20","duration","persistent20","severe50"]
+ e.loc[[d for d in dates if d in e.index],cols].to_csv(OUT/"tqqq_contextual_fed_examples.csv")
  print(pd.DataFrame(rows).to_string(index=False)); print("\nEXAMPLES\n",pd.read_csv(OUT/"tqqq_contextual_fed_examples.csv").to_string(index=False))
 if __name__=="__main__":main()
