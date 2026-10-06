@@ -76,95 +76,30 @@ def model_for(prior):
     m.fit(prior[FEATURES],y); return m
 
 def simulate(x, ep):
-    # Baseline is the frozen 100-DMA strategy. Adaptive changes only re-entry.
-    base=INITIAL; adapt=INITIAL
-    base_equity=[]; adapt_equity=[]; pos_a=0
     ep_by_exit={r.exit_date:r for _,r in ep.iterrows()}
-    pending=None; above_count=0
+    base_active=(x.adj_close>=x.dma).astype(float).fillna(0.0)
+    base_active.iloc[:DMA-1]=0.0
+    adaptive=np.zeros(len(x)); pending=None; above=0
     for i,d in enumerate(x.index):
-        # Decide exits at today's close for next open. During an episode, adaptive
-        # uses only information known at the exit and subsequent closes.
         if d in ep_by_exit:
-            r=ep_by_exit[d]; prior=ep[ep.exit_date<d]
-            m=model_for(prior)
+            r=ep_by_exit[d]; prior=ep[ep.exit_date<d]; m=model_for(prior)
             p=float(m.predict_proba(pd.DataFrame([r])[FEATURES])[:,1][0]) if m else 0.0
-            pending={"persistent":p>=0.50,"p":p,"exit_idx":i}
-            above_count=0
-        if pending is not None and pos_a==0:
-            if pending["persistent"]:
-                if x.adj_close.iloc[i] >= x.dma.iloc[i]: above_count+=1
-                else: above_count=0
-                if above_count>=5: pos_a=1; pending=None
-            else:
-                if x.adj_close.iloc[i] >= x.dma.iloc[i]: pos_a=1; pending=None
-        elif pending is None and i>=DMA and x.adj_close.iloc[i]>=x.dma.iloc[i]:
-            pos_a=1
-        # Baseline next-open mechanics are represented by weight from previous close.
-        if i>0:
-            base*=1+x.baseline_daily.iloc[i]
-            # adaptive overnight/intraday: position decided from prior close.
-            prev_pos=0
-            if d in ep_by_exit: prev_pos=0
-            else:
-                # derive current position from prior day's state
-                prev_pos=1 if (x.adj_close.iloc[i-1]>=x.dma.iloc[i-1] and
-                                not any(False for _ in [])) else 0
-            # This shortcut is replaced below by explicit state tracking.
-        base_equity.append(base)
-    # Re-simulate explicitly for adaptive and baseline positions.
-    b=a=INITIAL; bp=ap=0; pending=None; above=0; rows=[]
-    for i,d in enumerate(x.index):
-        if i==0: rows.append((d,b,a,bp,ap)); continue
-        if d in ep_by_exit:
-            r=ep_by_exit[d]; prior=ep[ep.exit_date<d]; m=model_for(prior)
-            p=float(m.predict_proba(pd.DataFrame([r])[FEATURES])[:,1][0]) if m else 0
-            pending=(p>=.50); above=0; bp=0; ap=0
-        # today's overnight uses yesterday's position
-        b*=1+(x.overnight_3x.iloc[i] if bp else 0)
-        a*=1+(x.overnight_3x.iloc[i] if ap else 0)
-        # close determines next day's position
-        if x.adj_close.iloc[i]>=x.dma.iloc[i] and not np.isnan(x.dma.iloc[i]):
-            bp=1
-        else: bp=0
-        if pending is not None and ap==0:
-            if pending:
-                above=above+1 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0
-                if above>=5: ap=1; pending=None
-            else:
-                if x.adj_close.iloc[i]>=x.dma.iloc[i]: ap=1; pending=None
-        # intraday return applies today's newly established? Next-open means prior close position;
-        # therefore intraday should use prior position, so use old state. Correct by applying
-        # intraday based on saved pre-close positions.
-        rows.append((d,b,a,bp,ap))
-    # Rebuild with correct next-open state in one pass.
-    b=a=INITIAL; bp=ap=0; pending=None; above=0; rec=[]
-    for i,d in enumerate(x.index):
-        if i==0:
-            rec.append((d,b,a)); continue
-        # exit signal from prior close controls today's open
-        if x.adj_close.iloc[i-1]<x.dma.iloc[i-1] if not np.isnan(x.dma.iloc[i-1]) else False:
-            bp=0
+            pending=(p>=0.50); above=0; adaptive[i]=0.0; continue
+        if i<DMA-1 or np.isnan(x.dma.iloc[i]): adaptive[i]=0.0; continue
+        if pending is None:
+            adaptive[i]=1.0 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0.0
+        elif pending:
+            above=above+1 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0
+            if above>=5: adaptive[i]=1.0; pending=None
+            else: adaptive[i]=0.0
         else:
-            bp=1 if bp or (x.adj_close.iloc[i-1]>=x.dma.iloc[i-1]) else 0
-        if d in ep_by_exit:
-            r=ep_by_exit[d]; prior=ep[ep.exit_date<d]; m=model_for(prior)
-            p=float(m.predict_proba(pd.DataFrame([r])[FEATURES])[:,1][0]) if m else 0
-            pending=(p>=.50); above=0; ap=0
-        b*=1+(bp*x.overnight_3x.iloc[i]) ; b*=1+(bp*x.intraday_3x.iloc[i])
-        if ap: a*=1+x.overnight_3x.iloc[i]; a*=1+x.intraday_3x.iloc[i]
-        # position for next day after today's close
-        if not np.isnan(x.dma.iloc[i]):
-            if pending is not None and ap==0:
-                if pending:
-                    above=above+1 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0
-                    if above>=5: ap=1; pending=None
-                else:
-                    if x.adj_close.iloc[i]>=x.dma.iloc[i]: ap=1; pending=None
-            elif pending is None:
-                ap=1 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0
-        rec.append((d,b,a))
-    out=pd.DataFrame(rec,columns=["Date","baseline","adaptive"]).set_index("Date")
-    return out
+            adaptive[i]=1.0 if x.adj_close.iloc[i]>=x.dma.iloc[i] else 0.0
+            if adaptive[i]: pending=None
+    def equity(active):
+        prev=np.roll(active,1); prev[0]=0.0
+        daily=(1+prev*x.overnight_3x.to_numpy())*(1+active*x.intraday_3x.to_numpy())-1
+        return INITIAL*np.cumprod(1+daily)
+    return pd.DataFrame({"baseline":equity(base_active.to_numpy()),"adaptive":equity(adaptive)},index=x.index)
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
