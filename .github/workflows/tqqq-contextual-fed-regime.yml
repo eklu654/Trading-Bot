@@ -19,4 +19,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-contextual-fed-regime-results
-          path: data/research/tqqq_contextual_fed_*.csv
+          path: data/research/tqqq_contextual_*.csv
