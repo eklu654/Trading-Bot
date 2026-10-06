@@ -1,0 +1,27 @@
+name: TQQQ Fed Conditioned 100DMA Backtest
+
+on:
+  push:
+    paths:
+      - "research/backtest_tqqq_fed_conditioned_100dma.py"
+      - ".github/workflows/tqqq-fed-conditioned-100dma.yml"
+  workflow_dispatch:
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install pandas numpy yfinance
+      - name: Run exact daily backtest
+        run: python research/backtest_tqqq_fed_conditioned_100dma.py
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-fed-conditioned-100dma-results
+          path: data/research/tqqq_fed_conditioned_100dma_*.csv
