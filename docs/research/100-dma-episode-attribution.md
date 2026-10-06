@@ -16,15 +16,13 @@ The confirmed synthetic-TQQQ survivability experiment uses:
 - immediate re-entry
 - next-open execution
 
-The independently reproduced terminal balance is approximately $128.315 billion.
+The independently reproduced terminal balance is approximately **$128.315 billion**.
 
 ## 2020 is confirmed as a successful independent catch
 
-The 100-DMA strategy exited on **2020-02-27**, at the beginning of the COVID crash.
+The 100-DMA strategy exited on **2020-02-27**, before the Federal Reserve's first emergency 2020 rate cut on March 4 in the corrected official historical record. The Fed then cut another 100 basis points on March 16, taking the target range to 0–0.25%.
 
-This is especially important for the Fed research because the Federal Reserve's first emergency 2020 rate cut was not until **March 3, 2020**, when it cut the target range by 50 basis points. The second emergency cut came March 15, taking the target to 0–0.25%. The official Fed record confirms both actions.
-
-Therefore, the 100-DMA signal did **not** need a prior Fed hike, Fed cut, or rate-cycle transition to detect the 2020 market break. The market-price signal independently moved defensive before the Fed's emergency response.
+Therefore, the 100-DMA signal did **not** need a prior Fed hike, Fed cut, or rate-cycle transition to detect the 2020 market break. The market-price signal independently moved defensive before the emergency Fed response.
 
 The 100-DMA path then experienced several rapid re-entry/exit signals:
 
@@ -48,7 +46,7 @@ The value is not evenly distributed across hundreds of small exits. It is domina
 Important examples include:
 
 | Exit | Re-entry | Defensive days | Synthetic TQQQ return while out |
-|---|---:|---:|---:|
+|---|---|---:|---:|
 | Apr 12, 2000 | Jun 19, 2000 | 45 | −8.3% |
 | Sep 25, 2000 | May 21, 2001 | 163 | −92.6% |
 | Mar 12, 2002 | Oct 21, 2002 | 154 | −82.3% |
@@ -84,17 +82,17 @@ These are window returns from the first to last trading observation in each cale
 
 ## Fed context
 
-The Fed is clearly relevant, but the evidence now argues against using Fed policy as the primary trigger.
+The Fed is clearly relevant, but the evidence argues against using Fed policy as the primary trigger.
 
-The 2000 episode occurred during an aggressive tightening cycle.
+The official historical record shows:
 
-The 2008 episode began after the Fed had already started cutting.
+- 1999–2000: a sustained tightening cycle culminating at 6.50%.
+- 2001: rapid easing after the tightening cycle broke.
+- 2007–2008: easing began before the worst of the financial crisis.
+- 2020: emergency easing came after the market-price signal had already exited.
+- 2022: tightening began after the market had already entered the deterioration that produced the first 100-DMA exit.
 
-The 2020 episode began before the Fed's emergency cuts.
-
-The 2022 episode began before the first 2022 rate hike.
-
-So the Fed cannot simply be represented as "hiking = danger" or "cutting = safety."
+The Fed therefore cannot simply be represented as "hiking = danger" or "cutting = safety." The policy state may still materially distinguish environments, but it is not a reliable standalone trigger.
 
 A better hypothesis is:
 
@@ -102,6 +100,35 @@ A better hypothesis is:
 - **Fed regime = contextual classifier**
 - **Macro stress = contextual confirmation**
 - **Re-entry/recovery behavior = critical for avoiding whipsaw**
+
+## New macro-attribution layer
+
+A new frozen descriptive workflow now attaches macro context to every 100-DMA episode.
+
+The research script is at research/analyze_tqqq_100dma_macro_context.py.
+
+The workflow is at .github/workflows/tqqq-100dma-macro-context.yml.
+
+It records:
+
+1. Fed target rate immediately before the exit.
+2. Current Fed policy-cycle direction.
+3. Net change within the current consecutive hike/cut cycle.
+4. Number of moves in that cycle.
+5. Days since the latest Fed move.
+6. 2s10s Treasury yield-curve level.
+7. 20-trading-day change in the 2s10s curve.
+8. The market outcome of the defensive episode.
+
+This is intentionally **not** an adaptive trading rule yet. It is an evidence-building layer whose job is to answer whether persistent failures and whipsaws have materially different macro environments.
+
+The Fed historical target-rate source is the Federal Reserve's official Open Market Operations record. The current official table confirms, among other periods, the 2008 cuts, 2020 emergency cuts, 2022 tightening sequence, and later policy changes. 
+
+## Important methodological warning
+
+The Fed target series is event-based and therefore suitable for describing the policy state known on a given date. The Treasury curve is sourced from FRED daily observations.
+
+This first macro pass is **descriptive, not publication-vintage-safe** for labor or other revised macroeconomic series. We therefore should not add unemployment, GDP, payrolls, or similar revised indicators to a prospective trading rule until we explicitly handle their historical publication vintages.
 
 ## Next research gate
 
@@ -112,7 +139,7 @@ For every 100-DMA exit/re-entry episode, reconstruct the information actually av
 3. Cumulative tightening/loosening from the preceding policy-cycle trough/peak.
 4. Distance from the policy-cycle peak.
 5. Yield-curve state.
-6. Labor/activity/credit stress.
+6. Labor/activity/credit stress, with publication-vintage controls.
 7. Market decline magnitude and duration.
 8. Subsequent recovery speed.
 
