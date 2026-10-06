@@ -258,6 +258,12 @@ def extract_episodes(frame: pd.DataFrame) -> pd.DataFrame:
             "fed_distance_from_cycle_trough": float(frame.loc[exit_date, "fed_distance_from_cycle_trough"]),
             "curve_2s10s_at_exit": float(frame.loc[exit_date, "curve_2s10s"]),
             "curve_change_20d_at_exit": float(frame.loc[exit_date, "curve_change_20d"]),
+            "dma_gap_at_exit": float(frame.loc[exit_date, "adj_close"] / frame.loc[exit_date, "dma"] - 1.0),
+            "dma_slope_20d_at_exit": float(frame.loc[exit_date, "dma"] / frame.iloc[max(i - 20, 0)]["dma"] - 1.0),
+            "qqq_return_5d_at_exit": float(frame.iloc[i]["adj_close"] / frame.iloc[max(i - 5, 0)]["adj_close"] - 1.0),
+            "qqq_return_20d_at_exit": float(frame.iloc[i]["adj_close"] / frame.iloc[max(i - 20, 0)]["adj_close"] - 1.0),
+            "qqq_return_60d_at_exit": float(frame.iloc[i]["adj_close"] / frame.iloc[max(i - 60, 0)]["adj_close"] - 1.0),
+            "qqq_realized_vol_20d_at_exit": float(frame["adj_close"].pct_change().rolling(20).std().iloc[i] * np.sqrt(252)),
         })
     return pd.DataFrame(rows)
 
