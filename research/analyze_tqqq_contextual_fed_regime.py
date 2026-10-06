@@ -74,6 +74,18 @@ def build():
  q=download("QQQ"); v=download("^VIX")[["close"]].rename(columns={"close":"vix"})
  x=q.join(v,how="left"); x.vix=x.vix.ffill(); x["fed"]=fed_series(x.index)
  x["dma"]=x.adj_close.rolling(100).mean(); x["gap"]=x.adj_close/x.dma-1
+ # Broader economic context from public FRED graph CSVs.
+ fred_ids={"dgs10":"DGS10","t3m":"DTB3","unrate":"UNRATE","cpi":"CPIAUCSL","baa_spread":"BAA10YM","nfci":"NFCI"}
+ for name,sid in fred_ids.items():
+  z=pd.read_csv(f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={sid}",parse_dates=["observation_date"],na_values=["."])
+  z=z.rename(columns={"observation_date":"date",sid:name}).set_index("date")[name].astype(float)
+  x[name]=z.reindex(x.index,method="ffill")
+ x["cpi_yoy"]=x.cpi.pct_change(252)
+ x["unrate_chg_6m"]=x.unrate-x.unrate.shift(126)
+ x["curve_10y3m"]=x.dgs10-x.t3m
+ x["curve_chg_3m"]=x.curve_10y3m-x.curve_10y3m.shift(63)
+ x["baa_chg_3m"]=x.baa_spread-x.baa_spread.shift(63)
+ x["nfci_chg_13w"]=x.nfci-x.nfci.shift(63)
  x["ret5"]=x.adj_close/x.adj_close.shift(5)-1; x["ret20"]=x.adj_close/x.adj_close.shift(20)-1
  x["ret60"]=x.adj_close/x.adj_close.shift(60)-1
  x["dma_slope20"]=x.dma/x.dma.shift(20)-1
@@ -123,8 +135,9 @@ def main():
  fed5=[c for c in e.columns if c.endswith("_1260") or c in ["tightening_6m","easing_6m"]]
  fed10=[c for c in e.columns if c.endswith("_2520") or c in ["tightening_6m","easing_6m"]]
  market=["ret5","ret20","ret60","gap","dma_slope20","rv20","vix_chg20"]
+ macro=["cpi_yoy","unrate","unrate_chg_6m","curve_10y3m","curve_chg_3m","baa_spread","baa_chg_3m","nfci","nfci_chg_13w","dgs10"]
  rows=[]
- for label,features in [("fed_2y",fed2),("fed_5y",fed5),("fed_10y",fed10),("market",market),("fed_2y_plus_market",fed2+market),("fed_5y_plus_market",fed5+market),("fed_10y_plus_market",fed10+market)]:
+ for label,features in [("fed_2y",fed2),("fed_5y",fed5),("fed_10y",fed10),("market",market),("macro",macro),("fed_2y_plus_macro",fed2+macro),("market_plus_macro",market+macro),("fed_2y_plus_market_plus_macro",fed2+market+macro)]:
   rows.append({"model":label,"persistent20_auc":auc_walk(e,features,"persistent20"),"severe50_auc":auc_walk(e,features,"severe50"),"n":int(e[features].notna().all(axis=1).sum())})
  pd.DataFrame(rows).to_csv(OUT/"tqqq_contextual_fed_auc.csv",index=False)
  dates=["2000-09-25","2002-03-12","2008-08-29","2020-03-06","2022-04-05"]
