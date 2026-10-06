@@ -25,3 +25,4 @@ jobs:
           path: |
             data/research/tqqq_100dma_persistence_adaptive_equity.csv
             data/research/tqqq_100dma_persistence_adaptive_summary.csv
+            data/research/tqqq_100dma_persistence_reentry_decisions.csv
