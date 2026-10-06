@@ -140,8 +140,19 @@ def main():
  for label,features in [("fed_2y",fed2),("fed_5y",fed5),("fed_10y",fed10),("market",market),("macro",macro),("fed_2y_plus_macro",fed2+macro),("market_plus_macro",market+macro),("fed_2y_plus_market_plus_macro",fed2+market+macro)]:
   rows.append({"model":label,"persistent20_auc":auc_walk(e,features,"persistent20"),"severe50_auc":auc_walk(e,features,"severe50"),"n":int(e[features].notna().all(axis=1).sum())})
  pd.DataFrame(rows).to_csv(OUT/"tqqq_contextual_fed_auc.csv",index=False)
+ # Fixed qualitative stress-state diagnostic; thresholds are deliberately predeclared,
+ # descriptive only, and are not optimized into a trading rule.
+ e["state_tightening"]=e.fed_chg_126>0
+ e["state_inverted"]=e.curve_10y3m<0
+ e["state_inflated"]=e.cpi_yoy>0.04
+ e["state_labor_deteriorating"]=e.unrate_chg_6m>0.5
+ e["state_credit_widening"]=e.baa_chg_3m>0.25
+ e["state_financial_stress"]=e.nfci_chg_13w>0.25
+ state_cols=["state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress"]
+ e["state_count"]=e[state_cols].sum(axis=1)
+ e.groupby("state_count").agg(n=("date","size"),persistent20_rate=("persistent20","mean"),severe50_rate=("severe50","mean")).reset_index().to_csv(OUT/"tqqq_contextual_macro_state_counts.csv",index=False)
  dates=["2000-09-25","2002-03-12","2008-08-29","2020-03-06","2022-04-05"]
- cols=["fed","fed_pct_504","fed_z_504","fed_min_dist_504","fed_pct_1260","fed_z_1260","fed_min_dist_1260","fed_pct_2520","fed_z_2520","fed_min_dist_2520","fed_chg_126","fed_chg_252","ret60","gap","dma_slope20","duration","persistent20","severe50"]
+ cols=["fed","fed_pct_504","fed_z_504","fed_min_dist_504","fed_pct_1260","fed_z_1260","fed_min_dist_1260","fed_pct_2520","fed_z_2520","fed_min_dist_2520","fed_chg_126","fed_chg_252","cpi_yoy","unrate_chg_6m","curve_10y3m","baa_chg_3m","nfci_chg_13w","state_tightening","state_inverted","state_inflated","state_labor_deteriorating","state_credit_widening","state_financial_stress","state_count","ret60","gap","dma_slope20","duration","persistent20","severe50"]
  e.loc[[d for d in dates if d in e.index],cols].to_csv(OUT/"tqqq_contextual_fed_examples.csv")
  print(pd.DataFrame(rows).to_string(index=False)); print("\nEXAMPLES\n",pd.read_csv(OUT/"tqqq_contextual_fed_examples.csv").to_string(index=False))
 if __name__=="__main__":main()
