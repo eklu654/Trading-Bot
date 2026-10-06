@@ -146,3 +146,81 @@ For every 100-DMA exit/re-entry episode, reconstruct the information actually av
 The objective is classification, not threshold optimization.
 
 Only after this episode anatomy is understood should we test an adaptive rule out-of-sample.
+
+
+## Macro classification result — October 6, 2026
+
+The first completed macro-classification run analyzed **160** 100-DMA exit/re-entry episodes.
+
+### Fed policy state is not a strong discriminator
+
+At the exit date:
+
+| Policy state | Episodes | Negative episode return | Major interim-loss rate (<= -50%) | Median BH return to re-entry | Median worst interim return |
+|---|---:|---:|---:|---:|---:|
+| Easing | 93 | 15.1% | 4.3% | +4.39% | -0.35% |
+| Tightening | 67 | 17.9% | 4.5% | +3.71% | -2.02% |
+
+The difference is small. In particular, the rate of major losses is essentially identical between easing and tightening.
+
+The seven episodes whose worst interim synthetic-TQQQ loss exceeded 50% also demonstrate why a simple Fed-direction rule is inadequate:
+
+- 2000-09-25: tightening
+- 2001-08-03: easing
+- 2002-03-12: easing
+- 2008-08-29: easing
+- 2020-03-06: easing
+- 2022-04-05: tightening
+- 2000-04-12: tightening
+
+The severe episodes therefore span both policy directions.
+
+### Continuous Fed relationships are weak
+
+Across all 160 episodes, Pearson correlations with the episode's worst interim buy-and-hold return were:
+
+- Fed target at exit: **-0.123**
+- Days since latest Fed move: **+0.136**
+- Fed cycle net change: **+0.035**
+- Fed moves in cycle: **+0.080**
+- Distance from cycle peak: **-0.003**
+- Distance from cycle trough: **+0.072**
+
+None is strong enough to justify making Fed state the primary exit trigger.
+
+The 2s10s curve variables were also weak:
+
+- Curve level at exit: **+0.052**
+- 20-day curve change: **+0.093 Pearson / +0.249 Spearman**
+
+The latter is the strongest relationship found so far, but it is still far below what we would want before turning it into a trading rule. More importantly, it is an episode-level descriptive relationship and has not been validated prospectively.
+
+### Interpretation
+
+This does **not** mean the Fed layer is useless.
+
+It means the evidence currently supports a narrower role:
+
+1. **100-DMA / market trend remains the primary defense mechanism.**
+2. **Fed policy remains a regime/context variable.**
+3. **Macro variables can be used to explain why an exit is occurring and potentially to modify re-entry behavior, but there is not yet evidence that they should replace the price signal.**
+4. **The next useful macro question is therefore not "Can the Fed predict exits?" but "Can macro context distinguish genuine trend breaks from short-lived whipsaws after the 100-DMA has already exited?"**
+
+That is a materially narrower and more testable question.
+
+## Research gate after this result
+
+The Fed layer should remain in the research architecture, but we should stop expanding it indiscriminately.
+
+The next test should compare **persistent vs. short 100-DMA exits** using only information available at the exit:
+
+- Fed policy state
+- 2s10s curve level/change
+- recent market decline magnitude
+- volatility / realized volatility
+- distance below the DMA
+- rate of change of the DMA itself
+- breadth or participation if a clean historical series is available
+
+The objective is classification of persistence, not another parameter sweep.
+
