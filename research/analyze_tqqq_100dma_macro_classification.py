@@ -58,6 +58,12 @@ def main() -> None:
         "fed_distance_from_cycle_trough",
         "curve_2s10s_at_exit",
         "curve_change_20d_at_exit",
+        "dma_gap_at_exit",
+        "dma_slope_20d_at_exit",
+        "qqq_return_5d_at_exit",
+        "qqq_return_20d_at_exit",
+        "qqq_return_60d_at_exit",
+        "qqq_realized_vol_20d_at_exit",
     ]
     targets = {
         "episode_return": "bh_return_to_reentry",
