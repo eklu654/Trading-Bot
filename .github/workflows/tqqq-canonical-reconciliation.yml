@@ -1,0 +1,25 @@
+name: TQQQ canonical replay reconciliation
+
+on:
+  push:
+    paths:
+      - "research/tqqq_three_layer_canonical_reconciliation.py"
+      - "research/tqqq_three_layer_event_attribution.py"
+      - ".github/workflows/tqqq-canonical-reconciliation.yml"
+  workflow_dispatch:
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_three_layer_canonical_reconciliation.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-three-layer-canonical-reconciliation
+          path: data/research/tqqq_three_layer_canonical_*.csv
