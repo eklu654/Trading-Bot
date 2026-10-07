@@ -1,0 +1,21 @@
+name: TQQQ actual three-layer veto attribution
+on:
+  push:
+    paths:
+      - "research/tqqq_actual_three_layer_veto_attribution.py"
+      - ".github/workflows/tqqq-actual-veto-attribution.yml"
+  workflow_dispatch:
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_actual_three_layer_veto_attribution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-actual-three-layer-veto-attribution
+          path: data/research/tqqq_actual_three_layer_veto_attribution.csv
