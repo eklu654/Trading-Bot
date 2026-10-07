@@ -1,0 +1,22 @@
+name: TQQQ 100-DMA MOM10 cooldown matrix
+on:
+  push:
+    paths:
+      - "research/tqqq_100dma_mom10_cooldown_matrix.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-100dma-mom10-cooldown.yml"
+  workflow_dispatch:
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_100dma_mom10_cooldown_matrix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-100dma-mom10-cooldown-matrix
+          path: data/research/tqqq_100dma_mom10_cooldown_matrix.csv
