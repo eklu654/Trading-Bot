@@ -1,0 +1,27 @@
+name: TQQQ QQQ drawdown return regime matrix
+
+on:
+  push:
+    paths:
+      - "research/tqqq_qqq_drawdown_return_regime_matrix.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-qqq-drawdown-return-regime.yml"
+  workflow_dispatch:
+
+jobs:
+  study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: PYTHONPATH=. python research/tqqq_qqq_drawdown_return_regime_matrix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-qqq-drawdown-return-regime
+          path: data/research/tqqq_qqq_drawdown_return_regime_matrix.csv
