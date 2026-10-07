@@ -29,3 +29,19 @@ def test_equity_matches_daily_returns():
     intraday=np.array([0.0,0.30,0.40])
     eq=next_open_equity(signal,overnight,intraday,5000.0)
     assert eq[-1] == 10920.0
+
+
+def test_tqqq_replays_use_single_causal_engine():
+    from pathlib import Path
+    root=Path(__file__).resolve().parent
+    scripts=[
+        "tqqq_actual_three_layer_validation.py",
+        "tqqq_three_layer_canonical_reconciliation.py",
+        "tqqq_three_layer_event_attribution.py",
+        "tqqq_partial_dma_matrix.py",
+        "tqqq_signal_source_audit.py",
+    ]
+    for name in scripts:
+        text=(root/name).read_text()
+        assert "from causal_execution import" in text, name
+        assert "exec_w=np.roll" not in text, name
