@@ -7,6 +7,7 @@ the architecture survives real leveraged-ETF path behavior.
 from pathlib import Path
 import numpy as np, pandas as pd
 import yfinance as yf
+from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
 from tqqq_three_layer_event_attribution import FED_EVENTS, RATE_THRESHOLD, SHOCK_THRESHOLD, fed_series
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"; INITIAL=5000.0
@@ -37,16 +38,9 @@ def main():
     x["in"]=(x.tqqq_adj_close/x.t_adj_open-1).fillna(0)
 
     def eq(sig):
-        # Signal at close t is executable at open t+1.
-        # Thus the overnight leg into day t+1 belongs to the position
-        # that was already held before that open; the intraday leg uses
-        # the newly executed prior-close signal.
-        w=np.asarray(sig,float)
-        exec_w=np.roll(w,1); exec_w[0]=0
-        prev_exec=np.roll(exec_w,1); prev_exec[0]=0
-        daily=(1+prev_exec*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
+        daily=next_open_daily_returns(sig,x.on,x["in"])
         e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
-        return float(e[-1]),float(dd.min()),float(w.mean())
+        return float(e[-1]),float(dd.min()),float(np.asarray(sig,float).mean())
 
     rows=[]
     years=(x.index[-1]-x.index[0]).days/365.2425
@@ -64,8 +58,7 @@ def main():
             w=x[name].to_numpy()
             exec_w=np.roll(w,1); exec_w[0]=0
             prev_exec=np.roll(exec_w,1); prev_exec[0]=0
-            daily=(1+prev_exec*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
-            daily-=np.abs(exec_w-prev_exec)*(bps/10000.0)
+            daily=next_open_cost_daily_returns(w,x.on,x["in"],bps)
             e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
             cost_rows.append({"bps":bps,"strategy":name,"final":float(e[-1]),"cagr":float((e[-1]/INITIAL)**(1/years)-1),"max_dd":float(dd.min())})
     print(pd.DataFrame(cost_rows).to_string(index=False))
