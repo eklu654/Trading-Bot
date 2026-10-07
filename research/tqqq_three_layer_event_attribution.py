@@ -42,9 +42,12 @@ def build():
  return x
 
 def equity(x,sig):
- w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
- # Prior-close signal controls the full next session.
- daily=(1+prev*x.on3.to_numpy())*(1+prev*x.in3.to_numpy())-1
+ w=np.asarray(sig,float)
+ exec_w=np.roll(w,1); exec_w[0]=0
+ prev_exec=np.roll(exec_w,1); prev_exec[0]=0
+ # Close-t decision executes at open t+1: prior position owns the
+ # overnight leg, while the newly executed signal owns the intraday leg.
+ daily=(1+prev_exec*x.on3.to_numpy())*(1+exec_w*x.in3.to_numpy())-1
  eq=INITIAL*np.cumprod(1+daily); return eq
 
 def one_day_impact(x, sig, idx):
