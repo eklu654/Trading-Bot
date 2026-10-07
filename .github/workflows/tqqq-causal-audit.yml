@@ -1,0 +1,39 @@
+name: TQQQ causal audit
+
+on:
+  push:
+    paths:
+      - "research/tqqq_actual_three_layer_validation.py"
+      - "research/tqqq_three_layer_canonical_reconciliation.py"
+      - "research/tqqq_three_layer_event_attribution.py"
+      - "research/tqqq_partial_dma_matrix.py"
+      - "research/tqqq_signal_source_audit.py"
+      - "research/tqqq_three_layer_event_attribution.py"
+      - ".github/workflows/tqqq-causal-audit.yml"
+  workflow_dispatch:
+
+jobs:
+  causal-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance
+      - name: Signal-source audit
+        run: PYTHONPATH=research python research/tqqq_signal_source_audit.py
+      - name: Actual TQQQ validation
+        run: PYTHONPATH=research python research/tqqq_actual_three_layer_validation.py
+      - name: Synthetic-vs-actual reconciliation
+        run: PYTHONPATH=research python research/tqqq_three_layer_canonical_reconciliation.py
+      - name: Three-layer event attribution
+        run: PYTHONPATH=research python research/tqqq_three_layer_event_attribution.py
+      - name: Partial-exposure DMA matrix
+        run: PYTHONPATH=research python research/tqqq_partial_dma_matrix.py
+      - name: Upload audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-causal-audit
+          path: data/research/
