@@ -12,5 +12,9 @@ jobs:
         with: {python-version: "3.11"}
       - run: pip install pandas numpy yfinance
       - run: python research/tqqq_three_layer_event_attribution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-three-layer-attribution
+          path: data/research/tqqq_three_layer_attribution*.csv
 
 # retrigger attribution workflow
