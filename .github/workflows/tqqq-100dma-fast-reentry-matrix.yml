@@ -6,6 +6,11 @@ on:
       - "research/tqqq_100dma_fast_reentry_matrix.py"
       - "research/causal_execution.py"
       - ".github/workflows/tqqq-100dma-fast-reentry-matrix.yml"
+  pull_request:
+    paths:
+      - "research/tqqq_100dma_fast_reentry_matrix.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-100dma-fast-reentry-matrix.yml"
   workflow_dispatch:
 
 jobs:
