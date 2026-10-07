@@ -75,6 +75,19 @@ def main():
   return "normal_mixed"
 
  x["state"]=x.apply(state,axis=1)
+ # Mandatory DMA exits remain unchanged. Macro may only veto re-entry.
+ macro_reentry=np.zeros(len(x),dtype=float)
+ in_pos=False
+ vetoes=[]
+ for i in range(100,len(x)):
+  if in_pos and x.adj_close.iloc[i] < x.dma.iloc[i]:
+   in_pos=False
+  elif (not in_pos) and x.adj_close.iloc[i] >= x.dma.iloc[i]:
+   if not bool(dangerous.iloc[i]):
+    in_pos=True
+   else:
+    vetoes.append((x.index[i],x.state.iloc[i],x.adj_close.iloc[i]/x.dma.iloc[i]-1))
+  macro_reentry[i]=1.0 if in_pos else 0.0
  base=(x.adj_close>=x.dma).astype(float); base.iloc[:99]=0
  dangerous=x.state.isin(["acute_shock","structural_tightening","inflation_liquidity_tightening","economic_credit_deterioration"])
  confirmed=np.where(x.adj_close>=x.dma,1.0,np.where(dangerous,0.0,1.0))
@@ -86,7 +99,7 @@ def main():
   return eq,dd
 
  rows=[]
- for name,sig in [("baseline_100dma",base),("macro_confirmed",confirmed)]:
+ for name,sig in [("baseline_100dma",base),("macro_confirmed_exit_only",confirmed),("macro_reentry",macro_reentry)]:
   eq,dd=equity(sig); rows.append({"strategy":name,"final":eq[-1],"cagr":(eq[-1]/INITIAL)**(365.2425/(x.index[-1]-x.index[0]).days)-1,"max_dd":dd.min(),"avg_exposure":sig.mean()})
   x[name+"_signal"]=sig; x[name+"_equity"]=eq
  pd.DataFrame(rows).to_csv(OUT/"tqqq_frozen_regime_strategy_comparison.csv",index=False)
@@ -94,7 +107,11 @@ def main():
  br=(x.adj_close<x.dma)&(x.adj_close.shift(1)>=x.dma)
  audit=x.loc[br,["state","fed","fed6","curve","cpi_yoy","unrate6","baa3","nfci13","vix20"]].copy()
  audit["baseline_exits"]=True; audit["macro_confirmed_exits"]=audit.state.isin(["acute_shock","structural_tightening","inflation_liquidity_tightening","economic_credit_deterioration"])
+ audit["macro_reentry_veto"]=False
+ for d,st,gap in vetoes:
+  if d in audit.index: audit.loc[d,"macro_reentry_veto"]=True
  audit.to_csv(OUT/"tqqq_frozen_regime_break_audit.csv")
+ pd.DataFrame(vetoes,columns=["date","state","dma_gap"]).to_csv(OUT/"tqqq_frozen_regime_reentry_vetoes.csv",index=False)
  print(pd.DataFrame(rows).to_string(index=False))
  print("\nBREAK AUDIT BY STATE")
  print(audit.groupby("state").agg(breaks=("baseline_exits","size"),exits=("macro_confirmed_exits","sum")).to_string())
