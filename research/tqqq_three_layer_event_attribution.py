@@ -80,4 +80,8 @@ def main():
  print(ev.groupby("era",observed=True)["event_terminal_delta"].agg(["count","sum","mean","min","max"]).to_string())
  print("\nTOP 5 POSITIVE SHARE",float(ev.nlargest(5,"event_terminal_delta").event_terminal_delta.sum()/pos) if pos else 0.0)
  print("TOP 5 NEGATIVE ABS SHARE",float(ev.nsmallest(5,"event_terminal_delta").event_terminal_delta.abs().sum()/abs(neg)) if neg else 0.0)
+ overlap=ev[ev.type=="veto_shock_overlap"]
+ print("\nSHOCK-OVERLAP EVENTS")
+ print(overlap[["date","vix_chg20","rv_chg20","event_terminal_delta"]].to_string(index=False))
+ print("SHOCK-OVERLAP IMPACT SUM",float(overlap.event_terminal_delta.sum()))
 if __name__=="__main__": main()
