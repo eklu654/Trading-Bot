@@ -7,7 +7,7 @@ on:
       - "research/tqqq_three_layer_canonical_reconciliation.py"
       - "research/tqqq_three_layer_event_attribution.py"
       - "research/tqqq_partial_dma_matrix.py"
-        - "research/tqqq_actual_partial_dma_matrix.py"
+      - "research/tqqq_actual_partial_dma_matrix.py"
       - "research/tqqq_signal_source_audit.py"
       - "research/causal_execution.py"
       - "research/test_causal_execution.py"
@@ -35,8 +35,10 @@ jobs:
         run: PYTHONPATH=research python research/tqqq_three_layer_canonical_reconciliation.py
       - name: Three-layer event attribution
         run: PYTHONPATH=research python research/tqqq_three_layer_event_attribution.py
-      - name: Partial-exposure DMA matrix
+      - name: Synthetic partial-exposure DMA matrix
         run: PYTHONPATH=research python research/tqqq_partial_dma_matrix.py
+      - name: Actual TQQQ partial-exposure DMA matrix
+        run: PYTHONPATH=research python research/tqqq_actual_partial_dma_matrix.py
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
