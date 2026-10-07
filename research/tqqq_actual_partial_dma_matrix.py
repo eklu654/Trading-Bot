@@ -48,6 +48,19 @@ def main():
     rows.append({"dma":"BUY_HOLD","below_exposure":1.0,"final":float(bh[-1]),
                  "cagr":(bh[-1]/INITIAL)**(1/years)-1,
                  "max_dd":float(bdd.min()),"avg_exposure":1.0})
+    # Fair control for each DMA: same delayed start/warm-up window as the
+    # corresponding DMA strategy. This prevents a DMA=100, below=100 result
+    # from appearing to beat buy-and-hold merely because the first 99 sessions
+    # are forced to zero exposure while raw buy-and-hold starts immediately.
+    for dma in DMAS:
+        sig=np.zeros(len(x))
+        sig[dma-1:]=1.0
+        eq=next_open_equity(sig,x.on,x["in"],INITIAL)
+        dd=eq/np.maximum.accumulate(eq)-1
+        final=float(eq[-1])
+        rows.append({"dma":f"BUY_HOLD_WARMUP_{dma}","below_exposure":1.0,
+                     "final":final,"cagr":(final/INITIAL)**(1/years)-1,
+                     "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     OUT.mkdir(parents=True,exist_ok=True)
     out.to_csv(OUT/"tqqq_actual_partial_dma_matrix.csv",index=False)
