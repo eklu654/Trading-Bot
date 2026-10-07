@@ -154,9 +154,14 @@ def evaluate(
     overnight_3x = np.clip(1.0 + 3.0 * overnight, 0.0, None) - 1.0
     intraday_3x = np.clip(1.0 + 3.0 * intraday, 0.0, None) - 1.0
 
-    prev_w = np.roll(weights, 1)
+    # weights[i] is the decision made at close i. It becomes executable at open i+1.
+    # Therefore overnight exposure on day i comes from the prior position (decision i-2),
+    # while intraday exposure comes from the decision executed at open i (decision i-1).
+    exec_w = np.roll(weights, 1)
+    exec_w[0] = 0.0
+    prev_w = np.roll(exec_w, 1)
     prev_w[0] = 0.0
-    daily = (1.0 + prev_w * overnight_3x) * (1.0 + weights * intraday_3x) - 1.0
+    daily = (1.0 + prev_w * overnight_3x) * (1.0 + exec_w * intraday_3x) - 1.0
     equity = INITIAL * np.cumprod(1.0 + daily)
     peak = np.maximum.accumulate(equity)
     dd = equity / peak - 1.0
