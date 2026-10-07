@@ -64,9 +64,11 @@ def equity(sig: pd.Series, overnight: pd.Series, intraday: pd.Series) -> float:
     w = sig.to_numpy(float)
     exec_w = np.roll(w, 1)
     exec_w[0] = 0.0
-    # The prior-close signal controls the entire next session. In particular,
-    # today's close-derived signal must NOT receive today's intraday return.
-    daily = (1.0 + exec_w * overnight.to_numpy()) * (
+    # Close-t decision executes at open t+1. The overnight leg into t+1
+    # belongs to the pre-existing position; the intraday leg uses exec_w.
+    prev_exec = np.roll(exec_w, 1)
+    prev_exec[0] = 0.0
+    daily = (1.0 + prev_exec * overnight.to_numpy()) * (
         1.0 + exec_w * intraday.to_numpy()
     ) - 1.0
     return float(INITIAL * np.cumprod(1.0 + daily)[-1])
