@@ -95,11 +95,22 @@ def evaluate(frame,source,dma,defense,st):
     w=sig(s,dma,defense)
     eq=next_open_equity(w,frame.on3,frame.in3,INITIAL)
     peak=np.maximum.accumulate(eq); dd=eq/peak-1
+    series=pd.Series(eq,index=frame.index)
+    stress={}
+    for label,a,b in [("dotcom","2000-01-01","2002-12-31"),("gfc","2007-10-01","2009-12-31"),("covid","2020-01-01","2020-12-31"),("inflation_2022","2022-01-01","2022-12-31")]:
+        z=series.loc[a:b]
+        if len(z):
+            zpeak=z.cummax()
+            stress[f"{label}_max_dd"]=float((z/zpeak-1).min())
+            stress[f"{label}_end_return"]=float(z.iloc[-1]/z.iloc[0]-1)
+        else:
+            stress[f"{label}_max_dd"]=np.nan
+            stress[f"{label}_end_return"]=np.nan
     years=(frame.index[-1]-frame.index[0]).days/365.25
     return {"source":source,"dma":dma,"defense_exposure":defense,
             "final_balance":float(eq[-1]),"cagr":float((eq[-1]/INITIAL)**(1/years)-1),
             "max_drawdown":float(dd.min()),"minimum_equity":float(eq.min()),
-            "avg_exposure":float(w.mean()),"defensive_days":int((w<1).sum())}
+            "avg_exposure":float(w.mean()),"defensive_days":int((w<1).sum()),**stress}
 
 
 def main():
