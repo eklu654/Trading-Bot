@@ -178,9 +178,10 @@ def apply_macro_states(
     usable = macro[["decision_date", "state"]].dropna().copy()
     usable = usable.reset_index(drop=True)
     usable = usable.sort_values("decision_date")
+    usable["decision_date"] = pd.to_datetime(usable["decision_date"]).astype("datetime64[ns]")
 
     daily = pd.DataFrame(index=out.index)
-    daily["date"] = daily.index
+    daily["date"] = pd.to_datetime(daily.index).astype("datetime64[ns]")
     mapped = pd.merge_asof(
         daily.reset_index(drop=True),
         usable.rename(columns={"decision_date": "date"}),
