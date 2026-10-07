@@ -108,6 +108,7 @@ def main():
     bh_r=daily(x,np.ones(len(x)))
 
     selected=[]
+    candidate_rows=[]
     for name,train_start,train_end,test_start,test_end in WINDOWS:
         train=(x.index>=train_start)&(x.index<=train_end)
         test=(x.index>=test_start)&(x.index<=test_end)
@@ -121,6 +122,16 @@ def main():
         p=best[3]
         test_final,test_cagr,test_dd=metrics(candidates[p],test)
         bh_final,bh_cagr,bh_dd=metrics(bh_r,test)
+        # Record every predeclared candidate on this untouched test window.
+        for cp, cr in candidates.items():
+            cf, cc, cd = metrics(cr, test)
+            candidate_rows.append({
+                "window": name, "entry": cp[0], "recovery": cp[1], "exposure": cp[2],
+                "test_final": cf, "test_cagr": cc, "test_dd": cd,
+                "bh_test_final": bh_final, "bh_test_cagr": bh_cagr, "bh_test_dd": bh_dd,
+                "test_final_delta": cf-bh_final, "test_cagr_delta": cc-bh_cagr,
+            })
+
         results.append({
             "window":name,"train_start":train_start,"train_end":train_end,
             "test_start":test_start,"test_end":test_end,
@@ -152,6 +163,16 @@ def main():
         })
 
     out=pd.DataFrame(results)
+    matrix=pd.DataFrame(candidate_rows)
+    matrix.to_csv(OUT/"tqqq_drawdown_walk_forward_candidate_matrix.csv",index=False)
+    robust=(matrix.groupby(["entry","recovery","exposure"],as_index=False)
+            .agg(min_test_cagr_delta=("test_cagr_delta","min"),
+                 mean_test_cagr_delta=("test_cagr_delta","mean"),
+                 windows_beating=("test_cagr_delta",lambda s:int((s>0).sum())),
+                 min_test_final_delta=("test_final_delta","min"),
+                 mean_test_final_delta=("test_final_delta","mean")))
+    robust=robust.sort_values(["windows_beating","min_test_cagr_delta","mean_test_cagr_delta"],ascending=False)
+    robust.to_csv(OUT/"tqqq_drawdown_walk_forward_robustness.csv",index=False)
     out.to_csv(OUT/"tqqq_drawdown_walk_forward_actual.csv",index=False)
     print(out.to_string(index=False))
     print("\nWalk-forward selected parameters:",selected)
@@ -161,6 +182,8 @@ def main():
     print("Frozen -25/-10/50 windows beating buy-and-hold:",
           int((out.iloc[len(WINDOWS):].test_cagr_delta>0).sum()),
           "/",len(WINDOWS))
+    print("\nROBUSTNESS ACROSS ALL PREDECLARED CANDIDATES")
+    print(robust.head(20).to_string(index=False))
 
 if __name__=="__main__":
     main()
