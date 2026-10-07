@@ -56,8 +56,6 @@ def main():
     for bps in [0,5,10,25,50]:
         for name in ["base","conditioned","three"]:
             w=x[name].to_numpy()
-            exec_w=np.roll(w,1); exec_w[0]=0
-            prev_exec=np.roll(exec_w,1); prev_exec[0]=0
             daily=next_open_cost_daily_returns(w,x.on,x["in"],bps)
             e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
             cost_rows.append({"bps":bps,"strategy":name,"final":float(e[-1]),"cagr":float((e[-1]/INITIAL)**(1/years)-1),"max_dd":float(dd.min())})
