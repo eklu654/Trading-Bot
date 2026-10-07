@@ -117,15 +117,15 @@ The frozen contextual rule tested:
 
 A shock override used either VIX 20-day change >= +100% or QQQ 20-day realized-volatility change >= +100%.
 
-In the synthetic daily-reset 3x QQQ framework this produced approximately $204.86B from $5,000 over 1999-03-10 through 2026-10-05 versus $128.32B for the immediate 100-DMA baseline. That synthetic result is **not production evidence**.
+IMPORTANT TIMING-AUDIT STATUS (2026-10-07): the synthetic wealth figures below were produced by an execution implementation that applied the close decision to the same day's intraday leg. That is look-ahead under the project's close-to-next-open convention. The affected synthetic wealth figures, including approximately $128.32B and $204.86B, are therefore **invalid/provisional and must not be used for strategy selection**. Corrected causal replays were committed on 2026-10-07 and are the authoritative rerun path.
 
-The actual-TQQQ validation from approximately 2010 through 2026-10-05 produced:
+The actual-TQQQ validation from approximately 2010 through 2026-10-05 produced (the dedicated actual-TQQQ replay was also corrected to the same causal convention on 2026-10-07):
 - actual TQQQ + 100-DMA: **$93.89M**, 80.66% CAGR, -35.38% max DD
 - actual TQQQ + Fed exception: $80.55M, 79.00% CAGR, -41.92% max DD
 - actual TQQQ + three-layer shock override: $91.18M, 80.34% CAGR, -35.38% max DD
 - actual TQQQ buy-and-hold: $2.10M, 43.76% CAGR, -81.66% max DD
 
-Therefore the **specific frozen three-layer architecture failed actual-TQQQ validation**, but this does **not** prove that 60-day trend or Fed context is useless. It proves only that this particular architecture did not improve actual TQQQ.
+Therefore the **specific frozen three-layer architecture failed the prior actual-TQQQ validation**, but this does **not** prove that 60-day trend or Fed context is useless. The corrected actual replay is now the version that must be used for final validation; no old synthetic wealth result may override it. It proves only that this particular architecture did not improve actual TQQQ.
 
 The 60-day trend remains an unresolved candidate feature for broader regime/AI research.
 
@@ -153,3 +153,25 @@ The approximately $128B/$204.86B figures are synthetic-framework results. The ap
 The prior reconstruction incorrectly elevated the latest TQQQ actual-validation result into the apparent project center and omitted or underweighted the earlier ETF, family-switching, options, defense/replay, 0DTE, SWITCH-001, and 60-day-trend research.
 
 This document exists to prevent that collapse from happening again.
+
+
+## 2026-10-07 timing-audit correction
+
+A systematic audit identified a look-ahead implementation error in several newly added synthetic next-open replay scripts. The intended convention is:
+
+**decision at today's close → execution at tomorrow's open**
+
+For a day (t), the overnight move into the open belongs to the position already held before that open, while the intraday move after the open belongs to the decision made at the prior close.
+
+Corrected commits on `main`:
+- `8b2fafba08fd8ac89de3d5bb60c758a4921ae320` — dot-com survivability
+- `36a7b4be0e1ae2dcc4ffee5d89ec7cd6f45cd40b` — Fed-conditioned 100-DMA
+- `72b1ffe9dea2274d797265ebde4590c5e47d8094` / `3b5318b9ce7c54355141cc4273f440bbf1112621` — three-layer shock
+- `20c559c39b3de9b570c0310d0740daba03d72529` — frozen regime strategy
+- `86f346d89a191af5605323054864530042224aef` — canonical reconciliation
+- `d0b3bbc2ec95c97e7870a2d9ec1202daa692eaa2` — actual three-layer validation
+
+The corrected dot-com implementation explicitly shifts execution state before applying the intraday leg. Existing actual-TQQQ partial-exposure and dedicated next-open DMA/re-entry research already uses the causal prior-close state convention and was not rewritten merely because of this audit.
+
+The old synthetic $128.3B/$183.1B/$204.9B results, and any other wealth results produced by the affected implementation, are now historical/provisional only. They must be rerun before being cited.
+
