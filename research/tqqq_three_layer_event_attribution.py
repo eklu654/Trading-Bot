@@ -43,7 +43,8 @@ def build():
 
 def equity(x,sig):
  w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
- daily=(1+prev*x.on3.to_numpy())*(1+w*x.in3.to_numpy())-1
+ # Prior-close signal controls the full next session.
+ daily=(1+prev*x.on3.to_numpy())*(1+prev*x.in3.to_numpy())-1
  eq=INITIAL*np.cumprod(1+daily); return eq
 
 def one_day_impact(x, sig, idx):
