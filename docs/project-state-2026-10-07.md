@@ -175,3 +175,19 @@ The corrected dot-com implementation explicitly shifts execution state before ap
 
 The old synthetic $128.3B/$183.1B/$204.9B results, and any other wealth results produced by the affected implementation, are now historical/provisional only. They must be rerun before being cited.
 
+
+
+## Corrected replay results available as of 2026-10-07
+
+The first completed post-audit artifacts materially change the TQQQ conclusions:
+
+- **Synthetic dot-com survivability, causal next-open replay:** synthetic buy-and-hold ends at approximately **$58.7K**; the prior synthetic **100-DMA/0%-below result falls from $128.3B to about $207.1K**. The strongest row in the tested 100–300 DMA / 0–100% below-DMA grid is currently **300-DMA / 0% below at about $872.1K**, with approximately **-62.8% max drawdown**. This is still synthetic and descriptive, not production evidence.
+- **Causal Fed-conditioned 100-DMA:** full-period baseline is approximately **$207.1K** versus **$110.1K** for the Fed/60-day exception. The exception therefore fails this causal synthetic replay rather than improving it.
+- **Causal three-layer synthetic replay:** full-period baseline approximately **$207.1K**, Fed-conditioned approximately **$110.1K**, three-layer approximately **$90.0K**. The three-layer shock override does not rescue the architecture in the corrected full-history replay.
+- **Macro-aware post-exit reentry:** causal baseline approximately **$207.1K** versus approximately **$97.4K** for the frozen macro-reentry veto. This rejects the current frozen macro-reentry implementation as an improvement.
+- **Canonical synthetic-vs-actual reconciliation:** for the same three-layer signal over 2010–2026, corrected synthetic final is approximately **$165.9K** and corrected actual-TQQQ final approximately **$91.8K**. The signal itself is therefore not producing the prior spectacular synthetic wealth when executed causally.
+- **Corrected actual-TQQQ main validation:** causal 100-DMA QQQ-signal final is approximately **$84.6K**, Fed-conditioned approximately **$106.9K**, three-layer approximately **$91.8K**, versus approximately **$2.03M** for actual TQQQ buy-and-hold over this validation window. This specific frozen architecture is therefore not a return-maximizing winner on actual TQQQ.
+
+The actual-TQQQ cost-stress diagnostic was subsequently found to contain a second look-ahead implementation in its stress-only calculation and was corrected in commit `f9fb321970e6cfe54d154edaa6add916f17e083c`. Its rerun is pending. The causal headline table above does not use that flawed stress calculation.
+
+These corrected results supersede the old synthetic $128B/$183B/$204B wealth figures for research decisions.
