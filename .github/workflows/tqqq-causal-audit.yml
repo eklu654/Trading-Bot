@@ -21,7 +21,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install pandas numpy yfinance
+      - run: pip install pandas numpy yfinance pytest
+      - name: Causal execution unit tests
+        run: PYTHONPATH=research pytest -q research/test_causal_execution.py
       - name: Signal-source audit
         run: PYTHONPATH=research python research/tqqq_signal_source_audit.py
       - name: Actual TQQQ validation
