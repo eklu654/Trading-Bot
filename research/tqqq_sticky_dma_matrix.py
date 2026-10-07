@@ -80,7 +80,7 @@ def sticky_weights(close, dma):
             defensive = True
         elif defensive and px >= m:
             defensive = False
-        w[i] = 0.0 if not defensive else np.nan
+        w[i] = np.nan if defensive else 1.0
     return w
 
 
