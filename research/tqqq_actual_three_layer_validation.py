@@ -22,6 +22,7 @@ def main():
     q=dl("QQQ"); t=dl("TQQQ"); v=dl("^VIX")[["close"]].rename(columns={"close":"vix"})
     x=q.join(v,how="left").join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
     x.vix=x.vix.ffill()
+    # Canonical signal source is QQQ. TQQQ is execution-only.
     x["dma"]=x.adj_close.rolling(100).mean(); x["ret60"]=x.adj_close/x.adj_close.shift(60)-1
     x["daily_ret"]=x.adj_close.pct_change(); x["rv20"]=x.daily_ret.rolling(20).std()*np.sqrt(252)
     x["vix_chg20"]=x.vix/x.vix.shift(20)-1; x["rv_chg20"]=x.rv20/x.rv20.shift(20)-1
@@ -49,6 +50,7 @@ def main():
     rows.append({"strategy":"actual_tqqq_buy_hold","final":bh,"cagr":(bh/INITIAL)**(1/years)-1,"max_dd":bd,"avg_exposure":be})
     out=pd.DataFrame(rows); OUT.mkdir(parents=True,exist_ok=True); out.to_csv(OUT/"tqqq_actual_three_layer_validation.csv",index=False)
     print(out.to_string(index=False))
+    print("\nSIGNAL SOURCE: QQQ adjusted close / 100-DMA; EXECUTION: actual TQQQ next session open.")
     print("\nACTUAL TQQQ COST STRESS (causal next-open execution)")
     cost_rows=[]
     for bps in [0,5,10,25,50]:
