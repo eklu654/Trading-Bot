@@ -1,0 +1,22 @@
+name: TQQQ 100-DMA cross-asset re-entry
+on:
+  push:
+    paths:
+      - "research/tqqq_100dma_cross_asset_reentry.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-100dma-cross-asset-reentry.yml"
+  workflow_dispatch:
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_100dma_cross_asset_reentry.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-100dma-cross-asset-reentry
+          path: data/research/tqqq_100dma_cross_asset_reentry.csv
