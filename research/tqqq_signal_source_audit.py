@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
@@ -61,17 +62,7 @@ def actual_tqqq_returns(tqqq: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
 
 
 def equity(sig: pd.Series, overnight: pd.Series, intraday: pd.Series) -> float:
-    w = sig.to_numpy(float)
-    exec_w = np.roll(w, 1)
-    exec_w[0] = 0.0
-    # Close-t decision executes at open t+1. The overnight leg into t+1
-    # belongs to the pre-existing position; the intraday leg uses exec_w.
-    prev_exec = np.roll(exec_w, 1)
-    prev_exec[0] = 0.0
-    daily = (1.0 + prev_exec * overnight.to_numpy()) * (
-        1.0 + exec_w * intraday.to_numpy()
-    ) - 1.0
-    return float(INITIAL * np.cumprod(1.0 + daily)[-1])
+    return float(next_open_equity(sig, overnight, intraday, INITIAL)[-1])
 
 
 def main() -> None:
