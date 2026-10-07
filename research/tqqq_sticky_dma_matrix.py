@@ -47,12 +47,17 @@ def qqq_frame():
 
 
 def actual_tqqq():
-    x = pd.read_csv(DATA / "tqqq_daily.csv", parse_dates=["Date"]).set_index("Date").sort_index()
-    x = x.loc[START:END].copy()
+    x = yf.download("TQQQ", start=START, end=END, auto_adjust=False,
+                    progress=False, actions=False)
+    if isinstance(x.columns, pd.MultiIndex):
+        x.columns = x.columns.get_level_values(0)
+    x.index = pd.to_datetime(x.index).tz_localize(None)
+    x = x.rename(columns={"Open": "open", "Close": "close",
+                          "Adj Close": "adj_close"}).sort_index().dropna()
     x["adj_open"] = x["open"] * x["adj_close"] / x["close"]
     x["overnight_3x"] = (x["adj_open"] / x["adj_close"].shift(1) - 1).fillna(0)
     x["intraday_3x"] = (x["adj_close"] / x["adj_open"] - 1).fillna(0)
-    return x.dropna(subset=["adj_close", "adj_open"])
+    return x
 
 
 def sticky_weights(close, dma):
