@@ -126,8 +126,9 @@ def stress_2020(x):
     three=np.where(z.base_signal==1,1.0,np.where(veto & ~z.shock,1.0,0.0))
     rows={}
     for name,sig in [("conditioned",cond),("three_layer",three)]:
-        prev=np.roll(sig,1); prev[0]=0
-        daily=(1+prev*z.on3.to_numpy())*(1+sig*z.in3.to_numpy())-1
+        exec_sig=np.roll(sig,1); exec_sig[0]=0
+        prev=np.roll(exec_sig,1); prev[0]=0
+        daily=(1+prev*z.on3.to_numpy())*(1+exec_sig*z.in3.to_numpy())-1
         eq=INITIAL*np.cumprod(1+daily); dd=eq/np.maximum.accumulate(eq)-1
         rows[f"high_rate_{name}_2020_final"]=float(eq[-1])
         rows[f"high_rate_{name}_2020_max_dd"]=float(dd.min())
