@@ -94,8 +94,13 @@ def build():
     x["conditioned_signal"]=np.where(x.base_signal==1,1.0,np.where(veto,1.0,0.0))
     x["three_layer_signal"]=np.where(x.base_signal==1,1.0,np.where(veto&~shock,1.0,0.0))
     def equity(sig):
-        w=sig.to_numpy(); prev=np.roll(w,1); prev[0]=0
-        daily=(1+prev*x.on3.to_numpy())*(1+w*x.in3.to_numpy())-1
+        # sig[i] is the decision made at close i and executes at open i+1.
+        # Overnight i+1 remains with the prior position; intraday i+1 uses
+        # the newly executed signal.
+        w=sig.to_numpy()
+        exec_w=np.roll(w,1); exec_w[0]=0
+        prev=np.roll(exec_w,1); prev[0]=0
+        daily=(1+prev*x.on3.to_numpy())*(1+exec_w*x.in3.to_numpy())-1
         eq=INITIAL*np.cumprod(1+daily); dd=eq/np.maximum.accumulate(eq)-1
         return eq,dd,daily
     for name,sig in [("base",x.base_signal),("conditioned",x.conditioned_signal),("three_layer",x.three_layer_signal)]:
