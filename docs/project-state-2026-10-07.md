@@ -208,3 +208,27 @@ The corrected cost-stress replay completed successfully in run `37596602588`. At
 The actual-TQQQ buy-and-hold control over the same validation period is approximately **$2.029M**, CAGR **43.47%**, max drawdown **-81.66%**.
 
 This reinforces the conclusion that the frozen QQQ-signal three-layer architecture is not the return-maximizing answer on actual TQQQ.
+
+
+## 2026-10-07 second timing-audit finding
+
+A follow-up code inspection after the first look-ahead correction found that several main-branch TQQQ validation scripts had subsequently reintroduced the same accounting error in a subtler form: they applied the prior-close signal to **both** the overnight close→open leg and the open→close intraday leg.
+
+That is not the canonical execution convention. If the signal is determined at today's close and executed at tomorrow's open:
+
+- the **overnight leg into tomorrow's open belongs to the position already held before that open**;
+- the **intraday leg after tomorrow's open belongs to the new position**.
+
+The correct ledger therefore uses:
+`prev_exec` for the overnight leg and `exec_w` for the intraday leg.
+
+The following scripts were corrected on main:
+- `research/tqqq_actual_three_layer_validation.py`
+- `research/tqqq_three_layer_canonical_reconciliation.py`
+- `research/tqqq_three_layer_event_attribution.py`
+- `research/tqqq_partial_dma_matrix.py`
+- `research/tqqq_signal_source_audit.py`
+
+An automated `TQQQ causal audit` workflow was also added so these scripts run together on relevant pushes.
+
+**Important:** the previously reported **$84.6K / $106.9K / $91.8K actual-TQQQ figures are now provisional and must be rerun after this second correction.** The old spectacular $128B/$204.9B figures remain invalid because they contained the earlier, more obvious same-day look-ahead. No TQQQ wealth figure should be treated as final until the new causal audit completes.
