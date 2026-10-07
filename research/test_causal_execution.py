@@ -16,8 +16,8 @@ def test_buy_hold_owns_overnight_after_initial_execution():
     intraday=np.array([0.02,0.03,0.04,0.01])
     daily=next_open_daily_returns(signal,overnight,intraday)
     expected=np.array([
-        0.02,
-        (1.10)*(1.03)-1,
+        0.0,
+        0.03,
         (1.20)*(1.04)-1,
         (1.05)*(1.01)-1,
     ])
@@ -28,7 +28,7 @@ def test_equity_matches_daily_returns():
     overnight=np.array([0.0,0.10,0.20])
     intraday=np.array([0.0,0.30,0.40])
     eq=next_open_equity(signal,overnight,intraday,5000.0)
-    assert eq[-1] == 10920.0
+    assert eq[-1] == 7000.0
 
 
 def test_tqqq_replays_use_single_causal_engine():
@@ -54,4 +54,4 @@ def test_execution_cost_is_charged_at_open_between_overnight_and_intraday():
     # Day 2: no overnight exposure, then buy at open and pay 1%,
     # then earn the 40% day-2 intraday return.
     eq=next_open_cost_equity(signal,overnight,intraday,100.0,5000.0)
-    np.testing.assert_allclose(eq[-1], 5000.0*1.30*1.20*0.99)
+    np.testing.assert_allclose(eq[-1], 5000.0*1.40*0.99)
