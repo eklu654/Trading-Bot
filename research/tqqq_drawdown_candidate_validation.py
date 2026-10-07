@@ -18,7 +18,7 @@ from causal_execution import next_open_equity, next_open_cost_equity
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"; INITIAL=5000.0
 START="1999-03-10"; END="2026-10-06"
-LOOKBACK=126; RECOVERY=-0.05; ENTRIES=(-0.15,-0.20,-0.25); COSTS=(0,5,10,25,50)
+LOOKBACK=126; RECOVERY=-0.05; ENTRIES=(-0.15,-0.20,-0.25,-0.30,-0.35); COSTS=(0,5,10,25,50)
 
 
 def dl(symbol,start=START):
