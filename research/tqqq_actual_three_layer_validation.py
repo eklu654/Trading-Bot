@@ -38,8 +38,9 @@ def main():
     def eq(sig):
         w=np.asarray(sig,float)
         exec_w=np.roll(w,1); exec_w[0]=0
-        prev=np.roll(exec_w,1); prev[0]=0
-        daily=(1+prev*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
+        # The prior-close signal controls the entire next session,
+        # including the overnight move into that session's open.
+        daily=(1+exec_w*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
         e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
         return float(e[-1]),float(dd.min()),float(w.mean())
     rows=[]
@@ -57,8 +58,7 @@ def main():
         for name in ["base","conditioned","three"]:
             w=x[name].to_numpy()
             exec_w=np.roll(w,1); exec_w[0]=0
-            prev=np.roll(exec_w,1); prev[0]=0
-            daily=(1+prev*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
+            daily=(1+exec_w*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
             daily-=np.abs(exec_w-prev)*(bps/10000.0)
             e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
             cost_rows.append({"bps":bps,"strategy":name,"final":float(e[-1]),"cagr":float((e[-1]/INITIAL)**(1/years)-1),"max_dd":float(dd.min())})
