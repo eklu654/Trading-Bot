@@ -14,7 +14,8 @@ DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
 
 def equity(x,sig):
     w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
-    daily=(1+prev*x.on3.to_numpy())*(1+w*x.in3.to_numpy())-1
+    # Prior-close signal controls the full next session.
+    daily=(1+prev*x.on3.to_numpy())*(1+prev*x.in3.to_numpy())-1
     eq=INITIAL*np.cumprod(1+daily); dd=eq/np.maximum.accumulate(eq)-1
     return float(eq[-1]),float(dd.min()),float((w>0).mean())
 
