@@ -1,0 +1,32 @@
+name: TQQQ Fed-Active DMA Sticky Survivability
+
+on:
+  push:
+    paths:
+      - "research/tqqq_fed_active_dma_sticky_matrix.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-fed-active-dma-sticky.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: tqqq-fed-active-dma-sticky
+  cancel-in-progress: false
+
+jobs:
+  fed-active-dma-sticky:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: PYTHONPATH=research python research/tqqq_fed_active_dma_sticky_matrix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-fed-active-dma-sticky
+          path: data/research/tqqq_fed_active_dma_sticky_matrix.csv
