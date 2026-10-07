@@ -8,6 +8,7 @@ The purpose is to isolate signal differences from instrument-path differences.
 """
 from pathlib import Path
 import numpy as np, pandas as pd, yfinance as yf
+from causal_execution import next_open_equity
 from tqqq_three_layer_event_attribution import FED_EVENTS, RATE_THRESHOLD, SHOCK_THRESHOLD, fed_series
 
 ROOT=Path(__file__).resolve().parents[1]
