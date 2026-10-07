@@ -24,4 +24,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-drawdown-walk-forward
-          path: data/research/tqqq_drawdown_walk_forward_actual.csv
+          path: |
+            data/research/tqqq_drawdown_walk_forward_actual.csv
+            data/research/tqqq_drawdown_walk_forward_candidate_matrix.csv
+            data/research/tqqq_drawdown_walk_forward_robustness.csv
