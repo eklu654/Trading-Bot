@@ -7,6 +7,7 @@ No optimization, costs, or cash yield.
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from causal_execution import next_open_equity
 from tqqq_three_layer_event_attribution import build, INITIAL
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
