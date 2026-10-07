@@ -47,13 +47,21 @@ def qqq_frame():
 
 
 def actual_tqqq():
-    x = yf.download("TQQQ", start=START, end=END, auto_adjust=False,
+    q = yf.download("QQQ", start=START, end=END, auto_adjust=False,
                     progress=False, actions=False)
-    if isinstance(x.columns, pd.MultiIndex):
-        x.columns = x.columns.get_level_values(0)
-    x.index = pd.to_datetime(x.index).tz_localize(None)
-    x = x.rename(columns={"Open": "open", "Close": "close",
-                          "Adj Close": "adj_close"}).sort_index().dropna()
+    t = yf.download("TQQQ", start=START, end=END, auto_adjust=False,
+                    progress=False, actions=False)
+    if isinstance(q.columns, pd.MultiIndex):
+        q.columns = q.columns.get_level_values(0)
+    if isinstance(t.columns, pd.MultiIndex):
+        t.columns = t.columns.get_level_values(0)
+    q.index = pd.to_datetime(q.index).tz_localize(None)
+    t.index = pd.to_datetime(t.index).tz_localize(None)
+    q = q.rename(columns={"Open": "qqq_open", "Close": "qqq_close",
+                          "Adj Close": "qqq_adj_close"})
+    t = t.rename(columns={"Open": "open", "Close": "close",
+                          "Adj Close": "adj_close"})
+    x = q[["qqq_adj_close"]].join(t[["open", "close", "adj_close"]], how="inner").sort_index().dropna()
     x["adj_open"] = x["open"] * x["adj_close"] / x["close"]
     x["overnight_3x"] = (x["adj_open"] / x["adj_close"].shift(1) - 1).fillna(0)
     x["intraday_3x"] = (x["adj_close"] / x["adj_open"] - 1).fillna(0)
@@ -82,7 +90,8 @@ def fill_defense(raw, exposure):
 
 
 def evaluate(frame, source, dma, exposure):
-    raw = sticky_weights(frame["adj_close"], dma)
+    signal_close = frame["qqq_adj_close"] if "qqq_adj_close" in frame.columns else frame["adj_close"]
+    raw = sticky_weights(signal_close, dma)
     sig = fill_defense(raw, exposure)
     eq = next_open_equity(sig, frame["overnight_3x"], frame["intraday_3x"], INITIAL)
     peak = np.maximum.accumulate(eq)
@@ -104,7 +113,7 @@ def evaluate(frame, source, dma, exposure):
 def main():
     rows = []
     for source, frame in [("synthetic_qqq_3x", qqq_frame()),
-                          ("actual_tqqq", actual_tqqq())]:
+                          ("actual_tqqq_with_qqq_signal", actual_tqqq())]:
         for dma in DMAS:
             for exposure in BELOW:
                 rows.append(evaluate(frame, source, dma, exposure))
