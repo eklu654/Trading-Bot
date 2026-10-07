@@ -35,7 +35,7 @@ def main():
     x["on"]=x.t_adj_open/x.tqqq_adj_close.shift(1)-1
     x["in"]=x.tqqq_adj_close/x.t_adj_open-1
     def eq(sig):
-        w=sig.to_numpy(); prev=np.roll(w,1); prev[0]=0
+        w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
         daily=(1+prev*x.on.to_numpy())*(1+w*x["in"].to_numpy())-1
         e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
         return float(e[-1]),float(dd.min()),float(w.mean())
