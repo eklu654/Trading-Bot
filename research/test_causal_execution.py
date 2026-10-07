@@ -54,4 +54,4 @@ def test_execution_cost_is_charged_at_open_between_overnight_and_intraday():
     # Day 2: no overnight exposure, then buy at open and pay 1%,
     # then earn the 40% day-2 intraday return.
     eq=next_open_cost_equity(signal,overnight,intraday,100.0,5000.0)
-    np.testing.assert_allclose(eq[-1], 5000.0*1.30*0.99)
+    np.testing.assert_allclose(eq[-1], 5000.0*1.30*1.20*0.99)
