@@ -10,6 +10,7 @@ on:
       - "research/tqqq_actual_partial_dma_matrix.py"
       - "research/tqqq_actual_reentry_delay_matrix.py"
       - "research/tqqq_signal_source_audit.py"
+      - "research/tqqq_sticky_dma_matrix.py"
       - "research/causal_execution.py"
       - "research/test_causal_execution.py"
       - ".github/workflows/tqqq-causal-audit.yml"
@@ -41,6 +42,8 @@ jobs:
         run: PYTHONPATH=research python research/tqqq_actual_partial_dma_matrix.py
       - name: Actual TQQQ re-entry-delay matrix
         run: PYTHONPATH=research python research/tqqq_actual_reentry_delay_matrix.py
+      - name: Sticky DMA survivability matrix
+        run: PYTHONPATH=research python research/tqqq_sticky_dma_matrix.py
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
