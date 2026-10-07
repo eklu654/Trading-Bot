@@ -47,5 +47,15 @@ def main():
     rows.append({"strategy":"actual_tqqq_buy_hold","final":bh,"cagr":(bh/INITIAL)**(1/years)-1,"max_dd":bd,"avg_exposure":be})
     out=pd.DataFrame(rows); OUT.mkdir(parents=True,exist_ok=True); out.to_csv(OUT/"tqqq_actual_three_layer_validation.csv",index=False)
     print(out.to_string(index=False))
+    print("\nACTUAL TQQQ COST STRESS")
+    cost_rows=[]
+    for bps in [0,5,10,25,50]:
+        for name in ["base","conditioned","three"]:
+            w=x[name].to_numpy(); prev=np.roll(w,1); prev[0]=0
+            daily=(1+prev*x.on.to_numpy())*(1+w*x["in"].to_numpy())-1
+            daily-=np.abs(w-prev)*(bps/10000.0)
+            e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
+            cost_rows.append({"bps":bps,"strategy":name,"final":float(e[-1]),"cagr":float((e[-1]/INITIAL)**(1/years)-1),"max_dd":float(dd.min())})
+    print(pd.DataFrame(cost_rows).to_string(index=False))
     print("\nCOUNTS",int(x.veto.sum()),int(x.shock.sum()),int((x.veto&x.shock).sum()))
 if __name__=="__main__": main()
