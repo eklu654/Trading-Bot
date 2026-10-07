@@ -1,5 +1,5 @@
 import numpy as np
-from causal_execution import next_open_daily_returns, next_open_equity
+from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_equity
 
 def test_close_signal_cannot_capture_pre_execution_overnight():
     signal=np.array([0.0,1.0,0.0])
@@ -45,3 +45,13 @@ def test_tqqq_replays_use_single_causal_engine():
         text=(root/name).read_text()
         assert "from causal_execution import" in text, name
         assert "exec_w=np.roll" not in text, name
+
+
+def test_execution_cost_is_charged_at_open_between_overnight_and_intraday():
+    signal=np.array([0.0,1.0,0.0])
+    overnight=np.array([0.0,0.10,0.20])
+    intraday=np.array([0.0,0.30,0.40])
+    # Day 2: no overnight exposure, then buy at open and pay 1%,
+    # then earn the 40% day-2 intraday return.
+    eq=next_open_cost_equity(signal,overnight,intraday,100.0,5000.0)
+    np.testing.assert_allclose(eq[-1], 5000.0*1.30*0.99)
