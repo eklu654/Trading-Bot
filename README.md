@@ -1,5 +1,7 @@
 # Trading Bot
 
+> **Project-state recovery (2026-10-07):** [authoritative research-state ledger](docs/project-state-2026-10-07.md). This preserves the ETF, family-switching, options, defense/replay, 0DTE, SWITCH-001, and TQQQ/60-day/Fed research branches after a context-loss event.
+
 Research and development repository for a regime-switching automated trading system.
 
 ## Strategy instances
