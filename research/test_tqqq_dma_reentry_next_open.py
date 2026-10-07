@@ -146,6 +146,15 @@ def main() -> None:
     print("\n=== 25-BPS LEADER ===")
     print(best.to_string())
 
+    # Explicit apples-to-apples controls for the audit:
+    # these use the same actual TQQQ adjusted-close series and date range.
+    bh = frame["adj_close"].iloc[-1] / frame["adj_close"].iloc[0] * INITIAL
+    zero = df[(df["cost_bps"] == 0) & (df["dma"] == 100) & (df["confirmation_sessions"] == 0)].iloc[0]
+    print("\n=== AUDIT CONTROLS ===")
+    print(f"TQQQ adjusted-close buy-and-hold control: {bh:.6f}")
+    print(f"TQQQ-signal 100-DMA immediate next-open: {zero['final_balance']:.6f}")
+    print("Signal source: ACTUAL TQQQ adjusted close; execution: next session open.")
+
 
 if __name__ == "__main__":
     main()
