@@ -42,14 +42,34 @@ Result over the same synthetic framework available to that run (through 2026-10-
 
 The shock-only rule produced **40 re-entry veto events** and still reduced terminal wealth substantially without improving maximum drawdown.
 
-## Research conclusion
+## Three-layer contextual exception: separate finding
 
-The evidence now supports a simple hierarchy:
+The failed macro-conditioned **re-entry** experiments must not be conflated with the separate contextual Fed exception that was tested later.
 
-1. **100-DMA is the hard market-defense trigger.**
-2. **Initial exits are never canceled by macro conditions.**
-3. **Immediate re-entry is strongly favored.**
-4. Macro/Fed information remains useful for analysis and future decision-support, but it should not currently veto the proven re-entry mechanism.
-5. Volatility/shock logic should not be added to re-entry solely to reduce drawdown; the tested version sacrificed substantial terminal wealth without improving max drawdown.
+Frozen contextual rule:
 
-The next research stage should therefore move away from increasingly restrictive re-entry delays and toward validation of the already-proven hard 100-DMA architecture, including realistic execution/cost robustness and eventual paper-trading readiness.
+- If QQQ is below the 100-DMA,
+- Fed target rate is > 3.5%,
+- and QQQ's 60-day return is non-negative,
+- temporarily remain invested rather than obeying the DMA exit.
+
+A subsequent predeclared shock override then exits even during that exception when either VIX 20-day change or QQQ 20-day realized-volatility change reaches +100%.
+
+That architecture produced approximately **$204.86B** versus **$128.32B** for the immediate 100-DMA baseline over the full synthetic period, while retaining the baseline's **-45.97%** maximum drawdown. Through the same endpoint, the conditioned layer alone was approximately **$183.10B**, so the shock override added another approximately **$21.76B** of terminal wealth.
+
+The event-attribution audit found **85 contextual-veto/shock-overlap events** (80 veto-only and 5 overlaps). This is important evidence that the result is not literally one or two special days. However, the individual one-day counterfactual impacts are **not additive** because changing one day's exposure changes subsequent compounding. Therefore we should not sum those event impacts and call the sum the strategy's causal contribution.
+
+The event audit also shows concentration by era: 45 events occurred in the dot-com era, 23 around the GFC, and 17 post-2020. The full-period gain therefore still requires robustness testing rather than being accepted as a universal law. Segment tests already show the contextual layer helped strongly in the dot-com window, had essentially no effect in the GFC/COVID/inflation windows, and hurt post-2010 terminal wealth unless the shock override was present.
+
+## Current research conclusion
+
+The evidence supports a more nuanced hierarchy:
+
+1. **100-DMA remains the hard market-defense baseline.**
+2. **The tested macro-confirmed exit and macro-conditioned re-entry architectures are rejected.**
+3. **Immediate re-entry remains the default when evaluating the plain DMA strategy.**
+4. **Fed context is not discarded.** The specific contextual Fed exception + shock override is promising and materially outperformed the plain 100-DMA baseline in the full-history synthetic test.
+5. **The contextual three-layer rule is not yet production-ready.** It needs robustness tests across eras, realistic costs/execution, and independent implementation/replay validation before it can replace the simpler baseline.
+6. The shock-only **re-entry** veto remains rejected; that is a different mechanism from the shock override used inside the contextual exception.
+
+The next stage should therefore validate the promising three-layer architecture rather than broadly rejecting macro. In parallel, continue realistic execution/cost robustness and paper-trading-readiness work on the strongest candidate(s).
