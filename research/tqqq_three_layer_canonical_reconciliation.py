@@ -49,13 +49,7 @@ def main():
     x["act_in"]=(x.tqqq_adj_close/x.t_adj_open-1).fillna(0)
 
     def path(sig,on,inn):
-        w=sig.to_numpy(float)
-        exec_w=np.roll(w,1); exec_w[0]=0
-        # Close-t decision executes at open t+1.
-        # The overnight leg into t+1 belongs to the position already held;
-        # the intraday leg belongs to the newly executed prior-close signal.
-        prev_exec=np.roll(exec_w,1); prev_exec[0]=0
-        daily=(1+prev_exec*on.to_numpy())*(1+exec_w*inn.to_numpy())-1
+        daily=next_open_daily_returns(sig,on,inn)
         eq=INITIAL*np.cumprod(1+daily)
         return daily,eq
 
