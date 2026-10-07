@@ -27,7 +27,6 @@ def dl(t):
 def main():
     q=dl("QQQ"); t=dl("TQQQ")
     x=q.join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
-    x["dma"] = x.adj_close.rolling(100).mean()
     t_adj_open=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
     x["on"]= (t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
     x["in"]= (x.tqqq_adj_close/t_adj_open-1).fillna(0)
