@@ -49,8 +49,10 @@ def main():
     x["act_in"]=(x.tqqq_adj_close/x.t_adj_open-1).fillna(0)
 
     def path(sig,on,inn):
-        w=sig.to_numpy(float); prev=np.roll(w,1); prev[0]=0
-        daily=(1+prev*on.to_numpy())*(1+w*inn.to_numpy())-1
+        w=sig.to_numpy(float)
+        exec_w=np.roll(w,1); exec_w[0]=0
+        prev=np.roll(exec_w,1); prev[0]=0
+        daily=(1+prev*on.to_numpy())*(1+exec_w*inn.to_numpy())-1
         eq=INITIAL*np.cumprod(1+daily)
         return daily,eq
 
