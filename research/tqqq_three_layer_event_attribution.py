@@ -10,6 +10,7 @@ No threshold optimization.
 from pathlib import Path
 import numpy as np, pandas as pd
 import yfinance as yf
+from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
 START="1999-03-10"; END="2026-10-05"; INITIAL=5000.0
@@ -43,12 +44,7 @@ def build():
 
 def equity(x,sig):
  w=np.asarray(sig,float)
- exec_w=np.roll(w,1); exec_w[0]=0
- prev_exec=np.roll(exec_w,1); prev_exec[0]=0
- # Close-t decision executes at open t+1: prior position owns the
- # overnight leg, while the newly executed signal owns the intraday leg.
- daily=(1+prev_exec*x.on3.to_numpy())*(1+exec_w*x.in3.to_numpy())-1
- eq=INITIAL*np.cumprod(1+daily); return eq
+ return next_open_equity(w,x.on3,x.in3,INITIAL)
 
 def one_day_impact(x, sig, idx):
  s=np.asarray(sig,float).copy(); s[idx]=1-s[idx]
