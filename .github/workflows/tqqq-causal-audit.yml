@@ -8,6 +8,7 @@ on:
       - "research/tqqq_three_layer_event_attribution.py"
       - "research/tqqq_partial_dma_matrix.py"
       - "research/tqqq_actual_partial_dma_matrix.py"
+      - "research/tqqq_actual_reentry_delay_matrix.py"
       - "research/tqqq_signal_source_audit.py"
       - "research/causal_execution.py"
       - "research/test_causal_execution.py"
@@ -39,6 +40,8 @@ jobs:
         run: PYTHONPATH=research python research/tqqq_partial_dma_matrix.py
       - name: Actual TQQQ partial-exposure DMA matrix
         run: PYTHONPATH=research python research/tqqq_actual_partial_dma_matrix.py
+      - name: Actual TQQQ re-entry-delay matrix
+        run: PYTHONPATH=research python research/tqqq_actual_reentry_delay_matrix.py
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
