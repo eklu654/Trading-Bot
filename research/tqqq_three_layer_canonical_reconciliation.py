@@ -51,8 +51,8 @@ def main():
     def path(sig,on,inn):
         w=sig.to_numpy(float)
         exec_w=np.roll(w,1); exec_w[0]=0
-        prev=np.roll(exec_w,1); prev[0]=0
-        daily=(1+prev*on.to_numpy())*(1+exec_w*inn.to_numpy())-1
+        # Signal at the prior close controls the entire next session.
+        daily=(1+exec_w*on.to_numpy())*(1+exec_w*inn.to_numpy())-1
         eq=INITIAL*np.cumprod(1+daily)
         return daily,eq
 
