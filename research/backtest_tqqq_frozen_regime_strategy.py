@@ -76,6 +76,8 @@ def main():
 
  x["state"]=x.apply(state,axis=1)
  # Mandatory DMA exits remain unchanged. Macro may only veto re-entry.
+ base=(x.adj_close>=x.dma).astype(float); base.iloc[:99]=0
+ dangerous=x.state.isin(["acute_shock","structural_tightening","inflation_liquidity_tightening","economic_credit_deterioration"])
  macro_reentry=np.zeros(len(x),dtype=float)
  in_pos=False
  vetoes=[]
@@ -88,8 +90,6 @@ def main():
    else:
     vetoes.append((x.index[i],x.state.iloc[i],x.adj_close.iloc[i]/x.dma.iloc[i]-1))
   macro_reentry[i]=1.0 if in_pos else 0.0
- base=(x.adj_close>=x.dma).astype(float); base.iloc[:99]=0
- dangerous=x.state.isin(["acute_shock","structural_tightening","inflation_liquidity_tightening","economic_credit_deterioration"])
  confirmed=np.where(x.adj_close>=x.dma,1.0,np.where(dangerous,0.0,1.0))
 
  def equity(sig):
