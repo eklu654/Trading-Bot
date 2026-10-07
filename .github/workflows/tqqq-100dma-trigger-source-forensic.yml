@@ -1,0 +1,28 @@
+name: TQQQ 100-DMA trigger-source forensic
+
+on:
+  push:
+    paths:
+      - "research/tqqq_100dma_trigger_source_forensic.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-100dma-trigger-source-forensic.yml"
+  workflow_dispatch:
+
+jobs:
+  forensic:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_100dma_trigger_source_forensic.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-100dma-trigger-source-forensic
+          path: |
+            data/research/tqqq_100dma_trigger_source_forensic.csv
+            data/research/tqqq_100dma_trigger_events.csv
+            data/research/tqqq_100dma_trigger_diagnostics.csv
