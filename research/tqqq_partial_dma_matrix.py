@@ -10,7 +10,7 @@ import pandas as pd
 from tqqq_three_layer_event_attribution import build, INITIAL
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
-DMAS=[125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
+DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
 
 def equity(x,sig):
     w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
