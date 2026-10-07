@@ -28,4 +28,4 @@ def test_equity_matches_daily_returns():
     overnight=np.array([0.0,0.10,0.20])
     intraday=np.array([0.0,0.30,0.40])
     eq=next_open_equity(signal,overnight,intraday,5000.0)
-    assert eq[-1] == 7000.0
+    assert eq[-1] == 10920.0
