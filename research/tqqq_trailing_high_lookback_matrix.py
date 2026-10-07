@@ -41,7 +41,7 @@ def actual():
 
 
 def evaluate(frame,source,lookback,entry,recovery,exposure):
-    px=frame.adj_close if "adj_close" in frame else frame.qqq_adj_close
+    px=frame.adj_close if source=="synthetic_qqq_3x" else frame.qqq_adj_close
     high=px.rolling(lookback).max(); metric=px/high-1
     armed=False; w=[]
     for x in metric.to_numpy():
