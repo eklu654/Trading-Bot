@@ -14,6 +14,7 @@ on:
       - "research/test_tqqq_macro_regime.py"
       - "research/test_tqqq_fed_paused_dma_sticky.py"
       - "research/test_tqqq_composite_structural_defense.py"
+      - "research/tqqq_fed_active_dma_sticky_matrix.py"
       - "research/causal_execution.py"
       - "research/test_causal_execution.py"
       - ".github/workflows/tqqq-causal-audit.yml"
@@ -51,6 +52,8 @@ jobs:
         run: python research/test_tqqq_macro_regime.py
       - name: Composite Fed + macro + DMA structural defense
         run: PYTHONPATH=. python research/test_tqqq_composite_structural_defense.py
+      - name: Fed-active DMA sticky matrix
+        run: PYTHONPATH=research python research/tqqq_fed_active_dma_sticky_matrix.py
       - name: Upload audit artifacts
         uses: actions/upload-artifact@v4
         with:
