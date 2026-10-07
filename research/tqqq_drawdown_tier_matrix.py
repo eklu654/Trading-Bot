@@ -79,3 +79,5 @@ def main():
     out.to_csv(OUT/"tqqq_drawdown_tier_matrix.csv",index=False)
     print(out.to_string(index=False))
 if __name__=="__main__": main()
+
+# Matrix workflow trigger validation: execute on subsequent source changes.
