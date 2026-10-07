@@ -191,3 +191,20 @@ The first completed post-audit artifacts materially change the TQQQ conclusions:
 The actual-TQQQ cost-stress diagnostic was subsequently found to contain a second look-ahead implementation in its stress-only calculation and was corrected in commit `f9fb321970e6cfe54d154edaa6add916f17e083c`. Its rerun is pending. The causal headline table above does not use that flawed stress calculation.
 
 These corrected results supersede the old synthetic $128B/$183B/$204B wealth figures for research decisions.
+
+
+### Actual-TQQQ causal cost stress completed
+
+The corrected cost-stress replay completed successfully in run `37596602588`. At 0/5/10/25/50 bps, the causal next-open results were:
+
+| Cost | 100-DMA base | Fed-conditioned | Three-layer |
+|---|---:|---:|---:|
+| 0 bps | $84,635 | $106,888 | $91,785 |
+| 5 bps | $77,128 | $97,213 | $83,550 |
+| 10 bps | $70,283 | $88,410 | $76,051 |
+| 25 bps | $53,167 | $66,483 | $57,339 |
+| 50 bps | $33,360 | $41,302 | $35,778 |
+
+The actual-TQQQ buy-and-hold control over the same validation period is approximately **$2.029M**, CAGR **43.47%**, max drawdown **-81.66%**.
+
+This reinforces the conclusion that the frozen QQQ-signal three-layer architecture is not the return-maximizing answer on actual TQQQ.
