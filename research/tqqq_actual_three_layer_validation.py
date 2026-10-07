@@ -35,14 +35,19 @@ def main():
     x["t_adj_open"]=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
     x["on"]=(x.t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
     x["in"]=(x.tqqq_adj_close/x.t_adj_open-1).fillna(0)
+
     def eq(sig):
+        # Signal at close t is executable at open t+1.
+        # Thus the overnight leg into day t+1 belongs to the position
+        # that was already held before that open; the intraday leg uses
+        # the newly executed prior-close signal.
         w=np.asarray(sig,float)
         exec_w=np.roll(w,1); exec_w[0]=0
-        # The prior-close signal controls the entire next session,
-        # including the overnight move into that session's open.
-        daily=(1+exec_w*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
+        prev_exec=np.roll(exec_w,1); prev_exec[0]=0
+        daily=(1+prev_exec*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
         e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
         return float(e[-1]),float(dd.min()),float(w.mean())
+
     rows=[]
     years=(x.index[-1]-x.index[0]).days/365.2425
     for name in ["base","conditioned","three"]:
@@ -58,8 +63,8 @@ def main():
         for name in ["base","conditioned","three"]:
             w=x[name].to_numpy()
             exec_w=np.roll(w,1); exec_w[0]=0
-            daily=(1+exec_w*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
             prev_exec=np.roll(exec_w,1); prev_exec[0]=0
+            daily=(1+prev_exec*x.on.to_numpy())*(1+exec_w*x["in"].to_numpy())-1
             daily-=np.abs(exec_w-prev_exec)*(bps/10000.0)
             e=INITIAL*np.cumprod(1+daily); dd=e/np.maximum.accumulate(e)-1
             cost_rows.append({"bps":bps,"strategy":name,"final":float(e[-1]),"cagr":float((e[-1]/INITIAL)**(1/years)-1),"max_dd":float(dd.min())})
