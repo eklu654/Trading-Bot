@@ -32,8 +32,8 @@ def main():
     x["conditioned"]=np.where(x.base==1,1.0,np.where(x.veto,1.0,0.0))
     x["three"]=np.where(x.base==1,1.0,np.where(x.veto&~x.shock,1.0,0.0))
     x["t_adj_open"]=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
-    x["on"]=x.t_adj_open/x.tqqq_adj_close.shift(1)-1
-    x["in"]=x.tqqq_adj_close/x.t_adj_open-1
+    x["on"]=(x.t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
+    x["in"]=(x.tqqq_adj_close/x.t_adj_open-1).fillna(0)
     def eq(sig):
         w=np.asarray(sig,float); prev=np.roll(w,1); prev[0]=0
         daily=(1+prev*x.on.to_numpy())*(1+w*x["in"].to_numpy())-1
