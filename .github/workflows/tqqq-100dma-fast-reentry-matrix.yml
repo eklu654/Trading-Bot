@@ -1,0 +1,27 @@
+name: TQQQ 100-DMA fixed-exit faster-reentry matrix
+
+on:
+  push:
+    paths:
+      - "research/tqqq_100dma_fast_reentry_matrix.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-100dma-fast-reentry-matrix.yml"
+  workflow_dispatch:
+
+jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_100dma_fast_reentry_matrix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-100dma-fast-reentry-matrix
+          path: |
+            data/research/tqqq_100dma_fast_reentry_matrix.csv
+            data/research/tqqq_100dma_fast_reentry_events.csv
