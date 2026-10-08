@@ -29,3 +29,5 @@ def main():
   e=INITIAL*np.cumprod(1+d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25;rows.append({"rule":f"S{shock}_M{n}","era":"FULL","growth":e[-1]/INITIAL,"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"cash":float((s==0).mean())})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_crash_momentum_validation.csv",index=False);print(out.sort_values(["era","growth"],ascending=[True,False]).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger validation
