@@ -223,7 +223,9 @@ def main():
     tp=t.reindex(idx)["Close"].squeeze().astype(float)
     ar=tp.pct_change().fillna(0)
 
-    f=pd.concat([features(p),extra_features(p)],axis=1)
+    f=features(p).copy()
+    f["ret5"]=p/p.shift(5)-1
+    f["ret10"]=p/p.shift(10)-1
     ev=event_frame(p,f)
     ev.to_csv(OUT/"canonical_failed_bounce_ma_events.csv",index=False)
     stats=signal_stats(ev)
