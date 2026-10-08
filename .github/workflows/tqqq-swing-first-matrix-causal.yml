@@ -4,6 +4,7 @@ on:
     paths:
       - "research/tqqq_swing_first_matrix_causal.py"
       - "research/causal_execution.py"
+      - "research/tqqq_swing_dynamic_exit_matrix.py"
       - ".github/workflows/tqqq-swing-first-matrix-causal.yml"
   workflow_dispatch:
 jobs:
