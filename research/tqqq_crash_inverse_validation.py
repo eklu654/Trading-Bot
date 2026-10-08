@@ -29,3 +29,5 @@ def main():
   e=INITIAL*np.cumprod(1+d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25;rows.append({"rule":f"S{shock}_M{n}_I{invdays}","era":"FULL","growth":e[-1]/INITIAL,"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"sqqq":float((state==-1).mean()),"cash":float((state==0).mean())})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_crash_inverse_validation.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
