@@ -17,6 +17,7 @@ jobs:
         with: {python-version: "3.11"}
       - run: pip install pandas numpy yfinance
       - run: PYTHONPATH=research python research/crash_hybrid_sqqq_recovery.py
+      - run: cat data/research/crash_hybrid_sqqq_recovery.csv
       - uses: actions/upload-artifact@v4
         with:
           name: crash-hybrid-sqqq-recovery
