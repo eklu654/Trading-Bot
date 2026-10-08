@@ -37,3 +37,5 @@ def main():
   d=out[out.window==tr].sort_values("growth",ascending=False);best=d.iloc[0].rule
   print("\n"+tr+" => "+te+" "+best);print(out[(out.window==te)&(out.rule==best)].to_string(index=False));print("TOP");print(out[out.window==te].sort_values("growth",ascending=False).head(8).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
