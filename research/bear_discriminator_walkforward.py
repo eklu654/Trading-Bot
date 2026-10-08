@@ -121,14 +121,21 @@ def growth_in_window(eq,start,end):
 
 
 def classify_failed_bounces(p,ma,r60):
-    """Classify whether a +10% recovery is followed by a failed bounce."""
+    """Build a larger, causal event dataset at every +10% recovery.
+
+    A recovery is labeled failed when, after the +10% recovery close,
+    QQQ reaches -10% before +20% within 252 trading days.  If neither
+    barrier is reached, the event is retained as censored (failed=-1).
+    This preserves information instead of silently dropping most events.
+    """
     rows=[]
     px=p.to_numpy()
     ma_v=ma.to_numpy()
     r60_v=r60.to_numpy()
-    r5=p.pct_change(5).to_numpy()
-    r10=p.pct_change(10).to_numpy()
-    r20=p.pct_change(20).to_numpy()
+    qret=p.pct_change().fillna(0).to_numpy()
+    r5=p.pct_change(5)
+    r10=p.pct_change(10)
+    r20=p.pct_change(20)
     slope20=p/p.shift(20)-1
     slope60=p/p.shift(60)-1
     vol20=p.pct_change().rolling(20).std()
@@ -151,58 +158,84 @@ def classify_failed_bounces(p,ma,r60):
     atr14=tr.rolling(14).mean()
     kelt_mid=p.ewm(span=20,adjust=False).mean()
     keltner_pct=(p-(kelt_mid-2*atr14))/(4*atr14)
+
     armed=False
     low=np.nan
-    qret=p.pct_change().fillna(0).to_numpy()
+    shock_date=None
+    shock_low_date=None
+    shock_count=0
     for i in range(1,len(p)):
         if not armed and qret[i] <= SHOCK:
             armed=True
             low=px[i]
+            shock_date=p.index[i]
+            shock_low_date=p.index[i]
+            shock_count += 1
         if armed:
-            low=min(low,px[i])
-            if px[i]/low-1 >= NORMAL_TARGET:
+            if px[i] < low:
+                low=px[i]
+                shock_low_date=p.index[i]
+            recovery_gain=px[i]/low-1
+            if recovery_gain >= NORMAL_TARGET:
                 recovery=px[i]
-                label=None
-                for j in range(i+1,min(i+126,len(p))):
+                label=-1
+                failure_date=None
+                success_date=None
+                horizon_end=min(i+253,len(p))
+                for j in range(i+1,horizon_end):
                     forward=px[j]/recovery-1
                     if forward <= -0.10:
                         label=1
+                        failure_date=p.index[j]
                         break
                     if forward >= 0.20:
                         label=0
+                        success_date=p.index[j]
                         break
-                if label is not None:
-                    future=px[i+1:min(i+61,len(p))]/recovery-1
-                    rows.append({
-                        "date":str(p.index[i].date()),
-                        "failed":label,
-                        "ret5":r5[i],
-                        "ret10":r10[i],
-                        "ret20":r20[i],
-                        "ret60":r60_v[i],
-                        "distance_100dma":px[i]/ma_v[i]-1 if np.isfinite(ma_v[i]) else np.nan,
-                        "slope20":slope20.iloc[i],
-                        "slope60":slope60.iloc[i],
-                        "vol20":vol20.iloc[i],
-                        "macd":macd.iloc[i],
-                        "macd_signal":macd_signal.iloc[i],
-                        "macd_hist":macd_hist.iloc[i],
-                        "macd_bull_cross":int(macd_cross.iloc[i]==1),
-                        "ma20_50":sma20.iloc[i]/sma50.iloc[i]-1,
-                        "ma50_100":sma50.iloc[i]/sma100.iloc[i]-1,
-                        "ma100_200":sma100.iloc[i]/sma200.iloc[i]-1,
-                        "ma20_50_bull":int(sma20.iloc[i]>sma50.iloc[i]),
-                        "ma50_100_bull":int(sma50.iloc[i]>sma100.iloc[i]),
-                        "ma100_200_bull":int(sma100.iloc[i]>sma200.iloc[i]),
-                        "bb_pct":bb_pct.iloc[i],
-                        "donchian_pct":donchian_pct.iloc[i],
-                        "keltner_pct":keltner_pct.iloc[i],
-                        "fwd20_max_gain":float(np.max(future[:20])) if len(future) else np.nan,
-                        "fwd20_max_loss":float(np.min(future[:20])) if len(future) else np.nan,
-                        "fwd60_max_gain":float(np.max(future)) if len(future) else np.nan,
-                        "fwd60_max_loss":float(np.min(future)) if len(future) else np.nan
-                    })
+                # Recovery speed is measured from the post-shock low to +10%.
+                days_from_low=i-np.searchsorted(p.index,shock_low_date)
+                # Days from the shock itself is a second, more stable path feature.
+                days_from_shock=i-np.searchsorted(p.index,shock_date)
+                future=px[i+1:min(i+61,len(p))]/recovery-1
+                rows.append({
+                    "date":str(p.index[i].date()),
+                    "shock_date":str(shock_date.date()) if shock_date is not None else "",
+                    "shock_low_date":str(shock_low_date.date()) if shock_low_date is not None else "",
+                    "failed":label,
+                    "days_shock_to_recovery":days_from_shock,
+                    "days_low_to_recovery":days_from_low,
+                    "ret5":r5.iloc[i],
+                    "ret10":r10.iloc[i],
+                    "ret20":r20.iloc[i],
+                    "ret60":r60_v[i],
+                    "distance_100dma":px[i]/ma_v[i]-1 if np.isfinite(ma_v[i]) else np.nan,
+                    "slope20":slope20.iloc[i],
+                    "slope60":slope60.iloc[i],
+                    "vol20":vol20.iloc[i],
+                    "macd":macd.iloc[i],
+                    "macd_signal":macd_signal.iloc[i],
+                    "macd_hist":macd_hist.iloc[i],
+                    "macd_bull_cross":int(macd_cross.iloc[i]==1),
+                    "ma20_50":sma20.iloc[i]/sma50.iloc[i]-1,
+                    "ma50_100":sma50.iloc[i]/sma100.iloc[i]-1,
+                    "ma100_200":sma100.iloc[i]/sma200.iloc[i]-1,
+                    "ma20_50_bull":int(sma20.iloc[i]>sma50.iloc[i]),
+                    "ma50_100_bull":int(sma50.iloc[i]>sma100.iloc[i]),
+                    "ma100_200_bull":int(sma100.iloc[i]>sma200.iloc[i]),
+                    "bb_pct":bb_pct.iloc[i],
+                    "donchian_pct":donchian_pct.iloc[i],
+                    "keltner_pct":keltner_pct.iloc[i],
+                    "fwd20_max_gain":float(np.max(future[:20])) if len(future) else np.nan,
+                    "fwd20_max_loss":float(np.min(future[:20])) if len(future) else np.nan,
+                    "fwd60_max_gain":float(np.max(future)) if len(future) else np.nan,
+                    "fwd60_max_loss":float(np.min(future)) if len(future) else np.nan,
+                })
+                # The event ends at the first +10% recovery. A new shock after
+                # recovery is a new event, preventing nested double counting.
                 armed=False
+                low=np.nan
+                shock_date=None
+                shock_low_date=None
     return pd.DataFrame(rows)
 
 
@@ -221,10 +254,14 @@ def main():
     event_df.to_csv(OUT/"failed_bounce_event_classification.csv",index=False)
     print("\nFAILED-BOUNCE EVENT CLASSIFICATION")
     print(event_df.to_string(index=False))
-    print("\nFAILED-BOUNCE FEATURE SEPARATION")
-    for col in ["ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20","macd_hist","ma20_50","ma50_100","ma100_200","bb_pct","donchian_pct","keltner_pct","macd_bull_cross"]:
-        if len(event_df):
-            print(col, event_df.groupby("failed")[col].agg(["count","mean","median"]).to_string())
+    print("\nFAILED-BOUNCE EVENT COUNTS")
+    if len(event_df):
+        print(event_df["failed"].value_counts(dropna=False).sort_index().to_string())
+    print("\nFAILED-BOUNCE FEATURE SEPARATION (labeled only)")
+    labeled=event_df[event_df["failed"]>=0] if len(event_df) else event_df
+    for col in ["days_shock_to_recovery","days_low_to_recovery","ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20","macd_hist","ma20_50","ma50_100","ma100_200","bb_pct","donchian_pct","keltner_pct","macd_bull_cross"]:
+        if len(labeled):
+            print(col, labeled.groupby("failed")[col].agg(["count","mean","median"]).to_string())
     rows=[]
     bh=INITIAL*np.cumprod(1+asset_returns.to_numpy())
     print(f"\nSANITY TQQQ BUY&HOLD: {bh[-1]:,.2f}")
