@@ -64,6 +64,18 @@ def features(p):
     f["ret20"]=p/p.shift(20)-1
     f["ret60"]=p/p.shift(60)-1
     f["ret120"]=p/p.shift(120)-1
+    ema12=p.ewm(span=12,adjust=False).mean(); ema26=p.ewm(span=26,adjust=False).mean()
+    macd=ema12-ema26; sig=macd.ewm(span=9,adjust=False).mean()
+    f["macd"]=macd; f["macd_signal"]=sig; f["macd_hist"]=macd-sig
+    f["macd_bull"]=((macd>sig)&(macd.shift(1)<=sig.shift(1))).astype(int)
+    f["macd_bear"]=((macd<sig)&(macd.shift(1)>=sig.shift(1))).astype(int)
+    mid=p.rolling(20).mean(); sd=p.rolling(20).std()
+    f["bb_pos"]=(p-(mid-2*sd))/(4*sd)
+    f["bb_above_mid"]=(p>mid).astype(int)
+    f["donch_pos"]=(p-p.rolling(20).min())/(p.rolling(20).max()-p.rolling(20).min())
+    atr=(p-p.shift(1)).abs().rolling(20).mean(); kc_mid=p.ewm(span=20,adjust=False).mean()
+    f["kc_pos"]=(p-(kc_mid-2*atr))/(4*atr)
+    f["vol20"]=p.pct_change().rolling(20).std()*np.sqrt(252)
     return pd.DataFrame(f,index=p.index)
 
 def canonical_events(p):
@@ -193,6 +205,9 @@ def main():
 
     print("\nCANONICAL EVENTS:",len(ev))
     print(ev[["decision_date","low_date","speed_days","label","label_days","label_return"]].to_string(index=False))
+    print("\nEVENT FEATURE SNAPSHOT")
+    cols=["decision_date","low_date","speed_days","label","ret20","ret60","ret120","macd","macd_signal","macd_hist","macd_bull","macd_bear","bb_pos","donch_pos","kc_pos","vol20","bull_count","bear_count","hierarchy_bull","hierarchy_bear","state_50_100","state_100_200"]
+    print(ev[cols].to_string(index=False))
     print("\nMA SIGNAL SEPARATION")
     print(stats.to_string(index=False))
 
