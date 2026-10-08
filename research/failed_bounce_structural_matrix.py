@@ -103,10 +103,12 @@ def event_indices(p, shock):
     armed = False
     low = np.nan
     low_i = None
+    event_start_i = None
     out = []
     for i in range(1, len(p)):
         if not armed and r[i] <= shock:
             armed = True
+            event_start_i = i
             low = px[i]
             low_i = i
         if armed:
@@ -114,7 +116,7 @@ def event_indices(p, shock):
                 low = px[i]
                 low_i = i
             if px[i] / low - 1 >= NORMAL:
-                out.append((i, low_i))
+                out.append((i, low_i, event_start_i))
                 armed = False
     return out
 
@@ -156,12 +158,14 @@ def rule_defs():
 
 def build_events(p, f, shock):
     rows = []
-    for decision_i, low_i in event_indices(p, shock):
+    for decision_i, low_i, event_start_i in event_indices(p, shock):
         lab, days, ret = label(p, decision_i)
         row = {
             "shock_pct": -shock,
             "decision_i": decision_i,
             "decision_date": p.index[decision_i].date(),
+            "event_start_i": event_start_i,
+            "event_start_date": p.index[event_start_i].date(),
             "low_i": low_i,
             "low_date": p.index[low_i].date(),
             "speed_days": decision_i - low_i,
@@ -185,8 +189,7 @@ def signal_for_rule(p, events, rule, target, exposure):
         # The strategy remains defensive from the original shock until the
         # recovery decision. The only question is how much exposure is allowed
         # after the +10% bounce when the structural rule flags a failed bounce.
-        for j in range(int(row.low_i), decision_i + 1):
-            w[j] = 0.0
+        w[int(row.event_start_i) : decision_i + 1] = 0.0
         try:
             flagged = bool(rule(row))
         except Exception:
@@ -273,7 +276,7 @@ def main():
     # Canonical binary defensive control: 0% through the +10% recovery.
     binary_w = np.ones(len(p))
     for row in canonical.itertuples(index=False):
-        binary_w[int(row.low_i) : int(row.decision_i) + 1] = 0.0
+        binary_w[int(row.event_start_i) : int(row.decision_i) + 1] = 0.0
     rows.append({
         "shock_pct": 4.5,
         "strategy": "canonical_defensive_until_plus10",
@@ -301,7 +304,7 @@ def main():
     print(pd.DataFrame(stats).groupby("shock_pct").first().to_string())
     print("\nCANONICAL EVENT SNAPSHOT")
     print(canonical[[
-        "decision_date", "low_date", "speed_days", "label", "ret60", "ret120",
+        "decision_date", "event_start_date", "low_date", "speed_days", "label", "ret60", "ret120",
         "slope_sma60", "slope_sma120", "state_60_120", "state_120_200",
         "structural_score", "secular_bear", "repair_damage"
     ]].to_string(index=False))
