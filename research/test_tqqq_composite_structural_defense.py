@@ -55,7 +55,14 @@ def build_composite_frame() -> pd.DataFrame:
     fed.index = pd.DatetimeIndex(pd.to_datetime(fed.index)).as_unit("ns")
     macro.index = pd.DatetimeIndex(pd.to_datetime(macro.index)).as_unit("ns")
 
-    frame = fed.join(macro, how="left")
+    fed = fed.reset_index()
+    macro = macro.reset_index()
+    fed.rename(columns={fed.columns[0]: "date"}, inplace=True)
+    macro.rename(columns={macro.columns[0]: "date"}, inplace=True)
+    fed["date"] = pd.to_datetime(fed["date"]).dt.normalize()
+    macro["date"] = pd.to_datetime(macro["date"]).dt.normalize()
+    frame = fed.merge(macro, on="date", how="left", validate="one_to_one")
+    frame = frame.set_index("date").sort_index()
     frame["qqq_return"] = frame["close"].pct_change().fillna(0.0)
     frame["synthetic_tqqq_return"] = (
         1.0 + 3.0 * frame["qqq_return"]
