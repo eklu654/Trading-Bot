@@ -1,0 +1,25 @@
+name: TQQQ Fed regime overlay
+
+on:
+  push:
+    paths:
+      - "research/tqqq_fed_regime_overlay.py"
+      - ".github/workflows/tqqq-fed-regime-overlay.yml"
+      - "research/failed_bounce_strategy_walkforward.py"
+  workflow_dispatch:
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_fed_regime_overlay.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-fed-regime-overlay
+          path: data/research/tqqq_fed_regime_*.csv
