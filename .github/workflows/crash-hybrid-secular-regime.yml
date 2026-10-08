@@ -1,0 +1,23 @@
+name: Crash hybrid secular regime
+on:
+  push:
+    paths:
+      - "research/crash_hybrid_secular_regime.py"
+      - ".github/workflows/crash-hybrid-secular-regime.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/crash_hybrid_secular_regime.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: crash-hybrid-secular-regime
+          path: data/research/crash_hybrid_secular_regime.csv
