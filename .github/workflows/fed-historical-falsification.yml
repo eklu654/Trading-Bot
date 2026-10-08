@@ -1,0 +1,24 @@
+name: Historical Fed regime falsification
+
+on:
+  push:
+    paths:
+      - "research/fed_historical_falsification.py"
+      - ".github/workflows/fed-historical-falsification.yml"
+  workflow_dispatch:
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install pandas numpy yfinance requests
+      - run: PYTHONPATH=research python research/fed_historical_falsification.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fed-historical-falsification
+          path: data/research/fed_historical_falsification_event_ledger.csv
