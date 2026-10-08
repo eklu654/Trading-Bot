@@ -1,0 +1,21 @@
+name: Failed Bounce Classification
+on:
+  push:
+    paths:
+      - research/failed_bounce_classification.py
+      - .github/workflows/failed-bounce-classification.yml
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install -q numpy pandas yfinance
+      - run: python research/failed_bounce_classification.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: failed-bounce-classification
+          path: data/research/failed_bounce_*.csv
