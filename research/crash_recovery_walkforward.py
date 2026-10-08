@@ -44,3 +44,5 @@ def main():
   print(out[(out.window==tes)&(out.rule==best)].to_string(index=False))
   print("TEST TOP",out[out.window==tes].sort_values("growth",ascending=False).head(8).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
