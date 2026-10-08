@@ -31,3 +31,5 @@ def main():
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_hybrid_sqqq_recovery.csv",index=False);print(out.sort_values("final",ascending=False).head(25).to_string(index=False))
 
 # trigger
+
+# trigger
