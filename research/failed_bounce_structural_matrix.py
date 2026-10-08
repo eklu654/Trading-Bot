@@ -88,7 +88,7 @@ def event_frame(p,f,shock):
     rows=[]
     for e in events(p,shock):
         lab,d,r=label(p,e); i=e["decision_i"]
-        row={"shock":-shock,**e,"label":lab,"label_days":d,"label_return":r}
+        row={"shock":-shock,"shock_pct":shock,**e,"label":lab,"label_days":d,"label_return":r}
         for k,v in f.iloc[i].items(): row[k]=float(v) if np.isfinite(v) else np.nan
         rows.append(row)
     return pd.DataFrame(rows)
