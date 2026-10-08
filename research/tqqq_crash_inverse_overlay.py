@@ -28,10 +28,11 @@ def main():
       elif i<=until: state[i]=-1
       else: state[i]=0
     # -1 SQQQ, 0 cash, 1 TQQQ
+    ex=np.roll(state,1); ex[0]=1
     d=np.ones(len(idx))
     for i in range(len(idx)):
-     if state[i]==1:d[i]=(1+to.iloc[i])*(1+ti.iloc[i])
-     elif state[i]==-1:d[i]=(1+bo.iloc[i])*(1+bi.iloc[i])
+     if ex[i]==1:d[i]=(1+to.iloc[i])*(1+ti.iloc[i])
+     elif ex[i]==-1:d[i]=(1+bo.iloc[i])*(1+bi.iloc[i])
     e=INITIAL*np.cumprod(d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25
     rows.append({"rule":f"S{shock}_M{n}_I{invdays}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"sqqq":float((state==-1).mean()),"cash":float((state==0).mean())})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_crash_inverse_overlay.csv",index=False);print(out.head(50).to_string(index=False))
