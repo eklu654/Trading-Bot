@@ -26,6 +26,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+eklu654@users.noreply.github.com"
+          git pull --rebase origin main
           git add data/research/tqqq_crash_inverse_overlay.csv
           if ! git diff --cached --quiet; then
             git commit -m "research: publish crash inverse overlay"
