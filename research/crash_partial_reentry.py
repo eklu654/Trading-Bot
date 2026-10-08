@@ -42,3 +42,5 @@ def main():
   print("\n"+s+" TOP TERMINAL");print(out[out['set']==s].sort_values('final',ascending=False).head(15).to_string(index=False))
   print("\n"+s+" BEST DD WITH >1x CAPITAL");print(out[(out['set']==s)&(out.final>=INITIAL)].sort_values('maxdd',ascending=False).head(12).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
