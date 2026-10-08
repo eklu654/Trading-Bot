@@ -48,7 +48,7 @@ def signals(q):
     return p,dma100,ret60
 
 
-def equity(p,dma100,ret60,override_mode=None,override_target=0.30,threshold=0.0):
+def equity(p,dma100,ret60,asset_returns,override_mode=None,override_target=0.30,threshold=0.0):
     """Return causal equity and event diagnostics.
 
     override_mode:
@@ -56,7 +56,7 @@ def equity(p,dma100,ret60,override_mode=None,override_target=0.30,threshold=0.0)
       ret60         -> if 60d return is below threshold, use override target
       dma_ret60     -> if below 100DMA AND 60d return below threshold, use override
     """
-    r=p.pct_change().fillna(0).to_numpy()
+    r=asset_returns.to_numpy()
     px=p.to_numpy()
     ma=dma100.to_numpy()
     r60=ret60.to_numpy()
@@ -120,7 +120,12 @@ def growth_in_window(eq,start,end):
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
     q=dl("QQQ")
+    t=dl("TQQQ")
+    idx=q.index.intersection(t.index)
+    q=q.reindex(idx)
+    t=t.reindex(idx)
     p,ma,r60=signals(q)
+    asset_returns=t["Adj Close"].squeeze().astype(float).pct_change().fillna(0)
 
     rows=[]
     configs=[("baseline_10pct","baseline",0.30,0.0)]
@@ -132,7 +137,7 @@ def main():
 
     # Full modern period.
     for name,mode,target,th in configs:
-        eq,diag=equity(p,ma,r60,mode,target,th)
+        eq,diag=equity(p,ma,r60,asset_returns,mode,target,th)
         years=(eq.index[-1]-eq.index[0]).days/365.25
         rows.append({
             "scope":"full_2010_2026",
