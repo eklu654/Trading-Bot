@@ -47,7 +47,7 @@ def features(p):
             f[f"bear_cross_{a}_{b}_{w}"]=(d.eq(-1).rolling(w).max().fillna(0)>0).astype(int)
         # Days since latest cross; capped naturally by available history.
         cross_idx=pd.Series(np.arange(len(p)),index=p.index).where(d.ne(0))
-        f[f"days_since_cross_{a}_{b}"]=cross_idx.ffill().rsub(np.arange(len(p)))
+        f[f"days_since_cross_{a}_{b}"]=pd.Series(np.arange(len(p)),index=p.index).subtract(cross_idx.ffill())
         f[f"slope_fast_{a}_{b}"]=sma[a]/sma[a].shift(20)-1
         f[f"slope_slow_{a}_{b}"]=sma[b]/sma[b].shift(20)-1
     # Full hierarchy: the short/medium structure has repaired in order.
