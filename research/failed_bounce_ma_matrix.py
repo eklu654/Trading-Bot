@@ -100,7 +100,7 @@ def extra_features(p):
         "macd_cross_bear":((macd<sig)&(macd.shift(1)>=sig.shift(1))).astype(int),
         "bb_position":bb,"donchian_position":dc,"keltner_position":kc,
         "ret5":p/p.shift(5)-1,"ret10":p/p.shift(10)-1,
-        "ret20":p/p.shift(20)-1,"ret60":p/p.shift(60)-1,
+        "ret60_extra":p/p.shift(60)-1,
         "ret120":p/p.shift(120)-1,
     },index=p.index)
 
