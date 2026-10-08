@@ -20,7 +20,8 @@ START="2010-01-01"
 END="2026-10-08"
 SHOCK=-0.045
 NORMAL=0.10
-TARGETS=(0.15,0.20,0.30)
+TARGETS=(0.15,0.20,0.25,0.30,0.40)
+SPEED_THRESHOLDS=(10,12,15,18,20,22,25,30)
 
 def dl(symbol):
     x=yf.download(symbol,start=START,end=END,auto_adjust=False,progress=False,actions=False)
@@ -63,6 +64,9 @@ def feature_arrays(p):
 
 def rule_flag(name, f, days):
     # These are deliberately simple, interpretable hypotheses.
+    if name.startswith("slow_"):
+        threshold=int(name.split("_")[1])
+        return days>=threshold
     if name=="slow15":
         return days>=15
     if name=="slow20":
@@ -84,7 +88,7 @@ def rule_flag(name, f, days):
         return days>=20 and (structural or channels)
     return False
 
-RULES=("slow15","slow20","slow20_ma50","slow20_ma100",
+RULES=tuple([f"slow_{x}" for x in SPEED_THRESHOLDS])+("slow20_ma50","slow20_ma100",
        "slow20_channels","slow20_no_macd_cross","slow20_structural",
        "slow20_structural_or_channels")
 
