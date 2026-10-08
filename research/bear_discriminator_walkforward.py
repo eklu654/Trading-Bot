@@ -153,6 +153,7 @@ def classify_failed_bounces(p,ma,r60):
                         label=0
                         break
                 if label is not None:
+                    future=px[i+1:min(i+61,len(p))]/recovery-1
                     rows.append({
                         "date":str(p.index[i].date()),
                         "failed":label,
@@ -163,7 +164,11 @@ def classify_failed_bounces(p,ma,r60):
                         "distance_100dma":px[i]/ma_v[i]-1 if np.isfinite(ma_v[i]) else np.nan,
                         "slope20":slope20.iloc[i],
                         "slope60":slope60.iloc[i],
-                        "vol20":vol20.iloc[i]
+                        "vol20":vol20.iloc[i],
+                        "fwd20_max_gain":float(np.max(future[:20])) if len(future) else np.nan,
+                        "fwd20_max_loss":float(np.min(future[:20])) if len(future) else np.nan,
+                        "fwd60_max_gain":float(np.max(future)) if len(future) else np.nan,
+                        "fwd60_max_loss":float(np.min(future)) if len(future) else np.nan
                     })
                 armed=False
     return pd.DataFrame(rows)
@@ -184,6 +189,10 @@ def main():
     event_df.to_csv(OUT/"failed_bounce_event_classification.csv",index=False)
     print("\nFAILED-BOUNCE EVENT CLASSIFICATION")
     print(event_df.to_string(index=False))
+    print("\nFAILED-BOUNCE FEATURE SEPARATION")
+    for col in ["ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20"]:
+        if len(event_df):
+            print(col, event_df.groupby("failed")[col].agg(["count","mean","median"]).to_string())
     rows=[]
     bh=INITIAL*np.cumprod(1+asset_returns.to_numpy())
     print(f"\nSANITY TQQQ BUY&HOLD: {bh[-1]:,.2f}")
