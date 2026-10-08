@@ -49,6 +49,12 @@ def build_composite_frame() -> pd.DataFrame:
         ["macro_state"]
     ].copy()
 
+    # pandas 3/4 can preserve different datetime resolutions on independently
+    # constructed indices (e.g. datetime64[s] vs datetime64[us]). Normalize
+    # both indexes to the same explicit ns dtype before joining.
+    fed.index = pd.DatetimeIndex(pd.to_datetime(fed.index)).astype("datetime64[ns]")
+    macro.index = pd.DatetimeIndex(pd.to_datetime(macro.index)).astype("datetime64[ns]")
+
     frame = fed.join(macro, how="left")
     frame["qqq_return"] = frame["close"].pct_change().fillna(0.0)
     frame["synthetic_tqqq_return"] = (
