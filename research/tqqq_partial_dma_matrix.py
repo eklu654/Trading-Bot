@@ -16,17 +16,23 @@ DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
 def equity(x,sig):
  w=np.asarray(sig,float)
  eq=next_open_equity(w,x.on3,x.in3,INITIAL); dd=eq/np.maximum.accumulate(eq)-1
- return float(eq[-1]),float(dd.min()),float((w>0).mean())
+ return float(eq[-1]),float(dd.min()),float(w.mean())
 
 def main():
     x=build(); years=(x.index[-1]-x.index[0]).days/365.2425; rows=[]
+    # Explicit always-invested synthetic 3x QQQ benchmark on the identical
+    # date range and execution model. This is a proxy, not live TQQQ history.
+    hold=np.ones(len(x),dtype=float)
+    final,dd,exp=equity(x,hold)
+    cagr=(final/INITIAL)**(1/years)-1
+    rows.append({"dma":0,"below_exposure":1.0,"final":final,"cagr":cagr,"max_dd":dd,"avg_exposure":exp,"strategy":"synthetic_3x_qqq_buy_hold"})
     for dma in DMAS:
         ma=x.adj_close.rolling(dma).mean()
         for below in BELOW:
             sig=np.where(x.adj_close>=ma,1.0,below); sig[:dma-1]=0
             final,dd,exp=equity(x,sig)
             cagr=(final/INITIAL)**(1/years)-1
-            rows.append({"dma":dma,"below_exposure":below,"final":final,"cagr":cagr,"max_dd":dd,"avg_exposure":exp})
+            rows.append({"dma":dma,"below_exposure":below,"final":final,"cagr":cagr,"max_dd":dd,"avg_exposure":exp,"strategy":"dma_partial_exposure"})
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     OUT.mkdir(parents=True,exist_ok=True); out.to_csv(OUT/"tqqq_partial_dma_matrix.csv",index=False)
     print(out.to_string(index=False))
