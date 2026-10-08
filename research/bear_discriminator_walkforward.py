@@ -31,6 +31,7 @@ SHOCK=-0.045
 NORMAL_TARGET=0.10
 OVERRIDE_TARGETS=(0.15,0.20,0.30,0.40)
 RET_THRESHOLDS=(0.0,-0.05,-0.10)
+FAILED_BOUNCE_FEATURES=("ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20")
 
 
 def dl(symbol):
@@ -118,6 +119,56 @@ def growth_in_window(eq,start,end):
     return float(z.iloc[-1]/before)
 
 
+
+def classify_failed_bounces(p,ma,r60):
+    """Classify whether a +10% recovery is followed by a failed bounce."""
+    rows=[]
+    px=p.to_numpy()
+    ma_v=ma.to_numpy()
+    r60_v=r60.to_numpy()
+    r5=p.pct_change(5).to_numpy()
+    r10=p.pct_change(10).to_numpy()
+    r20=p.pct_change(20).to_numpy()
+    slope20=p/p.shift(20)-1
+    slope60=p/p.shift(60)-1
+    vol20=p.pct_change().rolling(20).std()
+    armed=False
+    low=np.nan
+    qret=p.pct_change().fillna(0).to_numpy()
+    for i in range(1,len(p)):
+        if not armed and qret[i] <= SHOCK:
+            armed=True
+            low=px[i]
+        if armed:
+            low=min(low,px[i])
+            if px[i]/low-1 >= NORMAL_TARGET:
+                recovery=px[i]
+                label=None
+                for j in range(i+1,min(i+126,len(p))):
+                    forward=px[j]/recovery-1
+                    if forward <= -0.10:
+                        label=1
+                        break
+                    if forward >= 0.20:
+                        label=0
+                        break
+                if label is not None:
+                    rows.append({
+                        "date":str(p.index[i].date()),
+                        "failed":label,
+                        "ret5":r5[i],
+                        "ret10":r10[i],
+                        "ret20":r20[i],
+                        "ret60":r60_v[i],
+                        "distance_100dma":px[i]/ma_v[i]-1 if np.isfinite(ma_v[i]) else np.nan,
+                        "slope20":slope20.iloc[i],
+                        "slope60":slope60.iloc[i],
+                        "vol20":vol20.iloc[i]
+                    })
+                armed=False
+    return pd.DataFrame(rows)
+
+
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
     q=dl("QQQ")
@@ -129,6 +180,10 @@ def main():
     asset_prices=t["Close"].squeeze().astype(float).reindex(idx)
     asset_returns=asset_prices.pct_change().fillna(0)
 
+    event_df=classify_failed_bounces(p,ma,r60)
+    event_df.to_csv(OUT/"failed_bounce_event_classification.csv",index=False)
+    print("\nFAILED-BOUNCE EVENT CLASSIFICATION")
+    print(event_df.to_string(index=False))
     rows=[]
     bh=INITIAL*np.cumprod(1+asset_returns.to_numpy())
     print(f"\nSANITY TQQQ BUY&HOLD: {bh[-1]:,.2f}")
