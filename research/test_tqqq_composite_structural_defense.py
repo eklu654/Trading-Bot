@@ -52,8 +52,8 @@ def build_composite_frame() -> pd.DataFrame:
     # pandas 3/4 can preserve different datetime resolutions on independently
     # constructed indices (e.g. datetime64[s] vs datetime64[us]). Normalize
     # both indexes to the same explicit ns dtype before joining.
-    fed.index = pd.DatetimeIndex(pd.to_datetime(fed.index)).astype("datetime64[ns]")
-    macro.index = pd.DatetimeIndex(pd.to_datetime(macro.index)).astype("datetime64[ns]")
+    fed.index = pd.DatetimeIndex(pd.to_datetime(fed.index)).as_unit("ns")
+    macro.index = pd.DatetimeIndex(pd.to_datetime(macro.index)).as_unit("ns")
 
     frame = fed.join(macro, how="left")
     frame["qqq_return"] = frame["close"].pct_change().fillna(0.0)
