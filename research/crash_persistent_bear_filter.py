@@ -11,7 +11,7 @@ def dl(s,start,end):
  x.index=pd.to_datetime(x.index).tz_localize(None);return x
 def modern():
  q=dl("QQQ","2010-01-01","2026-10-07");t=dl("TQQQ","2010-01-01","2026-10-07")
- p=q["Close"].squeeze().astype(float);ta=t["Close"].squeeze().astype(float);idx=p.index.intersection(ta.index);p,ta=p.reindex(idx),ta.reindex(idx);r=p.pct_change();tr=ta.pct_change();rows=[]
+ p=q["Close"].squeeze().astype(float);ta=t["Close"].squeeze().astype(float);idx=p.index.intersection(ta.index);p,ta=p.reindex(idx),ta.reindex(idx);r=p.pct_change();tr=ta.pct_change().fillna(0);rows=[]
  for shock in [-.04,-.045,-.05]:
   for mom in [10,20]:
    for ma in [50,100,200]:
@@ -26,7 +26,7 @@ def modern():
     rows.append({"set":"actual","rule":f"S{shock}_M{mom}_MA{ma}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"cash":float((s==0).mean())})
  return rows
 def synth():
- q=dl("QQQ","1999-03-11","2010-03-11");p=q["Close"].squeeze().astype(float);r=p.pct_change();lev=(1+3*r).clip(lower=0).to_numpy();pv=p.to_numpy();rows=[]
+ q=dl("QQQ","1999-03-11","2010-03-11");p=q["Close"].squeeze().astype(float);r=p.pct_change().fillna(0);lev=(1+3*r).clip(lower=0).to_numpy();pv=p.to_numpy();rows=[]
  for shock in [-.04,-.045,-.05]:
   for mom in [10,20]:
    for ma in [50,100,200]:
