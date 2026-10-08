@@ -4,14 +4,14 @@ TQQQ history; it is only a structural test of the crash-brake idea against dot-c
 """
 from pathlib import Path
 import numpy as np,pandas as pd,yfinance as yf
-ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/"data"/"research";INITIAL=5000.;START="1999-03-10";END="2010-03-11"
+ROOT=Path(__file__).resolve().parents[1];OUT=ROOT/"data"/"research";INITIAL=5000.;START="1999-03-11";END="2010-03-11"
 def dl():
  x=yf.download("QQQ",start=START,end=END,auto_adjust=False,progress=False,actions=False)
  if isinstance(x.columns,pd.MultiIndex):x.columns=x.columns.get_level_values(0)
  x.index=pd.to_datetime(x.index).tz_localize(None)
  return x
 def main():
- q=dl();p=q["Close"].astype(float); r=p.pct_change().fillna(0)
+ q=dl();p=q["Close"].squeeze().astype(float); r=p.pct_change().fillna(0)
  # simple daily 3x compounding, no fees/financing; only structural
  lev=(1+3*r).clip(lower=0)
  bh=INITIAL*np.cumprod(lev)
