@@ -28,6 +28,7 @@ INITIAL=5000.0
 START="2010-01-01"
 END="2026-10-08"
 SHOCK=-0.045
+CLASSIFIER_SHOCK=-0.030
 NORMAL_TARGET=0.10
 OVERRIDE_TARGETS=(0.15,0.20,0.30,0.40)
 RET_THRESHOLDS=(0.0,-0.05,-0.10)
@@ -133,6 +134,7 @@ def classify_failed_bounces(p,ma,r60):
     ma_v=ma.to_numpy()
     r60_v=r60.to_numpy()
     qret=p.pct_change().fillna(0).to_numpy()
+    classifier_shock=CLASSIFIER_SHOCK
     r5=p.pct_change(5)
     r10=p.pct_change(10)
     r20=p.pct_change(20)
@@ -165,7 +167,7 @@ def classify_failed_bounces(p,ma,r60):
     shock_low_date=None
     shock_count=0
     for i in range(1,len(p)):
-        if not armed and qret[i] <= SHOCK:
+        if not armed and qret[i] <= classifier_shock:
             armed=True
             low=px[i]
             shock_date=p.index[i]
