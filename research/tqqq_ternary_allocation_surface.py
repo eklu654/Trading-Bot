@@ -30,7 +30,7 @@ def main():
             elif ex[i]==2: daily[i]*=1+ti[i]
         e=INITIAL*np.cumprod(daily); w=pd.Series(e,index=idx); yrs=(idx[-1]-idx[0]).days/365.25
         rows.append({"strategy":f"L{look}_S{strong}_W{weak}","final_balance":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"tqqq_pct":float((state==2).mean()),"qqq_pct":float((state==1).mean())})
-    e=INITIAL*np.cumprod(1+to); w=pd.Series(e,index=idx); yrs=(idx[-1]-idx[0]).days/365.25
+    bh_daily=(1+to)*(1+ti)-1; e=INITIAL*np.cumprod(1+bh_daily); w=pd.Series(e,index=idx); yrs=(idx[-1]-idx[0]).days/365.25
     rows.append({"strategy":"TQQQ_BH","final_balance":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"tqqq_pct":1.,"qqq_pct":0.})
     r=pd.DataFrame(rows).sort_values("final_balance",ascending=False); OUT.mkdir(parents=True,exist_ok=True); r.to_csv(OUT/"tqqq_ternary_allocation_surface.csv",index=False); print(r.head(40).to_string(index=False))
 if __name__=="__main__": main()
