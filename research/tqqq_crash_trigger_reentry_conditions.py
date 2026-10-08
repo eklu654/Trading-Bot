@@ -33,3 +33,5 @@ def main():
  bh=next_open_daily_returns(pd.Series(1.,index=idx),on,inn);e=INITIAL*np.cumprod(1+bh);w=pd.Series(e,index=idx);rows.append({"rule":"TQQQ_BH","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"cash":0})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_crash_trigger_reentry_conditions.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
+
+# validation trigger
