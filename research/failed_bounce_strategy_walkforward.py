@@ -86,11 +86,26 @@ def rule_flag(name, f, days):
         structural=(f["ma50_100"]<0 and f["ma100_200"]<0 and f["macd_bull_cross"]==0)
         channels=(f["donchian_pct"]>=0.99 and f["keltner_pct"]>1.0)
         return days>=20 and (structural or channels)
+    if name=="slow15_60neg":
+        return days>=15 and f["ret60"]<0
+    if name=="slow15_60neg_ma":
+        return days>=15 and f["ret60"]<0 and f["ma50_100"]<0
+    if name=="slow15_60neg_macd":
+        return days>=15 and f["ret60"]<0 and f["macd_bull_cross"]==0
+    if name=="slow15_60neg_structure":
+        return days>=15 and f["ret60"]<0 and f["ma50_100"]<0 and f["ma100_200"]<0
+    if name=="slow15_60neg_structure_macd":
+        return (days>=15 and f["ret60"]<0 and f["ma50_100"]<0 and
+                f["ma100_200"]<0 and f["macd_bull_cross"]==0)
+    if name=="slow15_60neg_channels":
+        return days>=15 and f["ret60"]<0 and f["donchian_pct"]>=0.99 and f["keltner_pct"]>1.0
     return False
 
 RULES=tuple([f"slow_{x}" for x in SPEED_THRESHOLDS])+("slow20_ma50","slow20_ma100",
        "slow20_channels","slow20_no_macd_cross","slow20_structural",
-       "slow20_structural_or_channels")
+       "slow20_structural_or_channels","slow15_60neg","slow15_60neg_ma",
+       "slow15_60neg_macd","slow15_60neg_structure",
+       "slow15_60neg_structure_macd","slow15_60neg_channels")
 
 def equity(p,asset_returns,rule=None,target=NORMAL):
     qret=p.pct_change().fillna(0).to_numpy()
