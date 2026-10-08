@@ -111,8 +111,8 @@ def build_daily_states(fed: pd.DataFrame, qqq: pd.DataFrame) -> pd.DataFrame:
 
     usable = actions.reset_index().rename(columns={"index": "date"})
     base = daily.reset_index().rename(columns={daily.index.name or "Date": "date"})
-    base["date"] = pd.to_datetime(base["date"]).dt.tz_localize(None)
-    usable["date"] = pd.to_datetime(usable["date"]).dt.tz_localize(None)
+    base["date"] = pd.to_datetime(base["date"]).dt.tz_localize(None).dt.as_unit("ns")
+    usable["date"] = pd.to_datetime(usable["date"]).dt.tz_localize(None).dt.as_unit("ns")
 
     merged = pd.merge_asof(
         base.sort_values("date"),
