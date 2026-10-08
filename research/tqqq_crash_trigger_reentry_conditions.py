@@ -27,7 +27,7 @@ def main():
     if k=="immediate": return True
     if k.startswith("mom"): return i>=int(k[3:]) and p.iloc[i]/p.iloc[i-int(k[3:])]-1>0
     if k.endswith("high"): n=int(k[5:-4]); return i>=n and p.iloc[i]>=p.iloc[i-n+1:i+1].max()
-    n=int(k[:-2]); return i>=n and p.iloc[i]>=p.rolling(n).mean().iloc[i]
+    n=int(k[5:-2]); return i>=n and p.iloc[i]>=p.rolling(n).mean().iloc[i]
    s=run(p,r,shock,cond);d=next_open_daily_returns(pd.Series(s,index=idx),on,inn);e=INITIAL*np.cumprod(1+d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25
    rows.append({"rule":f"S{shock}_{kind}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"cash":float((s==0).mean())})
  bh=next_open_daily_returns(pd.Series(1.,index=idx),on,inn);e=INITIAL*np.cumprod(1+bh);w=pd.Series(e,index=idx);rows.append({"rule":"TQQQ_BH","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"cash":0})
