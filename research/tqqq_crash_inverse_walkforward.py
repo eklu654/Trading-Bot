@@ -21,7 +21,8 @@ def main():
     if i>=n and p.iloc[i]/p.iloc[i-n]-1>0:armed=False
     elif i<=until:state[i]=-1
     else:state[i]=0
-  d=np.where(state==1,(1+to)*(1+ti),np.where(state==-1,(1+bo)*(1+bi),1))-1
+  ex=np.roll(state,1); ex[0]=1
+  d=np.where(ex==1,(1+to)*(1+ti),np.where(ex==-1,(1+bo)*(1+bi),1))-1
   for era,a,z in [("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]:
    m=(idx>=a)&(idx<=z);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+d[st:en+1]);rows.append({"rule":f"S{shock}_M{n}_I{iv}","era":era,"growth":v,"cagr":v**(365.25/max((idx[en]-idx[st]).days,1))-1})
  df=pd.DataFrame(rows);picks=[]
