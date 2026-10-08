@@ -69,6 +69,13 @@ def features(p):
     f["macd"]=macd; f["macd_signal"]=sig; f["macd_hist"]=macd-sig
     f["macd_bull"]=((macd>sig)&(macd.shift(1)<=sig.shift(1))).astype(int)
     f["macd_bear"]=((macd<sig)&(macd.shift(1)>=sig.shift(1))).astype(int)
+    for w in CROSS_WINDOWS:
+        f[f"macd_bull_recent_{w}"]=(f["macd_bull"].rolling(w).max().fillna(0)>0).astype(int)
+        f[f"macd_bear_recent_{w}"]=(f["macd_bear"].rolling(w).max().fillna(0)>0).astype(int)
+    f["macd_bull_state"]=(macd>sig).astype(int)
+    f["macd_bear_state"]=(macd<sig).astype(int)
+    f["macd_hist_positive"]=(f["macd_hist"]>0).astype(int)
+    f["macd_hist_negative"]=(f["macd_hist"]<0).astype(int)
     mid=p.rolling(20).mean(); sd=p.rolling(20).std()
     f["bb_pos"]=(p-(mid-2*sd))/(4*sd)
     f["bb_above_mid"]=(p>mid).astype(int)
@@ -171,6 +178,37 @@ def rule_defs():
         r.state_20_50>0 and r.state_50_100>0 and r.state_100_200<0)
     rules["short_bull_long_bear"]=lambda r: (
         r.state_10_20>0 and r.state_20_50>0 and r.state_50_100<0 and r.state_100_200<0)
+    rules["ret60_negative"]=lambda r:r.ret60<0
+    rules["ret120_negative"]=lambda r:r.ret120<0
+    rules["macd_bull_state"]=lambda r:r.macd_bull_state==1
+    rules["macd_bear_state"]=lambda r:r.macd_bear_state==1
+    rules["macd_hist_positive"]=lambda r:r.macd_hist_positive==1
+    rules["macd_hist_negative"]=lambda r:r.macd_hist_negative==1
+    rules["bb_above_mid"]=lambda r:r.bb_above_mid==1
+    rules["bb_below_mid"]=lambda r:r.bb_above_mid==0
+    rules["bb_pos_ge075"]=lambda r:r.bb_pos>=0.75
+    rules["bb_pos_le025"]=lambda r:r.bb_pos<=0.25
+    rules["donch_pos_ge075"]=lambda r:r.donch_pos>=0.75
+    rules["donch_pos_le025"]=lambda r:r.donch_pos<=0.25
+    rules["kc_pos_ge075"]=lambda r:r.kc_pos>=0.75
+    rules["kc_pos_le025"]=lambda r:r.kc_pos<=0.25
+    for w in CROSS_WINDOWS:
+        rules[f"macd_bull_recent_{w}"]=lambda r,w=w:getattr(r,f"macd_bull_recent_{w}")==1
+        rules[f"macd_bear_recent_{w}"]=lambda r,w=w:getattr(r,f"macd_bear_recent_{w}")==1
+    rules["ret60neg_bull10_20"]=lambda r:r.ret60<0 and r.state_10_20>0
+    rules["ret60neg_bull10_50"]=lambda r:r.ret60<0 and r.state_10_50>0
+    rules["ret60neg_bear_count6"]=lambda r:r.ret60<0 and r.bear_count>=6
+    rules["ret120neg_bear_count6"]=lambda r:r.ret120<0 and r.bear_count>=6
+    rules["repair_ret60_structural_damage"]=lambda r:(
+        r.ret60<0 and r.state_10_20>0 and r.state_20_50>0 and
+        r.state_50_100<0 and r.state_100_200<0)
+    rules["repair_ret120_structural_damage"]=lambda r:(
+        r.ret120<0 and r.state_10_20>0 and r.state_20_50>0 and
+        r.state_50_100<0 and r.state_100_200<0)
+    rules["macd_repair_ret60_bear6"]=lambda r:(
+        r.macd_bull_state==1 and r.ret60<0 and r.bear_count>=6)
+    rules["macd_hist_repair_ret60_bear6"]=lambda r:(
+        r.macd_hist_positive==1 and r.ret60<0 and r.bear_count>=6)
     return rules
 
 def signal_stats(ev):
