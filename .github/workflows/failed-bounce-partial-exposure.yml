@@ -1,0 +1,21 @@
+name: Failed bounce partial exposure
+on:
+  push:
+    paths:
+      - "research/failed_bounce_partial_exposure.py"
+      - "research/failed_bounce_structural_matrix.py"
+      - ".github/workflows/failed-bounce-partial-exposure.yml"
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/failed_bounce_partial_exposure.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: failed-bounce-partial-exposure
+          path: data/research/failed_bounce_structural_partial_exposure.csv
