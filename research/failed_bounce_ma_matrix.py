@@ -236,7 +236,7 @@ def equity(p,ar,rule_fn=None,target=NORMAL):
     # persist the selected target until it is actually reached.  This avoids
     # re-evaluating the classifier on later days and makes the state auditable.
     qret=p.pct_change().fillna(0).to_numpy(); px=p.to_numpy(); asset=ar.to_numpy()
-    f=features(p)
+    f=pd.concat([features(p),extra_features(p)],axis=1)
     invested=np.ones(len(p))
     armed=False; low=np.nan; required=NORMAL
     for i in range(1,len(p)):
