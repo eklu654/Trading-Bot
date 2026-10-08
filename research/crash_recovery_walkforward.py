@@ -35,12 +35,18 @@ def main():
  actual=eval_asset(pa,ta.pct_change().fillna(0).to_numpy(),[("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")],"actual")
  synp=p[(p.index>="1999-03-11")&(p.index<="2010-03-11")];synret=(1+3*synp.pct_change().fillna(0)).clip(lower=0).to_numpy()-1
  syn=eval_asset(synp,synret,[("TRAIN","1999-03-11","2004-12-31"),("TEST","2005-01-01","2010-03-11")],"synthetic")
- # add untouched buy-and-hold benchmarks for every test/training window\n bench=[]\n for asset,p0,ret0,windows in [("actual",pa,ta.pct_change().fillna(0).to_numpy(),[("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]),("synthetic",synp,synret,[("TRAIN","1999-03-11","2004-12-31"),("TEST","2005-01-01","2010-03-11")])]:\n  for name,a,b in windows:\n   m=(p0.index>=a)&(p0.index<=b);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+ret0[st:en+1]);bench.append({"asset":asset,"rule":"B&H","window":name,"growth":v,"cagr":v**(365.25/max((p0.index[en]-p0.index[st]).days,1))-1})\n out=pd.concat([actual,syn,pd.DataFrame(bench)],ignore_index=True);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_recovery_walkforward.csv",index=False)
+ # add untouched buy-and-hold benchmarks for every test/training window
+ bench=[]
+ for asset,p0,ret0,windows in [("actual",pa,ta.pct_change().fillna(0).to_numpy(),[("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]),("synthetic",synp,synret,[("TRAIN","1999-03-11","2004-12-31"),("TEST","2005-01-01","2010-03-11")])]:
+  for name,a,b in windows:
+   m=(p0.index>=a)&(p0.index<=b);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+ret0[st:en+1]);bench.append({"asset":asset,"rule":"B&H","window":name,"growth":v,"cagr":v**(365.25/max((p0.index[en]-p0.index[st]).days,1))-1})
+ out=pd.concat([actual,syn,pd.DataFrame(bench)],ignore_index=True);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_recovery_walkforward.csv",index=False)
  for trn,tes in [("TRAIN1","TEST1"),("TRAIN2","TEST2"),("TRAIN","TEST")]:
   d=out[out.window==trn]
   if not len(d):continue
   best=d.sort_values("growth",ascending=False).iloc[0].rule
-  print("\n",trn,"=>",tes,"SELECTED",best)
+  print("
+",trn,"=>",tes,"SELECTED",best)
   print(out[(out.window==tes)&(out.rule==best)].to_string(index=False))
   print("TEST TOP",out[out.window==tes].sort_values("growth",ascending=False).head(8).to_string(index=False))
 if __name__=="__main__":main()
