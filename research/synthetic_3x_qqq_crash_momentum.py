@@ -19,3 +19,5 @@ def main():
  bh=INITIAL*np.cumprod(lev);w=pd.Series(bh,index=p.index);rows.append({"rule":"SYNTHETIC_3X_BH","final":bh[-1],"cagr":(bh[-1]/INITIAL)**(365.25/max((p.index[-1]-p.index[0]).days,1))-1,"maxdd":float((w/w.cummax()-1).min()),"cash":0})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"synthetic_3x_qqq_crash_momentum.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
