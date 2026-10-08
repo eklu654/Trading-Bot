@@ -194,27 +194,35 @@ def signal_stats(ev):
                                           ascending=[False,False])
 
 def equity(p,ar,rule_fn=None,target=NORMAL):
+    # Event-driven implementation: determine the +10% decision once, then
+    # persist the selected target until it is actually reached.  This avoids
+    # re-evaluating the classifier on later days and makes the state auditable.
     qret=p.pct_change().fillna(0).to_numpy(); px=p.to_numpy(); asset=ar.to_numpy()
     f=features(p)
-    invested=np.ones(len(p)); armed=False; low=np.nan; required=NORMAL
+    invested=np.ones(len(p))
+    armed=False; low=np.nan; required=NORMAL
     for i in range(1,len(p)):
         if not armed and qret[i] <= SHOCK:
-            armed=True; low=px[i]
+            armed=True; low=px[i]; required=NORMAL
         if armed:
-            low=min(low,px[i]); gain=px[i]/low-1
-            if gain>=NORMAL and required==NORMAL:
+            if px[i] < low: low=px[i]
+            gain=px[i]/low-1
+            if required == NORMAL and gain >= NORMAL:
+                flag=False
                 if rule_fn is not None:
                     row=f.iloc[i]
-                    try: flag=bool(rule_fn(row)) and np.isfinite(row.to_numpy(dtype=float)).all()
-                    except Exception: flag=False
-                    if flag: required=target
-            if gain>=required:
+                    try:
+                        vals=row.to_numpy(dtype=float)
+                        flag=np.isfinite(vals).all() and bool(rule_fn(row))
+                    except Exception:
+                        flag=False
+                required=target if flag else NORMAL
+            if gain >= required:
                 armed=False; low=np.nan; required=NORMAL
             else:
                 invested[i]=0.0
     exposure=np.roll(invested,1); exposure[0]=1
-    eq=INITIAL*np.cumprod(1+exposure*asset)
-    return eq
+    return INITIAL*np.cumprod(1+exposure*asset)
 
 def main():
     OUT.mkdir(parents=True,exist_ok=True)
