@@ -31,3 +31,5 @@ def main():
  print("\nTEST TOP 15\n",df[df.era.isin(["TEST1","TEST2"])].sort_values(["era","growth"],ascending=[True,False]).groupby("era").head(15).to_string(index=False))
  OUT.mkdir(parents=True,exist_ok=True);df.to_csv(OUT/"tqqq_crash_inverse_walkforward.csv",index=False)
 if __name__=="__main__":main()
+
+# trigger
