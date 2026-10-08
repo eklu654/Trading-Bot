@@ -37,3 +37,5 @@ def main():
     e,ex,dd=run(p,tr,severe,moderate,window);rows.append({"rule":f"SEV{severe}_MOD{moderate}_W{window}","final":e[-1],"cagr":(e[-1]/INITIAL)**(365.25/(idx[-1]-idx[0]).days)-1,"maxdd":dd,"defensive":int((ex==0).sum())})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"clustered_crash_trigger.csv",index=False);print(out.sort_values("final",ascending=False).head(20).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
