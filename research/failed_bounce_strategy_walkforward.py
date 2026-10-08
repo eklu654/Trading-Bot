@@ -116,6 +116,7 @@ def equity(p,asset_returns,rule=None,target=NORMAL):
     armed=False
     low=np.nan
     low_i=None
+    required_target=NORMAL
     for i in range(1,len(p)):
         if not armed and qret[i]<=SHOCK:
             armed=True
@@ -126,19 +127,20 @@ def equity(p,asset_returns,rule=None,target=NORMAL):
                 low=px[i]
                 low_i=i
             gain=px[i]/low-1
-            required=NORMAL
-            if gain>=NORMAL:
+            if gain>=NORMAL and required_target==NORMAL:
                 flagged=False
                 if rule is not None:
                     days=i-low_i
                     vals={k:f[k][i] for k in f}
                     if all(np.isfinite(v) for v in vals.values()):
                         flagged=rule_flag(rule,vals,days)
-                required=target if flagged else NORMAL
+                required_target=target if flagged else NORMAL
+            required=required_target
             if gain>=required:
                 armed=False
                 low=np.nan
                 low_i=None
+                required_target=NORMAL
             else:
                 invested[i]=0.0
     exposure=np.roll(invested,1)
