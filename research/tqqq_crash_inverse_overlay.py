@@ -36,3 +36,5 @@ def main():
     rows.append({"rule":f"S{shock}_M{n}_I{invdays}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"sqqq":float((state==-1).mean()),"cash":float((state==0).mean())})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_crash_inverse_overlay.csv",index=False);print(out.head(50).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
