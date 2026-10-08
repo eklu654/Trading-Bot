@@ -1,5 +1,7 @@
 """Cross-proxy robustness: frozen Fed timing rule on NASDAQ Composite, 1971-1984.
 
+Uses DFF (effective federal funds rate), not the target-rate series, because the target series is not populated consistently for this early window. This is a separate robustness check, not comparable to the main target-rate test.
+
 This is deliberately separate from the NDX ledger because NASDAQ Composite is
 broader than the Nasdaq-100. It is only used to ask whether the Fed-timing
 mechanism appears in earlier tightening eras.
@@ -22,10 +24,10 @@ def market():
  z.observation_date=pd.to_datetime(z.observation_date);z.NASDAQCOM=pd.to_numeric(z.NASDAQCOM,errors="coerce")
  return z.set_index("observation_date").NASDAQCOM.loc[START:END].dropna()
 def fed():
- u="https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFEDTAR"
+ u="https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF"
  z=pd.read_csv(io.StringIO(requests.get(u,timeout=30).text))
- z.observation_date=pd.to_datetime(z.observation_date);z.DFEDTAR=pd.to_numeric(z.DFEDTAR,errors="coerce")
- return z.set_index("observation_date").DFEDTAR.dropna()
+ z.observation_date=pd.to_datetime(z.observation_date);z.DFF=pd.to_numeric(z.DFF,errors="coerce")
+ return z.set_index("observation_date").DFF.dropna()
 def run(px,fr):
  r=px.pct_change().fillna(0).to_numpy();a=px.to_numpy();armed=False;low=np.nan;li=si=None;rows=[]
  for i in range(1,len(px)):
