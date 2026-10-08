@@ -37,3 +37,5 @@ def main():
  for s in ["actual","synthetic"]:
   x=out[out['set']==s];print("\n"+s+" TOP");print(x.sort_values('final',ascending=False).head(15).to_string(index=False));print("\n"+s+" BEST DD >=5000");print(x[x.final>=5000].sort_values('maxdd',ascending=False).head(10).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
