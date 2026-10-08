@@ -35,3 +35,5 @@ def main():
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_partial_reentry_causal.csv",index=False)
  print(out.sort_values(["set","final"],ascending=[True,False]).groupby("set").head(15).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
