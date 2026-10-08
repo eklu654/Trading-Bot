@@ -1,0 +1,19 @@
+name: Bear discriminator walk forward
+on:
+  push:
+    paths: ["research/bear_discriminator_walkforward.py",".github/workflows/bear-discriminator-walkforward.yml"]
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/bear_discriminator_walkforward.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bear-discriminator-walkforward
+          path: data/research/bear_discriminator_walkforward.csv
