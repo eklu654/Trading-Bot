@@ -7,6 +7,7 @@ on:
       - "research/tqqq_swing_dynamic_exit_matrix.py"
       - "research/tqqq_short_horizon_surface.py"
       - "research/tqqq_short_breakout_validation.py"
+      - "research/tqqq_1to5day_surface.py"
       - ".github/workflows/tqqq-swing-first-matrix-causal.yml"
   workflow_dispatch:
 permissions:
@@ -24,6 +25,7 @@ jobs:
       - run: PYTHONPATH=research python research/tqqq_swing_dynamic_exit_matrix.py
       - run: PYTHONPATH=research python research/tqqq_short_horizon_surface.py
       - run: PYTHONPATH=research python research/tqqq_short_breakout_validation.py
+      - run: PYTHONPATH=research python research/tqqq_1to5day_surface.py
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-swing-first-matrix-causal
@@ -32,12 +34,13 @@ jobs:
             data/research/tqqq_swing_dynamic_exit_matrix.csv
             data/research/tqqq_short_horizon_surface.csv
             data/research/tqqq_short_breakout_validation.csv
+            data/research/tqqq_1to5day_surface.csv
 
       - name: Commit research result
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/research/tqqq_swing_dynamic_exit_matrix.csv data/research/tqqq_short_horizon_surface.csv data/research/tqqq_short_breakout_validation.csv
+          git add data/research/tqqq_swing_dynamic_exit_matrix.csv data/research/tqqq_short_horizon_surface.csv data/research/tqqq_short_breakout_validation.csv data/research/tqqq_1to5day_surface.csv
           if ! git diff --cached --quiet; then
             git commit -m "research: publish dynamic-exit matrix result"
             git push
