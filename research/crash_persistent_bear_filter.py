@@ -40,3 +40,5 @@ def synth():
     ex=np.roll(s,1);ex[0]=1;e=INITIAL*np.cumprod(np.where(ex,lev,1));w=pd.Series(e,index=p.index);rows.append({"set":"synthetic","rule":f"S{shock}_M{mom}_MA{ma}","final":e[-1],"cagr":(e[-1]/INITIAL)**(365.25/max((p.index[-1]-p.index[0]).days,1))-1,"maxdd":float((w/w.cummax()-1).min()),"cash":float((s==0).mean())})
  return rows
 out=pd.DataFrame(modern()+synth());OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_persistent_bear_filter.csv",index=False);print(out.sort_values(["set","final"],ascending=[True,False]).to_string(index=False))
+
+# trigger
