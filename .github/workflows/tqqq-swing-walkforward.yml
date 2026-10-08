@@ -1,0 +1,22 @@
+name: TQQQ swing walk-forward robustness
+on:
+  push:
+    paths:
+      - "research/tqqq_swing_walkforward.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/tqqq-swing-walkforward.yml"
+  workflow_dispatch:
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_swing_walkforward.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-swing-walkforward
+          path: data/research/tqqq_swing_walkforward_*.csv
