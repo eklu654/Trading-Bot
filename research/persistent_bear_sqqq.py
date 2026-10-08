@@ -32,3 +32,5 @@ def main():
      f,dd,ip,cp=run(p,tr,br,shock,n,target,inv);yrs=(idx[-1]-idx[0]).days/365.25;rows.append({"rule":f"S{shock}_N{n}_T{target}_I{inv}","final":f,"cagr":(f/INITIAL)**(1/yrs)-1,"maxdd":dd,"sqqq":ip,"cash":cp})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"persistent_bear_sqqq.csv",index=False);print(out.sort_values("final",ascending=False).head(25).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
