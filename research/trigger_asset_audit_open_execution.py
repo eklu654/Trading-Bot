@@ -27,3 +27,5 @@ def main():
     rows.append({"trigger":trigger,"rule":f"S{shock}_M{mom}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"cash":float((state==0).mean())})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"trigger_asset_audit_open_execution.csv",index=False);print(out.sort_values("final",ascending=False).head(30).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
