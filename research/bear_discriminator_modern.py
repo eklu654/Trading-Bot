@@ -46,3 +46,5 @@ def main():
   f,dd=run(p,a,mode,param);rows.append({"rule":f"{mode}:{param}","final":f,"cagr":(f/INITIAL)**(365.25/(p.index[-1]-p.index[0]).days)-1,"maxdd":dd})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"bear_discriminator_modern.csv",index=False);print(out.sort_values("final",ascending=False).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
