@@ -225,3 +225,5 @@ def main():
     print("\nOVERRIDE EVENT SUMMARY\n",summary.to_string(index=False))
 
 if __name__=="__main__": main()
+
+# CI trigger: crash-path structural override research.
