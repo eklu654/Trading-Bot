@@ -38,3 +38,5 @@ def main():
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_hybrid_secular_regime.csv",index=False)
  for s in ["actual","synthetic"]: print("\n",s);print(out[out['set']==s].sort_values('final',ascending=False).head(20).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
