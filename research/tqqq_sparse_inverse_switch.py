@@ -36,5 +36,17 @@ def main():
     e=INITIAL*np.cumprod(daily);w=pd.Series(e,index=idx)
     rows.append({"rule":f"S{shock}_INV{invdays}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"inverse_pct":float((st==-1).mean())})
  d=INITIAL*np.cumprod((1+ton)*(1+tin));w=pd.Series(d,index=idx);rows.append({"rule":"TQQQ_BH","final":d.iloc[-1],"cagr":(d.iloc[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"inverse_pct":0})
- out=pd.DataFrame(rows).sort_values("final",ascending=False);\n # chronological holdout: evaluate fixed candidate SQQQ shock rules separately by era\n wf=[]\n for shock,cool in [(-.04,10),(-.045,10),(-.05,7),(-.05,10),(-.055,10),(-.06,10)]:\n  st=np.ones(len(idx));u=-1\n  for i in range(len(idx)):\n   if i<=u: st[i]=-1\n   if i>=1 and r.iloc[i]<=shock: u=i+cool;st[i]=-1\n  ex=np.roll(st,1);ex[0]=1;dr=np.where(ex==1,(1+ton)*(1+tin),(1+bon)*(1+bin))-1\n  for era,a,z in [("2010_17","2010-01-01","2017-12-31"),("2018_21","2018-01-01","2021-12-31"),("2022_26","2022-01-01","2026-10-07")]:\n   m=(idx>=pd.Timestamp(a))&(idx<=pd.Timestamp(z));v=np.prod(1+dr[m]);wf.append({"rule":f"S{shock}_C{cool}","era":era,"growth":v})\n OUT.mkdir(parents=True,exist_ok=True)\n pd.DataFrame(wf).to_csv(OUT/"tqqq_sparse_inverse_holdout.csv",index=False)(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_sparse_inverse_switch.csv",index=False);print(out.head(60).to_string(index=False))
+ out=pd.DataFrame(rows).sort_values("final",ascending=False);
+ # chronological holdout: evaluate fixed candidate SQQQ shock rules separately by era
+ wf=[]
+ for shock,cool in [(-.04,10),(-.045,10),(-.05,7),(-.05,10),(-.055,10),(-.06,10)]:
+  st=np.ones(len(idx));u=-1
+  for i in range(len(idx)):
+   if i<=u: st[i]=-1
+   if i>=1 and r.iloc[i]<=shock: u=i+cool;st[i]=-1
+  ex=np.roll(st,1);ex[0]=1;dr=np.where(ex==1,(1+ton)*(1+tin),(1+bon)*(1+bin))-1
+  for era,a,z in [("2010_17","2010-01-01","2017-12-31"),("2018_21","2018-01-01","2021-12-31"),("2022_26","2022-01-01","2026-10-07")]:
+   m=(idx>=pd.Timestamp(a))&(idx<=pd.Timestamp(z));v=np.prod(1+dr[m]);wf.append({"rule":f"S{shock}_C{cool}","era":era,"growth":v})
+ OUT.mkdir(parents=True,exist_ok=True)
+ pd.DataFrame(wf).to_csv(OUT/"tqqq_sparse_inverse_holdout.csv",index=False);out.to_csv(OUT/"tqqq_sparse_inverse_switch.csv",index=False);print(out.head(60).to_string(index=False))
 if __name__=="__main__":main()
