@@ -4,6 +4,7 @@ on:
     paths:
       - "research/tqqq_swing_leader_holdout_costs.py"
       - "research/tqqq_swing_walkforward.py"
+      - "research/tqqq_swing_fixed_leader_robustness.py"
       - "research/causal_execution.py"
       - ".github/workflows/tqqq-swing-leader-holdout-costs.yml"
   workflow_dispatch:
@@ -35,3 +36,17 @@ jobs:
         with:
           name: tqqq-swing-walkforward
           path: data/research/tqqq_swing_walkforward_*.csv
+
+  robustness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_swing_fixed_leader_robustness.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-swing-fixed-leader-robustness
+          path: data/research/tqqq_swing_fixed_leader_robustness.csv
