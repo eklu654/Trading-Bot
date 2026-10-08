@@ -56,7 +56,8 @@ def equity(p,dma100,ret60,asset_returns,override_mode=None,override_target=0.30,
       ret60         -> if 60d return is below threshold, use override target
       dma_ret60     -> if below 100DMA AND 60d return below threshold, use override
     """
-    r=asset_returns.to_numpy()
+    asset_r=asset_returns.to_numpy()
+    q_r=p.pct_change().fillna(0).to_numpy()
     px=p.to_numpy()
     ma=dma100.to_numpy()
     r60=ret60.to_numpy()
@@ -69,7 +70,7 @@ def equity(p,dma100,ret60,asset_returns,override_mode=None,override_target=0.30,
     shock_count=0
 
     for i in range(1,len(p)):
-        if not armed and r[i] <= SHOCK:
+        if not armed and q_r[i] <= SHOCK:
             armed=True
             low=px[i]
             shock_count += 1
@@ -96,7 +97,7 @@ def equity(p,dma100,ret60,asset_returns,override_mode=None,override_target=0.30,
     # Signal observed at close i controls session i+1.
     exposure=np.roll(invested,1)
     exposure[0]=1.0
-    daily=exposure*r
+    daily=exposure*asset_r
     eq=INITIAL*np.cumprod(1+daily)
     peak=np.maximum.accumulate(eq)
     dd=eq/peak-1
