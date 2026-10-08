@@ -30,3 +30,5 @@ def main():
  print(pd.concat(picks).to_string(index=False));print("\nTEST top");print(df[df.era.isin(["TEST1","TEST2"])].sort_values(["era","growth"],ascending=[True,False]).groupby("era").head(10).to_string(index=False))
  OUT.mkdir(parents=True,exist_ok=True);df.to_csv(OUT/"tqqq_sqqq_crash_walkforward.csv",index=False)
 if __name__=="__main__":main()
+
+# trigger
