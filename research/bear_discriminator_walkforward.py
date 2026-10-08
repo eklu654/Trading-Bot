@@ -37,3 +37,5 @@ def main():
  for tr,te in [("T1","E1"),("T2","E2")]:
   print("\n",tr,"=>",te);print(out[(out.train==tr)&(out.test==te)].sort_values("train_growth",ascending=False).to_string(index=False));print("TEST RANK");print(out[(out.train==tr)&(out.test==te)].sort_values("test_growth",ascending=False).to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
