@@ -69,7 +69,7 @@ def explicit_equity(tqqq, signal):
     for i in range(len(tqqq)):
         # Signal[i-1] is the position established at yesterday's close and
         # therefore held through today's overnight and today's intraday move.
-        overnight_position = signal[i - 1] if i > 0 else 0.0
+        overnight_position = signal[i - 2] if i > 1 else 0.0
         intraday_position = signal[i - 1] if i > 0 else 0.0
         if i > 0:
             value *= 1.0 + overnight_position * (adj_open[i] / adj_close[i - 1] - 1.0)
