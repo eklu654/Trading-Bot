@@ -186,6 +186,7 @@ def main():
         rows.append(row)
 
     event_df = pd.DataFrame(rows)
+    event_df["decision_date"] = pd.to_datetime(event_df["decision_date"])
     event_df.to_csv(OUT/"failed_bounce_feature_audit_events.csv", index=False)
 
     # Compact separation table: all events, then each walk-forward train/test fold.
