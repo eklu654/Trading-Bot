@@ -1,0 +1,19 @@
+name: Bear discriminator modern
+on:
+  push:
+    paths: ["research/bear_discriminator_modern.py",".github/workflows/bear-discriminator-modern.yml"]
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/bear_discriminator_modern.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bear-discriminator-modern
+          path: data/research/bear_discriminator_modern.csv
