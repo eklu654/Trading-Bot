@@ -59,9 +59,10 @@ def build_composite_frame() -> pd.DataFrame:
     macro = macro.reset_index()
     fed.rename(columns={fed.columns[0]: "date"}, inplace=True)
     macro.rename(columns={macro.columns[0]: "date"}, inplace=True)
-    fed["date"] = pd.to_datetime(fed["date"]).dt.normalize()
-    macro["date"] = pd.to_datetime(macro["date"]).dt.normalize()
+    fed["date"] = pd.to_datetime(fed["date"]).dt.strftime("%Y-%m-%d")
+    macro["date"] = pd.to_datetime(macro["date"]).dt.strftime("%Y-%m-%d")
     frame = fed.merge(macro, on="date", how="left", validate="one_to_one")
+    frame["date"] = pd.to_datetime(frame["date"])
     frame = frame.set_index("date").sort_index()
     frame["qqq_return"] = frame["close"].pct_change().fillna(0.0)
     frame["synthetic_tqqq_return"] = (
