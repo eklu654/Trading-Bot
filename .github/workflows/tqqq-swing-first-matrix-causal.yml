@@ -5,6 +5,7 @@ on:
       - "research/tqqq_swing_first_matrix_causal.py"
       - "research/causal_execution.py"
       - "research/tqqq_swing_dynamic_exit_matrix.py"
+      - "research/tqqq_short_horizon_surface.py"
       - ".github/workflows/tqqq-swing-first-matrix-causal.yml"
   workflow_dispatch:
 permissions:
@@ -20,12 +21,14 @@ jobs:
       - run: pip install pandas numpy yfinance
       - run: PYTHONPATH=research python research/tqqq_swing_first_matrix_causal.py
       - run: PYTHONPATH=research python research/tqqq_swing_dynamic_exit_matrix.py
+      - run: PYTHONPATH=research python research/tqqq_short_horizon_surface.py
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-swing-first-matrix-causal
           path: |
             data/research/tqqq_swing_first_matrix.csv
             data/research/tqqq_swing_dynamic_exit_matrix.csv
+            data/research/tqqq_short_horizon_surface.csv
 
       - name: Commit research result
         run: |
