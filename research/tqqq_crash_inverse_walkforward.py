@@ -25,7 +25,9 @@ def main():
   d=np.where(ex==1,(1+to)*(1+ti),np.where(ex==-1,(1+bo)*(1+bi),1))-1
   for era,a,z in [("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]:
    m=(idx>=a)&(idx<=z);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+d[st:en+1]);rows.append({"rule":f"S{shock}_M{n}_I{iv}","era":era,"growth":v,"cagr":v**(365.25/max((idx[en]-idx[st]).days,1))-1})
- df=pd.DataFrame(rows);\n bh=(1+to)*(1+ti)-1\n for era,a,z in [("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]:\n  m=(idx>=a)&(idx<=z);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+bh[st:en+1]);rows.append({"rule":"TQQQ_BH","era":era,"growth":v,"cagr":v**(365.25/max((idx[en]-idx[st]).days,1))-1})\n df=pd.DataFrame(rows);picks=[]
+ df=pd.DataFrame(rows)
+ bh=(1+to)*(1+ti)-1\n for era,a,z in [("TRAIN1","2010-01-01","2017-12-31"),("TEST1","2018-01-01","2021-12-31"),("TRAIN2","2010-01-01","2021-12-31"),("TEST2","2022-01-01","2026-10-07")]:\n  m=(idx>=a)&(idx<=z);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+bh[st:en+1]);rows.append({"rule":"TQQQ_BH","era":era,"growth":v,"cagr":v**(365.25/max((idx[en]-idx[st]).days,1))-1})
+ df=pd.DataFrame(rows);picks=[]
  for tr,te in [("TRAIN1","TEST1"),("TRAIN2","TEST2")]:
   best=df[df.era==tr].sort_values("growth",ascending=False).iloc[0].rule;picks.extend([df[(df.era==tr)&(df.rule==best)],df[(df.era==te)&(df.rule==best)]])
  print("\nTOP TRAIN/TEST PICKS\n",pd.concat(picks).to_string(index=False))
