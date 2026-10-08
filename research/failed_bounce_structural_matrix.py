@@ -310,7 +310,7 @@ def main():
     print("\nCANONICAL 4.5% EVENT SNAPSHOT")
     print(events_df[events_df.shock_pct==4.5][["decision_date","low_date","speed_days","label","ret60","ret120","slope_sma60","slope_sma120","state_60_120","state_120_200","structural_score","secular_bear","repair_damage"]].to_string(index=False))
 
-if __name__=="__main__": main()    rows=[]
+if __name__=="__main__": main()
     for shock in SHOCKS:
         for name,rule in rules().items():
             for exposure in [0.25,0.50,0.75]:
