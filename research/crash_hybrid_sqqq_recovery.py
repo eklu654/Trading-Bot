@@ -33,3 +33,5 @@ def main():
 # trigger
 
 # trigger
+
+if __name__=='__main__': main()
