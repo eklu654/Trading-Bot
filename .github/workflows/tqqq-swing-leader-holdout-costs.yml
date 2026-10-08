@@ -7,6 +7,7 @@ on:
       - "research/tqqq_swing_fixed_leader_robustness.py"
       - "research/tqqq_swing_strict_2013_freeze.py"
       - "research/tqqq_swing_chronological_freeze_sensitivity.py"
+      - "research/tqqq_swing_train_validate_test.py"
       - "research/causal_execution.py"
       - ".github/workflows/tqqq-swing-leader-holdout-costs.yml"
   workflow_dispatch:
@@ -76,3 +77,16 @@ jobs:
         with:
           name: tqqq-swing-freeze-sensitivity
           path: data/research/tqqq_swing_chronological_freeze_sensitivity.csv
+  train_validate_test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/tqqq_swing_train_validate_test.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-swing-train-validate-test
+          path: data/research/tqqq_swing_train_validate_test.csv
