@@ -63,20 +63,25 @@ def event_ledger(px,fed):
     rows.append(row); armed=False; low=np.nan; li=si=None
  return pd.DataFrame(rows)
 
-def episodes(ev):
+def episodes(ev, px):
  ev=ev.sort_values("shock_date").copy()
- # A new shock within 20 trading days of prior recovery is part of same stress episode.
- ep=[]; current=-1; prev_rec=None
+ # A new shock within 20 ACTUAL NDX trading sessions after the prior
+ # recovery is part of the same stress episode. This avoids a calendar-day
+ # approximation.
+ pos={d:i for i,d in enumerate(px.index)}
+ ep=[]; current=-1; prev_recovery_i=None
  for _,r in ev.iterrows():
-  if prev_rec is None or r.recovery_date>prev_rec+pd.Timedelta(days=35):
+  shock_i=pos[r.shock_date]
+  if prev_recovery_i is None or shock_i-prev_recovery_i>20:
    current+=1
-  ep.append(current); prev_rec=r.recovery_date
+  ep.append(current)
+  prev_recovery_i=pos[r.recovery_date]
  ev["episode_id"]=ep
  return ev
 
 if __name__=="__main__":
  OUT.mkdir(parents=True,exist_ok=True); px=get_ndx(); fed=get_fed()
- ev=event_ledger(px,fed); ev=episodes(ev)
+ ev=event_ledger(px,fed); ev=episodes(ev,px)
  ev["fed_duration_cell"]=ev.fed_aggressive.astype(str)+"_"+ev.shock_to_recovery_bucket
  ev.to_csv(OUT/"fed_duration_event_ledger.csv",index=False)
 
