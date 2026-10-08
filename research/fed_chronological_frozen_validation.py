@@ -47,6 +47,8 @@ def ledger(px,fr):
     # Diagnostic only: whether the target was still higher at recovery than at shock.
     # This is NOT yet a trading rule or selection criterion.
     row["tightening_persisted_to_recovery"]=row["fed_change_shock_to_recovery_bp"]>0
+    row["candidate_persistent_tightening"]=row["aggressive"] and row["tightening_persisted_to_recovery"]
+    row["candidate_persistent_tightening_slow"]=row["candidate_persistent_tightening"] and row["prolonged"]
     row["warning_rule"]=row["aggressive"] and row["prolonged"]
     rows.append(row); armed=False;low=np.nan;li=si=None
  return pd.DataFrame(rows)
@@ -65,4 +67,6 @@ if __name__=="__main__":
  print("FROZEN RULE: aggressive >=50bp/63d AND shock-to-+10% >30 trading days")
  print("\nALL EVENTS"); print(e.to_string(index=False))
  print("\nSUMMARY"); print(s.to_string(index=False))
- print("\nRULE-HIT EVENTS"); print(e[e.warning_rule].to_string(index=False))
+ print("\nCURRENT FROZEN WARNING-HIT EVENTS"); print(e[e.warning_rule].to_string(index=False))
+ print("\nEXPLORATORY PERSISTENT-TIGHTENING CANDIDATE (NOT FROZEN)"); print(e[e.candidate_persistent_tightening].to_string(index=False))
+ print("\nEXPLORATORY CANDIDATE SUMMARY"); print(e.groupby("candidate_persistent_tightening").agg(events=("recovery_date","size"),negative_120d=("fwd_120d",lambda x:(x<0).sum()),median_fwd120=("fwd_120d","median"),median_fwd252=("fwd_252d","median")).to_string())
