@@ -35,6 +35,6 @@ def main():
     daily=np.where(np.roll(st,1)==1,(1+ton)*(1+tin),np.where(np.roll(st,1)==-1,(1+bon)*(1+bin),1));daily[0]=1
     e=INITIAL*np.cumprod(daily);w=pd.Series(e,index=idx)
     rows.append({"rule":f"S{shock}_INV{invdays}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"inverse_pct":float((st==-1).mean())})
- d=INITIAL*np.cumprod((1+ton)*(1+tin));w=pd.Series(d,index=idx);rows.append({"rule":"TQQQ_BH","final":d.iloc[-1],"cagr":(d[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"inverse_pct":0})
+ d=INITIAL*np.cumprod((1+ton)*(1+tin));w=pd.Series(d,index=idx);rows.append({"rule":"TQQQ_BH","final":d.iloc[-1],"cagr":(d.iloc[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"inverse_pct":0})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_sparse_inverse_switch.csv",index=False);print(out.head(60).to_string(index=False))
 if __name__=="__main__":main()
