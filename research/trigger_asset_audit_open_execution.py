@@ -13,7 +13,7 @@ def adjopen(x):
  return x["Open"].squeeze().astype(float)*(x["Adj Close"].squeeze().astype(float)/x["Close"].squeeze().astype(float))
 def main():
  q=dl("QQQ");t=dl("TQQQ");idx=q.index.intersection(t.index);q,t=q.reindex(idx),t.reindex(idx);qp=q["Close"].squeeze().astype(float);tp=t["Close"].squeeze().astype(float);qo=adjopen(q);to=adjopen(t);qret=qo.shift(-1)/qo-1;tret=to.shift(-1)/to-1
- rows=[]
+ rows=[{"trigger":"BENCHMARK","rule":"TQQQ_BH","final":INITIAL*np.prod(1+tret.fillna(0).to_numpy()),"cagr":(INITIAL*np.prod(1+tret.fillna(0).to_numpy())/INITIAL)**(365.25/((idx[-1]-idx[0]).days))-1,"maxdd":float((pd.Series(INITIAL*np.cumprod(1+tret.fillna(0).to_numpy()))/pd.Series(INITIAL*np.cumprod(1+tret.fillna(0).to_numpy())).cummax()-1).min()),"cash":0}]
  for trigger,price in [("QQQ",qp),("TQQQ",tp)]:
   r=price.pct_change().fillna(0)
   for shock in [-.04,-.05,-.06,-.07]:
