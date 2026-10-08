@@ -78,6 +78,32 @@ def features(p):
     f["vol20"]=p.pct_change().rolling(20).std()*np.sqrt(252)
     return pd.DataFrame(f,index=p.index)
 
+def extra_features(p):
+    r=p.pct_change()
+    ema12=p.ewm(span=12,adjust=False).mean()
+    ema26=p.ewm(span=26,adjust=False).mean()
+    macd=ema12-ema26
+    sig=macd.ewm(span=9,adjust=False).mean()
+    mid=p.rolling(20).mean()
+    sd=p.rolling(20).std()
+    bb=(p-(mid-2*sd))/(4*sd)
+    dc_hi=p.rolling(20).max()
+    dc_lo=p.rolling(20).min()
+    dc=(p-dc_lo)/(dc_hi-dc_lo)
+    atr=(p.diff().abs()).rolling(20).mean()
+    kc_mid=mid
+    kc=(p-(kc_mid-2*atr))/(4*atr)
+    return pd.DataFrame({
+        "macd":macd,"macd_signal":sig,"macd_hist":macd-sig,
+        "macd_bull":(macd>sig).astype(int),
+        "macd_cross_bull":((macd>sig)&(macd.shift(1)<=sig.shift(1))).astype(int),
+        "macd_cross_bear":((macd<sig)&(macd.shift(1)>=sig.shift(1))).astype(int),
+        "bb_position":bb,"donchian_position":dc,"keltner_position":kc,
+        "ret5":p/p.shift(5)-1,"ret10":p/p.shift(10)-1,
+        "ret20":p/p.shift(20)-1,"ret60":p/p.shift(60)-1,
+        "ret120":p/p.shift(120)-1,
+    },index=p.index)
+
 def canonical_events(p):
     r=p.pct_change().fillna(0).to_numpy()
     px=p.to_numpy()
@@ -197,7 +223,7 @@ def main():
     tp=t.reindex(idx)["Close"].squeeze().astype(float)
     ar=tp.pct_change().fillna(0)
 
-    f=features(p)
+    f=pd.concat([features(p),extra_features(p)],axis=1)
     ev=event_frame(p,f)
     ev.to_csv(OUT/"canonical_failed_bounce_ma_events.csv",index=False)
     stats=signal_stats(ev)
@@ -208,7 +234,9 @@ def main():
     print("\nEVENT FEATURE SNAPSHOT")
     cols=["decision_date","low_date","speed_days","label","ret20","ret60","ret120","macd","macd_signal","macd_hist","macd_bull","macd_bear","bb_pos","donch_pos","kc_pos","vol20","bull_count","bear_count","hierarchy_bull","hierarchy_bear","state_50_100","state_100_200"]
     print(ev[cols].to_string(index=False))
-    print("\nMA SIGNAL SEPARATION")
+    print("\n2022 FAILED-BOUNCE FEATURE SNAPSHOT")
+    print(ev[ev.label=="failed"].T.to_string())
+    print("\nSIGNAL SEPARATION")
     print(stats.to_string(index=False))
 
     rules=rule_defs()
