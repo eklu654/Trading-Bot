@@ -154,7 +154,7 @@ def main():
         years=(p.index[-1]-p.index[0]).days/365.25
         bh=INITIAL*np.cumprod(1+t.pct_change().fillna(0).to_numpy())[-1]
         full.append({"shock_pct":-shock,"strategy":"baseline","target":10,
-                     "final_balance":float(equity(p,t,shock)),"cagr":np.nan})
+                     "final_balance":float(equity(p,t,shock)[-1]),"cagr":np.nan})
         for name,fn in rdefs.items():
             for target in TARGETS:
                 eq=equity(p,t,shock,fn,target)
