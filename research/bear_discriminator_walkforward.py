@@ -132,6 +132,25 @@ def classify_failed_bounces(p,ma,r60):
     slope20=p/p.shift(20)-1
     slope60=p/p.shift(60)-1
     vol20=p.pct_change().rolling(20).std()
+    ema12=p.ewm(span=12,adjust=False).mean()
+    ema26=p.ewm(span=26,adjust=False).mean()
+    macd=ema12-ema26
+    macd_signal=macd.ewm(span=9,adjust=False).mean()
+    macd_hist=macd-macd_signal
+    macd_cross=(macd>macd_signal).astype(int).diff()
+    sma20=p.rolling(20).mean()
+    sma50=p.rolling(50).mean()
+    sma100=p.rolling(100).mean()
+    sma200=p.rolling(200).mean()
+    bb_std=p.rolling(20).std()
+    bb_pct=(p-(sma20-2*bb_std))/(4*bb_std)
+    don_hi=p.rolling(20).max()
+    don_lo=p.rolling(20).min()
+    donchian_pct=(p-don_lo)/(don_hi-don_lo)
+    tr=p.diff().abs()
+    atr14=tr.rolling(14).mean()
+    kelt_mid=p.ewm(span=20,adjust=False).mean()
+    keltner_pct=(p-(kelt_mid-2*atr14))/(4*atr14)
     armed=False
     low=np.nan
     qret=p.pct_change().fillna(0).to_numpy()
@@ -165,6 +184,19 @@ def classify_failed_bounces(p,ma,r60):
                         "slope20":slope20.iloc[i],
                         "slope60":slope60.iloc[i],
                         "vol20":vol20.iloc[i],
+                        "macd":macd.iloc[i],
+                        "macd_signal":macd_signal.iloc[i],
+                        "macd_hist":macd_hist.iloc[i],
+                        "macd_bull_cross":int(macd_cross.iloc[i]==1),
+                        "ma20_50":sma20.iloc[i]/sma50.iloc[i]-1,
+                        "ma50_100":sma50.iloc[i]/sma100.iloc[i]-1,
+                        "ma100_200":sma100.iloc[i]/sma200.iloc[i]-1,
+                        "ma20_50_bull":int(sma20.iloc[i]>sma50.iloc[i]),
+                        "ma50_100_bull":int(sma50.iloc[i]>sma100.iloc[i]),
+                        "ma100_200_bull":int(sma100.iloc[i]>sma200.iloc[i]),
+                        "bb_pct":bb_pct.iloc[i],
+                        "donchian_pct":donchian_pct.iloc[i],
+                        "keltner_pct":keltner_pct.iloc[i],
                         "fwd20_max_gain":float(np.max(future[:20])) if len(future) else np.nan,
                         "fwd20_max_loss":float(np.min(future[:20])) if len(future) else np.nan,
                         "fwd60_max_gain":float(np.max(future)) if len(future) else np.nan,
@@ -190,7 +222,7 @@ def main():
     print("\nFAILED-BOUNCE EVENT CLASSIFICATION")
     print(event_df.to_string(index=False))
     print("\nFAILED-BOUNCE FEATURE SEPARATION")
-    for col in ["ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20"]:
+    for col in ["ret5","ret10","ret20","ret60","distance_100dma","slope20","slope60","vol20","macd_hist","ma20_50","ma50_100","ma100_200","bb_pct","donchian_pct","keltner_pct","macd_bull_cross"]:
         if len(event_df):
             print(col, event_df.groupby("failed")[col].agg(["count","mean","median"]).to_string())
     rows=[]
