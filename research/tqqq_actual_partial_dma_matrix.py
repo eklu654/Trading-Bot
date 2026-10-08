@@ -28,43 +28,46 @@ def main():
     q=dl("QQQ"); t=dl("TQQQ")
     x=q.join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
     t_adj_open=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
-    x["on"]= (t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
-    x["in"]= (x.tqqq_adj_close/t_adj_open-1).fillna(0)
+    x["on"]=(t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
+    x["in"]=(x.tqqq_adj_close/t_adj_open-1).fillna(0)
+
+    # One common evaluation window after the maximum 250-session lookback.
+    # All strategies begin with the same $5,000 on the same date. Moving
+    # averages are calculated on full history before slicing, so signals are
+    # warmed up without cash-only warmup days distorting ending balances.
+    max_dma=max(DMAS)
+    x["eval_date"] = x.index
+    for dma in DMAS:
+        x[f"ma_{dma}"] = x.adj_close.rolling(dma).mean()
+    x=x.iloc[max_dma-1:].copy()
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
-    for dma in DMAS:
-        ma=x.adj_close.rolling(dma).mean()
-        for below in BELOW:
-            sig=np.where(x.adj_close>=ma,1.0,below)
-            sig[:dma-1]=0.0
-            eq=next_open_equity(sig,x.on,x["in"],INITIAL)
-            dd=eq/np.maximum.accumulate(eq)-1
-            final=float(eq[-1])
-            rows.append({"dma":dma,"below_exposure":below,"final":final,
-                         "cagr":(final/INITIAL)**(1/years)-1,
-                         "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
-    bh=next_open_equity(np.ones(len(x)),x.on,x["in"],INITIAL)
-    bdd=bh/np.maximum.accumulate(bh)-1
-    rows.append({"dma":"BUY_HOLD","below_exposure":1.0,"final":float(bh[-1]),
-                 "cagr":(bh[-1]/INITIAL)**(1/years)-1,
-                 "max_dd":float(bdd.min()),"avg_exposure":1.0})
-    # Fair control for each DMA: same delayed start/warm-up window as the
-    # corresponding DMA strategy. This prevents a DMA=100, below=100 result
-    # from appearing to beat buy-and-hold merely because the first 99 sessions
-    # are forced to zero exposure while raw buy-and-hold starts immediately.
-    for dma in DMAS:
-        sig=np.zeros(len(x))
-        sig[dma-1:]=1.0
+
+    def record(label,dma,below,sig):
         eq=next_open_equity(sig,x.on,x["in"],INITIAL)
         dd=eq/np.maximum.accumulate(eq)-1
-        final=float(eq[-1])
-        rows.append({"dma":f"BUY_HOLD_WARMUP_{dma}","below_exposure":1.0,
-                     "final":final,"cagr":(final/INITIAL)**(1/years)-1,
+        rows.append({"strategy":label,"dma":dma,"below_exposure":below,
+                     "evaluation_start":x.index[0].date().isoformat(),
+                     "evaluation_end":x.index[-1].date().isoformat(),
+                     "final":float(eq[-1]),
+                     "cagr":(float(eq[-1])/INITIAL)**(1/years)-1,
                      "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
+
+    record("BUY_HOLD",0,1.0,np.ones(len(x)))
+    for dma in DMAS:
+        ma=x[f"ma_{dma}"].to_numpy()
+        above=(x.adj_close.to_numpy()>=ma)
+        for below in BELOW:
+            sig=np.where(above,1.0,below)
+            record("DMA_PARTIAL",dma,below,sig)
+
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     OUT.mkdir(parents=True,exist_ok=True)
     out.to_csv(OUT/"tqqq_actual_partial_dma_matrix.csv",index=False)
+    print("ACTUAL TQQQ; QQQ DMA signal; next-open execution")
+    print("COMMON EVALUATION WINDOW",x.index[0].date(),"to",x.index[-1].date(),
+          "| initial capital",INITIAL)
     print(out.to_string(index=False))
-    print("\nBY DMA")
-    print(out.sort_values(["dma","below_exposure"],key=lambda c:c.astype(str)).to_string(index=False))
+    print("\\nBY DMA")
+    print(out.sort_values(["dma","below_exposure"]).to_string(index=False))
 if __name__=="__main__": main()
