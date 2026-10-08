@@ -45,3 +45,5 @@ out=pd.DataFrame(actual()+synthetic());OUT.mkdir(parents=True,exist_ok=True);out
 print("\nACTUAL TOP\n",out[out['set']=='actual'].sort_values('final',ascending=False).head(20).to_string(index=False))
 print("\nSYNTHETIC TOP\n",out[out['set']=='synthetic'].sort_values('final',ascending=False).head(20).to_string(index=False))
 print("\nSYNTHETIC LOW-DD\n",out[out['set']=='synthetic'].sort_values('maxdd',ascending=False).head(15).to_string(index=False))
+
+# trigger
