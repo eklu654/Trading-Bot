@@ -160,7 +160,7 @@ def main():
         train_mask &= p.index<=tb
         test_mask=(p.index>=ea)&(p.index<=eb)
         for name,mode,target,th in configs:
-            eq,_=equity(p,ma,r60,mode,target,th)
+            eq,_=equity(p,ma,r60,asset_returns,mode,target,th)
             trz=eq.loc[ta:tb]
             tez=eq.loc[ea:eb]
             rows.append({
