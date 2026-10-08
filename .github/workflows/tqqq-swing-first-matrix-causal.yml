@@ -19,10 +19,13 @@ jobs:
         with: {python-version: "3.11"}
       - run: pip install pandas numpy yfinance
       - run: PYTHONPATH=research python research/tqqq_swing_first_matrix_causal.py
+      - run: PYTHONPATH=research python research/tqqq_swing_dynamic_exit_matrix.py
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-swing-first-matrix-causal
-          path: data/research/tqqq_swing_first_matrix.csv
+          path: |
+            data/research/tqqq_swing_first_matrix.csv
+            data/research/tqqq_swing_dynamic_exit_matrix.csv
 
       - name: Commit research result
         run: |
