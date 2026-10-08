@@ -11,7 +11,7 @@ def dl():
  x.index=pd.to_datetime(x.index).tz_localize(None)
  return x
 def main():
- q=dl();p=q["Adj Close"]; r=p.pct_change().fillna(0)
+ q=dl();p=q["Adj Close"].astype(float); r=p.pct_change().fillna(0)
  # simple daily 3x compounding, no fees/financing; only structural
  lev=(1+3*r).clip(lower=0)
  bh=INITIAL*np.cumprod(lev)
