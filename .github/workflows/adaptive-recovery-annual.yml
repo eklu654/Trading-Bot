@@ -1,0 +1,23 @@
+name: Adaptive recovery annual
+on:
+  push:
+    paths:
+      - "research/adaptive_recovery_annual.py"
+      - ".github/workflows/adaptive-recovery-annual.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/adaptive_recovery_annual.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-recovery-annual
+          path: data/research/adaptive_recovery_annual.csv
