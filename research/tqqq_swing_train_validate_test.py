@@ -55,3 +55,5 @@ def main():
  print("TRAIN TOP10",ranked);print("VALIDATION TOP",vr);print({"selected":best[0],"validation_from_5000":best[1],"test_end_0bps":end,"test_end_5bps":cost,"bh_test_end":bhend,"test_cagr":(end/INITIAL)**(1/yrs)-1,"bh_cagr":(bhend/INITIAL)**(1/yrs)-1})
  out=pd.DataFrame([{"selected_rule":best[0][0],"hold":best[0][1],"validation_end":best[1],"test_end_0bps":end,"test_end_5bps":cost,"bh_test_end":bhend,"test_cagr":(end/INITIAL)**(1/yrs)-1,"bh_cagr":(bhend/INITIAL)**(1/yrs)-1}]);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_swing_train_validate_test.csv",index=False)
 if __name__=="__main__":main()
+
+# Trigger: preserve the fixed train/validation/test split.
