@@ -33,3 +33,5 @@ def main():
   rows.append({"split":name,"selected_rule":best[0][0],"hold":best[0][1],"train_end":best[1],"test_end_0bps":end,"test_end_5bps":cost,"bh_test_end":bhend,"test_cagr":(end/INITIAL)**(1/yrs)-1,"bh_cagr":(bhend/INITIAL)**(1/yrs)-1})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"tqqq_swing_chronological_freeze_sensitivity.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
+
+# Workflow trigger validation: frozen methodology, no parameter changes.
