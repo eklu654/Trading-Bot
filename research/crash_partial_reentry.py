@@ -30,7 +30,7 @@ def main():
     for mid in [.25,.50,.75]:
      f,dd,c,m=test(pa,ta.pct_change().fillna(0).to_numpy(),shock,r1,r2,mid);yrs=(idx[-1]-idx[0]).days/365.25
      rows.append({"set":"actual","rule":f"S{shock}_R{r1}_{r2}_M{mid}","final":f,"cagr":(f/INITIAL)**(1/yrs)-1,"maxdd":dd,"cash":c,"partial":m})
- synp=q["Close"].squeeze().astype(float);sr=synp.pct_change().fillna(0).to_numpy();slev=(1+3*sr).clip(lower=0).to_numpy()-1
+ synp=q["Close"].squeeze().astype(float);sr=synp.pct_change().fillna(0).to_numpy();slev=np.clip(1+3*sr,0,None)-1
  for shock in [-.04,-.045,-.05,-.055]:
   for r1 in [.05,.10]:
    for r2 in [.15,.20,.30,.40]:
