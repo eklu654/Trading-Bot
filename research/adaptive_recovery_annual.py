@@ -25,3 +25,5 @@ def main():
   v=g.prod();b=(1+tr[[i.year==y for i in idx]]).prod();rows.append({"year":y,"strategy_growth":v,"strategy_return":v-1,"bh_growth":b,"bh_return":b-1,"strategy_better":v>b,"defensive_days":int((ex[[i.year==y for i in idx]]==0).sum())})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"adaptive_recovery_annual.csv",index=False);print(out.to_string(index=False));print("\nCumulative strategy",np.prod(d),"B&H",np.prod(1+tr))
 if __name__=="__main__":main()
+
+# trigger
