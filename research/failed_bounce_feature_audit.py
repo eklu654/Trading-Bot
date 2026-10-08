@@ -86,7 +86,7 @@ def recency_of_cross(fast, slow, bullish=True):
     return out
 
 
-def feature_frame(p, vix):
+def feature_frame(p, vix, raw):
     f = pd.DataFrame(index=p.index)
     sma = {n: p.rolling(n).mean() for n in (10,20,50,100,200)}
     ema = {n: p.ewm(span=n, adjust=False).mean() for n in (12,26,20)}
@@ -140,10 +140,13 @@ def feature_frame(p, vix):
         f[f"donchian{n}_position"] = (p-lo) / (hi-lo)
 
     # Keltner-style channel: EMA20 +/- 2 ATR20.
+    high = raw["High"].astype(float)
+    low = raw["Low"].astype(float)
+    close = raw["Close"].astype(float)
     tr = pd.concat([
-        dl("QQQ")["High"].astype(float) - dl("QQQ")["Low"].astype(float),
-        (dl("QQQ")["High"].astype(float) - dl("QQQ")["Close"].astype(float).shift(1)).abs(),
-        (dl("QQQ")["Low"].astype(float) - dl("QQQ")["Close"].astype(float).shift(1)).abs(),
+        high - low,
+        (high - close.shift(1)).abs(),
+        (low - close.shift(1)).abs(),
     ], axis=1).max(axis=1)
     atr = tr.rolling(20).mean()
     ku = ema[20] + 2*atr
@@ -164,7 +167,7 @@ def main():
     q = dl("QQQ")
     vix = dl("^VIX")["Close"].astype(float)
     p = q["Adj Close"].astype(float)
-    f = feature_frame(p, vix)
+    f = feature_frame(p, vix, q)
 
     rows = []
     for shock_i, low_i, decision_i in events(p):
