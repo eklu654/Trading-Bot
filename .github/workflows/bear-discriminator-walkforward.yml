@@ -16,4 +16,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: bear-discriminator-walkforward
-          path: data/research/bear_discriminator_dma_vs_nodma_walkforward.csv\ndata/research/failed_bounce_event_classification.csv
+          path: |
+            data/research/bear_discriminator_dma_vs_nodma_walkforward.csv
+            data/research/failed_bounce_event_classification.csv
