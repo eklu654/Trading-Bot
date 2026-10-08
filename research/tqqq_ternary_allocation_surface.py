@@ -28,10 +28,6 @@ def main():
      # strong bullish = TQQQ; middle = QQQ; weak = cash
      s.append(3.0 if m>=strong else (1.0 if m>weak and p.iloc[i]>ma.iloc[i] else 0.0))
     s=np.array(s)
-    # build direct asset-return path with next-open execution
-    ex=np.roll(s,1);ex[0]=0
-    prev=np.roll(ex,1);prev[0]=0
-    daily=(1+prev*to)*(1+ex*ti)
     # QQQ middle exposure: use asset-specific weights
     mid=(ex==1)
     daily=np.where(mid,(1+prev[mid]*qo[mid])*(1+ex[mid]*qi[mid]),daily)
@@ -39,6 +35,7 @@ def main():
     # Recompute correctly with states 0=cash, 1=QQQ, 2=TQQQ.
     state=np.where(s>=2,2,np.where(s>=1,1,0)); exs=np.roll(state,1);exs[0]=0;prevs=np.roll(exs,1);prevs[0]=0
     daily=np.ones(len(idx))
+    qo=np.asarray(qo,float); qi=np.asarray(qi,float); to=np.asarray(to,float); ti=np.asarray(ti,float)
     for i in range(len(idx)):
       if prevs[i]==1: daily[i]*=1+qo.iloc[i]
       elif prevs[i]==2: daily[i]*=1+to.iloc[i]
