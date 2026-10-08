@@ -9,16 +9,16 @@ def dl(s,a,b):
  x=yf.download(s,start=a,end=b,auto_adjust=False,progress=False,actions=False)
  if isinstance(x.columns,pd.MultiIndex):x.columns=x.columns.get_level_values(0)
  x.index=pd.to_datetime(x.index).tz_localize(None);return x
-def test(p,ret,shock,r1,r2,mid):
+def test(p,signal_ret,asset_ret,shock,r1,r2,mid):
  s=np.ones(len(p));armed=False;low=0.
  for i in range(1,len(p)):
-  if ret[i]<=shock:armed=True;low=p.iloc[i]
+  if signal_ret[i]<=shock:armed=True;low=p.iloc[i]
   if armed:
    low=min(low,p.iloc[i]);rec=p.iloc[i]/low-1
    if rec>=r2:armed=False;s[i]=1
    elif rec>=r1:s[i]=mid
    else:s[i]=0
- ex=np.roll(s,1);ex[0]=1;e=INITIAL*np.cumprod(1+ret*ex);w=pd.Series(e,index=p.index)
+ ex=np.roll(s,1);ex[0]=1;e=INITIAL*np.cumprod(1+asset_ret*ex);w=pd.Series(e,index=p.index)
  return e[-1],float((w/w.cummax()-1).min()),float((ex==0).mean()),float((ex==mid).mean())
 def main():
  q=dl("QQQ","1999-03-11","2026-10-07");t=dl("TQQQ","2010-01-01","2026-10-07");idx=q.index.intersection(t.index)
