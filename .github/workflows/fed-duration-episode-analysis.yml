@@ -1,0 +1,21 @@
+name: Fed tightening recovery-duration analysis
+on:
+  push:
+    paths:
+      - "research/fed_duration_episode_analysis.py"
+      - ".github/workflows/fed-duration-episode-analysis.yml"
+  workflow_dispatch:
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance requests
+      - run: PYTHONPATH=research python research/fed_duration_episode_analysis.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fed-duration-episode-analysis
+          path: data/research/fed_duration_*.csv
