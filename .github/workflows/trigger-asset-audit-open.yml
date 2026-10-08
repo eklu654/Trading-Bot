@@ -1,0 +1,23 @@
+name: Trigger asset audit open execution
+on:
+  push:
+    paths:
+      - "research/trigger_asset_audit_open_execution.py"
+      - ".github/workflows/trigger-asset-audit-open.yml"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pandas numpy yfinance
+      - run: PYTHONPATH=research python research/trigger_asset_audit_open_execution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: trigger-asset-audit-open
+          path: data/research/trigger_asset_audit_open_execution.csv
