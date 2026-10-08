@@ -36,11 +36,17 @@ def ledger(px,fr):
    if a[i]/low-1>=REC:
     d=px.index[i]; f=fr.loc[:d]; cur=float(f.iloc[-1]); p=f.loc[:d-pd.Timedelta(days=FED_DAYS)]
     old=float(p.iloc[-1]) if len(p) else np.nan; bp=(cur-old)*100
+    fs=fr.loc[:px.index[si]]; shock_rate=float(fs.iloc[-1])
     row={"shock_date":px.index[si],"low_date":px.index[li],"recovery_date":d,
          "shock_to_recovery_td":i-si,"low_to_recovery_td":i-li,
+         "fed_target_at_shock":shock_rate,"fed_target_at_recovery":cur,
+         "fed_change_shock_to_recovery_bp":(cur-shock_rate)*100,
          "fed_63d_bp":bp,"aggressive":bp>=FED_BP,"prolonged":(i-si)>DUR}
     for n in [60,120,252]:
      q=px.loc[d:].iloc[:n+1]; row[f"fwd_{n}d"]=float(q.iloc[-1]/q.iloc[0]-1) if len(q)>1 else np.nan
+    # Diagnostic only: whether the target was still higher at recovery than at shock.
+    # This is NOT yet a trading rule or selection criterion.
+    row["tightening_persisted_to_recovery"]=row["fed_change_shock_to_recovery_bp"]>0
     row["warning_rule"]=row["aggressive"] and row["prolonged"]
     rows.append(row); armed=False;low=np.nan;li=si=None
  return pd.DataFrame(rows)
@@ -53,7 +59,7 @@ if __name__=="__main__":
  OUT.mkdir(parents=True,exist_ok=True); e=ledger(market(),fed()); e["era"]=e.recovery_date.map(era)
  e["outcome_120"]=np.where(e.fwd_120d<0,"negative","nonnegative")
  e.to_csv(OUT/"fed_chronological_frozen_event_ledger.csv",index=False)
- s=e.groupby(["era","warning_rule"],as_index=False).agg(events=("recovery_date","size"),negative_120d=("outcome_120","size"),median_fwd120=("fwd_120d","median"),median_duration=("shock_to_recovery_td","median"))
+ s=e.groupby(["era","warning_rule"],as_index=False).agg(events=("recovery_date","size"),median_fwd120=("fwd_120d","median"),median_duration=("shock_to_recovery_td","median"))
  s["negative_share_120d"]=s.apply(lambda x: np.nan if x.events==0 else (e.loc[(e.era==x.era)&(e.warning_rule==x.warning_rule),"fwd_120d"]<0).mean(),axis=1)
  s.to_csv(OUT/"fed_chronological_frozen_summary.csv",index=False)
  print("FROZEN RULE: aggressive >=50bp/63d AND shock-to-+10% >30 trading days")
