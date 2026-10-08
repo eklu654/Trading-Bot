@@ -27,3 +27,5 @@ def main():
   e=INITIAL*np.cumprod(d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25;rows.append({"rule":name,"final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min())})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_architecture_benchmarks.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
+
+# trigger
