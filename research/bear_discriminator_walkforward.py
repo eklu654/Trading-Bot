@@ -125,9 +125,12 @@ def main():
     q=q.reindex(idx)
     t=t.reindex(idx)
     p,ma,r60=signals(q)
-    asset_returns=t["Adj Close"].squeeze().astype(float).pct_change().fillna(0)
+    asset_prices=t["Close"].squeeze().astype(float).reindex(idx)
+    asset_returns=asset_prices.pct_change().fillna(0)
 
     rows=[]
+    bh=INITIAL*np.cumprod(1+asset_returns.to_numpy())
+    print(f"\nSANITY TQQQ BUY&HOLD: {bh[-1]:,.2f}")
     configs=[("baseline_10pct","baseline",0.30,0.0)]
     for mode in ("ret60","dma_ret60"):
         for th in RET_THRESHOLDS:
