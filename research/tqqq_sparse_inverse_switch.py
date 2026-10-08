@@ -48,5 +48,5 @@ def main():
   for era,a,z in [("2010_17","2010-01-01","2017-12-31"),("2018_21","2018-01-01","2021-12-31"),("2022_26","2022-01-01","2026-10-07")]:
    m=(idx>=pd.Timestamp(a))&(idx<=pd.Timestamp(z));v=np.prod(1+dr[m]);wf.append({"rule":f"S{shock}_C{cool}","era":era,"growth":v})
  OUT.mkdir(parents=True,exist_ok=True)
- pd.DataFrame(wf).to_csv(OUT/"tqqq_sparse_inverse_holdout.csv",index=False);out.to_csv(OUT/"tqqq_sparse_inverse_switch.csv",index=False);print(out.head(60).to_string(index=False))
+ pd.DataFrame(wf).to_csv(OUT/"tqqq_sparse_inverse_holdout.csv",index=False); print("\nHOLDOUT\n"+pd.DataFrame(wf).to_string(index=False));out.to_csv(OUT/"tqqq_sparse_inverse_switch.csv",index=False);print(out.head(60).to_string(index=False))
 if __name__=="__main__":main()
