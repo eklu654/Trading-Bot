@@ -29,3 +29,5 @@ def main():
     e=INITIAL*np.cumprod(d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25
     rows.append({"rule":f"S{shock}_R{rec}_I{inv}","final":e[-1],"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"sqqq":float((ex==-1).mean()),"cash":float((ex==0).mean()),"switches":int(np.sum(ex[1:]!=ex[:-1]))})
  out=pd.DataFrame(rows);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"crash_hybrid_sqqq_recovery.csv",index=False);print(out.sort_values("final",ascending=False).head(25).to_string(index=False))
+
+# trigger
