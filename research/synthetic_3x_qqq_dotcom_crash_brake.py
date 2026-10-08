@@ -28,6 +28,6 @@ def main():
    daily=np.where(ex,lev,1)
    e=INITIAL*np.cumprod(daily)
    rows.append({"rule":f"S{shock}_C{c}","final":e[-1],"cagr":(e[-1]/INITIAL)**(365.25/max((p.index[-1]-p.index[0]).days,1))-1,"maxdd":float((pd.Series(e)/pd.Series(e).cummax()-1).min()),"cash":float((s==0).mean())})
- rows.append({"rule":"SYNTHETIC_3X_BH","final":bh[-1],"cagr":(bh[-1]/INITIAL)**(365.25/max((p.index[-1]-p.index[0]).days,1))-1,"maxdd":float((pd.Series(bh)/pd.Series(bh).cummax()-1).min()),"cash":0})
+ rows.append({"rule":"SYNTHETIC_3X_BH","final":bh.iloc[-1],"cagr":(bh[-1]/INITIAL)**(365.25/max((p.index[-1]-p.index[0]).days,1))-1,"maxdd":float((pd.Series(bh)/pd.Series(bh).cummax()-1).min()),"cash":0})
  out=pd.DataFrame(rows).sort_values("final",ascending=False);OUT.mkdir(parents=True,exist_ok=True);out.to_csv(OUT/"synthetic_3x_qqq_dotcom_crash_brake.csv",index=False);print(out.to_string(index=False))
 if __name__=="__main__":main()
