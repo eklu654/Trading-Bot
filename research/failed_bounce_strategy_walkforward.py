@@ -162,6 +162,19 @@ def main():
 
     # Full-period comparison.
     rows=[]
+    # canonical-event diagnostic: print every 4.5% shock -> 10% recovery and speed
+    qret=p.pct_change().fillna(0).to_numpy(); px=p.to_numpy(); armed=False; low=np.nan; low_i=None
+    canonical=[]
+    for i in range(1,len(p)):
+        if not armed and qret[i] <= SHOCK:
+            armed=True; low=px[i]; low_i=i
+        if armed:
+            if px[i]<low: low=px[i]; low_i=i
+            if px[i]/low-1>=NORMAL:
+                canonical.append((str(p.index[i].date()), i-low_i, px[i]/low-1))
+                armed=False; low=np.nan; low_i=None
+    print("\nCANONICAL 4.5% SHOCK -> 10% RECOVERY EVENTS")
+    print(canonical)
     configs=[("baseline_10pct",None,NORMAL)]
     for rule in RULES:
         for target in TARGETS:
