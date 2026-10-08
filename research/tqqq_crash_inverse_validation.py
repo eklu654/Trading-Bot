@@ -23,7 +23,8 @@ def main():
     if i>=n and p.iloc[i]/p.iloc[i-n]-1>0:armed=False
     elif i<=until:state[i]=-1
     else:state[i]=0
-  d=np.where(state==1,(1+to)*(1+ti),np.where(state==-1,(1+bo)*(1+bi),1))-1
+  ex=np.roll(state,1); ex[0]=1
+  d=np.where(ex==1,(1+to)*(1+ti),np.where(ex==-1,(1+bo)*(1+bi),1))-1
   for name,a,z in eras:
    m=(idx>=a)&(idx<=z);ii=np.where(m)[0];st,en=ii[0],ii[-1];v=np.prod(1+d[st:en+1]);rows.append({"rule":f"S{shock}_M{n}_I{invdays}","era":name,"growth":v,"cagr":v**(365.25/max((idx[en]-idx[st]).days,1))-1})
   e=INITIAL*np.cumprod(1+d);w=pd.Series(e,index=idx);yrs=(idx[-1]-idx[0]).days/365.25;rows.append({"rule":f"S{shock}_M{n}_I{invdays}","era":"FULL","growth":e[-1]/INITIAL,"cagr":(e[-1]/INITIAL)**(1/yrs)-1,"maxdd":float((w/w.cummax()-1).min()),"sqqq":float((state==-1).mean()),"cash":float((state==0).mean())})
