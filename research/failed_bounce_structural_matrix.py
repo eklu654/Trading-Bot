@@ -189,7 +189,7 @@ def signal_for_rule(p, events, rule, target, exposure):
         # The strategy remains defensive from the original shock until the
         # recovery decision. The only question is how much exposure is allowed
         # after the +10% bounce when the structural rule flags a failed bounce.
-        w[int(row.event_start_i) : decision_i + 1] = 0.0
+        w[int(row.event_start_i) : decision_i] = 0.0
         try:
             flagged = bool(rule(row))
         except Exception:
@@ -202,9 +202,9 @@ def signal_for_rule(p, events, rule, target, exposure):
             future = p.iloc[decision_i + 1 :].to_numpy() / base - 1
             hit = np.where(future >= target)[0]
             resume_i = decision_i + 1 + int(hit[0]) if len(hit) else len(p)
-            w[decision_i + 1 : resume_i] = exposure
+            w[decision_i : resume_i] = exposure
         else:
-            w[decision_i + 1] = 1.0
+            w[decision_i] = 1.0
     return w
 
 
@@ -276,7 +276,7 @@ def main():
     # Canonical binary defensive control: 0% through the +10% recovery.
     binary_w = np.ones(len(p))
     for row in canonical.itertuples(index=False):
-        binary_w[int(row.event_start_i) : int(row.decision_i) + 1] = 0.0
+        binary_w[int(row.event_start_i) : int(row.decision_i)] = 0.0
     rows.append({
         "shock_pct": 4.5,
         "strategy": "canonical_defensive_until_plus10",
