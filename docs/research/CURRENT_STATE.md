@@ -279,7 +279,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 ### Recovery-gated structural confirmation results — 2026-10-09
 
 - Workflow passed: [run 37913598899](https://github.com/eklu654/Trading-Bot/actions/runs/37913598899); artifact ID `11607946132`, digest `0e9e84b2492c26692a3c0f7194e8ae0cdb8d71f41f5bca5448e945de942d916a`.
-- Report: [recovery gate results](CANONICAL_RECOVERY_GATE_2026-10-09.md).
+- Report: [recovery gate results](CANONICAL_RECOVERY_GATE_RESULTS_2026-10-09.md).
 - Actual TQQQ: B0 $4.040M; N=5 $1.724M, N=8 $3.102M, N=10 $3.102M. N=8/10 preserve COVID's +24.58% window, but worsen max DD (-79.68% vs B0 -73.53%), worsen 2022 (-76.83% vs -69.83%), and finish ~23.2% below B0. N=5 also blocks COVID and is worse.
 - Decision: reject this recovery gate in its tested form; do not choose a speed threshold. The 2022 veto kept the strategy out until the matrix cleared on 2022-08-10, with opportunity cost outweighing avoided weakness.
 - Next hypothesis, if pursued: test a bounded short delay rather than waiting for DMA clearance. Keep it explicitly exploratory; modern data has already been inspected.
+
+
+- Audit detail: artifact manifest reports actual aligned input 2010-02-11 through 2026-10-07 (4,189 rows), SHA-256 `1b4993c21e5dd211a71d0bda23934e07ade383d00eeb17f24645f9c03f8095b1`. Synthetic 1999+ output is an uncalibrated hypothetical 3x QQQ proxy, not actual TQQQ.
+- Full event-level review: 2019-01-07 and 2020-03-26 recovery attempts were vetoed at N=5 but released at N=8/10; the 2022-07-19 recovery was vetoed through 2022-08-10. Vetoed checks repeat daily and are not independent events.
+- No more threshold tuning of this design. If testing a bounded delay next, predeclare it separately and compare against B0 on the same frozen input.
