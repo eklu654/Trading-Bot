@@ -266,3 +266,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - At the +10% recovery decision, structural condition flagged 23/38 events; fast-shock flagged 27/38. Against a new-low-within-60-session target, precision was 60.9%/59.3% and specificity only 47.1%/35.3%, respectively. By 120 sessions precision rose to ~74%, but specificity remained ~42–50%. This is suggestive, not enough to override B0.
 - Counterexamples: 2019-01-07 structural true but QQQ +16.5% over next 60 sessions without a new low; 2020-03-26 fast-shock true but QQQ +28.8% over next 60 sessions without a new low; 2022-07-19 both flags true and QQQ made a new low within 60 sessions.
 - Decision: current structural/fast-shock flags are too nonspecific to safely gate B0 recovery. If proceeding, test an explicit recovery-confirmation rule with a fast-rebound exception; keep B0 unchanged as control.
+
+
+### Recovery-gated structural confirmation experiment — 2026-10-09
+
+- The continuous matrix overlay was rejected because it blocks successful B0 recovery decisions. New candidate applies the matrix only at the canonical +10% recovery decision; it never reduces exposure during ordinary B0-held periods.
+- When a recovery is flagged, the strategy vetoes it only if the rebound took longer than a fixed N sessions from the running low. A veto keeps the strategy defensive, updates any new low, and reassesses at the next +10% recovery. Fast-recovery exception sensitivity: N=5/8/10 sessions.
+- This is a small, exploratory, in-sample sensitivity test, not a production selection. Frozen plan: [CANONICAL_RECOVERY_GATE_2026-10-09.md](CANONICAL_RECOVERY_GATE_2026-10-09.md).
+- Workflow: `.github/workflows/canonical-recovery-gate.yml`; results to be recorded after artifact inspection.
