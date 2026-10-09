@@ -81,3 +81,51 @@ The older user-confirmed remembered baseline was approximately $3.3M: QQQ daily 
 
 ### Next verification action
 Create a shared, immutable input artifact once (QQQ/TQQQ raw OHLCV plus one explicit adjusted-price construction), then run both canonical engines against those exact files without downloading again. Assert byte-identical input hashes, matching event/execution dates, and compare every daily equity value. Separately recover and reproduce the exact ~$3.3M anti-fakeout rule from its historical source before treating it as the original strategy.
+
+
+## 2026-10-09 continuation: latest workflow sweep and three-layer reality check
+
+### Latest CI / research sweep
+All following runs completed successfully on main at commit `b6d8e24c486de2dcb4925398580438f84167ddf7` (UTC 2026-10-09 03:52):
+- Research tests: [37881243283](https://github.com/eklu654/Trading-Bot/actions/runs/37881243283)
+- Canonical shock/recovery robustness: [37881243286](https://github.com/eklu654/Trading-Bot/actions/runs/37881243286), artifact 11595175078
+- Structural matrix: [37881243310](https://github.com/eklu654/Trading-Bot/actions/runs/37881243310), artifact 11593689207
+- Partial DMA matrix: [37881243315](https://github.com/eklu654/Trading-Bot/actions/runs/37881243315), artifact 11594611426
+- Actual-TQQQ three-layer validation: [37881243323](https://github.com/eklu654/Trading-Bot/actions/runs/37881243323), artifact 11595025449
+- Independent canonical audit: [37881243328](https://github.com/eklu654/Trading-Bot/actions/runs/37881243328), artifact 11594243817
+- Feature audit: [37881243337](https://github.com/eklu654/Trading-Bot/actions/runs/37881243337), artifact 11593574579
+- Three-layer event attribution: [37881243276](https://github.com/eklu654/Trading-Bot/actions/runs/37881243276), artifact 11594870800
+
+### Latest canonical result (still provisional, not 100% verified)
+- Latest robustness artifact: $4,040,313.07 final from $5,000; TQQQ buy-and-hold $2,094,668.95; max drawdown -73.53% vs -81.66%.
+- Independent audit from the same sweep: $4,040,314.45 vs buy-and-hold $2,094,668.80. This implementation's strategy terminal balance differs from robustness by about $1.38, but inputs still come from separately downloaded adjusted-price series. No exact same-input/daily-curve equality assertion has been demonstrated; therefore status remains PROVISIONALLY REPRODUCED, NOT FULLY VERIFIED.
+- Cost stress on the robustness run: estimated terminal wealth is $4.0018M at 5 bps, $3.9637M at 10 bps, $3.8513M at 25 bps, and $3.6706M at 50 bps per exposure transition. These are modeled costs, not broker fill evidence.
+- The simple rule is not consistently better by era: 2025-current return is about +100.2% for the rule vs +114.4% buy-and-hold, though the rule materially improved 2022-2024 (+42.3% vs -1.36%). Its observed max drawdown remains very large at roughly -73.5%.
+
+### Critical discovery: the huge synthetic three-layer result does not survive actual TQQQ
+- The synthetic leveraged-QQQ three-layer artifact reports approximately $204.86 billion from $5,000 for its three-layer variant (base $128.31B; conditioned $183.10B). This is a separate synthetic proxy backtest starting in 1999, not a real TQQQ result and not the shock/recovery strategy.
+- The actual-TQQQ validation on the available 2010–2026 TQQQ history reports:
+  - 100-DMA base: $84,635.24
+  - Fed-conditioned: $106,887.61
+  - Three-layer: $91,784.61
+  - Actual TQQQ buy-and-hold: $2,029,288.82
+- Thus the three-layer architecture, as currently specified, fails badly against actual TQQQ buy-and-hold. The $128B/$205B synthetic figures must not be used as strategy performance or as evidence that the rule beats TQQQ. Treat the synthetic study as REJECTED FOR PERFORMANCE CLAIMS until the synthetic return model and regime rule are rebuilt and the actual-instrument validation is explained.
+- The event-attribution artifact is also internally suspicious: its summary says conditioned minus base is -$96,938.73 and three-layer minus conditioned is -$20,155.01, whereas its synthetic terminal values claim conditioned and three-layer greatly exceed base. This is a direct reconciliation inconsistency between artifact summaries and needs a code/data audit before using that attribution.
+- Current code's synthetic proxy is based on applying a 3x multiple to QQQ returns with a daily loss floor, rather than actual TQQQ OHLC/adjusted-open returns; it omits real fund path/tracking/fee behavior. That is a likely model limitation, but not by itself a complete explanation for the scale of the gap.
+
+### Structural and feature diagnostics are too small to establish a reliable anti-fakeout rule
+- The latest canonical feature audit produces only nine canonical shock/recovery events; the resolved outcome sample in the separation table is one failed vs seven successful events. These counts are too small to validate a multi-feature classifier or optimize a threshold without severe overfitting risk.
+- The structural matrix's best exploratory rows report about $3.763M and -70.23% max drawdown, but they were selected from many rules/targets/exposures over the same sample. They are exploratory, not an out-of-sample result and not proof of the user's remembered ~$3.3M baseline.
+- The 2018/2020/2022 event labels are diagnostic future outcomes only. No feature rule is approved until frozen, causal, chronological holdout results show robust improvement and the event ledger is independently reconciled.
+
+### Historical-period scope correction
+- Actual QQQ data begins in 1999 and actual TQQQ begins in 2010. Any proposed tests for 1987 or 1971 cannot be actual QQQ/TQQQ strategy backtests. They must be explicitly labeled as broad-market signal-only studies using a long-history index (e.g., S&P 500 series), with different claims and no invented TQQQ terminal balance. The 2000–2002 study can use QQQ as a signal source but must still label TQQQ performance as synthetic if projecting a leveraged instrument that did not yet exist.
+- Repo code search did not recover an exact existing failed-bounce report for 1971/1987, so those historical test definitions/results remain UNRECOVERED rather than assumed completed.
+
+### Next actions, in order
+1. Implement one immutable shared dataset artifact and deterministic replay: download once, store QQQ/TQQQ raw OHLCV plus adjusted close (and explicit adjusted-open formula), record SHA-256 hashes, and feed the exact same arrays to both canonical engines.
+2. Add an automated assertion comparing event dates, executed exposure by session, daily returns, and daily equity across engines; test at least one shock/recovery transition and the first overnight/intraday after each transition.
+3. Recover the exact ~$3.3M anti-fakeout rule from git history and old run artifacts. Do not infer it from the current matrix's top row.
+4. Audit synthetic three-layer model: reconcile the contradictory attribution artifact, inspect daily return construction and date alignment, then either repair or explicitly retire synthetic wealth figures.
+5. Run long-history signal diagnostics for 1971, 1987, 2000–2002, and 2022 with the same causal feature definitions where the data supports them. Keep signal-only evaluation separate from actual TQQQ portfolio returns.
+6. Keep the initial benchmark non-AI. Do not advance to AI selection or paper trading until the original baseline, exact-input replay, and stress/holdout evidence are resolved.
