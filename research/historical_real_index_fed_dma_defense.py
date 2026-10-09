@@ -62,8 +62,9 @@ def state_frame(index: pd.DatetimeIndex, dff: pd.Series) -> pd.DataFrame:
     # index session. This historical proxy is not the modern target-rate builder.
     daily = dff.copy()
     daily.index = daily.index + pd.Timedelta(days=1)
-    ix = pd.DataFrame({"date": index}).sort_values("date")
+    ix = pd.DataFrame({"date": pd.to_datetime(index).astype("datetime64[ns]")}).sort_values("date")
     rates = daily.rename("dff").reset_index()
+    rates["date"] = pd.to_datetime(rates["date"]).astype("datetime64[ns]")
     rates.columns = ["date", "dff"]
     mapped = pd.merge_asof(ix, rates.sort_values("date"), on="date", direction="backward")
     mapped = mapped.set_index("date")
@@ -87,8 +88,9 @@ def treasury_cash_returns(index: pd.DatetimeIndex, tb3ms: pd.Series) -> tuple[np
     # avoid using the current month's as-yet-unpublished value.
     tb = tb3ms.copy()
     tb.index = tb.index + pd.offsets.MonthBegin(1)
-    ix = pd.DataFrame({"date": index}).sort_values("date")
+    ix = pd.DataFrame({"date": pd.to_datetime(index).astype("datetime64[ns]")}).sort_values("date")
     right = tb.rename("yield_pct").reset_index()
+    right["date"] = pd.to_datetime(right["date"]).astype("datetime64[ns]")
     right.columns = ["date", "yield_pct"]
     mapped = pd.merge_asof(ix, right.sort_values("date"), on="date", direction="backward").set_index("date")
     annual = mapped["yield_pct"].fillna(0).to_numpy() / 100.0
@@ -144,19 +146,21 @@ def run_one(close: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, inpu
             trans.append(ev)
     rows, episodes = [], []
     for mode, st in states.items():
+        # Close-derived state changes exposure on the next session only.
+        st_exec = np.r_[False, st[:-1]]
         for exposure in EXPOSURES:
             name = f"{mode}_defense_{int(exposure*100)}pct"
-            weights = np.where(st, exposure, 1.0)
+            weights = np.where(st_exec, exposure, 1.0)
             portret = weights * rets + (1.0-weights)*cash
             m = calc_metrics(portret, close.index, label)
-            m.update({"mechanic":mode,"defensive_index_exposure":exposure,"defensive_sessions":int(st.sum()),"defensive_fraction":float(st.mean()),"transitions":int(np.count_nonzero(st[1:]!=st[:-1])),"input_hashes":json.dumps(input_hashes,sort_keys=True)})
+            m.update({"mechanic":mode,"defensive_index_exposure":exposure,"defensive_sessions":int(st_exec.sum()),"defensive_fraction":float(st_exec.mean()),"signal_transitions":int(np.count_nonzero(st[1:]!=st[:-1])),"executed_exposure_transitions":int(np.count_nonzero(st_exec[1:]!=st_exec[:-1])),"input_hashes":json.dumps(input_hashes,sort_keys=True)})
             rows.append(m)
             eq = np.cumprod(1+portret)
             for ep, start, end in EPISODES:
                 mask=(close.index>=start)&(close.index<=end)
                 if not mask.any(): continue
                 er=portret[mask]; ee=np.cumprod(1+er); dd=(ee/np.maximum.accumulate(ee)-1).min()
-                episodes.append({"index":label,"episode":ep,"mechanic":mode,"defensive_index_exposure":exposure,"start":close.index[mask][0].date().isoformat(),"end":close.index[mask][-1].date().isoformat(),"return":float(ee[-1]-1),"local_max_drawdown":float(dd),"defensive_sessions":int(st[mask].sum())})
+                episodes.append({"index":label,"episode":ep,"mechanic":mode,"defensive_index_exposure":exposure,"start":close.index[mask][0].date().isoformat(),"end":close.index[mask][-1].date().isoformat(),"return":float(ee[-1]-1),"local_max_drawdown":float(dd),"defensive_sessions":int(st_exec[mask].sum())})
     return pd.DataFrame(rows),pd.concat(trans,ignore_index=True) if trans else pd.DataFrame(),pd.DataFrame(episodes)
 
 def main():
