@@ -29,3 +29,12 @@ These must remain separate in reporting.
 - The feature audit is underpowered and descriptive, not a validated predictor.
 - No paper or live trading approval.
 - This note documents analysis and a small audit-metric fix; the triggered workflow must be checked separately.
+
+
+## Follow-up code audit — transaction-cost application
+
+A second source review found that `research/failed_bounce_robustness.py` estimated cost stress by subtracting the cost fraction from the already-compounded daily return. That is not the exact modeled execution order. The shared `next_open_cost_equity` implementation applies the overnight return on the prior position, then the transaction cost at the open, then the intraday return on the newly executed position.
+
+The robustness script now uses that exact equity helper and reconstructs adjusted overnight/intraday legs for its 0/5/10/25/50-bps table. Commit: `5981710d8ff6a542aa9991175b126fd3bf0e35fa`.
+
+This is a cost-accounting correction only; it does not change the B0 signal or no-cost return path. Any prior failed-bounce cost table is superseded by the workflow artifact produced from this commit. Wait for the corresponding workflow and compare its 0-bps result with the headline path before accepting the cost table. The helper's 0-bps output should reconcile to the strategy equity path within numerical tolerance; if it does not, investigate before further interpretation.
