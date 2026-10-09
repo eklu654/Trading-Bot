@@ -25,7 +25,9 @@
 | D75 | Below 200-DMA regardless of Fed; 75% TQQQ | $2,939,995 | -67.11% | -66.00% | 701 |
 | TQQQ buy-and-hold | No defense | $2,094,669 | -81.66% | -81.04% | 0 |
 
-The DMA-only variants substantially reduced drawdown, but paid for it with too many defensive sessions and much lower ending wealth. D50 finished below TQQQ buy-and-hold in this run; D75 finished above buy-and-hold but about $1.10M below B0. F50/F75 preserved much more wealth because the Fed condition filtered out many DMA-only defensive episodes.
+The raw Fed-gated overlay state was active on 337 sessions; the DMA-only state was active on 600 sessions. Because the baseline shock-defense state overlaps some overlay sessions, the combined target exposure was below 100% on 473 sessions for F50/F75 and 701 sessions for D50/D75.
+
+The DMA-only variants substantially reduced drawdown, but paid for it with many more reduced-exposure sessions and much lower ending wealth. D50 finished below TQQQ buy-and-hold in this run; D75 finished above buy-and-hold but about $1.10M below B0. F50/F75 preserved much more wealth because the Fed condition filtered out many DMA-only defensive episodes.
 
 ## 3. Cost sensitivity
 
