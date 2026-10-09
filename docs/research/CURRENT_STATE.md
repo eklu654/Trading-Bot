@@ -1,265 +1,75 @@
 # Trading-Bot Research — Current State
 
-**Last updated:** 2026-10-08 (latest verification activity extends into 2026-10-09 UTC)  
-**Active investigation:** Reverify the QQQ shock/recovery TQQQ strategy family.  
-**Starting capital:** $5,000.
+**Last updated:** 2026-10-09 UTC  
+**Active investigation:** Determine whether the canonical QQQ shock/recovery TQQQ strategy can withstand both acute V-shaped crashes and gradual/prolonged bear markets.  
+**Starting capital:** $5,000.  
+**Authority:** This file and the dated research reports are the working project checkpoint. Keep old results, but clearly label their validity.
 
-## Active baseline (user-confirmed, exact rule still being recovered)
-The user's remembered current baseline is approximately **$3.3M**, based on a QQQ daily-drop trigger and +10% recovery from the post-shock low, plus an additional anti-bear-rally rule. The exact anti-fakeout rule must be recovered from prior source history/logs before treating any matrix row as the original frozen baseline. Do not substitute the simple ~$4.04M strategy for this baseline.
+## User's current direction
 
-## Results status
-- **Original ~$3.337M structural-matrix result: INVALID AS ORIGINALLY IMPLEMENTED.** The original code skipped events labelled `censored`, where that label depended on up to 252 future sessions. This made future outcomes gate whether a qualifying event was traded.
-- **Look-ahead gate fixed:** commit `773c06b0621562497c6e47394fb267f214b788e6` removed the censored-label skip from `signal_for_rule()`; future outcome labels are now diagnostics only and no longer gate trading signals.
-- **Corrected exploratory matrix:** run [37862580078](https://github.com/eklu654/Trading-Bot/actions/runs/37862580078) passed. It reports the simple binary canonical shock/+10% strategy at **$4,040,314**, buy-and-hold at **$2,094,669**, and top structural configurations around **$3,763,076** (repair_damage/120_200_bear-style filter, +15% higher target, 75% exposure). This is a post-fix exploratory matrix result, not the frozen baseline and not out-of-sample validation.
-- **~$4.04M canonical result: REPRODUCED, STILL PROVISIONAL.** The aligned robustness run [37862580103](https://github.com/eklu654/Trading-Bot/actions/runs/37862580103) reports $4,040,313; independent audit [37862580071](https://github.com/eklu654/Trading-Bot/actions/runs/37862580071) reports $4,040,312. The one-dollar-scale discrepancy is rounding/data arithmetic, not evidence of a material difference. Both use 9 qualifying events. Correction to an earlier note: the independent audit DOES intersect QQQ and TQQQ date indexes before generating events; the earlier claim that its event indices were misaligned was wrong. The explicit overnight/intraday loop appears consistent with close[t] signal -> open[t+1] execution, but exact daily-curve equality has not yet been asserted in a test.
-- **Remembered ~$3.3M baseline: NOT YET REPRODUCED.** The original exact anti-bear-rally rule and matching frozen configuration are still not identified. Do not assume the current matrix's best row is that baseline.
-- **~$3.7M Fed/DMA synthetic-history result: SEPARATE STUDY.** Do not use it as evidence for actual-TQQQ shock/recovery performance.
-- **Historical reason the ~$4M result was previously withdrawn:** not recovered yet; do not invent it. What is now confirmed is that the result is numerically reproduced by aligned implementations, but its parameter-selection/generalization evidence is insufficient.
+Start from the current, reproducible ~$4.04M candidate and let the evidence determine its strengths, weaknesses, and whether any overlay is warranted. Do not spend more time blocking progress on recovering the separate remembered ~$3.3M anti-fakeout strategy. Historical work can inform hypotheses, but must not displace the current baseline without evidence.
 
-## Latest code/test activity
-- Code fix commit: `773c06b0621562497c6e47394fb267f214b788e6`.
-- Regression test added: `tests/test_failed_bounce_no_lookahead.py`, commit `c862803ffa4d539bd64541bd467908f7150fcbbe`.
-- First test run failed during collection because `research` was not on `sys.path`; corrected in commit `87e74d008884d475248263a9510fa39ef300517c`.
-- The rerun `research-tests` workflow is [37862742592](https://github.com/eklu654/Trading-Bot/actions/runs/37862742592); status was in progress at last inspection. Do not mark regression tests passed until its final logs show that.
-- The fixed matrix passed at [37862580078](https://github.com/eklu654/Trading-Bot/actions/runs/37862580078); duplicate workflow [37862580116](https://github.com/eklu654/Trading-Bot/actions/runs/37862580116) also passed.
-- Robustness run: [37862580103](https://github.com/eklu654/Trading-Bot/actions/runs/37862580103).
-- Independent audit: [37862580071](https://github.com/eklu654/Trading-Bot/actions/runs/37862580071).
-- Feature audit: [37862580158](https://github.com/eklu654/Trading-Bot/actions/runs/37862580158), successful as diagnostic output, not strategy validation.
+## Frozen working baseline
 
-## Source files inspected
-- `research/failed_bounce_structural_matrix.py` — blob `0ffb403cb29609a0ba4ade92ec9517ec11d722f1` after fix
-- `research/failed_bounce_robustness.py` — blob `753ecc24f8df11406601495c2427e457fcd7be22`
-- `research/audit_failed_bounce_canonical_independent.py` — blob `740d3bb7f71a9c143efe61b153b91c940cc39c80`
-- `research/failed_bounce_strategy_walkforward.py` — blob `e6f7cd1103ab749b5cc20ca6a97726ad3095e325`
-- `research/causal_execution.py` — blob `caf48a0f64b0485021cf27adf0d822ab795735ae`
-- Detailed checkpoint: `docs/research/TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md`
+**Rule ID:** `qqq_shock45_recovery10_actual_tqqq_v1`
+
+- Starting equity: $5,000.
+- Signal instrument: QQQ adjusted close.
+- Trigger: QQQ daily adjusted-close return <= -4.5%.
+- Defense: target 0% TQQQ exposure from the next open after the trigger close.
+- Recovery: track the post-trigger adjusted-close low; re-enter after a close is >= 10% above that low, with execution at the next open.
+- Otherwise: 100% TQQQ exposure.
+- Execution accounting: overnight return belongs to the position held before the open; intraday return belongs to the position after open execution.
+- No DMA, Fed, MACD, golden-cross, macro, inverse ETF, or AI filter is part of this baseline.
+
+Do not alter this rule when creating comparison candidates. Every candidate must be run against this baseline on the same dates, data fields, execution convention, starting capital, and cost assumptions.
+
+## Baseline verification and latest results
+
+- Same-input daily-curve reconciliation passed: [run 37884245700](https://github.com/eklu654/Trading-Bot/actions/runs/37884245700). Both engines agreed exactly on daily equity/returns and the nine event transitions on the frozen common inputs.
+- Latest robustness run: [37884245678](https://github.com/eklu654/Trading-Bot/actions/runs/37884245678), ending balance **$4,040,311.91**; TQQQ buy-and-hold **$2,094,668.80**; CAGR **49.49% vs 43.70%**; max drawdown **-73.53% vs -81.66%**. This run downloads its own market data, so use the same-input run—not cross-run decimal equality—for exact reconciliation.
+- First stress scorecard: [CANONICAL_SHOCK_RECOVERY_FIRST_STRESS_SCORECARD_2026-10-09.md](CANONICAL_SHOCK_RECOVERY_FIRST_STRESS_SCORECARD_2026-10-09.md), committed at `e2780545292964b96ab6005b3b4e2fc238e15e3c`.
+- Latest research sweep at commit `207213dea6e4dde44a89f68daa044e7f213fe202`: robustness, independent audit, structural matrix, long-history drawdown audit, feature audit, actual three-layer validation, partial-DMA matrix, event attribution, and research-tests all completed successfully. Individual run links are in the stress scorecard.
+- The canonical candidate is a **working historical baseline**, not an approved live strategy. The approximately 73.5% maximum drawdown is severe and must be treated as a central risk finding.
+
+## First stress findings
+
+Returns below are measured independently inside each named period; period equity is reset to 1 at the period start. Period drawdown is likewise local to that period.
+
+| Period | Baseline return | TQQQ buy-and-hold return | Baseline max DD | Buy-and-hold max DD |
+|---|---:|---:|---:|---:|
+| 2010–2014 | +895.0% | +865.3% | -43.1% | -43.9% |
+| 2015–2019 | +569.6% | +434.0% | -44.5% | -58.1% |
+| 2020–2021 (COVID crash/recovery) | +325.6% | +284.4% | -47.0% | -69.9% |
+| 2022–2024 (tightening bear/recovery) | +42.3% | -1.4% | -72.6% | -81.0% |
+| 2025–2026-10-07 | +100.2% | +114.4% | -56.1% | -56.8% |
+
+The rule outperformed the control in the first four windows but lagged in 2025–current. Its nine event counterfactuals include both substantial benefits (notably 2018 Q4, COVID's initial crash, and 2022) and costly false-positive exits (notably June 2020 and April 2025). These findings justify diagnostics; they do not prove that any new filter will help.
+
+## Historical study boundaries
+
+- Actual TQQQ validation is limited to the period in which TQQQ exists and the aligned input data are available.
+- Pre-2010 studies such as the 1970s, 1987, and 2000–2002 are signal-only index diagnostics unless a daily-reset leveraged proxy is explicitly labeled synthetic with assumptions disclosed.
+- Future outcome labels (e.g., whether a recovery later failed within 252 sessions) may be used for diagnostics only; they must never determine whether a live signal is taken.
+- The former structural-matrix code had a future-label/censored-event selection defect; that gate has been removed. Treat optimized matrix rows as exploratory/in-sample, not validated.
+- The old ~$3.3M anti-fakeout strategy is a distinct, unrecovered historical variant. It is no longer a blocker or the active baseline.
+- The separate synthetic ~$3.7M Fed/DMA study and extreme synthetic-wealth outputs are not evidence of actual-TQQQ results. Corrected actual-TQQQ three-layer validation remained far below buy-and-hold.
 
 ## Mandatory next steps
-1. Inspect final regression-test run [37862742592](https://github.com/eklu654/Trading-Bot/actions/runs/37862742592); fix any failures and record passing evidence.
-2. Add a test comparing the independent audit's day-by-day equity to `causal_execution.py` on a deterministic fixture, including the first shock and recovery transitions.
-3. Recover the exact frozen anti-bear-rally rule and prior ~$3.3M run from git history/workflow artifacts; do not infer it from the best current matrix row.
-4. Reconstruct baseline and simple $4M candidate on one aligned QQQ/TQQQ frame, identical dates, price basis, $5,000 start, and close-to-next-open execution.
-5. Generate a dated event/trade ledger and assert no future label is referenced by signal construction.
-6. Run chronological holdouts only after rules are frozen; no winner selection on the holdout period.
-7. Record every meaningful research action, exact outputs, commit SHA, workflow run ID, result status and next step here before switching tasks or ending a work session.
 
-## Context-preservation rule
-Before any new experiment, read this file and the detailed checkpoint. After every meaningful step, commit the current rules, exact output/result, status (VERIFIED / PROVISIONAL / REJECTED / UNVERIFIED), reason, commit SHA, workflow run ID, and next step. Never silently replace prior findings. At the end of every work session, update this file first.
+1. **Finish baseline diagnostics without changing its rules.** Build a continuous event timeline and per-period ledger for COVID (2020-02 through 2020-07), 2022, 2018 Q4, June/September 2020 false-positive exits, and April 2025. Report start/end equity, inherited-vs-reset accounting, peak/trough and recovery dates, maximum drawdown, time defensive, exit/re-entry delays, and rebound return missed.
+2. **Audit slow-bear exposure.** Mechanically identify prolonged QQQ drawdowns where no -4.5% daily shock occurs near the beginning. Measure how long the baseline stays 100% exposed and the losses accrued before any trigger. Do not choose periods by looking at TQQQ strategy outcomes.
+3. **Only then test overlays.** First test the existing 200-DMA × live-safe Fed lifecycle feature as a separate frozen candidate; test existing macro state separately. Combine only if an individual overlay demonstrates incremental value. No broad indicator fishing, fresh DMA-length sweeps, re-entry-delay search, or AI layer yet.
+4. **Protect the growth objective.** Compare ending wealth first, with drawdown/stress behavior used to identify unacceptable failure modes. Do not optimize for drawdown alone.
+5. **Use chronological holdouts.** Freeze the candidate rule before viewing the final holdout. Any rule changed after holdout inspection converts that period to development data and requires a new untouched holdout.
+6. **Record every meaningful action.** Update this file and the dated report with commit SHA, run ID, input hashes/date range, rule ID, exact results, validity label, and next action.
 
-## Forensic follow-up — October 8 execution-timing concern (added 2026-10-09 UTC)
-A review of the repository commit chronology surfaced specific, contemporaneous execution-timing fixes that must be investigated as the likely source of the user's remembered open/close discrepancy:
+## Result labels
 
-- `b813c898fdd7f54b88618a44ed89a3ba284fcd0d` (2026-10-08 19:23:08 UTC): “Fix failed-bounce signal timing: re-entry executes next open after recovery close”. In `research/failed_bounce_structural_matrix.py`, changed defensive/re-entry slice boundaries around `decision_i`; also changed canonical defensive control from `decision_i + 1` endpoint to `decision_i`. This is a real timing correction, not merely a datetime precision issue.
-- `ea1e01c08d2ab3905fa946a6e8128b5aa6d4a843` (2026-10-08 19:25:12 UTC): “Correct independent audit overnight position timing”.
-- `c0387408f85c788fc66d817372474de17f5ef35e` (2026-10-07 10:06:05 UTC): “Correct close-to-next-open overnight exposure accounting”, modifying `research/tqqq_signal_source_audit.py` so overnight return is attributed to the position held before the open execution, while intraday return uses the executed position.
-- `ab27e7bc73bcfa9d472f392371b55c3675a5f2d0` (2026-10-06): “fix: derive adjusted open for actual TQQQ validation”, adding `adj_open = open * adj_close / close`.
-- Earlier, `f2c048a37eaf283e755678b301904b0ecd8861f7` (2026-09-29) explicitly separated adjusted-close total-return accounting from unadjusted-close DMA signals.
+- **SUPPORTED:** replicated on identified data/execution with no known material methodological defect.
+- **WORKING:** usable as the current comparison anchor but not yet established as robust/generalizable.
+- **PROVISIONAL:** replicated with unresolved input or implementation differences.
+- **REJECTED:** known defect or failed predeclared criterion invalidates the claimed result.
+- **UNRESOLVED:** evidence is insufficient.
 
-These commits strongly support that close/open timing and adjusted-open accounting are relevant to the historical audit. They do NOT alone establish that the canonical ~$4.04M figure is wrong: need map the exact $4M run to the code revision and compare the old/new daily equity series. Also distinguish the datetime-resolution merge errors (Fed/market join failures) from genuine return-accounting timing bugs; these are separate classes of defect.
-
-### Exact next forensic tasks
-1. Fetch the workflow run history around the 2026-10-08 19:22–19:27 UTC commits and map each run's head SHA to the above fixes; record whether the ~$4.04M run predates or follows them.
-2. Inspect full patches for `ea1e01c` and `b813c89`, plus `research/failed_bounce_robustness.py`, `research/audit_failed_bounce_canonical_independent.py`, and `research/causal_execution.py` at each relevant commit.
-3. Recompute the canonical strategy before and after the timing fixes on identical aligned raw OHLC + adjusted-close inputs. The recovery close signal must execute at next open; overnight return belongs to the position held before that open; intraday return belongs to the position after execution.
-4. Compare the resulting event ledger, per-day holdings/returns/equity, final balance, and TQQQ buy-and-hold control. Do not call $4.04M verified until this reconciliation passes.
-
-
-## 2026-10-08 evening follow-up: execution accounting vs result rejection
-- The user correctly raised that the assistant may have mistakenly said the ~$4M candidate was rejected. Current evidence supports reopening it; no source-backed record yet proves the original rejection reason.
-- Exact timing fixes identified:
-  - `b813c898fdd7f54b88618a44ed89a3ba284fcd0d`: structural matrix changed defensive slice from `[event_start_i:decision_i+1]` to `[event_start_i:decision_i]` and re-entry from `decision_i+1` to `decision_i`. Since the shared engine executes `signal[t]` at open[t+1], these are signal-close indices, so corrected slices are consistent with the next-open convention.
-  - `ea1e01c08d2ab3905fa946a6e8128b5aa6d4a843`: independent audit corrected overnight position from `signal[i-1]` to `signal[i-2]`; intraday position remains `signal[i-1]`. This matches the shared engine's execution lag.
-- Canonical robustness and independent audit use the same intended event definition: QQQ adjusted-close daily return <= -4.5%; track the lowest QQQ adjusted close from the shock onward; first close >= 10% above that low ends defense; TQQQ traded returns use adjusted OHLC reconstructed from Open * Adj Close / Close. Both use 2010-01-01 through 2026-10-08, $5,000 initial equity, and yfinance source. Thus they are independent calculations, but not independent market-data sources or event definitions.
-- Results from post-fix runs were close: robustness/independent audit approximately $4,040,3xx with buy-and-hold approximately $2,094,669. This supports numerical reproduction but does not by itself prove the daily equity curves are identical or data source is flawless.
-- Important open issue: `failed_bounce_robustness.py` computes `years` using requested START/END, while its equity array ends at the last actual downloaded TQQQ date. Need record actual last observation and ensure comparison dates identical. Also independently compare event date lists and every daily return/equity value between the two implementations.
-- Classification: ~$4.04M = REOPENED / PROVISIONALLY REPRODUCED, NOT REJECTED, NOT YET FULLY VERIFIED. Do not claim a known execution bug invalidated it without a quantified before/after replay.
-- Next actions: (1) obtain workflow logs/artifacts containing exact event dates and summary values for run 37862742569 and 37862742593; (2) add shared fixture test for event equivalence and daily equity equality; (3) download one frozen OHLC/Adj Close dataset once and run both engines on it; (4) produce pre-/post-fix replay for commits b813c89 and ea1e01c; (5) compare baseline ~$3.3M only after its anti-fakeout rule is recovered.
-
-
-## Artifact-level reconciliation started — 2026-10-09 02:16 UTC continuation
-Downloaded and inspected actual GitHub Actions artifacts from run SHA `87e74d008884d475248263a9510fa39ef300517c`:
-- Robustness run 37862742569 artifact `tqqq-failed-bounce-robustness` (SHA-256 `c5f0e3ed49dff871e030b41744cac8bc9ac2ec313212f7a04d834be16af3194b`).
-- Independent audit run 37862742593 artifact `tqqq-failed-bounce-independent-audit` (SHA-256 `a0fc76889d38fc187c75c80552c18446f7c2c5204015e1de3de04c218ca27b0d`).
-
-The actual event ledger from the artifact confirms nine events:
-1. shock 2011-08-04; low 2011-08-19; recovery decision 2011-08-31.
-2. 2018-10-24; low 2018-12-24; decision 2019-01-07.
-3. 2020-02-27; low 2020-03-16; decision 2020-03-26.
-4. 2020-06-11; low 2020-06-11; decision 2020-07-06.
-5. 2020-09-03; low 2020-09-23; decision 2020-10-12.
-6. 2022-05-05; low 2022-06-16; decision 2022-07-19.
-7. 2022-09-13; low 2022-11-03; decision 2022-11-11.
-8. 2025-04-03; low 2025-04-08; decision 2025-04-09.
-9. 2026-06-05; low 2026-07-29; decision 2026-08-13.
-
-Artifact summaries:
-- Robustness: canonical $4,040,316.234; TQQQ buy-and-hold $2,094,668.953; CAGR 49.4874% canonical / 43.7047% buy-and-hold; max DD -73.5343% / -81.6598%.
-- Independent audit: canonical $4,040,313.235; buy-and-hold $2,094,668.953; CAGR 49.0757% / 43.3478%; max DD agrees to within ~0.000013 percentage points.
-- These artifacts are only 3 dollars apart in terminal balances and use the same nine event dates. However, CAGR differs by ~0.41 percentage points despite nearly identical terminal balances. Investigate CAGR annualization/end-date convention before quoting CAGR as validated; terminal value agreement alone does not resolve it.
-- Robustness event counterfactuals show the defense helps materially in Feb-Mar 2020 and both 2022 events, but hurts in June/Sept 2020 and April 2025; it is not universally beneficial. These event counterfactual effects are overlapping-path counterfactuals and must not be added as if independent.
-- Cost stress in robustness artifact: at 50 bps per exposure change, ending balance ~$3.671M vs ~$4.040M with zero costs; strategy still above reported buy-and-hold but this does not validate other assumptions.
-- The scripts use `yfinance.download(... auto_adjust=False)` and reconstruct adjusted open as `Open * Adj Close / Close`. The independent audit computes overnight return with `signal[i-2]` and intraday with `signal[i-1]`; this aligns with close signal -> next-open execution.
-- Important caveat: each script independently downloads QQQ and TQQQ, rather than sharing one frozen input snapshot. Dates align in the event ledger but this is not the requested frozen-dataset test. Next fix: persist both exact downloaded tables with index and adjustment columns, hash them, and feed those same files to both engines.
-- Classification remains: result is provisionally reproduced. Event ledger recovered. Still not fully verified until frozen-data, daily-curve, event-index, and CAGR conventions reconcile. Original conversation rejection message still not recovered.
-
-
-### CAGR discrepancy resolved at code level
-At artifact SHA `87e74d008884d475248263a9510fa39ef300517c`, the two scripts annualize over different durations:
-- `failed_bounce_robustness.py` computes the main summary CAGR using `(t.index[-1] - t.index[0]).days / 365.25` (actual TQQQ data endpoints).
-- `audit_failed_bounce_canonical_independent.py` computes CAGR using `(END_DATE - START_DATE).days / 365.25`, i.e. requested 2010-01-01 to 2026-10-08, regardless of actual first TQQQ observation.
-This explains why ending balances and drawdowns agree while CAGR differs. Do not treat CAGR difference as evidence of a return-path mismatch; standardize CAGR to actual first/last observation dates and disclose that period. The user requested a consistent date range, so the scripts should explicitly report requested range AND actual traded-data range, and both annualization formulas should use the same declared convention.
-
-
-## Critical newly identified risk: QQQ event indices may be applied to TQQQ by row number, not date
-At commit `87e74d008884d475248263a9510fa39ef300517c`, both `research/failed_bounce_robustness.py` and `research/audit_failed_bounce_canonical_independent.py` download QQQ and TQQQ separately from requested START=`2010-01-01`. They calculate event row indices from QQQ (`build_events(q)` / `events(q)`) and pass those integer indices to `build_signal(len(t), events)` / `build_signal(len(t), evs)` for TQQQ. No explicit join/reindex by calendar date is present in the inspected code paths.
-Because TQQQ began trading after QQQ, QQQ's first available session and TQQQ's first available session are not the same. This creates a serious potential index-offset bug: event dates in the QQQ ledger may be correct, but the defensive signal can be applied to a different TQQQ session. The exact offset and impact must be confirmed using the actual workflow data; do not infer a corrected final balance without replaying.
-This may be the remembered price/execution discrepancy that led to concern over the ~$4M result, but the original conversation has not been recovered, so that connection is a hypothesis, not a fact.
-Required fix before any verification:
-1. Join QQQ and TQQQ data explicitly on shared trading-date index (inner join), preserving a single date index.
-2. Generate events on aligned QQQ observations and build the signal on that same aligned index.
-3. Assert each shock/low/decision timestamp maps to the same date in the TQQQ table; assert no integer-only cross-symbol indexing.
-4. Compare old vs aligned results using identical downloaded snapshots and print the first/last observation and all mapped execution dates.
-5. Add regression test where QQQ contains extra leading dates before TQQQ; verify the event is mapped by date, not shifted by row count.
-Until this replay is done, the ~$4.04M figure should be labelled REPRODUCIBLE UNDER THE EXISTING IMPLEMENTATION, BUT NOT TRUSTWORTHY AS A CORRECTLY DATE-ALIGNED BACKTEST.
-
-
-## Audit correction — QQQ/TQQQ row-index misalignment hypothesis disproved by source inspection
-On continuation review of the exact artifact revision `87e74d008884d475248263a9510fa39ef300517c`, both canonical scripts explicitly intersect their QQQ and TQQQ indices before generating events/signals:
-```python
-idx = q.index.intersection(t.index)
-q = q.reindex(idx).dropna()
-t = t.reindex(idx).dropna()
-```
-Therefore the earlier claim that these scripts directly used unaligned QQQ row numbers against TQQQ dates was an incorrect inference. Do not cite it as the cause of the original $4M rejection. Because the data downloads call `.dropna()` before intersection and then reindex to the shared index, their dates should match in the normal data path; explicit assertions have now been added to both scripts to enforce this.
-Commits adding assertions:
-- `3c11699ac45d35a6cd48bf8fc40ff2f182bab7e2` — `research/failed_bounce_robustness.py`
-- `36bec88f8ec3d93cefbbf2750786d3e6f456a646` — `research/audit_failed_bounce_canonical_independent.py`
-Important process note: the assistant previously stated a possible alignment defect before fully reading both scripts. This was a false alarm; explicitly retract it. The original historical reason for the $4M rejection remains unrecovered.
-Next step is not to change strategy based on that disproved hypothesis. Continue with (1) regression tests/workflow after new alignment assertions, (2) shared frozen dataset + daily curve comparison, and (3) recover exact original rejection context / inspect any actual open/close/midday price discrepancy.
-
-
-## Verification after explicit date-alignment assertions (2026-10-09 UTC)
-- Added explicit post-intersection equality/length assertions in both canonical scripts; commits `3c11699` and `36bec88`.
-- GitHub Actions successfully reran both robustness and independent audit on the changed code:
-  - [Robustness run 37874744047](https://github.com/eklu654/Trading-Bot/actions/runs/37874744047): success.
-  - [Independent audit run 37874744058](https://github.com/eklu654/Trading-Bot/actions/runs/37874744058): success; canonical $4,040,313, TQQQ buy-and-hold $2,094,669; 9 events.
-  - Earlier commit's [independent audit run 37874731173](https://github.com/eklu654/Trading-Bot/actions/runs/37874731173): success; canonical $4,040,315, buy-and-hold $2,094,669; 9 events.
-  - Earlier commit's [robustness run 37874731205](https://github.com/eklu654/Trading-Bot/actions/runs/37874731205): success.
-- Thus the explicit alignment assertions passed and did not change the headline result. The previously raised row-index-offset concern is retracted; code already intersected/reindexed both series before building events.
-- Remaining high-value work: (a) ensure research-tests run 37874744026 completes and passes; (b) make both scripts export daily equity curves and aligned input data with hashes, or create a single shared frozen-data artifact; (c) compare daily return/equity curves, not only final balances; (d) recover the exact earlier conversational rejection message if possible.
-
-
-## 2026-10-09 follow-up: test suite cancellation and daily-curve artifacts
-- Rechecked prior run 37874744026: research-tests conclusion is `cancelled`, not passed. Do not describe the full suite as green. Both strategy-specific workflows did succeed (37874744047 robustness; 37874744058 independent audit).
-- Inspected canonical source: both scripts intersect QQQ/TQQQ indices and reindex before building events, confirming the earlier row-offset hypothesis was false. Explicit index-equality assertions pass.
-- Added reproducibility exports to both canonical scripts:
-  - robustness script exports aligned QQQ/TQQQ input CSVs plus `failed_bounce_daily_equity.csv` with daily returns/equity and close signal.
-  - independent audit exports its aligned QQQ/TQQQ input CSVs plus `failed_bounce_independent_daily_equity.csv`.
-  - Commits: `1464f0133cffb88e09a41c14b62a3972a276b845`, `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`.
-- Next action: wait for/inspect strategy workflows after these commits; download the two input/equity artifacts; compare frozen input files and daily equity curves. The scripts currently download independently, so compare hashes/values and only then refactor to a single shared snapshot if data differs.
-- Caution: robustness `metrics` still uses requested START/END in its now-unused helper, but main summary uses actual aligned t-index dates. Independent audit stats still annualizes over requested range. CAGR must be standardized to actual common first/last dates before final report.
-
-
-## 2026-10-09 audit continuation — daily equity exports and workflow state
-- Source review reconfirmed the false QQQ/TQQQ index-offset hypothesis: both scripts intersect and reindex dates before building signals.
-- Important CI finding: research-tests run `37874744026` was cancelled, not passed. New run `37876820261` is in progress at time of note.
-- Added CSV exports for exact aligned QQQ/TQQQ data and daily equity curves:
-  - robustness: commit `1464f0133cffb88e09a41c14b62a3972a276b845`
-  - independent audit: commit `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`
-- These two commits triggered duplicate sets of GitHub workflows because each commit was pushed separately. Runs on both SHAs were in progress at check time; use newest SHA `de2a6b4acecd08e168a7654ffd123f1daf74b2dd` as canonical for review, and do not infer success until conclusions are available.
-- Latest relevant run IDs:
-  - robustness 37876820205 (in progress, SHA de2a6b4...)
-  - independent audit 37876820452 (in progress, SHA de2a6b4...)
-  - research-tests 37876820261 (in progress, SHA de2a6b4...)
-- Next: retrieve the artifacts from successful canonical-SHA runs; compare frozen QQQ/TQQQ files (dates and values) and align equity curves. If independent downloads differ in values, refactor to one shared downloaded snapshot. Also standardize CAGR to actual aligned dates in both scripts.
-
-
-## Artifact review and correction — 2026-10-09
-- The new strategy runs completed successfully on SHA `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`:
-  - robustness run 37876820205 success; artifact 11592487962.
-  - independent audit run 37876820452 success; artifact 11592288195.
-- Results from these fresh runs: robustness canonical $4,040,314.42 vs buy-and-hold $2,094,668.80; independent audit canonical $4,040,316.26 vs buy-and-hold $2,094,669.10. Nine events in both.
-- The downloaded artifacts initially contained only summary/event/cost files. The newly added frozen-input and daily-equity CSVs were NOT being uploaded because the workflow YAML artifact path lists had not been updated. This omission has now been corrected:
-  - robustness workflow commit `add975c991600a29e6a1052d132a8a29582e77d8`
-  - independent audit workflow commit `5c212af28bcd501eb9ccf0d2a7f17f542f81c65c`
-- These results show the headline balance reproduces, but the independent scripts independently download market data; their final values differ by about $1.84 and controls by about $0.30. That is small, but demonstrates the need for a shared frozen input dataset before claiming exact daily-curve equality.
-- research-tests run `37876820261` was cancelled. Do not call the whole test suite passed.
-- Next step: inspect fresh runs after workflow artifact path changes, download frozen data/equity CSVs, compare row counts, date indices, OHLC/adjusted-close columns, event indices and daily equity. If the files are still generated from separate downloads and differ, use one shared dataset artifact or a workflow that downloads once and invokes both engines on those same files.
-
-
-## 2026-10-09 user decision: resume strategy refinement using ~$4.04M working reference
-User explicitly authorized proceeding with the ~$4.04M QQQ shock/recovery result rather than blocking progress on the remaining frozen-input reconciliation. This changes the workflow priority: treat the rule/result as the working baseline for strategy research while preserving the outstanding audit caveat.
-- Created canonical specification: `docs/research/FAILED_BOUNCE_CANONICAL_STRATEGY_SPEC.md` (commit `69e8651e3b01d32a3f196b07f2b3f43501fa4f31`).
-- Frozen baseline: QQQ adjusted-close daily return <= -4.5% triggers defense; track the low; re-enter after the first close >= 10% above the low; close signals execute at the next open; otherwise hold 100% TQQQ. No DMA, inverse ETF, AI, or Fed overlay in the baseline.
-- Recorded reference: about $4.04M from $5,000 vs about $2.095M TQQQ buy-and-hold; nine recorded events. Use as reference, not as a promise or claim that all accounting audits are complete.
-- Primary research objective restored: test whether a predeclared structural rule can identify 2022-style prolonged Fed-tightening bear regimes without sacrificing acute V-shaped recoveries such as COVID, and find holes in the strategy.
-- Crucial historical limitation: TQQQ did not exist in 2000–2002. A dot-com-era test requires a labelled synthetic 3x daily leveraged QQQ proxy with financing/expense/rebalance assumptions and validation against live TQQQ. Never describe it as actual TQQQ history.
-- Immediate sequence: stress scorecard; quantify baseline false positives/missed rebounds; define candidate feature families and thresholds before holdout testing; chronological development/holdout; preserve full results and run IDs. The 4M result is not to be discarded because frozen-data reconciliation remains incomplete.
-
-
-## Structural refinement plan committed
-- Added `docs/research/FAILED_BOUNCE_STRUCTURAL_ROBUSTNESS_PLAN.md` (commit `6781346c49595251a388e1bb90335724f1de129a`).
-- Plan restores the exact original research question: can a genuinely predeclared structural feature recognize prolonged Fed-tightening bear markets without sacrificing V-shaped recoveries?
-- Next experiment is deliberately diagnostic and does not change the baseline: stress scorecard for COVID, 2022, 2018 Q4, false-positive 2020/2025 events, plus mechanically selected worst rolling 12-month periods.
-- Then inspect slow-bear misses, test frozen Fed lifecycle / existing 200-DMA / existing macro-state families separately, and only combine features if at least one has incremental value. Do not restart a broad DMA or re-entry-delay search.
-- Previously tested Fed+macro+DMA composite is not a current candidate: documented as modern-era over-defensive. It may inform diagnostics but must not be presumed to solve the $4M baseline's weak spots.
-- Keep actual-TQQQ period and synthetic pre-2010 3x proxy separate; TQQQ did not exist in 2000–2002.
-
-
-## Latest checkpoint — 2026-10-09 04:12 UTC
-
-The latest CI sweep on commit `b6d8e24c486de2dcb4925398580438f84167ddf7` is complete and all inspected workflows succeeded, including the research-tests run [37881243283](https://github.com/eklu654/Trading-Bot/actions/runs/37881243283). This supersedes the older note that the regression test run was still in progress.
-
-### Current result classifications
-- **Canonical QQQ shock/recovery rule, ~$4.04M: PROVISIONALLY REPRODUCED, NOT FULLY VERIFIED.** Latest robustness [37881243286](https://github.com/eklu654/Trading-Bot/actions/runs/37881243286) reports $4,040,313.07; latest independent audit [37881243328](https://github.com/eklu654/Trading-Bot/actions/runs/37881243328) reports $4,040,314.45. Their ~$1.38 gap is small but the inputs are separate downloads. Frozen same-input, daily-curve equality remains a required gate.
-- **Remembered ~$3.3M anti-fakeout baseline: UNRECOVERED / NOT REPRODUCED.** Do not substitute a current structural-matrix winner.
-- **Structural matrix top row, ~$3.763M: EXPLORATORY / IN-SAMPLE ONLY.** Many rules/targets/exposures were compared; this is not a holdout estimate.
-- **Synthetic three-layer $128B–$205B figures: REJECTED FOR PERFORMANCE CLAIMS.** Actual-TQQQ validation [37881243323](https://github.com/eklu654/Trading-Bot/actions/runs/37881243323) reports $84,635 base, $106,888 Fed-conditioned, $91,785 three-layer, versus $2,029,289 actual TQQQ buy-and-hold. Synthetic three-layer attribution also contradicts its own synthetic terminal results and must be reconciled.
-- **Feature classifier: INSUFFICIENT SAMPLE.** Canonical event set has only nine events, with one failed and seven successful resolved outcomes. Not enough evidence to establish or tune a general anti-fakeout classifier.
-- **Partial DMA matrix:** available run [37881243315](https://github.com/eklu654/Trading-Bot/actions/runs/37881243315) completed; outputs remain exploratory and should be read alongside the user’s preference for offensive growth and consistent-date final-balance comparisons.
-
-### Immediate work queue
-1. Freeze one common QQQ/TQQQ dataset and hashes; assert identical event dates, position series, daily returns and equity curves across the canonical engines.
-2. Recover the historical ~$3.3M anti-fakeout rule from commit/workflow history instead of guessing.
-3. Reconcile or retire the synthetic three-layer result and its inconsistent event-attribution artifact.
-4. Build separate causal signal-only historical tests for 1971, 1987, 2000–2002 and 2022. QQQ begins in 1999 and TQQQ in 2010, so pre-inception tests must not be represented as actual TQQQ returns.
-5. Do not begin AI selection or paper trading until the canonical replay and original baseline have cleared these gates.
-
-Detailed evidence and run IDs are in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
-
-
-## Correction — synthetic three-layer result (2026-10-09 04:20 UTC)
-
-**Important reclassification:** The prior $128B–$205B synthetic three-layer cost-stress results are invalid. The cost-stress script used signal[t] for intraday return[t], violating close[t] -> open[t+1] execution and leaking same-session information. The corrected implementation now uses the shared causal execution engine and reads a frozen dataset exported by the attribution step.
-
-- Corrected source commits: `ed95b70` (causal engine), `533525a` (frozen input export), `6b3e1ab` (consume same frozen inputs), `e88a3ac` (syntax fix).
-- Passing attribution run: [37883372240](https://github.com/eklu654/Trading-Bot/actions/runs/37883372240), artifact 11594948023.
-- Zero-cost output agrees with the same-run attribution summary to numerical tolerance: synthetic base ~$207,068; Fed-conditioned ~$110,129; three-layer ~$89,973. Actual-TQQQ validation remains roughly $84.6k / $106.9k / $91.8k against ~$2.03M actual TQQQ buy-and-hold.
-- The new frozen-input consistency assertion passed; research tests also passed at [37883372312](https://github.com/eklu654/Trading-Bot/actions/runs/37883372312).
-
-Thus the extraordinary synthetic wealth result is **REJECTED**, not a strategy result. The Fed layer remains an unvalidated hypothesis. The separate simple shock/recovery ~$4.04M candidate remains **PROVISIONALLY REPRODUCED**, and the remembered ~$3.3M anti-fakeout baseline remains **UNRECOVERED**.
-
-See the dated log for full failure analysis and run evidence: [TQQQ shock/recovery re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
-
-
-## Latest verified checkpoint — 2026-10-09 04:24 UTC
-
-### Canonical ~$4.04M result: VERIFIED ON A FROZEN INPUT SNAPSHOT
-- Same-input run [37883989658](https://github.com/eklu654/Trading-Bot/actions/runs/37883989658), artifact 11594464513, passed with two independent event builders and two independent execution engines.
-- Frozen dataset: 4,189 aligned observations, 2010-02-11 through 2026-10-07, SHA-256 `fa28ea933475d843cb8daf6bdd8d7aeca3c4ed20b9a0e55f8bec5eaaf68f7d00`.
-- Exact final balances on that snapshot: canonical $4,040,311.69; actual TQQQ buy-and-hold $2,094,668.80. Event lists and signals match; max absolute daily-return and equity differences are both 0.0.
-- **Important qualification:** separate fresh adjusted-price downloads have changed the result by about a dollar. The ~$4.04M headline is verified for the frozen snapshot and convention; terminal dollars remain snapshot-dependent.
-
-### Original ~$3.3M anti-fakeout strategy: still UNRECOVERED
-An older artifact reports $3,270,343.84 for `baseline_10pct`, but its code uses unadjusted Close-to-close returns and has no added anti-fakeout rule. It is a candidate source of the remembered number, not the strategy we need to reconstruct. Do not treat it as the recovered baseline.
-
-### Long-history signal-only stress labels
-- S&P 500 daily-shock rule: 18 events from 1970–2026; 10 failed, 6 successful, 2 censored. No 1970s events because the single-day -4.5% trigger is too narrow for that decade.
-- Separate S&P 500 -10% drawdown trigger: 24 events; 12 failed, 9 successful, 3 censored. It captures the 1971 drawdown (censored under the 252-session label), the 1973 rally (failed), 1987 (failed), two 2000–2002 rallies (failed), two 2022 rallies (failed), and successful 2020 recovery episodes.
-- These are outcome labels only, not proof that a classifier can predict failures. No pre-2010 TQQQ portfolio returns are claimed.
-- Drawdown audit run: [37883989726](https://github.com/eklu654/Trading-Bot/actions/runs/37883989726). Daily-shock audit run: [37883989671](https://github.com/eklu654/Trading-Bot/actions/runs/37883989671).
-
-Detailed run IDs, hashes, event ledger, limitations, and next steps are recorded in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
-
-
-**Additional forensic caution:** the older `ret60_ret-10_target15` row is $3.138M, and its code does not persist the stricter target after the +10% decision. The two chronological folds selected the baseline. This candidate is not the remembered anti-fakeout strategy. See the detailed audit note in the dated log.
+Current baseline status: **WORKING**. Same-input numerical reconciliation is supported; generalization across slow/prolonged bears and live execution remains unresolved.
