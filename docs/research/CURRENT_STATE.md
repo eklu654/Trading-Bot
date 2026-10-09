@@ -152,3 +152,8 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Interpretation remains cautious: F50/F75 benefits are concentrated in the single modern 2022 tightening bear and fail the episode-diversification gate. D50/D75 fail the wealth-retention gate. No strategy selected; B0 remains the control.
 - Regression CI passed after adding the DMA-only unit test: [research-tests run 37889389620](https://github.com/eklu654/Trading-Bot/actions/runs/37889389620).
 
+## Final metadata cleanup
+
+- Updated the comparison script's docstring and manifest candidate list to include the new D50/D75 ablation candidates. This is metadata-only; it does not alter signals, prices, execution, or results.
+- Commit: `5b207d1681b08e6f9872af406110d467a7daa341`. The dedicated comparison workflow and regression tests are triggered again; prior ablation run [37889360594](https://github.com/eklu654/Trading-Bot/actions/runs/37889360594) remains the source for the reported numbers until the metadata-only rerun completes.
+
