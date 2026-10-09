@@ -304,3 +304,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - S&P 500 signal-only sample, 1970-01-02 to 2026-10-07: 24 drawdown/recovery events, 12 failed, 9 successful, 3 censored. Failed events averaged 38.5 sessions low-to-recovery (median 31.5) versus 20.8 (median 16) for successful events.
 - 1987 is a clear counterexample to speed-only logic: recovery threshold occurred two sessions after the low, yet another -10% decline followed within three sessions. 2000–2002 produced two failed events with slow average recovery (34.5 sessions).
 - This is not the canonical QQQ event set, no TQQQ balance is computed, and the small retrospective sample cannot validate a trading rule. Use speed only as one hypothesis; any next test needs a causal confirmation signal and fast-rebound exception.
+
+
+### Bounded-delay result and same-input audit — 2026-10-09
+
+- Run 37913900764 passed; artifact 11608910752 (SHA-256 `d1a171fd62d0a578ecbf79993e7ec52f8ee889b4809b06fc3977396e8ad74db4`). Report: [bounded recovery delay](CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md).
+- Actual TQQQ B0 ended $4.040M; bounded wait 3/5/10 sessions ended $3.921M/$3.774M/$3.451M. None beat B0; all preserve COVID but worsen drawdown and 2022.
+- Audit caveat: actual overlay indicators were calculated from a separate QQQ download, not recomputed from frozen `x.qqq_adj_close`. Correct actual feature construction and rerun before treating these as exact same-input comparisons.
