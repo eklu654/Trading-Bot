@@ -46,3 +46,8 @@ The synthetic overlay's better terminal wealth is not proof of historical TQQQ p
 
 ## Known implementation caveat
 The previous matrix's sticky-hard-defense state is preserved: once the fast-shock override arms, it remains at 0% until QQQ closes at/above the selected structural DMA, even if the immediate fast-shock condition ceases. This likely explains some excessive time out of market and should be explicitly ablated before any further candidate selection. The script's output uses the same established close-to-next-open execution helper for both actual and proxy returns.
+
+
+## Same-input correction rerun
+- Corrected run: [37914258527](https://github.com/eklu654/Trading-Bot/actions/runs/37914258527); artifact ID `11609270400`, SHA-256 `50232ef0bb2c7090a7ee6113f322d02cbdd39789d48d2eb71b0206d88a7d1a8c`.
+- The live-period overlay indicators now retain pre-inception QQQ lookback history but use the exact frozen QQQ adjusted closes used by B0 on all actual-TQQQ dates. The actual-TQQQ result is unchanged to displayed precision: B0 $4.040M; best structural+fast $727k; COVID window -8.63% vs B0 +24.58%. Rejection remains.
