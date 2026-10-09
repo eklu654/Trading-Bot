@@ -10,10 +10,11 @@ No threshold optimization.
 from pathlib import Path
 import numpy as np, pandas as pd
 import yfinance as yf
-from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
 try:
+    from .causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
     from .synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
 except ImportError:
+    from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
     from synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
