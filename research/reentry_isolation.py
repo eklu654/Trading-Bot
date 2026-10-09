@@ -10,7 +10,10 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 
-from research.causal_execution import next_open_daily_returns, next_open_cost_equity
+try:
+    from .causal_execution import next_open_daily_returns, next_open_cost_equity
+except ImportError:  # Support direct execution as a script from the repository root.
+    from causal_execution import next_open_daily_returns, next_open_cost_equity
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
