@@ -1,0 +1,37 @@
+name: Canonical recovery event quality audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/canonical_recovery_event_quality.py"
+      - "research/requirements.txt"
+      - ".github/workflows/canonical-recovery-event-quality.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-recovery-event-quality
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: python -m py_compile research/canonical_recovery_event_quality.py
+      - run: python research/canonical_recovery_event_quality.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-recovery-event-quality
+          if-no-files-found: error
+          path: |
+            data/research/canonical_recovery_event_quality.csv
+            data/research/canonical_recovery_event_quality_scorecard.csv
+            data/research/canonical_recovery_event_quality_manifest.json
