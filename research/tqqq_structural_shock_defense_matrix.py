@@ -145,7 +145,13 @@ def main():
                             sig=signal(q,sd,fd,rt,dt,vt,exp)
                             rows.append(eval_frame(q,"synthetic_qqq_3x",q.index,sig,sd,fd,rt,dt,vt,exp))
     a=actual_tqqq()
-    aq=q.reindex(a.index).ffill()
+    aq=q.reindex(q.index.union(a.index)).sort_index().ffill().reindex(a.index)
+    # Use the same aligned QQQ adjusted close as the actual-TQQQ frame for indicators.
+    aq["adj_close"] = a.qqq_adj_close.to_numpy(float)
+    for d in (50, 100, 150, 200):
+        aq[f"dma{d}"] = aq.adj_close.rolling(d, min_periods=d).mean()
+    aq["ret63"] = aq.adj_close / aq.adj_close.shift(63) - 1.0
+    aq["dd252"] = aq.adj_close / aq.adj_close.rolling(252, min_periods=252).max() - 1.0
     for sd in STRUCTURAL_DMAS:
         for fd in FAST_DMAS:
             for rt in RET_THRESHOLDS:
