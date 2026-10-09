@@ -111,12 +111,13 @@ def main():
         if len(events):
             for e in events.to_dict("records"): e["max_fast_recovery_sessions"]=n; all_events.append(e)
     x,path=make_frozen_input()
-    feat=q.reindex(q.index.union(x.index)).sort_index().ffill().reindex(x.index)
-    # Recompute QQQ indicators from the frozen close series used by B0.
-    feat["adj_close"]=x.qqq_adj_close.to_numpy(float)
+    feat=q.reindex(q.index.union(x.index)).sort_index().ffill()
+    # Keep pre-inception lookback history; live-period QQQ closes are frozen to B0's input.
+    feat.loc[x.index,"adj_close"]=x.qqq_adj_close.to_numpy(float)
     for d in (FD,SD): feat[f"dma{d}"]=feat.adj_close.rolling(d,min_periods=d).mean()
     feat["ret63"]=feat.adj_close/feat.adj_close.shift(63)-1
     feat["dd252"]=feat.adj_close/feat.adj_close.rolling(252,min_periods=252).max()-1
+    feat=feat.reindex(x.index)
     _,b0a=build_events_and_signal(x.qqq_adj_close.astype(float))
     on=np.zeros(len(x)); intr=np.zeros(len(x))
     on[1:]=x.tqqq_adj_open.to_numpy()[1:]/x.tqqq_adj_close.to_numpy()[:-1]-1
