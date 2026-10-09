@@ -347,3 +347,16 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 
 - Consolidated all combined-matrix, state-ablation, interval-attribution, recovery-event, recovery-gate, bounded-delay, and frozen-input correction findings in [STRUCTURAL_MATRIX_COMBINED_INVESTIGATION_SUMMARY_2026-10-09.md](STRUCTURAL_MATRIX_COMBINED_INVESTIGATION_SUMMARY_2026-10-09.md).
 - No matrix candidate beat B0 on the actual-TQQQ objective; do not promote these variants to paper trading or continue tuning the same thresholds against the inspected sample.
+
+
+### Consolidated Actions artifact audit — 2026-10-09
+
+- Reviewed latest successful outputs from the completed research workflow burst; many runs were duplicates across successive commits, not independent replications. `research-tests` jobs in the burst were cancelled; they are not passing-test evidence.
+- Full consolidated audit: [COMPLETED_ACTIONS_AUDIT_2026-10-09.md](COMPLETED_ACTIONS_AUDIT_2026-10-09.md).
+- Canonical same-input reconciliation (run [37914677971](https://github.com/eklu654/Trading-Bot/actions/runs/37914677971)) and independent audit (run [37914677915](https://github.com/eklu654/Trading-Bot/actions/runs/37914677915)) support B0 at about $4.040M from $5,000, actual TQQQ 2010-02-11 to 2026-10-07, under the frozen next-open execution assumptions. Buy-and-hold is about $2.095M on the independent audit. Costs reduce B0 from $4.040M at 0 bps to $3.671M at 50 bps per transition.
+- Structural matrix/repair-damage variants reduce max drawdown somewhat but do not beat B0 terminal wealth: best listed variant about $3.763M, max DD -70.23% versus B0 -73.53%. The 4.5% shock cohort has only 9 actual events (8 resolved); flagged-signal metrics are too underpowered to validate a classifier.
+- Long-history bear-rally audit: 18 events; drawdown-trigger audit: 24 events since the 1970s. They include the requested 1987, 2000–02, 2008, and 1970s regimes but are small descriptive event samples, not out-of-sample validation. Feature audit uses just 9 actual recovery events.
+- Important correction: `research/tqqq_actual_three_layer_validation.py` is **not** a validation of the canonical -4.5%/+10% shock-recovery strategy. It tests a 100-DMA/Fed-rate/vix-volatility-conditioned rule over a different interval (2010-01-01 to 2026-10-05); its ~$84.6k base and ~$2.029M buy-and-hold figures are not comparable to canonical B0 and must not be used as its validation.
+- Partial-DMA matrix best row (~$824k) is a hypothetical 3x QQQ proxy with ~-98.24% max DD; not actual TQQQ and not a candidate for production.
+- Recovery gate and bounded-delay tests also completed and were rejected; see their individual reports. Do not keep tuning these thresholds on the same inspected sample.
+- Next work should focus on pre-registered walk-forward feature testing and reconciliation of the separate Fed/DMA pipeline before relying on it. Preserve B0 as control and label synthetic 3x QQQ history separately from actual TQQQ.
