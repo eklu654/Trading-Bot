@@ -1,0 +1,44 @@
+name: Canonical bounded recovery delay
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/canonical_bounded_recovery_delay.py"
+      - "research/tqqq_canonical_same_input_reconciliation.py"
+      - "research/causal_execution.py"
+      - "research/requirements.txt"
+      - ".github/workflows/canonical-bounded-recovery-delay.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-bounded-recovery-delay
+  cancel-in-progress: false
+
+jobs:
+  bounded-delay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: |
+          python -m py_compile research/canonical_bounded_recovery_delay.py
+          python -m py_compile research/tqqq_canonical_same_input_reconciliation.py
+          python -m py_compile research/causal_execution.py
+      - run: PYTHONPATH=research python research/canonical_bounded_recovery_delay.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-bounded-recovery-delay
+          if-no-files-found: error
+          path: |
+            data/research/canonical_bounded_recovery_delay_results.csv
+            data/research/canonical_bounded_recovery_delay_attempts.csv
+            data/research/canonical_bounded_recovery_delay_releases.csv
+            data/research/canonical_bounded_recovery_delay_manifest.json
+            data/research/tqqq_canonical_frozen_common_input.csv
