@@ -1,0 +1,44 @@
+name: Canonical structural overlay attribution
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/canonical_structural_overlay_attribution.py"
+      - "research/tqqq_canonical_same_input_reconciliation.py"
+      - "research/causal_execution.py"
+      - "research/requirements.txt"
+      - ".github/workflows/canonical-structural-overlay-attribution.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-structural-overlay-attribution
+  cancel-in-progress: false
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: |
+          python -m py_compile research/canonical_structural_overlay_attribution.py
+          python -m py_compile research/tqqq_canonical_same_input_reconciliation.py
+          python -m py_compile research/causal_execution.py
+      - run: PYTHONPATH=research python research/canonical_structural_overlay_attribution.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-structural-overlay-attribution
+          if-no-files-found: error
+          path: |
+            data/research/canonical_structural_attribution_intervals.csv
+            data/research/canonical_structural_attribution_summary.csv
+            data/research/canonical_structural_attribution_b0_events.csv
+            data/research/canonical_structural_attribution_manifest.json
+            data/research/tqqq_canonical_frozen_common_input.csv
