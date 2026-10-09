@@ -11,6 +11,10 @@ from pathlib import Path
 import numpy as np, pandas as pd
 import yfinance as yf
 from causal_execution import next_open_daily_returns, next_open_equity, next_open_cost_daily_returns
+try:
+    from .synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
+except ImportError:
+    from synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
 START="1999-03-10"; END="2026-10-05"; INITIAL=5000.0
@@ -30,8 +34,9 @@ def fed_series(idx):
 def build():
  q=dl("QQQ"); v=dl("^VIX")[["close"]].rename(columns={"close":"vix"}); x=q.join(v,how="left"); x.vix=x.vix.ffill()
  x["adj_open"]=x.open*x.adj_close/x.close
- x["on3"]=((1+3*(x.adj_open/x.adj_close.shift(1)-1)).clip(lower=0)-1).fillna(0)
- x["in3"]=((1+3*(x.adj_close/x.adj_open-1)).clip(lower=0)-1).fillna(0)
+ on3,in3=synthetic_3x_legs_from_adjusted_prices(x.adj_open,x.adj_close)
+ x["on3"]=on3
+ x["in3"]=in3
  x["dma"]=x.adj_close.rolling(100).mean(); x["ret60"]=x.adj_close/x.adj_close.shift(60)-1
  x["daily_ret"]=x.adj_close.pct_change(); x["rv20"]=x.daily_ret.rolling(20).std()*np.sqrt(252)
  x["vix_chg20"]=x.vix/x.vix.shift(20)-1; x["rv_chg20"]=x.rv20/x.rv20.shift(20)-1; x["fed"]=fed_series(x.index)
