@@ -37,3 +37,8 @@ This proxy is not calibrated to reproduce actual TQQQ fund financing, fees, trac
 - The simple explanation “sticky hard defense alone caused the poor result” is incomplete. Removing hard-state stickiness improves ending wealth, but the overlay still severely impairs actual TQQQ compounding and still misses COVID's rebound.
 - Stop parameter tuning of this structural matrix. The broader feature family is not supported for production.
 - Next step should be attribution, not another grid: export the dates and duration of structural-defense intervals after each B0 recovery decision, especially COVID 2020 and 2022, and quantify which overlay intervals account for the wealth reduction. Then only consider a narrowly scoped, recovery-aware rule if it targets the false-recovery problem without blocking confirmed V-shaped recoveries.
+
+
+## Same-input correction rerun
+- Corrected run: [37914285510](https://github.com/eklu654/Trading-Bot/actions/runs/37914285510); artifact ID `11608731601`, SHA-256 `e4a4afe0eae902f6beefc4d549ab8ef268e86e2ea24791b7e8ac6bac11492054`.
+- Live-period QQQ indicators are now recomputed from B0's frozen adjusted-close series with pre-inception lookback retained. Results match to displayed precision: sticky $727k, hard-nonsticky $892k, daily-nonsticky $1.355M; all still miss COVID's rebound. Rejection remains.
