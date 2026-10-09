@@ -46,7 +46,13 @@ def metrics(returns: np.ndarray, dates: pd.DatetimeIndex, initial: float = INITI
     }
 
 
-def episode_contributions(dates, x, baseline, overlay_binary, exposure):
+def build_dma_only_overlay(qqq_adj_close: pd.Series) -> np.ndarray:
+    """0 while below the existing 200-DMA, 1 otherwise; no Fed input."""
+    ma = qqq_adj_close.rolling(DMA, min_periods=DMA).mean()
+    return np.where(qqq_adj_close.to_numpy(dtype=float) < ma.to_numpy(dtype=float), 0.0, 1.0)
+
+
+def episode_contributions(dates, x, baseline, overlay_binary, exposure, overlay_name="overlay"):
     """Conditional leave-one-overlay-episode-out effects; not additive."""
     active = overlay_binary == 0.0
     starts = np.flatnonzero(active & ~np.r_[False, active[:-1]])
@@ -69,6 +75,7 @@ def episode_contributions(dates, x, baseline, overlay_binary, exposure):
         counterfactual_returns = next_open_daily_returns(counterfactual_signal, overnight, intraday)
         counterfactual_final = float(INITIAL * np.cumprod(1.0 + counterfactual_returns)[-1])
         rows.append({
+            "overlay_family": overlay_name,
             "exposure_in_overlay": exposure,
             "episode": number,
             "start_date": dates[start_i].date().isoformat(),
@@ -106,14 +113,19 @@ def main() -> None:
     overlay_binary, transitions = build_active_tightening_overlay(
         x["qqq_adj_close"], lagged_fed
     )
-    if len(overlay_binary) != len(x):
+    dma_only_binary = build_dma_only_overlay(x["qqq_adj_close"])
+    if len(overlay_binary) != len(x) or len(dma_only_binary) != len(x):
         raise AssertionError("Overlay signal length differs from frozen market input")
     signals = {"B0_baseline": baseline, "TQQQ_buy_hold": np.ones(len(x), dtype=float)}
     for exposure in EXPOSURES:
         overlay_weight = np.where(overlay_binary == 0.0, exposure, 1.0)
         signals[f"F{int(exposure * 100):02d}"] = np.minimum(baseline, overlay_weight)
-    if not np.all(signals["F50"] <= baseline) or not np.all(signals["F75"] <= baseline):
-        raise AssertionError("Candidate exposure must never exceed baseline target exposure")
+    for exposure in (0.50, 0.75):
+        dma_weight = np.where(dma_only_binary == 0.0, exposure, 1.0)
+        signals[f"D{int(exposure * 100):02d}"] = np.minimum(baseline, dma_weight)
+    for name in ("F50", "F75", "D50", "D75"):
+        if not np.all(signals[name] <= baseline):
+            raise AssertionError(f"{name} exposure must never exceed baseline target exposure")
 
     adj_open = x["tqqq_adj_open"].to_numpy(dtype=float)
     adj_close = x["tqqq_adj_close"].to_numpy(dtype=float)
@@ -188,7 +200,11 @@ def main() -> None:
     contribution_rows = []
     for exposure in EXPOSURES:
         contribution_rows.extend(
-            episode_contributions(dates, x, baseline, overlay_binary, exposure).to_dict(orient="records")
+            episode_contributions(dates, x, baseline, overlay_binary, exposure, "FED_ACTIVE_DMA").to_dict(orient="records")
+        )
+    for exposure in (0.50, 0.75):
+        contribution_rows.extend(
+            episode_contributions(dates, x, baseline, dma_only_binary, exposure, "DMA_ONLY").to_dict(orient="records")
         )
     pd.DataFrame(contribution_rows).to_csv(
         OUT / "canonical_frozen_overlay_comparison_episode_contributions.csv", index=False
@@ -201,6 +217,7 @@ def main() -> None:
         "qqq_sma_200": x["qqq_adj_close"].rolling(DMA, min_periods=DMA).mean().to_numpy(),
         "baseline_signal_close": baseline,
         "active_tightening_overlay_state_close": overlay_binary,
+        "dma_only_overlay_state_close": dma_only_binary,
     })
     for name, signal in signals.items():
         daily[f"{name}_target_exposure_close"] = signal
@@ -237,8 +254,10 @@ def main() -> None:
         "shock_threshold": SHOCK,
         "recovery_threshold": RECOVERY,
         "dma": DMA,
-        "overlay_rule": "QQQ below SMA200 and previous-session Fed lifecycle state TIGHTENING_ACTIVE; sticky until close >= SMA200; baseline shock defense overrides",
-        "exposures_in_overlay": list(EXPOSURES),
+        "fed_overlay_rule": "QQQ below SMA200 and previous-session Fed lifecycle state TIGHTENING_ACTIVE; sticky until close >= SMA200; baseline shock defense overrides",
+        "dma_only_ablation_rule": "QQQ below SMA200 regardless of Fed state; state ends when QQQ closes at/above SMA200; baseline shock defense overrides",
+        "exposures_in_fed_overlay": list(EXPOSURES),
+        "exposures_in_dma_only_ablation": [0.50, 0.75],
         "cost_bps": list(COST_BPS),
         "execution": "close[t] signal -> open[t+1]; prior position earns overnight; executed position earns intraday; costs at exposure changes",
         "event_count": len(events),
