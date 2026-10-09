@@ -31,6 +31,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yfinance as yf
+from synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
@@ -151,8 +152,9 @@ def evaluate(
     intraday = (
         frame["adj_close"] / frame["adj_open"] - 1.0
     ).fillna(0.0).to_numpy()
-    overnight_3x = np.clip(1.0 + 3.0 * overnight, 0.0, None) - 1.0
-    intraday_3x = np.clip(1.0 + 3.0 * intraday, 0.0, None) - 1.0
+    overnight_3x, intraday_3x = synthetic_3x_legs_from_adjusted_prices(
+        frame["adj_open"], frame["adj_close"]
+    )
 
     # weights[i] is the decision made at close i. It becomes executable at open i+1.
     # Therefore overnight exposure on day i comes from the prior position (decision i-2),
