@@ -243,3 +243,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Added a no-search attribution run to identify contiguous dates when the matrix overlay cuts exposure after B0 has returned to 100%, with leave-one-interval-out terminal-wealth counterfactuals.
 - Frozen representative settings; no threshold tuning. Report/plan: [CANONICAL_STRUCTURAL_OVERLAY_ATTRIBUTION_2026-10-09.md](CANONICAL_STRUCTURAL_OVERLAY_ATTRIBUTION_2026-10-09.md).
 - Workflow: `.github/workflows/canonical-structural-overlay-attribution.yml`; awaiting run artifact before adding conclusions.
+
+
+### Recovery-event quality audit — 2026-10-09
+
+- Added a QQQ-only event study to test whether the matrix's structural/fast-shock conditions are present at canonical +10% recovery decisions and whether those recoveries later fail over 20/60/120/252 sessions.
+- This is signal diagnostics only; it does not claim pre-inception TQQQ returns or constitute a trading backtest. No thresholds are being searched.
+- Frozen audit plan: [CANONICAL_RECOVERY_EVENT_QUALITY_2026-10-09.md](CANONICAL_RECOVERY_EVENT_QUALITY_2026-10-09.md). Workflow artifact to be reviewed before interpreting results.
