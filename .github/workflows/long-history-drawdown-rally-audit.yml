@@ -1,0 +1,25 @@
+name: Long-history drawdown rally audit
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy pandas yfinance
+      - name: Run 10-percent drawdown historical signal audit
+        run: PYTHONPATH=research python research/long_history_drawdown_rally_audit.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: long-history-drawdown-rally-audit
+          path: |
+            data/research/long_history_drawdown_rally_events.csv
+            data/research/long_history_drawdown_rally_summary.csv
+            data/research/long_history_drawdown_rally_feature_separation.csv
+            data/research/long_history_drawdown_rally_manifest.json
