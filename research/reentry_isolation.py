@@ -44,7 +44,7 @@ def target_exposure(qqq, candidate):
     low, then 100% at +10%. The running low continues to update until full
     recovery, including after the half-exposure tranche is active.
     """
-    if candidate not in {"B0", "R1", "R2"}:
+    if candidate not in {"B0", "R1", "R2", "R2P"}:
         raise ValueError(f"unknown candidate: {candidate}")
     px = qqq["Adj Close"].astype(float).to_numpy()
     daily = qqq["Adj Close"].astype(float).pct_change().fillna(0).to_numpy()
@@ -65,13 +65,17 @@ def target_exposure(qqq, candidate):
             weights[i] = 1.0
             continue
 
-        # A fresh shock while defensive restarts the recovery clock and
-        # keeps exposure at zero. This prevents R1 from re-entering during
-        # consecutive shock sessions and resets any staged R2 tranche.
+        # A fresh shock while defensive restarts the recovery clock.
+        # R2P is the preregistered behavior: once its 50% tranche has
+        # activated, retain that tranche through subsequent declines/new lows.
+        # R2 is the guarded exploratory variant that resets to cash.
         if daily[i] <= SHOCK:
             low = px[i]
-            staged = False
-            weights[i] = 0.0
+            if candidate == "R2P" and staged:
+                weights[i] = 0.5
+            else:
+                staged = False
+                weights[i] = 0.0
             continue
 
         low = min(low, px[i])
@@ -87,7 +91,7 @@ def target_exposure(qqq, candidate):
                 weights[i] = 1.0
             else:
                 weights[i] = 0.0
-        else:  # R2 staged recovery
+        else:  # R2/R2P staged recovery
             if staged:
                 if rebound >= RECOVERY_FULL:
                     defensive = False
@@ -169,7 +173,7 @@ def main():
     all_rows = []
     curve_rows = []
     candidates = {}
-    for name in ("B0", "R1", "R2"):
+    for name in ("B0", "R1", "R2", "R2P"):
         w = target_exposure(q, name)
         candidates[name] = w
         for bps in (0, 10, 25, 50):
