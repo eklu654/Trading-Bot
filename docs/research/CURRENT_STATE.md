@@ -210,3 +210,13 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Compared structural+fast-shock matrix and fast-shock-only ablation over the previous 144-configuration grid, with B0 controls, actual TQQQ on the aligned live-fund window, and a separately labeled hypothetical 3x QQQ proxy for pre-TQQQ history.
 - Experiment note: [CANONICAL_PLUS_STRUCTURAL_MATRIX_EXPERIMENT_2026-10-09.md](CANONICAL_PLUS_STRUCTURAL_MATRIX_EXPERIMENT_2026-10-09.md).
 - Workflow run: https://github.com/eklu654/Trading-Bot/actions/runs/37912413316. At checkpoint, run was in progress during dependency installation; no combined performance results are claimed yet. Inspect the completed artifact and update the experiment note before interpreting any winner.
+
+
+### Combined canonical + structural matrix results — 2026-10-09
+
+- Completed successfully: [workflow run 37912413316](https://github.com/eklu654/Trading-Bot/actions/runs/37912413316), artifact ID `11607472004`, SHA-256 `8714513d2f7390f562cdddfcaf6e228ef0e187bfcc5ac4bd5dabe805afef3afd`.
+- Full report: [combined matrix results](CANONICAL_PLUS_STRUCTURAL_MATRIX_RESULTS_2026-10-09.md).
+- Actual TQQQ baseline $4.040M. Best matrix-overlay row by terminal balance: $727,050 (structural DMA 150, fast DMA 100, return -20%, drawdown -20%, VIX 30, 25% structural exposure); max drawdown improved to -59.47%, but COVID crash/rebound window returned -8.63% versus B0 +24.58%. The best drawdown row ended $579,625 with max drawdown -57.24%. Fast-only variants were worse for ending balance.
+- Decision: reject this sticky matrix family as a production candidate; no more parameter sweeping of the same rule. It improves drawdown by sacrificing far too much compounding and COVID rebound capture.
+- Historical 1999+ outputs remain a hypothetical 3x QQQ proxy, not actual TQQQ returns. Proxy B0 drawdown approached -99.4%, so do not interpret it as calibrated fund simulation.
+- Root cause hypothesis to test next: the fast-shock override remains hard-defensive until QQQ closes above the structural DMA, even after the shock condition fades. A recovery-aware/non-sticky ablation is more useful than more threshold tuning.
