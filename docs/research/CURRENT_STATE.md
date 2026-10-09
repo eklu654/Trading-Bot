@@ -147,7 +147,7 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 
 - Same-frozen-input comparison passed: [workflow run 37889360594](https://github.com/eklu654/Trading-Bot/actions/runs/37889360594), artifact `11597189873`.
 - Result report: [Fed filter vs. DMA-only overlay](CANONICAL_SHOCK_RECOVERY_FED_VS_DMA_ABLATION_RESULT_2026-10-09.md).
-- On the same 4,189 market rows, the 50%/75% DMA-only variants ended at ~$1.988M / ~$2.940M, versus ~$4.087M / ~$4.125M for the active-Fed-gated F50/F75 variants. DMA-only defense was active for 701 sessions versus 473 overlay-state sessions for the Fed-gated variants.
+- On the same 4,189 market rows, the 50%/75% DMA-only variants ended at ~$1.988M / ~$2.940M, versus ~$4.087M / ~$4.125M for the active-Fed-gated F50/F75 variants. The DMA-only state was active for 600 sessions versus 337 sessions for the Fed-gated state. The resulting target exposure was below 100% for 701 sessions in D50/D75 versus 473 sessions in F50/F75, because the baseline's own 0% shock-defense state overlaps some overlay sessions.
 - At 25 bp cost, D50/D75 ended ~$1.746M / ~$2.690M, so both fail the wealth-retention gate. The Fed condition adds meaningful selectivity in this sample; it is not redundant with the 200-DMA.
 - Interpretation remains cautious: F50/F75 benefits are concentrated in the single modern 2022 tightening bear and fail the episode-diversification gate. D50/D75 fail the wealth-retention gate. No strategy selected; B0 remains the control.
 - Regression CI passed after adding the DMA-only unit test: [research-tests run 37889389620](https://github.com/eklu654/Trading-Bot/actions/runs/37889389620).
