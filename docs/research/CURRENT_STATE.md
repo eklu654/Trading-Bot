@@ -158,3 +158,17 @@ Next step is not to change strategy based on that disproved hypothesis. Continue
   - Commits: `1464f0133cffb88e09a41c14b62a3972a276b845`, `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`.
 - Next action: wait for/inspect strategy workflows after these commits; download the two input/equity artifacts; compare frozen input files and daily equity curves. The scripts currently download independently, so compare hashes/values and only then refactor to a single shared snapshot if data differs.
 - Caution: robustness `metrics` still uses requested START/END in its now-unused helper, but main summary uses actual aligned t-index dates. Independent audit stats still annualizes over requested range. CAGR must be standardized to actual common first/last dates before final report.
+
+
+## 2026-10-09 audit continuation — daily equity exports and workflow state
+- Source review reconfirmed the false QQQ/TQQQ index-offset hypothesis: both scripts intersect and reindex dates before building signals.
+- Important CI finding: research-tests run `37874744026` was cancelled, not passed. New run `37876820261` is in progress at time of note.
+- Added CSV exports for exact aligned QQQ/TQQQ data and daily equity curves:
+  - robustness: commit `1464f0133cffb88e09a41c14b62a3972a276b845`
+  - independent audit: commit `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`
+- These two commits triggered duplicate sets of GitHub workflows because each commit was pushed separately. Runs on both SHAs were in progress at check time; use newest SHA `de2a6b4acecd08e168a7654ffd123f1daf74b2dd` as canonical for review, and do not infer success until conclusions are available.
+- Latest relevant run IDs:
+  - robustness 37876820205 (in progress, SHA de2a6b4...)
+  - independent audit 37876820452 (in progress, SHA de2a6b4...)
+  - research-tests 37876820261 (in progress, SHA de2a6b4...)
+- Next: retrieve the artifacts from successful canonical-SHA runs; compare frozen QQQ/TQQQ files (dates and values) and align equity curves. If independent downloads differ in values, refactor to one shared downloaded snapshot. Also standardize CAGR to actual aligned dates in both scripts.
