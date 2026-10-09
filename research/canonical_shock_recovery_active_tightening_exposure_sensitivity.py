@@ -185,7 +185,7 @@ def main() -> None:
         "exit": "QQQ adjusted close at/above 200-session SMA",
         "execution": "close[t] signal -> open[t+1]; prior position earns overnight, new position earns intraday",
         "baseline_event_count": len(events),
-        "overlay_episode_count": int((~np.asarray(overlay_binary, dtype=bool)).sum() > 0 and (overlay_binary == 0).sum()),
+        "overlay_episode_count": int((transitions["state"] == "ENTER").sum()) if not transitions.empty else 0,
         "summary": summary.to_dict(orient="records"),
         "warning": "Exposure sensitivity only; no threshold/DMA optimization. All candidates use identical market inputs and execution.",
     }
