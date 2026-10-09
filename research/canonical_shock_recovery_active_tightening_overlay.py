@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from causal_execution import next_open_cost_equity
 from canonical_shock_recovery_fed_dma_overlay import (
     START, END, INITIAL, DMA, download_market, download_fed,
     map_fed_state_to_market, build_shock_recovery_events,
