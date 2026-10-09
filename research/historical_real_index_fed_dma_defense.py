@@ -56,6 +56,14 @@ def index_close(ticker: str) -> pd.Series:
     s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
     return s[~s.index.duplicated(keep="last")].sort_index().rename(ticker)
 
+def index_open(ticker: str) -> pd.Series:
+    frame = yf.download(ticker, start=START, end=END, auto_adjust=False, progress=False, actions=False)
+    if frame.empty: raise RuntimeError(f'No Yahoo Finance index data for {ticker}')
+    if isinstance(frame.columns, pd.MultiIndex): frame.columns = frame.columns.get_level_values(0)
+    s = frame['Open'].dropna().astype(float)
+    s.index = pd.to_datetime(s.index).tz_localize(None).normalize()
+    return s[~s.index.duplicated(keep='last')].sort_index().rename(ticker+'_OPEN')
+
 def state_frame(index: pd.DatetimeIndex, dff: pd.Series) -> pd.DataFrame:
     # DFF observations are published with a lag; shift the rate series by one
     # calendar day before mapping to index sessions, then lag mapped state one
@@ -133,9 +141,14 @@ def calc_metrics(daily_returns: np.ndarray, dates: pd.DatetimeIndex, label: str)
     roll = pd.Series(np.log1p(daily_returns)).rolling(252,min_periods=252).sum().dropna()
     return {"index":label,"final_normalized_wealth":float(eq[-1]),"cagr":float(eq[-1]**(1/years)-1),"max_drawdown":float((eq/peak-1).min()),"worst_rolling_252d_return":float(np.expm1(roll.min())) if len(roll) else None}
 
-def run_one(close: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, input_hashes: dict) -> tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
+def run_one(close: pd.Series, open_price: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, input_hashes: dict) -> tuple[pd.DataFrame,pd.DataFrame,pd.DataFrame]:
     close = close.loc[START:].dropna()
     rets = close.pct_change().fillna(0).to_numpy()
+    open_price = open_price.reindex(close.index)
+    overnight = open_price.to_numpy() / np.r_[close.to_numpy()[0], close.to_numpy()[:-1]] - 1.0
+    overnight[0] = 0.0
+    intraday = close.to_numpy() / open_price.to_numpy() - 1.0
+    cash_half = np.sqrt(1.0 + cash)
     states = {}
     trans = []
     for mode in ("combined","fed_only","dma_only"):
@@ -151,7 +164,10 @@ def run_one(close: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, inpu
         for exposure in EXPOSURES:
             name = f"{mode}_defense_{int(exposure*100)}pct"
             weights = np.where(st_exec, exposure, 1.0)
-            portret = weights * rets + (1.0-weights)*cash
+            weights_prev = np.r_[1.0, weights[:-1]]
+            overnight_factor = weights_prev*(1.0+overnight) + (1.0-weights_prev)*cash_half
+            intraday_factor = weights*(1.0+intraday) + (1.0-weights)*cash_half
+            portret = overnight_factor*intraday_factor - 1.0
             m = calc_metrics(portret, close.index, label)
             m.update({"mechanic":mode,"defensive_index_exposure":exposure,"defensive_sessions":int(st_exec.sum()),"defensive_fraction":float(st_exec.mean()),"signal_transitions":int(np.count_nonzero(st[1:]!=st[:-1])),"executed_exposure_transitions":int(np.count_nonzero(st_exec[1:]!=st_exec[:-1])),"input_hashes":json.dumps(input_hashes,sort_keys=True)})
             rows.append(m)
@@ -176,7 +192,11 @@ def run_one(close: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, inpu
     st_exec = np.r_[False, st[:-1]]
     for exposure in EXPOSURES:
         zero_cash = np.zeros_like(cash)
-        portret = np.where(st_exec, exposure, 1.0) * rets + (1.0-np.where(st_exec, exposure, 1.0))*zero_cash
+        weights = np.where(st_exec, exposure, 1.0)
+        weights_prev = np.r_[1.0, weights[:-1]]
+        overnight_factor = weights_prev*(1.0+overnight) + (1.0-weights_prev)*np.sqrt(1.0+zero_cash)
+        intraday_factor = weights*(1.0+intraday) + (1.0-weights)*np.sqrt(1.0+zero_cash)
+        portret = overnight_factor*intraday_factor - 1.0
         m = calc_metrics(portret, close.index, label)
         m.update({"mechanic":"combined_zero_yield_cash","defensive_index_exposure":exposure,"defensive_sessions":int(st_exec.sum()),"defensive_fraction":float(st_exec.mean()),"signal_transitions":int(np.count_nonzero(st[1:]!=st[:-1])),"executed_exposure_transitions":int(np.count_nonzero(st_exec[1:]!=st_exec[:-1])),"input_hashes":json.dumps(input_hashes,sort_keys=True)})
         rows.append(m)
@@ -191,9 +211,11 @@ def main():
     OUT.mkdir(parents=True,exist_ok=True)
     sources={}
     indexes={}
+    opens={}
     for ticker in ("^IXIC","^GSPC"):
         indexes[ticker]=index_close(ticker)
-        sources[ticker]=hashlib.sha256(indexes[ticker].to_csv().encode()).hexdigest()
+        opens[ticker]=index_open(ticker)
+        sources[ticker]=hashlib.sha256((indexes[ticker].to_csv()+opens[ticker].to_csv()).encode()).hexdigest()
     dff=fred("DFF")
     tb3ms=fred("TB3MS")
     sources["DFF"]=hashlib.sha256(dff.to_csv().encode()).hexdigest()
@@ -207,7 +229,7 @@ def main():
         idx=close.index
         local_fed=fed.reindex(idx).ffill().fillna("INSUFFICIENT_HISTORY")
         local_cash=pd.Series(cash,index=fedframe.index).reindex(idx).fillna(0).to_numpy()
-        r,e,ep=run_one(close,local_fed,local_cash,ticker,sources)
+        r,e,ep=run_one(close,opens[ticker],local_fed,local_cash,ticker,sources)
         results.append(r); episode_rows.append(ep)
         if len(e): events.append(e)
     summary=pd.concat(results,ignore_index=True)
