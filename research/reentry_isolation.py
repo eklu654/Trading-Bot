@@ -62,6 +62,15 @@ def target_exposure(qqq, candidate):
             weights[i] = 1.0
             continue
 
+        # A fresh shock while defensive restarts the recovery clock and
+        # keeps exposure at zero. This prevents R1 from re-entering during
+        # consecutive shock sessions and resets any staged R2 tranche.
+        if daily[i] <= SHOCK:
+            low = px[i]
+            staged = False
+            weights[i] = 0.0
+            continue
+
         low = min(low, px[i])
         rebound = px[i] / low - 1.0
 
