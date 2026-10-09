@@ -121,3 +121,18 @@ Required fix before any verification:
 4. Compare old vs aligned results using identical downloaded snapshots and print the first/last observation and all mapped execution dates.
 5. Add regression test where QQQ contains extra leading dates before TQQQ; verify the event is mapped by date, not shifted by row count.
 Until this replay is done, the ~$4.04M figure should be labelled REPRODUCIBLE UNDER THE EXISTING IMPLEMENTATION, BUT NOT TRUSTWORTHY AS A CORRECTLY DATE-ALIGNED BACKTEST.
+
+
+## Audit correction — QQQ/TQQQ row-index misalignment hypothesis disproved by source inspection
+On continuation review of the exact artifact revision `87e74d008884d475248263a9510fa39ef300517c`, both canonical scripts explicitly intersect their QQQ and TQQQ indices before generating events/signals:
+```python
+idx = q.index.intersection(t.index)
+q = q.reindex(idx).dropna()
+t = t.reindex(idx).dropna()
+```
+Therefore the earlier claim that these scripts directly used unaligned QQQ row numbers against TQQQ dates was an incorrect inference. Do not cite it as the cause of the original $4M rejection. Because the data downloads call `.dropna()` before intersection and then reindex to the shared index, their dates should match in the normal data path; explicit assertions have now been added to both scripts to enforce this.
+Commits adding assertions:
+- `3c11699ac45d35a6cd48bf8fc40ff2f182bab7e2` — `research/failed_bounce_robustness.py`
+- `36bec88f8ec3d93cefbbf2750786d3e6f456a646` — `research/audit_failed_bounce_canonical_independent.py`
+Important process note: the assistant previously stated a possible alignment defect before fully reading both scripts. This was a false alarm; explicitly retract it. The original historical reason for the $4M rejection remains unrecovered.
+Next step is not to change strategy based on that disproved hypothesis. Continue with (1) regression tests/workflow after new alignment assertions, (2) shared frozen dataset + daily curve comparison, and (3) recover exact original rejection context / inspect any actual open/close/midday price discrepancy.
