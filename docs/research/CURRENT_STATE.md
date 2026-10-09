@@ -87,3 +87,13 @@ Every candidate comparison keeps this baseline unchanged.
 - **UNRESOLVED:** insufficient evidence.
 
 Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is **WORKING TRADE-OFF, NOT SELECTED**. Numerical reproduction is supported; generalization across major downturn types remains unresolved.
+
+## Validation protocol frozen — 2026-10-09
+
+- Protocol: [canonical shock/recovery validation protocol](CANONICAL_SHOCK_RECOVERY_VALIDATION_PROTOCOL_2026-10-09.md), committed at `fa3e491cf973ca680ea869c4664cf63ef516fd28`.
+- The protocol formalizes the unchanged B0 baseline, F50 and F75 development candidates, F00/F25 sensitivity controls, data/causality assertions, required cost and segment scorecards, candidate gates, and what does/does not count as out-of-sample evidence.
+- Critical honesty rule: the full 2010–2026 sample has already been inspected. Historical subperiods are retrospective stability diagnostics, not untouched holdouts. Only a genuinely frozen prospective test can become new out-of-sample evidence.
+- Candidate advancement gates: at least 95% of baseline ending wealth after 25 bp exposure-change costs; at least 5 percentage points improvement in max drawdown and worst rolling 252-session return; no material unaccounted deterioration in COVID/2018 windows; and evidence the benefit is not entirely one episode.
+- No candidate selected. B0 remains WORKING CONTROL; F50/F75 remain WORKING DEVELOPMENT CANDIDATES; the existing macro classifier remains REJECTED for the current objective. AI and paper trading remain deferred.
+- Next engineering task: a single workflow/run that freezes one aligned QQQ/TQQQ/Fed input set, runs B0/F50/F75 from it, independently checks causality/accounting, and emits one comparable artifact set. Existing sensitivity output is useful, but its market-input hash differs from the canonical baseline hash; do not describe its dollar figures as exact same-input comparisons until that is reconciled.
+
