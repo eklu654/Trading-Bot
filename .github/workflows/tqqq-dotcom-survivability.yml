@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "research/test_tqqq_dotcom_survivability.py"
+      - "research/synthetic_b0_unified_survivability.py"
+      - "tests/test_synthetic_b0_unified_survivability.py"
       - ".github/workflows/tqqq-dotcom-survivability.yml"
       - "research/requirements.txt"
   workflow_dispatch:
@@ -27,9 +29,13 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt
       - name: Compile
-        run: python -m py_compile research/test_tqqq_dotcom_survivability.py
-      - name: Run dot-com survivability research
+        run: |
+          python -m py_compile research/test_tqqq_dotcom_survivability.py
+          python -m py_compile research/synthetic_b0_unified_survivability.py
+      - name: Run existing dot-com survivability research
         run: python research/test_tqqq_dotcom_survivability.py
+      - name: Run unified B0 versus synthetic buy-and-hold replay
+        run: python research/synthetic_b0_unified_survivability.py
       - name: Upload research artifacts
         uses: actions/upload-artifact@v4
         with:
