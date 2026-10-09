@@ -10,6 +10,7 @@ if str(RESEARCH) not in sys.path:
     sys.path.insert(0, str(RESEARCH))
 
 from canonical_shock_recovery_frozen_overlay_comparison import (  # noqa: E402
+    build_dma_only_overlay,
     episode_contributions,
     metrics,
 )
@@ -50,3 +51,13 @@ def test_metrics_reports_terminal_equity_and_drawdown_from_same_return_path():
     assert np.isclose(result["final_balance"], expected_final)
     assert result["max_drawdown"] < 0.0
     assert result["worst_rolling_252_session_return"] < 0.0
+
+
+
+def test_dma_only_overlay_uses_existing_200_session_sma_without_fed_input():
+    prices = pd.Series([100.0] * 200 + [90.0], index=pd.bdate_range("2024-01-02", periods=201))
+    state = build_dma_only_overlay(prices)
+
+    assert state.shape == (201,)
+    assert np.all(state[:200] == 1.0)
+    assert state[200] == 0.0
