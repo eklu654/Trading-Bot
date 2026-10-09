@@ -74,3 +74,30 @@ These commits strongly support that close/open timing and adjusted-open accounti
 - Important open issue: `failed_bounce_robustness.py` computes `years` using requested START/END, while its equity array ends at the last actual downloaded TQQQ date. Need record actual last observation and ensure comparison dates identical. Also independently compare event date lists and every daily return/equity value between the two implementations.
 - Classification: ~$4.04M = REOPENED / PROVISIONALLY REPRODUCED, NOT REJECTED, NOT YET FULLY VERIFIED. Do not claim a known execution bug invalidated it without a quantified before/after replay.
 - Next actions: (1) obtain workflow logs/artifacts containing exact event dates and summary values for run 37862742569 and 37862742593; (2) add shared fixture test for event equivalence and daily equity equality; (3) download one frozen OHLC/Adj Close dataset once and run both engines on it; (4) produce pre-/post-fix replay for commits b813c89 and ea1e01c; (5) compare baseline ~$3.3M only after its anti-fakeout rule is recovered.
+
+
+## Artifact-level reconciliation started — 2026-10-09 02:16 UTC continuation
+Downloaded and inspected actual GitHub Actions artifacts from run SHA `87e74d008884d475248263a9510fa39ef300517c`:
+- Robustness run 37862742569 artifact `tqqq-failed-bounce-robustness` (SHA-256 `c5f0e3ed49dff871e030b41744cac8bc9ac2ec313212f7a04d834be16af3194b`).
+- Independent audit run 37862742593 artifact `tqqq-failed-bounce-independent-audit` (SHA-256 `a0fc76889d38fc187c75c80552c18446f7c2c5204015e1de3de04c218ca27b0d`).
+
+The actual event ledger from the artifact confirms nine events:
+1. shock 2011-08-04; low 2011-08-19; recovery decision 2011-08-31.
+2. 2018-10-24; low 2018-12-24; decision 2019-01-07.
+3. 2020-02-27; low 2020-03-16; decision 2020-03-26.
+4. 2020-06-11; low 2020-06-11; decision 2020-07-06.
+5. 2020-09-03; low 2020-09-23; decision 2020-10-12.
+6. 2022-05-05; low 2022-06-16; decision 2022-07-19.
+7. 2022-09-13; low 2022-11-03; decision 2022-11-11.
+8. 2025-04-03; low 2025-04-08; decision 2025-04-09.
+9. 2026-06-05; low 2026-07-29; decision 2026-08-13.
+
+Artifact summaries:
+- Robustness: canonical $4,040,316.234; TQQQ buy-and-hold $2,094,668.953; CAGR 49.4874% canonical / 43.7047% buy-and-hold; max DD -73.5343% / -81.6598%.
+- Independent audit: canonical $4,040,313.235; buy-and-hold $2,094,668.953; CAGR 49.0757% / 43.3478%; max DD agrees to within ~0.000013 percentage points.
+- These artifacts are only 3 dollars apart in terminal balances and use the same nine event dates. However, CAGR differs by ~0.41 percentage points despite nearly identical terminal balances. Investigate CAGR annualization/end-date convention before quoting CAGR as validated; terminal value agreement alone does not resolve it.
+- Robustness event counterfactuals show the defense helps materially in Feb-Mar 2020 and both 2022 events, but hurts in June/Sept 2020 and April 2025; it is not universally beneficial. These event counterfactual effects are overlapping-path counterfactuals and must not be added as if independent.
+- Cost stress in robustness artifact: at 50 bps per exposure change, ending balance ~$3.671M vs ~$4.040M with zero costs; strategy still above reported buy-and-hold but this does not validate other assumptions.
+- The scripts use `yfinance.download(... auto_adjust=False)` and reconstruct adjusted open as `Open * Adj Close / Close`. The independent audit computes overnight return with `signal[i-2]` and intraday with `signal[i-1]`; this aligns with close signal -> next-open execution.
+- Important caveat: each script independently downloads QQQ and TQQQ, rather than sharing one frozen input snapshot. Dates align in the event ledger but this is not the requested frozen-dataset test. Next fix: persist both exact downloaded tables with index and adjustment columns, hash them, and feed those same files to both engines.
+- Classification remains: result is provisionally reproduced. Event ledger recovered. Still not fully verified until frozen-data, daily-curve, event-index, and CAGR conventions reconcile. Original conversation rejection message still not recovered.
