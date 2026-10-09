@@ -50,3 +50,17 @@ This is a cost-accounting correction only; it does not change the B0 signal or n
 
 ## Workflow scheduling note
 Several commits in quick succession caused push-triggered workflow fan-out. A research-tests run on an earlier commit was cancelled while later commit runs queued; this is not a test failure, but neither is it a pass. The latest research-tests run on commit `420429a12ec69f159aee964ba7a9aeb8e02619a0` must reach a completed conclusion before the code changes are called fully test-verified. Avoid further documentation-only commits until that run is checked, to reduce unnecessary duplicate workflow churn.
+
+
+## Final verification update (2026-10-09 10:30Z)
+
+The later validation batch on commit `f16a0c57743af41fcca7456aff1429f8ee089563` completed:
+- [Research tests run 37917934645](https://github.com/eklu654/Trading-Bot/actions/runs/37917934645): **119 passed, 1 warning**; the event-attribution script also completed successfully.
+- [Independent failed-bounce audit run 37917934603](https://github.com/eklu654/Trading-Bot/actions/runs/37917934603): success.
+- [Robustness run 37917934582](https://github.com/eklu654/Trading-Bot/actions/runs/37917934582): success with the exact next-open cost helper.
+- [Same-input reconciliation run 37917934634](https://github.com/eklu654/Trading-Bot/actions/runs/37917934634): success. Shared-helper and independent-loop equity matched on the same frozen input; the manifest reported a final balance of approximately $4,040,312 and maximum drawdown of -73.5343%.
+- Structural matrix, partial-DMA matrix, long-history drawdown/rally, feature audit, and actual three-layer validation workflows also completed successfully on this batch. Successful execution validates the code path, not a new strategy candidate.
+
+The one remaining small accounting discrepancy is across separate downloads/scripts: the primary robustness run ended near $4,040,315, while the separate independent audit ended near $4,040,311. CAGR and drawdown now agree to displayed precision. Since the canonical same-input run reconciles its own two engines exactly, the residual cross-workflow difference is most likely due to independently downloaded input snapshots or small implementation/data-path differences; it is not yet proved which. The correct next step is to compare the two frozen input files or run both robustness calculations from the exact same frozen CSV before claiming cross-script equality.
+
+No additional strategy was tested or promoted in this verification update. B0 remains the control and the feature audit remains underpowered.
