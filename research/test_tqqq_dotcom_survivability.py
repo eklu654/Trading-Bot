@@ -80,24 +80,23 @@ def download_qqq() -> pd.DataFrame:
 def build_synthetic(frame: pd.DataFrame) -> pd.DataFrame:
     out = frame.copy()
 
-    # Daily-reset 3x total-return proxy. The first observation establishes the
-    # synthetic price level; subsequent closes compound 3x the QQQ adjusted
-    # close-to-close return.
-    qqq_ret = out["adj_close"].pct_change().fillna(0.0)
-    growth = (1.0 + 3.0 * qqq_ret).clip(lower=0.0)
-    out["synthetic_tqqq_close"] = INITIAL * growth.cumprod()
-
-    # Synthetic next-open execution path. We need an adjusted QQQ open that
-    # incorporates the same dividend/split adjustment as adjusted close.
+    # Construct one daily-reset 3x price path with a close-to-next-open split.
+    # The shared helper adjusts the intraday leverage after the overnight gap,
+    # so open-to-close plus close-to-open compounds to 3x QQQ's daily return
+    # when neither segment is clipped at a total loss.
     out["adj_open"] = out["open"] * out["adj_close"] / out["close"]
-    overnight = out["adj_open"] / out["adj_close"].shift(1) - 1.0
-    intraday = out["adj_close"] / out["adj_open"] - 1.0
-    overnight = overnight.fillna(0.0)
-    intraday = intraday.fillna(0.0)
-    out["synthetic_tqqq_open"] = (
-        INITIAL * (1.0 + 3.0 * overnight).clip(lower=0.0)
-        * (1.0 + 3.0 * intraday).clip(lower=0.0)
+    overnight_3x, intraday_3x = synthetic_3x_legs_from_adjusted_prices(
+        out["adj_open"], out["adj_close"]
     )
+    synthetic_open = np.empty(len(out), dtype=float)
+    synthetic_close = np.empty(len(out), dtype=float)
+    synthetic_open[0] = INITIAL
+    synthetic_close[0] = INITIAL
+    if len(out) > 1:
+        synthetic_open[1:] = synthetic_close[:-1] * (1.0 + overnight_3x[1:])
+        synthetic_close[1:] = synthetic_open[1:] * (1.0 + intraday_3x[1:])
+    out["synthetic_tqqq_open"] = synthetic_open
+    out["synthetic_tqqq_close"] = synthetic_close
     return out
 
 
