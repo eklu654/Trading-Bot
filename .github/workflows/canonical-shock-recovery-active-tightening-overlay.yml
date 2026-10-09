@@ -1,0 +1,50 @@
+name: Canonical Shock Recovery — Active Tightening x 200-DMA Overlay
+
+on:
+  push:
+    paths:
+      - "research/canonical_shock_recovery_active_tightening_overlay.py"
+      - "research/canonical_shock_recovery_fed_dma_overlay.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/canonical-shock-recovery-active-tightening-overlay.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-shock-recovery-active-tightening-overlay
+  cancel-in-progress: false
+
+jobs:
+  compare-active-overlay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile research scripts
+        run: python -m py_compile research/canonical_shock_recovery_active_tightening_overlay.py research/canonical_shock_recovery_fed_dma_overlay.py research/causal_execution.py
+      - name: Run one frozen candidate comparison
+        run: python research/canonical_shock_recovery_active_tightening_overlay.py
+      - name: Upload full audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-shock-recovery-active-tightening-overlay
+          if-no-files-found: error
+          path: |
+            data/research/canonical_active_tightening_overlay_frozen_inputs.csv
+            data/research/canonical_active_tightening_overlay_daily.csv
+            data/research/canonical_active_tightening_overlay_summary.csv
+            data/research/canonical_active_tightening_overlay_periods.csv
+            data/research/canonical_active_tightening_overlay_stress_windows.csv
+            data/research/canonical_active_tightening_overlay_baseline_events.csv
+            data/research/canonical_active_tightening_overlay_transitions.csv
+            data/research/canonical_active_tightening_overlay_costs.csv
+            data/research/canonical_active_tightening_overlay_manifest.json
