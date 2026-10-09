@@ -360,3 +360,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Partial-DMA matrix best row (~$824k) is a hypothetical 3x QQQ proxy with ~-98.24% max DD; not actual TQQQ and not a candidate for production.
 - Recovery gate and bounded-delay tests also completed and were rejected; see their individual reports. Do not keep tuning these thresholds on the same inspected sample.
 - Next work should focus on pre-registered walk-forward feature testing and reconciliation of the separate Fed/DMA pipeline before relying on it. Preserve B0 as control and label synthetic 3x QQQ history separately from actual TQQQ.
+
+
+### User question: 2000–02 survivability / 99.9% drawdown — 2026-10-09
+
+- Checked the newly completed Actions runs, including [canonical same-input reconciliation](https://github.com/eklu654/Trading-Bot/actions/runs/37915156980), [failed-bounce robustness](https://github.com/eklu654/Trading-Bot/actions/runs/37915157011), and [long-history drawdown/rally audit](https://github.com/eklu654/Trading-Bot/actions/runs/37915156850).
+- The verified canonical control on actual TQQQ (2010-02-11 to 2026-10-07, $5,000 start) ended at $4,040,314 with max drawdown -73.5343%; independent engines matched exactly. Therefore this verified TQQQ-era run did **not** reach -99.9%.
+- The long-history audit is a signal-only S&P 500 study from 1970-01-02 through 2026-10-07; it does not simulate the canonical strategy's portfolio equity in 2000–02. TQQQ did not exist in 2000. Thus whether the canonical rule survives 2000–02 on a synthetic 3x proxy, and whether that proxy hits -99.9%, remain **unanswered** by these artifacts. Do not treat the signal audit as portfolio evidence.
+- Next required experiment: explicitly run the unchanged -4.5% daily QQQ shock / +10% from running low strategy on a clearly labeled synthetic 3x QQQ daily-return proxy from at least 1999, reporting equity curve, maximum drawdown, lowest equity as a fraction of peak, dates of maximum drawdown, 2000–02 terminal value, and any first crossing of -99%, -99.9%, or zero. Compare only within the proxy's own assumptions; do not call it actual TQQQ.
