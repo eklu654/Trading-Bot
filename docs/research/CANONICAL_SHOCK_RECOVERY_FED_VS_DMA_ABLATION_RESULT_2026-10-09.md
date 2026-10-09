@@ -38,7 +38,7 @@ At 25 bp per full exposure change:
 - D50: $1.746M
 - D75: $2.690M
 
-The simple DMA-only overlay does not pass the wealth-retention gate. The Fed condition is clearly material to this sample's result; it is not merely redundant with the 200-DMA.
+The simple DMA-only overlay does not pass the wealth-retention gate. At 25 bp costs, F50 ends about $2.084M above D50, and F75 about $1.209M above D75. The Fed condition is clearly material to this sample's result; it is not merely redundant with the 200-DMA. This comparison establishes selectivity in the observed data, not that the Fed condition will generalize to future tightening cycles.
 
 ## 4. Regime behavior
 
