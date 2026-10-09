@@ -43,3 +43,17 @@ def test_b0_and_buy_hold_share_one_execution_path_and_summary_schema():
     assert summary["first_crossing_dd_99pct"].eq("").all()
     assert summary["first_crossing_dd_99_9pct"].eq("").all()
     assert summary["dotcom_trough_date"].notna().all()
+
+
+def test_synthetic_legs_reconcile_to_three_times_daily_return_without_clipping():
+    idx = pd.bdate_range("2024-01-02", periods=3)
+    q = pd.DataFrame({
+        "Open": [100.0, 110.0, 121.0],
+        "Close": [100.0, 121.0, 133.1],
+        "Adj Close": [100.0, 121.0, 133.1],
+    }, index=idx)
+    overnight, intraday = synthetic_3x_legs(q)
+    # Day 2: +10% overnight, +10% intraday, +21% QQQ close-to-close.
+    # The synthetic daily-reset proxy must return 3 * 21% = 63%, not 69%.
+    combined = (1.0 + overnight[1]) * (1.0 + intraday[1]) - 1.0
+    assert np.isclose(combined, 3.0 * (121.0 / 100.0 - 1.0), atol=1e-12)
