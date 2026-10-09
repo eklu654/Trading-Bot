@@ -98,7 +98,7 @@ def main():
             cf_signal=np.minimum(b0,cf)
             cf_ret=next_open_daily_returns(cf_signal,on,intr)
             cf_final=float(INITIAL*np.cumprod(1+cf_ret)[-1])
-            prior_recoveries=[ev for ev in event_rows if pd.Timestamp(ev["baseline_reentry_execution_date"])<=dates[s]]
+            prior_recoveries=[ev for ev in event_rows if pd.Timestamp(ev["recovery_decision_date"])<=dates[s]]
             last_prior_recovery=prior_recoveries[-1]["recovery_decision_date"] if prior_recoveries else ""
             labels=[]
             for label,a,b in [("COVID","2020-02-19","2020-07-31"),("2022","2022-01-03","2022-12-30"),
@@ -107,7 +107,7 @@ def main():
             intervals.append({"mode":mode,"episode":n,"start":dates[s].date().isoformat(),
               "end":dates[e].date().isoformat(),"sessions":e-s+1,
               "mean_overlay_exposure":float(ov[s:e+1].mean()),"minimum_overlay_exposure":float(ov[s:e+1].min()),
-              "intersects":",".join(labels),"last_b0_recovery_before_interval":last_prior_recovery,
+              "intersects":",".join(labels),"latest_b0_recovery_decision_on_or_before_interval":last_prior_recovery,
               "full_candidate_final":full_final,"counterfactual_final_without_interval":cf_final,
               "conditional_terminal_contribution":full_final-cf_final})
         summary.append({"source":"actual_tqqq","mode":mode,"final_balance":full_final,
