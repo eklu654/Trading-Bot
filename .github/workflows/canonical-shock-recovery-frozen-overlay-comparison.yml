@@ -54,6 +54,7 @@ jobs:
             data/research/canonical_frozen_overlay_comparison_summary.csv
             data/research/canonical_frozen_overlay_comparison_periods.csv
             data/research/canonical_frozen_overlay_comparison_costs.csv
+            data/research/canonical_frozen_overlay_comparison_episode_contributions.csv
             data/research/canonical_frozen_overlay_comparison_daily.csv
             data/research/canonical_frozen_overlay_comparison_events.csv
             data/research/canonical_frozen_overlay_comparison_fed_dma_transitions.csv
