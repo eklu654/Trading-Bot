@@ -163,3 +163,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Full repository research-tests passed on the latest research code plus report updates: [run 37889605031](https://github.com/eklu654/Trading-Bot/actions/runs/37889605031), commit `32e250c8044efa00c65d780b4176e157cdcb19ca`. This includes pytest and the existing event-attribution script.
 - The report's final quantitative conclusion remains: the Fed filter substantially outperforms the same-exposure DMA-only ablation on terminal wealth in this sample, but F50/F75 fail the episode-diversification gate and D50/D75 fail wealth retention. No strategy selected; no paper/live trading approved.
 
+
+## Next experiment — historical real-index Fed/DMA defense test
+
+- User asked whether the defensive mechanic can be tested in earlier periods without reconstructing TQQQ. Decision: yes; test signal timing against actual daily Nasdaq Composite index data (from its available 1971 history) plus actual historical Fed-rate observations, with no leverage simulation and no pre-2010 TQQQ wealth claims.
+- Plan: [historical real-index Fed/DMA defense test](HISTORICAL_REAL_INDEX_FED_DMA_DEFENSE_TEST_PLAN_2026-10-09.md), committed 2026-10-09 (commit `a496a6d2bd583fa9bd5a3c92e9218c221e0650c5`).
+- Frozen rule to test: index close below 200-session SMA AND one-session-lagged Fed state `TIGHTENING_ACTIVE`; sticky defense persists until index closes back at/above 200-DMA. Reuse the exact current Fed-state builder if available; do not silently invent a new definition if not.
+- Primary real-price proxy: Nasdaq Composite, not QQQ and not TQQQ. Broad-market cross-check: S&P 500 where verified daily data are available. Policy source: FRED/Board of Governors daily DFF; source references and guardrails are in the plan.
+- Required outputs: all defense entry/exit dates, duration, drawdown at entry, forward 21/63/126/252-session index outcomes, missed rebounds, and Fed-only / DMA-only / combined ablations. Hash inputs and preserve machine-readable artifacts.
+- This experiment tests whether the signal generalizes across historical regimes. It cannot establish pre-inception TQQQ portfolio wealth or prove that the overlay improves TQQQ terminal wealth.
