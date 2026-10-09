@@ -136,3 +136,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Main research CI passed on commit `241131edd2cf7de64e3f543b4e7898227aed6233`: [research-tests run 37889166998](https://github.com/eklu654/Trading-Bot/actions/runs/37889166998). This includes `PYTHONPATH=. pytest -q` and the existing three-layer event-attribution script.
 - The dedicated corrected comparison workflow also passed on code/workflow commit `1083830aece25d82ed79ba7a1b19a258ef512617`: [run 37888844274](https://github.com/eklu654/Trading-Bot/actions/runs/37888844274).
 
+## Fed-versus-DMA ablation initiated
+
+- Predeclared question and constraints: [Fed-vs-DMA ablation plan](CANONICAL_SHOCK_RECOVERY_FED_VS_DMA_ABLATION_PLAN_2026-10-09.md), committed at `a4d3eb4228747d83df310eb062593b3c4a79c628`.
+- The same-input comparison script now adds D50/D75: 50%/75% TQQQ exposure below the existing 200-DMA without a Fed entry filter, compared against F50/F75 with the active-Fed gate. B0 and buy-and-hold remain controls. No new thresholds or DMA lengths.
+- Added a synthetic test for the DMA-only entry state. Code commit: `72480d9356bc9258b6e583eb0d4f9320609c1039`; test commit: `9b29ba1eb3a6c7becee38437477fb6fd5582b266`.
+- The new comparison and regression workflows are triggered by these commits. No ablation result is claimed yet; all data remains retrospective development data.
+
