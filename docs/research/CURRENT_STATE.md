@@ -136,3 +136,14 @@ Commits adding assertions:
 - `36bec88f8ec3d93cefbbf2750786d3e6f456a646` — `research/audit_failed_bounce_canonical_independent.py`
 Important process note: the assistant previously stated a possible alignment defect before fully reading both scripts. This was a false alarm; explicitly retract it. The original historical reason for the $4M rejection remains unrecovered.
 Next step is not to change strategy based on that disproved hypothesis. Continue with (1) regression tests/workflow after new alignment assertions, (2) shared frozen dataset + daily curve comparison, and (3) recover exact original rejection context / inspect any actual open/close/midday price discrepancy.
+
+
+## Verification after explicit date-alignment assertions (2026-10-09 UTC)
+- Added explicit post-intersection equality/length assertions in both canonical scripts; commits `3c11699` and `36bec88`.
+- GitHub Actions successfully reran both robustness and independent audit on the changed code:
+  - [Robustness run 37874744047](https://github.com/eklu654/Trading-Bot/actions/runs/37874744047): success.
+  - [Independent audit run 37874744058](https://github.com/eklu654/Trading-Bot/actions/runs/37874744058): success; canonical $4,040,313, TQQQ buy-and-hold $2,094,669; 9 events.
+  - Earlier commit's [independent audit run 37874731173](https://github.com/eklu654/Trading-Bot/actions/runs/37874731173): success; canonical $4,040,315, buy-and-hold $2,094,669; 9 events.
+  - Earlier commit's [robustness run 37874731205](https://github.com/eklu654/Trading-Bot/actions/runs/37874731205): success.
+- Thus the explicit alignment assertions passed and did not change the headline result. The previously raised row-index-offset concern is retracted; code already intersected/reindexed both series before building events.
+- Remaining high-value work: (a) ensure research-tests run 37874744026 completes and passes; (b) make both scripts export daily equity curves and aligned input data with hashes, or create a single shared frozen-data artifact; (c) compare daily return/equity curves, not only final balances; (d) recover the exact earlier conversational rejection message if possible.
