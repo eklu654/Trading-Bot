@@ -59,3 +59,8 @@ Synthetic series is not actual TQQQ and is not fully calibrated; these results a
 
 ## Decision
 This targeted “matrix only gates B0 recovery” implementation is better scoped than the rejected always-on overlay, but still does not improve the actual-TQQQ objective. The 2022 veto delays re-entry until the matrix clears, and the opportunity cost outweighs the avoided weakness in the full-period account. Do not deploy or keep tuning N on this same sample. Next useful question is whether a **bounded, short re-entry delay** (rather than waiting for DMA clearance) captures enough of the false-bounce protection without keeping TQQQ out for weeks. Treat any such follow-up as exploratory and do not select a winner from the inspected period.
+
+
+## Same-input correction rerun
+- Corrected run: [37914294832](https://github.com/eklu654/Trading-Bot/actions/runs/37914294832); artifact ID `11608866543`, SHA-256 `f1bfb2dbe565df8c3f2841bbcb60c280524a94f95fc17e576e864b2eba7b40db`.
+- Live-period indicator features now use B0's frozen QQQ closes. Results match to displayed precision: N=8/10 end $3.102M vs B0 $4.040M and worsen drawdown/2022. Rejection remains.
