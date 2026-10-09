@@ -46,3 +46,38 @@ Every meaningful step must leave a durable GitHub trail:
 - Never replace a prior result silently. Mark it VERIFIED, PROVISIONAL, REJECTED, or UNVERIFIED with the specific evidence and reason.
 - On resumption, read CURRENT_STATE first, then this log, then inspect the latest commit and workflow run before conducting new experiments.
 - Do not say “verified” unless an independent reconstruction with matching dates and execution passes and the benchmark is computed on the identical data window.
+
+
+## 2026-10-09 rerun and artifact comparison (after workflow export fix)
+Fresh workflow runs on commit `7b7824959ff6602641a64e52c078d046f1f69a13`:
+- robustness run 37877619231 (success), artifact 11592489544.
+- independent audit run 37877619214 (success), artifact 11593196137.
+- structural matrix run 37877619135 (success), artifact 11592718712.
+
+### Recomputed balances
+- robustness canonical: $4,040,314.1961; buy-and-hold $2,094,668.8014.
+- structural matrix canonical row: $4,040,314.3869 (same shock/recovery baseline, different report implementation).
+- independent audit canonical: $4,040,312.7260; buy-and-hold $2,094,668.8014.
+- The independent strategy ending balance differs from robustness by about $1.47. This is small relative to $4.04M but not yet an exact daily-curve reconciliation.
+
+### Critical frozen-data comparison
+Both artifacts have 4,189 rows and the same date range, 2010-02-11 through 2026-10-07. However, they are NOT identical frozen inputs:
+- QQQ adjusted-close maximum absolute difference: approximately 0.000213623, across 3,241 rows.
+- TQQQ adjusted-close maximum absolute difference: approximately 0.0000152588, across 3,041 rows.
+- QQQ/TQQQ raw Close, Open, High, Low, and Volume columns match exactly in the downloaded CSV comparison; adjusted-close columns do not. This likely reflects separate yfinance adjusted-series calculations/revisions, but the cause is not proven.
+- Input file hashes differ. Therefore the user's specific requirement—same frozen inputs and daily curves reconciled—has not passed.
+- Both outputs do contain daily equity curves and input CSVs after the artifact-path correction.
+
+### What is now supported
+The ~$4.04M result is reproducible to within a few dollars across independent implementations and repeated runs on the available history. This is a solid numerical replication of the reported headline, but not yet a fully identical-input audit. Do not describe it as 100% verified. The common raw OHLC data suggests adjusted-close differences are not driving a large terminal-value discrepancy, but this remains to be established by a same-input replay.
+
+### Historical strategy context recovered
+The older user-confirmed remembered baseline was approximately $3.3M: QQQ daily shock -> +10% recovery from the post-shock low, plus an additional anti-fakeout rule intended to avoid re-entry during a bear-market rally. This is NOT the same as the current ~$4.04M baseline, which has no anti-fakeout filter. The exact historical filter and reason the ~$4M was withdrawn remain unresolved.
+- The structural-matrix workflow is `tqqq-failed-bounce-structural-matrix.yml`, run 37877619135.
+- Its artifact reports canonical_defensive_until_plus10 at $4,040,314.39. It also includes feature-family diagnostics: 60/120/200-day trend and SMA-slope states, price vs SMA, structural damage/repair labels, and candidate flags.
+- A documented defect in `research/failed_bounce_structural_matrix.py`: the event builder creates labels using up to 252 future sessions, then signal construction skips censored events based on those future labels. That leaks future observability into portfolio event selection. The matrix's best selected outputs must not be treated as unbiased strategy results.
+- The previous Fed/macro/DMA structural composite is documented in `docs/research/tqqq-composite-fed-macro-dma-defense-2026-10-05.md`: 200-DMA below trend + Fed TIGHTENING_PAUSED and/or macro deterioration/crisis; exit only above 200-DMA and MACRO_STRUCTURAL_EXPANSION. It improved the synthetic 1999–2009 path but was classified HISTORICALLY EFFECTIVE, MODERN-ERA OVER-DEFENSIVE. It is not the $4M strategy.
+- Fed cycle event study lists 1994–95, 1999–2000, 2004–06, 2015–18, and 2022–July 2023 cycles. MACD/golden-cross feature family has not yet been recovered from the specific historical failed-bounce workflow records inspected here; do not invent its exact rule.
+
+### Next verification action
+Create a shared, immutable input artifact once (QQQ/TQQQ raw OHLCV plus one explicit adjusted-price construction), then run both canonical engines against those exact files without downloading again. Assert byte-identical input hashes, matching event/execution dates, and compare every daily equity value. Separately recover and reproduce the exact ~$3.3M anti-fakeout rule from its historical source before treating it as the original strategy.
