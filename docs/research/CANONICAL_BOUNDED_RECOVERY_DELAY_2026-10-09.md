@@ -23,3 +23,38 @@ B0 unchanged; actual TQQQ live-fund history and a separately labeled synthetic 3
 - Code commit: `5e4a159685c7dba9075d4cfd01b124890db9802a`
 - Workflow commit: `d23f20b42e2fcec4dae39d51a9485520b5f6a746`
 - Add run/artifact/result metadata after completion.
+
+
+## Results
+
+- Workflow passed: [run 37913900764](https://github.com/eklu654/Trading-Bot/actions/runs/37913900764).
+- Artifact ID `11608910752`; SHA-256 `d1a171fd62d0a578ecbf79993e7ec52f8ee889b4809b06fc3977396e8ad74db4`.
+- Actual TQQQ dates: 2010-02-11 through 2026-10-07, 4,189 observations; synthetic diagnostic 6,938 observations from 1999-03-10 through 2026-10-07.
+
+### Actual TQQQ results
+
+| Rule | Ending balance | CAGR | Max drawdown | Worst rolling 252-session return | COVID window | 2022 window |
+|---|---:|---:|---:|---:|---:|---:|
+| B0 canonical | $4,040,314 | 49.49% | -73.53% | -72.64% | +24.58% | -69.83% |
+| Bounded wait 3 sessions | $3,921,280 | 49.22% | -74.31% | -73.45% | +24.58% | -70.71% |
+| Bounded wait 5 sessions | $3,774,295 | 48.88% | -75.28% | -74.44% | +24.58% | -71.81% |
+| Bounded wait 10 sessions | $3,451,428 | 48.08% | -77.39% | -76.63% | +24.58% | -74.22% |
+
+All use the fixed 8-session fast-recovery exception. A 3-session cap is closest to B0, but still reduces ending wealth by about 2.95% and worsens max drawdown by 0.78 percentage points. Longer waits are progressively worse. The vetoed July 2022 recovery was released on July 22 / July 27 / August 2 for caps 3 / 5 / 10; waiting for matrix clearance was worse still.
+
+### Synthetic 3x QQQ diagnostic
+
+| Rule | Ending balance | CAGR | Max drawdown | COVID window | 2022 window |
+|---|---:|---:|---:|---:|---:|
+| B0 canonical | $836,043 | 20.40% | -99.37% | +26.34% | -68.81% |
+| Bounded wait 3 sessions | $1,174,860 | 21.89% | -99.10% | +26.34% | -69.77% |
+| Bounded wait 5 sessions | $764,318 | 20.01% | -99.39% | +26.34% | -71.00% |
+| Bounded wait 10 sessions | $1,133,867 | 21.73% | -99.01% | +26.34% | -73.49% |
+
+Synthetic output is not actual TQQQ performance and remains uncalibrated; it is not a basis for selecting a rule.
+
+## Decision
+The 3-session cap is close to B0 but does not improve the stated objective; 5/10 sessions are worse. Reject this bounded-delay family on the current actual-TQQQ sample. Do not continue sweeping delay caps against this same inspected period.
+
+## Methodology audit follow-up
+The actual-TQQQ scripts aligned feature dates to the frozen QQQ/TQQQ frame, but the overlay indicators were originally calculated from a separate QQQ download before alignment. This means the overlay's adjusted-close-derived indicators were not literally calculated from the same frozen QQQ series as B0. Differences appear small in the reported summaries, but exact same-input comparisons require recalculating the actual overlay indicators from `x.qqq_adj_close` after alignment. Treat the above result as provisional until that causal input alignment is corrected and rerun.
