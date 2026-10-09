@@ -228,3 +228,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Compared B0 with (1) original sticky hard defense, (2) hard 0% only while the fast-shock condition is currently true while structural 25% defense remains sticky, and (3) fully daily/non-sticky structural and fast-shock conditions.
 - All candidates remain `min(B0, overlay)`; none can increase exposure above B0.
 - Experiment plan and audit trail: [CANONICAL_STRUCTURAL_STATE_ABLATION_2026-10-09.md](CANONICAL_STRUCTURAL_STATE_ABLATION_2026-10-09.md). Workflow will record results before interpretation.
+
+
+### Structural state ablation results — 2026-10-09
+
+- Workflow passed: [run 37912719777](https://github.com/eklu654/Trading-Bot/actions/runs/37912719777); artifact ID `11606304467`, SHA-256 `0bf75ad8bf27a72d004b0700cd298cecf49b274de65d907f746c28f30de4ee12`.
+- Full result table: [state ablation results](CANONICAL_STRUCTURAL_STATE_ABLATION_RESULTS_2026-10-09.md).
+- Actual-TQQQ results at the fixed representative setting: B0 $4.040M; original sticky overlay $727k; hard-nonsticky $892k; fully daily/non-sticky $1.355M. Max drawdown improves from -73.53% to between -57.81% and -60.49%, but all three overlays turn B0's +24.58% COVID window into roughly -8.6% to -9.9% and materially reduce long-run wealth.
+- Decision: sticky hard defense is not the only problem. Reject this structural matrix family and stop tuning its thresholds. Next step is episode attribution around B0 recovery decisions, especially COVID and 2022, before considering any narrowly scoped recovery-aware candidate.
