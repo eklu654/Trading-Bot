@@ -9,9 +9,14 @@ No optimization, costs, or cash yield.
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from causal_execution import next_open_equity
-from tqqq_three_layer_event_attribution import build, INITIAL
-from reentry_isolation import target_exposure
+try:
+    from .causal_execution import next_open_equity
+    from .tqqq_three_layer_event_attribution import build, INITIAL
+    from .reentry_isolation import target_exposure
+except ImportError:
+    from causal_execution import next_open_equity
+    from tqqq_three_layer_event_attribution import build, INITIAL
+    from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
 DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
