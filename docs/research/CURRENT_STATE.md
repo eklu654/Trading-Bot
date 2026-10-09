@@ -341,3 +341,9 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Corrected actual indicator construction now retains pre-2010 QQQ history for rolling lookbacks, overwrites live dates with the frozen QQQ adjusted closes used by B0, and recomputes DMA/return/drawdown features from that merged series.
 - Corrected runs succeeded: combined matrix [37914258527](https://github.com/eklu654/Trading-Bot/actions/runs/37914258527), state ablation [37914285510](https://github.com/eklu654/Trading-Bot/actions/runs/37914285510), interval attribution [37914289809](https://github.com/eklu654/Trading-Bot/actions/runs/37914289809), recovery gate [37914294832](https://github.com/eklu654/Trading-Bot/actions/runs/37914294832), bounded delay [37914300654](https://github.com/eklu654/Trading-Bot/actions/runs/37914300654), and standalone matrix [37914263604](https://github.com/eklu654/Trading-Bot/actions/runs/37914263604).
 - Recomputed actual-TQQQ results match the earlier results to displayed precision. The rejection conclusions are unchanged; the earlier signal-input mismatch is now corrected in code and rerun artifacts.
+
+
+### Consolidated matrix investigation checkpoint — 2026-10-09
+
+- Consolidated all combined-matrix, state-ablation, interval-attribution, recovery-event, recovery-gate, bounded-delay, and frozen-input correction findings in [STRUCTURAL_MATRIX_COMBINED_INVESTIGATION_SUMMARY_2026-10-09.md](STRUCTURAL_MATRIX_COMBINED_INVESTIGATION_SUMMARY_2026-10-09.md).
+- No matrix candidate beat B0 on the actual-TQQQ objective; do not promote these variants to paper trading or continue tuning the same thresholds against the inspected sample.
