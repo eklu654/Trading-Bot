@@ -195,3 +195,12 @@ User explicitly authorized proceeding with the ~$4.04M QQQ shock/recovery result
 - Primary research objective restored: test whether a predeclared structural rule can identify 2022-style prolonged Fed-tightening bear regimes without sacrificing acute V-shaped recoveries such as COVID, and find holes in the strategy.
 - Crucial historical limitation: TQQQ did not exist in 2000–2002. A dot-com-era test requires a labelled synthetic 3x daily leveraged QQQ proxy with financing/expense/rebalance assumptions and validation against live TQQQ. Never describe it as actual TQQQ history.
 - Immediate sequence: stress scorecard; quantify baseline false positives/missed rebounds; define candidate feature families and thresholds before holdout testing; chronological development/holdout; preserve full results and run IDs. The 4M result is not to be discarded because frozen-data reconciliation remains incomplete.
+
+
+## Structural refinement plan committed
+- Added `docs/research/FAILED_BOUNCE_STRUCTURAL_ROBUSTNESS_PLAN.md` (commit `6781346c49595251a388e1bb90335724f1de129a`).
+- Plan restores the exact original research question: can a genuinely predeclared structural feature recognize prolonged Fed-tightening bear markets without sacrificing V-shaped recoveries?
+- Next experiment is deliberately diagnostic and does not change the baseline: stress scorecard for COVID, 2022, 2018 Q4, false-positive 2020/2025 events, plus mechanically selected worst rolling 12-month periods.
+- Then inspect slow-bear misses, test frozen Fed lifecycle / existing 200-DMA / existing macro-state families separately, and only combine features if at least one has incremental value. Do not restart a broad DMA or re-entry-delay search.
+- Previously tested Fed+macro+DMA composite is not a current candidate: documented as modern-era over-defensive. It may inform diagnostics but must not be presumed to solve the $4M baseline's weak spots.
+- Keep actual-TQQQ period and synthetic pre-2010 3x proxy separate; TQQQ did not exist in 2000–2002.
