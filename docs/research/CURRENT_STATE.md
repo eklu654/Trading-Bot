@@ -274,3 +274,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - When a recovery is flagged, the strategy vetoes it only if the rebound took longer than a fixed N sessions from the running low. A veto keeps the strategy defensive, updates any new low, and reassesses at the next +10% recovery. Fast-recovery exception sensitivity: N=5/8/10 sessions.
 - This is a small, exploratory, in-sample sensitivity test, not a production selection. Frozen plan: [CANONICAL_RECOVERY_GATE_2026-10-09.md](CANONICAL_RECOVERY_GATE_2026-10-09.md).
 - Workflow: `.github/workflows/canonical-recovery-gate.yml`; results to be recorded after artifact inspection.
+
+
+### Recovery-gated structural confirmation results — 2026-10-09
+
+- Workflow passed: [run 37913598899](https://github.com/eklu654/Trading-Bot/actions/runs/37913598899); artifact ID `11607946132`, digest `0e9e84b2492c26692a3c0f7194e8ae0cdb8d71f41f5bca5448e945de942d916a`.
+- Report: [recovery gate results](CANONICAL_RECOVERY_GATE_2026-10-09.md).
+- Actual TQQQ: B0 $4.040M; N=5 $1.724M, N=8 $3.102M, N=10 $3.102M. N=8/10 preserve COVID's +24.58% window, but worsen max DD (-79.68% vs B0 -73.53%), worsen 2022 (-76.83% vs -69.83%), and finish ~23.2% below B0. N=5 also blocks COVID and is worse.
+- Decision: reject this recovery gate in its tested form; do not choose a speed threshold. The 2022 veto kept the strategy out until the matrix cleared on 2022-08-10, with opportunity cost outweighing avoided weakness.
+- Next hypothesis, if pursued: test a bounded short delay rather than waiting for DMA clearance. Keep it explicitly exploratory; modern data has already been inspected.
