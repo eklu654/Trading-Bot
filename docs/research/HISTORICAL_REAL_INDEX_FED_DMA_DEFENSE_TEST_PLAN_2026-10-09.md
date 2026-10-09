@@ -72,3 +72,19 @@ A useful first result must:
 ## Research question
 
 Does active tightening plus below-200-DMA identify dangerous regimes across multiple distinct historical eras, or is its apparent value concentrated in the single 2022 episode? The study should let the data answer that without assuming any pre-TQQQ leveraged return path.
+
+
+## Additional direct test of the mechanic using real index returns
+
+In addition to event-level signal diagnostics, run a separate **index-only exposure backtest** using actual index returns. This directly tests whether the exposure-reduction mechanic helps on real historical market data without claiming to replicate TQQQ:
+
+- Normal state: 100% invested in the selected real index.
+- Defensive state: compare 0%, 25%, 50%, and 75% index exposure; remainder earns a documented cash proxy.
+- Cash proxy: use actual 3-month Treasury-bill yield data where verified coverage is available (for example, FRED TB3MS); explicitly convert quoted annualized yield to a daily accrual convention and test a zero-cash-yield sensitivity. Never treat the quoted yield as a daily return.
+- Compare combined Fed-active × below-200-DMA with Fed-active-only, below-200-DMA-only, and always-invested controls.
+- Use the same position-state timing for all variants: a close-derived state affects the next session, not the same session's return.
+- Report ending index-strategy wealth from a normalized 1.0 starting value, CAGR, maximum drawdown, worst rolling 252-session return, time defensive, turnover/state transitions, and results by named historical episode.
+- Run price-index results as the primary consistently sourced series, and clearly disclose that Nasdaq Composite price returns exclude dividends. If a verified total-return index is available for the same dates, add it as a separate cross-check rather than mixing series.
+- This is a genuine backtest of the defensive mechanic applied to an actual index. It is still **not a TQQQ backtest**: leveraged ETF daily reset, financing, tracking, fees, and path-dependent compounding are deliberately outside scope.
+
+This two-part design answers two different questions without conflating them: (1) did the signal arrive in time across old market regimes? (2) did reducing exposure improve outcomes when applied to the real index itself?
