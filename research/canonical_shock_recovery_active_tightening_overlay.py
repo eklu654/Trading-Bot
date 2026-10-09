@@ -109,6 +109,43 @@ def targeted_windows(
     return pd.DataFrame(rows)
 
 
+def overlay_episode_contributions(
+    frame: pd.DataFrame,
+    baseline_signal: np.ndarray,
+    overlay_signal: np.ndarray,
+) -> pd.DataFrame:
+    """Leave-one-overlay-episode-out terminal counterfactuals.
+
+    These conditional effects are not additive because strategy episodes interact
+    through the changing account balance and baseline defense.
+    """
+    mask = np.asarray(overlay_signal) == 0.0
+    starts = np.flatnonzero(mask & ~np.r_[False, mask[:-1]])
+    ends = np.flatnonzero(mask & ~np.r_[mask[1:], False])
+    full_signal = np.minimum(baseline_signal, overlay_signal)
+    full_returns = calculate_returns(frame, full_signal)
+    full_final = float(INITIAL * np.cumprod(1.0 + full_returns)[-1])
+    rows = []
+    for number, (start_i, end_i) in enumerate(zip(starts, ends), start=1):
+        counterfactual_overlay = np.asarray(overlay_signal, dtype=float).copy()
+        counterfactual_overlay[start_i:end_i + 1] = 1.0
+        counterfactual_signal = np.minimum(baseline_signal, counterfactual_overlay)
+        counterfactual_returns = calculate_returns(frame, counterfactual_signal)
+        counterfactual_final = float(INITIAL * np.cumprod(1.0 + counterfactual_returns)[-1])
+        rows.append({
+            "episode": number,
+            "start_date": frame.index[start_i].date().isoformat(),
+            "end_date": frame.index[end_i].date().isoformat(),
+            "overlay_signal_sessions": int(end_i - start_i + 1),
+            "incremental_defense_sessions": int((baseline_signal[start_i:end_i + 1] == 1.0).sum()),
+            "baseline_defense_overlap_sessions": int((baseline_signal[start_i:end_i + 1] == 0.0).sum()),
+            "full_candidate_final": full_final,
+            "counterfactual_final_without_this_overlay_episode": counterfactual_final,
+            "conditional_terminal_contribution": full_final - counterfactual_final,
+        })
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     q = download_market("QQQ").rename(columns={
@@ -158,6 +195,7 @@ def main() -> None:
     summary = pd.DataFrame(summary_rows)
     periods = make_period_rows(common.index, return_map, equity_map, signal_map)
     windows = targeted_windows(common.index, return_map, equity_map, signal_map)
+    episode_contributions = overlay_episode_contributions(common, baseline_signal, overlay_signal)
 
     event_rows = []
     for shock_i, low_i, decision_i in events:
@@ -193,6 +231,7 @@ def main() -> None:
     windows.to_csv(OUT / "canonical_active_tightening_overlay_stress_windows.csv", index=False)
     event_df.to_csv(OUT / "canonical_active_tightening_overlay_baseline_events.csv", index=False)
     transitions.to_csv(OUT / "canonical_active_tightening_overlay_transitions.csv", index=False)
+    episode_contributions.to_csv(OUT / "canonical_active_tightening_overlay_episode_contributions.csv", index=False)
 
     adj_open = common["tqqq_open"].to_numpy(dtype=float) * common["tqqq_adj_close"].to_numpy(dtype=float) / common["tqqq_close"].to_numpy(dtype=float)
     adj_close = common["tqqq_adj_close"].to_numpy(dtype=float)
@@ -254,6 +293,8 @@ def main() -> None:
     print(event_df.to_string(index=False))
     print("\nOVERLAY TRANSITIONS")
     print(transitions.to_string(index=False))
+    print("\nOVERLAY EPISODE CONTRIBUTIONS (leave-one-out; non-additive)")
+    print(episode_contributions.to_string(index=False))
     print("\nCOST SENSITIVITY")
     print(costs.to_string(index=False))
     print("\nMANIFEST")
