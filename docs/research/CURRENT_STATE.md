@@ -45,3 +45,20 @@ The user's remembered current baseline is approximately **$3.3M**, based on a QQ
 
 ## Context-preservation rule
 Before any new experiment, read this file and the detailed checkpoint. After every meaningful step, commit the current rules, exact output/result, status (VERIFIED / PROVISIONAL / REJECTED / UNVERIFIED), reason, commit SHA, workflow run ID, and next step. Never silently replace prior findings. At the end of every work session, update this file first.
+
+## Forensic follow-up — October 8 execution-timing concern (added 2026-10-09 UTC)
+A review of the repository commit chronology surfaced specific, contemporaneous execution-timing fixes that must be investigated as the likely source of the user's remembered open/close discrepancy:
+
+- `b813c898fdd7f54b88618a44ed89a3ba284fcd0d` (2026-10-08 19:23:08 UTC): “Fix failed-bounce signal timing: re-entry executes next open after recovery close”. In `research/failed_bounce_structural_matrix.py`, changed defensive/re-entry slice boundaries around `decision_i`; also changed canonical defensive control from `decision_i + 1` endpoint to `decision_i`. This is a real timing correction, not merely a datetime precision issue.
+- `ea1e01c08d2ab3905fa946a6e8128b5aa6d4a843` (2026-10-08 19:25:12 UTC): “Correct independent audit overnight position timing”.
+- `c0387408f85c788fc66d817372474de17f5ef35e` (2026-10-07 10:06:05 UTC): “Correct close-to-next-open overnight exposure accounting”, modifying `research/tqqq_signal_source_audit.py` so overnight return is attributed to the position held before the open execution, while intraday return uses the executed position.
+- `ab27e7bc73bcfa9d472f392371b55c3675a5f2d0` (2026-10-06): “fix: derive adjusted open for actual TQQQ validation”, adding `adj_open = open * adj_close / close`.
+- Earlier, `f2c048a37eaf283e755678b301904b0ecd8861f7` (2026-09-29) explicitly separated adjusted-close total-return accounting from unadjusted-close DMA signals.
+
+These commits strongly support that close/open timing and adjusted-open accounting are relevant to the historical audit. They do NOT alone establish that the canonical ~$4.04M figure is wrong: need map the exact $4M run to the code revision and compare the old/new daily equity series. Also distinguish the datetime-resolution merge errors (Fed/market join failures) from genuine return-accounting timing bugs; these are separate classes of defect.
+
+### Exact next forensic tasks
+1. Fetch the workflow run history around the 2026-10-08 19:22–19:27 UTC commits and map each run's head SHA to the above fixes; record whether the ~$4.04M run predates or follows them.
+2. Inspect full patches for `ea1e01c` and `b813c89`, plus `research/failed_bounce_robustness.py`, `research/audit_failed_bounce_canonical_independent.py`, and `research/causal_execution.py` at each relevant commit.
+3. Recompute the canonical strategy before and after the timing fixes on identical aligned raw OHLC + adjusted-close inputs. The recovery close signal must execute at next open; overnight return belongs to the position held before that open; intraday return belongs to the position after execution.
+4. Compare the resulting event ledger, per-day holdings/returns/equity, final balance, and TQQQ buy-and-hold control. Do not call $4.04M verified until this reconciliation passes.
