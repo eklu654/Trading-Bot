@@ -97,3 +97,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - No candidate selected. B0 remains WORKING CONTROL; F50/F75 remain WORKING DEVELOPMENT CANDIDATES; the existing macro classifier remains REJECTED for the current objective. AI and paper trading remain deferred.
 - Next engineering task: a single workflow/run that freezes one aligned QQQ/TQQQ/Fed input set, runs B0/F50/F75 from it, independently checks causality/accounting, and emits one comparable artifact set. Existing sensitivity output is useful, but its market-input hash differs from the canonical baseline hash; do not describe its dollar figures as exact same-input comparisons until that is reconciled.
 
+## Frozen-input overlay comparison implementation — 2026-10-09
+
+- New script: [canonical_shock_recovery_frozen_overlay_comparison.py](../../research/canonical_shock_recovery_frozen_overlay_comparison.py), commit `1c71e82018d8f2001af0e1e9dbc6225cfbed3e74`.
+- New workflow: [canonical-shock-recovery-frozen-overlay-comparison.yml](../../.github/workflows/canonical-shock-recovery-frozen-overlay-comparison.yml), commit `9459ba314a093cc56e19be32c80fcb0ab167682c`.
+- Workflow run: [37888705794](https://github.com/eklu654/Trading-Bot/actions/runs/37888705794). At checkpoint it was in progress during dependency installation; no result is claimed yet.
+- Intended behavior: freeze aligned QQQ/TQQQ market input once using the existing same-input reconciler; derive B0, F00/F25/F50/F75, and buy-and-hold from those exact rows; download/map the Fed state once with existing lag; independently reconcile B0 execution returns; emit daily equity/exposure, event ledger, Fed/DMA transitions, chronological subperiod scorecard, transaction-cost sensitivity, and a hash manifest.
+- Important distinction: this is a same-run comparison on one frozen input. Its downloaded price snapshot may differ from earlier runs because vendor adjusted-price histories can be revised. Use its own manifest/hash for its conclusions; do not claim byte-identical inputs across separate workflow runs.
+- No candidate selected. Inspect the actual workflow result and artifacts before interpreting the output. If it fails, preserve the failure, fix the code, and rerun rather than inferring results.
+
