@@ -104,4 +104,5 @@ The prior `NEAR_RUIN_DEFENSE_GATE_CONTINUATION_2026-10-09.md` recorded a separat
 
 - Keep actual-TQQQ B0 as the modern-period control; do not imply its modern drawdown is representative of pre-2010 synthetic stress.
 - The corrected synthetic result does not justify paper/live deployment. It confirms a near-ruin tail even without crossing -99.9% in the B0 replay.
-- Any protective overlay must be preregistered and evaluated against both the modern actual-TQQQ compounding record and this synthetic stress path, with 0/10/25/50-bp transition-cost stress, COVID rebound retention, 2022 behavior, and chronological holdout results.
+- The preregistered B0 + 250-DMA hybrid follow-up is complete and **rejected**: all three exposure levels failed the actual-TQQQ wealth-retention gate. See [B0_250DMA_HYBRID_RESULTS_AUDIT_2026-10-09.md](B0_250DMA_HYBRID_RESULTS_AUDIT_2026-10-09.md). Do not retune that family from the observed results.
+- The next research direction should be an orthogonal, preregistered state modifier rather than another post-hoc DMA grid, and must pass the actual-TQQQ wealth gate plus corrected synthetic stress, 0/10/25/50-bp transition-cost stress, COVID rebound retention, 2022 behavior, and chronological holdout requirements.
