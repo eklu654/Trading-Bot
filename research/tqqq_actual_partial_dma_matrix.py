@@ -1,5 +1,7 @@
 """Actual-TQQQ partial-exposure DMA matrix.
 
+Continuation rerun marker: compare the corrected synthetic 150-DMA/25% row with actual TQQQ.
+
 Signal: QQQ adjusted close vs its DMA.
 Execution: actual TQQQ at next session open.
 Above DMA: 100% TQQQ.
