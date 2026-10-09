@@ -226,3 +226,17 @@ The latest CI sweep on commit `b6d8e24c486de2dcb4925398580438f84167ddf7` is comp
 5. Do not begin AI selection or paper trading until the canonical replay and original baseline have cleared these gates.
 
 Detailed evidence and run IDs are in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
+
+
+## Correction — synthetic three-layer result (2026-10-09 04:20 UTC)
+
+**Important reclassification:** The prior $128B–$205B synthetic three-layer cost-stress results are invalid. The cost-stress script used signal[t] for intraday return[t], violating close[t] -> open[t+1] execution and leaking same-session information. The corrected implementation now uses the shared causal execution engine and reads a frozen dataset exported by the attribution step.
+
+- Corrected source commits: `ed95b70` (causal engine), `533525a` (frozen input export), `6b3e1ab` (consume same frozen inputs), `e88a3ac` (syntax fix).
+- Passing attribution run: [37883372240](https://github.com/eklu654/Trading-Bot/actions/runs/37883372240), artifact 11594948023.
+- Zero-cost output agrees with the same-run attribution summary to numerical tolerance: synthetic base ~$207,068; Fed-conditioned ~$110,129; three-layer ~$89,973. Actual-TQQQ validation remains roughly $84.6k / $106.9k / $91.8k against ~$2.03M actual TQQQ buy-and-hold.
+- The new frozen-input consistency assertion passed; research tests also passed at [37883372312](https://github.com/eklu654/Trading-Bot/actions/runs/37883372312).
+
+Thus the extraordinary synthetic wealth result is **REJECTED**, not a strategy result. The Fed layer remains an unvalidated hypothesis. The separate simple shock/recovery ~$4.04M candidate remains **PROVISIONALLY REPRODUCED**, and the remembered ~$3.3M anti-fakeout baseline remains **UNRECOVERED**.
+
+See the dated log for full failure analysis and run evidence: [TQQQ shock/recovery re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
