@@ -311,3 +311,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Run 37913900764 passed; artifact 11608910752 (SHA-256 `d1a171fd62d0a578ecbf79993e7ec52f8ee889b4809b06fc3977396e8ad74db4`). Report: [bounded recovery delay](CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md).
 - Actual TQQQ B0 ended $4.040M; bounded wait 3/5/10 sessions ended $3.921M/$3.774M/$3.451M. None beat B0; all preserve COVID but worsen drawdown and 2022.
 - Audit caveat: actual overlay indicators were calculated from a separate QQQ download, not recomputed from frozen `x.qqq_adj_close`. Correct actual feature construction and rerun before treating these as exact same-input comparisons.
+
+
+### Long-history bear-rally signal audit — 2026-10-09
+
+- Workflow passed: [run 37913829220](https://github.com/eklu654/Trading-Bot/actions/runs/37913829220), artifact ID `11607543639`, digest `864433f76e885fe5e5717dac38aca7fd72b0d62507034d0592674e2f0489118e`.
+- Report: [long-history bear-rally signal audit](LONG_HISTORY_BEAR_RALLY_SIGNAL_AUDIT_RESULTS_2026-10-09.md).
+- S&P 500 signal-only sample: 18 events (10 failed, 6 successful, 2 censored). Failed versus successful events had weaker 60-session returns at recovery (mean -14.4% vs -4.6%) and price farther below the 100/200-DMA. Recovery speed did not separate overall: mean 17.6 sessions for failed vs 20.3 for successful; the 1987 fast failures break a speed-only rule.
+- Treat this as a small descriptive clue, not a validated rule or TQQQ backtest. Next review the actual-TQQQ feature and three-layer validation/attribution artifacts before deciding whether any next candidate merits implementation.
