@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from causal_execution import next_open_daily_returns
+from causal_execution import next_open_daily_returns, next_open_cost_equity
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
@@ -157,13 +157,19 @@ def main():
     contrib_df = event_contributions(t, events, signal, r)
 
     cost_rows = []
+    # Rebuild the two return legs so the cost-stress path charges execution
+    # costs at the next open between the old-position overnight leg and the
+    # new-position intraday leg. Do not approximate by subtracting cost from
+    # the already-compounded daily return.
+    adj_open = (t["Open"] * t["Adj Close"] / t["Close"]).astype(float).to_numpy()
+    adj_close = t["Adj Close"].astype(float).to_numpy()
+    overnight = np.zeros(len(t))
+    intraday = np.zeros(len(t))
+    overnight[1:] = adj_open[1:] / adj_close[:-1] - 1
+    intraday[:] = adj_close / adj_open - 1
+    exec_w = np.roll(signal, 1); exec_w[0] = 0.0
     for bps in (0, 5, 10, 25, 50):
-        # Cost is charged only when next-open exposure changes.
-        exec_w = np.roll(signal, 1); exec_w[0] = 0.0
-        prev_exec = np.roll(exec_w, 1); prev_exec[0] = 0.0
-        cost = np.abs(exec_w - prev_exec) * (bps / 10000.0)
-        rr = r - cost
-        eq = INITIAL * np.cumprod(1 + rr)
+        eq = next_open_cost_equity(signal, overnight, intraday, bps, INITIAL)
         peak = np.maximum.accumulate(eq)
         cost_rows.append({
             "bps": bps,
