@@ -46,6 +46,43 @@ def metrics(returns: np.ndarray, dates: pd.DatetimeIndex, initial: float = INITI
     }
 
 
+def episode_contributions(dates, x, baseline, overlay_binary, exposure):
+    """Conditional leave-one-overlay-episode-out effects; not additive."""
+    active = overlay_binary == 0.0
+    starts = np.flatnonzero(active & ~np.r_[False, active[:-1]])
+    ends = np.flatnonzero(active & ~np.r_[active[1:], False])
+    overlay_weights = np.where(active, exposure, 1.0)
+    full_signal = np.minimum(baseline, overlay_weights)
+    adj_open = x["tqqq_adj_open"].to_numpy(dtype=float)
+    adj_close = x["tqqq_adj_close"].to_numpy(dtype=float)
+    overnight = np.zeros(len(x), dtype=float)
+    intraday = np.zeros(len(x), dtype=float)
+    overnight[1:] = adj_open[1:] / adj_close[:-1] - 1.0
+    intraday[:] = adj_close / adj_open - 1.0
+    full_returns = next_open_daily_returns(full_signal, overnight, intraday)
+    full_final = float(INITIAL * np.cumprod(1.0 + full_returns)[-1])
+    rows = []
+    for number, (start_i, end_i) in enumerate(zip(starts, ends), start=1):
+        counterfactual_overlay = overlay_weights.copy()
+        counterfactual_overlay[start_i:end_i + 1] = 1.0
+        counterfactual_signal = np.minimum(baseline, counterfactual_overlay)
+        counterfactual_returns = next_open_daily_returns(counterfactual_signal, overnight, intraday)
+        counterfactual_final = float(INITIAL * np.cumprod(1.0 + counterfactual_returns)[-1])
+        rows.append({
+            "exposure_in_overlay": exposure,
+            "episode": number,
+            "start_date": dates[start_i].date().isoformat(),
+            "end_date": dates[end_i].date().isoformat(),
+            "overlay_sessions": int(end_i - start_i + 1),
+            "incremental_defense_sessions": int(np.sum(baseline[start_i:end_i + 1] == 1.0)),
+            "overlap_with_baseline_defense_sessions": int(np.sum(baseline[start_i:end_i + 1] == 0.0)),
+            "candidate_final": full_final,
+            "counterfactual_final_without_episode": counterfactual_final,
+            "conditional_terminal_contribution": full_final - counterfactual_final,
+        })
+    return pd.DataFrame(rows)
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     x, frozen_path = make_frozen_input()
@@ -136,12 +173,26 @@ def main() -> None:
     for bps in COST_BPS:
         for name, signal in signals.items():
             curve = next_open_cost_equity(signal, overnight, intraday, bps, initial=INITIAL)
+            cost_returns = np.zeros(len(curve), dtype=float)
+            cost_returns[0] = curve[0] / INITIAL - 1.0
+            cost_returns[1:] = curve[1:] / curve[:-1] - 1.0
+            cost_metrics = metrics(cost_returns, dates)
             cost_rows.append({
                 "cost_bps_per_full_exposure_change": bps, "strategy": name,
                 "final_balance": float(curve[-1]),
                 "max_drawdown": float((curve / np.maximum.accumulate(curve) - 1.0).min()),
+                "worst_rolling_252_session_return": cost_metrics["worst_rolling_252_session_return"],
             })
     pd.DataFrame(cost_rows).to_csv(OUT / "canonical_frozen_overlay_comparison_costs.csv", index=False)
+
+    contribution_rows = []
+    for exposure in EXPOSURES:
+        contribution_rows.extend(
+            episode_contributions(dates, x, baseline, overlay_binary, exposure).to_dict(orient="records")
+        )
+    pd.DataFrame(contribution_rows).to_csv(
+        OUT / "canonical_frozen_overlay_comparison_episode_contributions.csv", index=False
+    )
 
     daily = pd.DataFrame({
         "date": dates,
@@ -197,6 +248,7 @@ def main() -> None:
             "canonical_frozen_overlay_comparison_summary.csv",
             "canonical_frozen_overlay_comparison_periods.csv",
             "canonical_frozen_overlay_comparison_costs.csv",
+            "canonical_frozen_overlay_comparison_episode_contributions.csv",
             "canonical_frozen_overlay_comparison_daily.csv",
             "canonical_frozen_overlay_comparison_events.csv",
             "canonical_frozen_overlay_comparison_fed_dma_transitions.csv",
