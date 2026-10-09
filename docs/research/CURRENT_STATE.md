@@ -250,3 +250,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Added a QQQ-only event study to test whether the matrix's structural/fast-shock conditions are present at canonical +10% recovery decisions and whether those recoveries later fail over 20/60/120/252 sessions.
 - This is signal diagnostics only; it does not claim pre-inception TQQQ returns or constitute a trading backtest. No thresholds are being searched.
 - Frozen audit plan: [CANONICAL_RECOVERY_EVENT_QUALITY_2026-10-09.md](CANONICAL_RECOVERY_EVENT_QUALITY_2026-10-09.md). Workflow artifact to be reviewed before interpreting results.
+
+
+### Structural overlay attribution result — 2026-10-09
+
+- Corrected successful run: [37913116036](https://github.com/eklu654/Trading-Bot/actions/runs/37913116036), artifact ID `11606389641`, digest `1f78aae47b60f8a4983208b6dd845cfb3058299ac3844797096dd205952480a7`. Detailed intervals and caveats are in [the attribution report](CANONICAL_STRUCTURAL_OVERLAY_ATTRIBUTION_2026-10-09.md).
+- Main opportunity cost: the matrix is defensive on the same close that B0 triggers re-entry. It blocks B0 re-entry on 2019-01-07 and 2020-03-26 (COVID), with conditional leave-one-interval-out costs of roughly $140k–$213k for the 2019 interval and $230k–$454k for the COVID interval, depending on state variant. These conditional effects are non-additive.
+- The overlay also helps in selected 2022 intervals, confirming a context-classification problem rather than a simple sticky-state bug. Do not sum interval contributions or promote this overlay.
