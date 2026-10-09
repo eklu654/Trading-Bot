@@ -4,10 +4,10 @@
 
 ## Run and artifact provenance
 
-- Corrected workflow: [TQQQ Dot-Com Survivability Research, run 37923204992](https://github.com/eklu654/Trading-Bot/actions/runs/37923199785), completed successfully.
+- Corrected workflow: [TQQQ Dot-Com Survivability Research, run 37923204992](https://github.com/eklu654/Trading-Bot/actions/runs/37923204992), completed successfully.
 - Corrected research code commit: `3ec8f679b1ecb57dbb738965b80be7b44ccc7c54`.
 - Full research test suite: [run 37923205463](https://github.com/eklu654/Trading-Bot/actions/runs/37923205463), completed successfully: **131 passed, 1 existing warning**.
-- Artifact: `tqqq-dotcom-survivability`, ID `11612419144`, SHA-256 `1dc4292720f1779969f4d7518cbd4f14369b0db45bfe4fb3823abd0e3cfd13fc`.
+- Artifact: `tqqq-dotcom-survivability`, ID `11612668300`, SHA-256 `3c6bd0a2c3f5558e30ededbbb23333842bf4db1fffa9e4c2dda49331b376a291.
 - Frozen QQQ CSV SHA-256: `dc1a36980348aa568455402c1c64c78a66db2919a6bdf45112dd5e287fb4edb7`.
 - Summary CSV SHA-256: `73113d46f87396873fd1cff99b3d8d5f91be8eb59283c8371c42f2898b23d532`.
 
