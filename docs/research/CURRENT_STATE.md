@@ -106,3 +106,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Important distinction: this is a same-run comparison on one frozen input. Its downloaded price snapshot may differ from earlier runs because vendor adjusted-price histories can be revised. Use its own manifest/hash for its conclusions; do not claim byte-identical inputs across separate workflow runs.
 - No candidate selected. Inspect the actual workflow result and artifacts before interpreting the output. If it fails, preserve the failure, fix the code, and rerun rather than inferring results.
 
+## Frozen-input comparison first pass and completeness correction
+
+- First combined workflow [37888705794](https://github.com/eklu654/Trading-Bot/actions/runs/37888705794) passed and emitted a single-input comparison artifact (market SHA-256 `922ca85860b505a949ec4191a9ed016afe56f1963f87fa16a3aa3547a2c341d2`, 4,189 rows, 2010-02-11–2026-10-07).
+- First-pass figures were inspected only as an implementation check. Before treating them as a complete protocol scorecard, I found the artifact omitted cost-adjusted worst rolling-year return and leave-one-overlay-episode-out diagnostics, both required by the frozen protocol.
+- Added those diagnostics to the script and included the new episode-contribution CSV in the workflow artifact list. Code commit: `191490af99a1cefa1b46c0012b9b24c194b1e0b0`; workflow commit: `1083830aece25d82ed79ba7a1b19a258ef512617`.
+- Corrected workflow run: [37888844274](https://github.com/eklu654/Trading-Bot/actions/runs/37888844274). It was pending at this checkpoint; do not treat the corrected artifact as available until the run completes successfully.
+- First-pass data is development-only, because the same modern sample has been inspected. No winner is selected and no live/paper-trading approval follows from this work.
+
