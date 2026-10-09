@@ -2,6 +2,8 @@
 
 Tests DMA lengths 125/150/175/200/250 with fixed below-DMA exposures
 75%, 50%, and 25%. Above DMA is always 100%; re-entry is immediate.
+All strategies start with the same $5,000 on the same post-250-session
+evaluation date. Signal history is computed before the evaluation slice.
 No optimization, costs, or cash yield.
 """
 from pathlib import Path
@@ -9,35 +11,65 @@ import numpy as np
 import pandas as pd
 from causal_execution import next_open_equity
 from tqqq_three_layer_event_attribution import build, INITIAL
+from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
 DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
 
+
 def equity(x,sig):
- w=np.asarray(sig,float)
- eq=next_open_equity(w,x.on3,x.in3,INITIAL); dd=eq/np.maximum.accumulate(eq)-1
- return float(eq[-1]),float(dd.min()),float(w.mean())
+    w=np.asarray(sig,float)
+    eq=next_open_equity(w,x.on3,x.in3,INITIAL)
+    dd=eq/np.maximum.accumulate(eq)-1
+    return float(eq[-1]),float(dd.min()),float(w.mean())
+
+
+def run_matrix(full):
+    """Evaluate all candidates on one shared post-warm-up date range."""
+    full=full.copy()
+    max_dma=max(DMAS)
+    b0_full=target_exposure(full.rename(columns={"adj_close":"Adj Close"}),"B0").to_numpy(dtype=float)
+    signals={}
+    for dma in DMAS:
+        ma=full.adj_close.rolling(dma).mean()
+        above=(full.adj_close.to_numpy()>=ma.to_numpy())
+        for below in BELOW:
+            sig=np.where(above,1.0,below)
+            signals[(dma,below)]=sig
+    start=max_dma-1
+    x=full.iloc[start:].copy()
+    b0=b0_full[start:]
+    years=(x.index[-1]-x.index[0]).days/365.2425
+    rows=[]
+
+    def record(label,dma,below,sig):
+        final,dd,exp=equity(x,sig)
+        rows.append({"strategy":label,"dma":dma,"below_exposure":below,
+                     "evaluation_start":x.index[0].date().isoformat(),
+                     "evaluation_end":x.index[-1].date().isoformat(),
+                     "observations":len(x),"starting_balance":INITIAL,
+                     "final":final,"cagr":(final/INITIAL)**(1/years)-1,
+                     "max_dd":dd,"avg_exposure":exp})
+
+    record("B0_SHOCK_RECOVERY",-1,np.nan,b0)
+    record("synthetic_3x_qqq_buy_hold",0,1.0,np.ones(len(x),dtype=float))
+    for dma in DMAS:
+        for below in BELOW:
+            record("dma_partial_exposure",dma,below,signals[(dma,below)][start:])
+    return pd.DataFrame(rows).sort_values("final",ascending=False),x.index[0],x.index[-1]
+
 
 def main():
-    x=build(); years=(x.index[-1]-x.index[0]).days/365.2425; rows=[]
-    # Explicit always-invested synthetic 3x QQQ benchmark on the identical
-    # date range and execution model. This is a proxy, not live TQQQ history.
-    hold=np.ones(len(x),dtype=float)
-    final,dd,exp=equity(x,hold)
-    cagr=(final/INITIAL)**(1/years)-1
-    rows.append({"dma":0,"below_exposure":1.0,"final":final,"cagr":cagr,"max_dd":dd,"avg_exposure":exp,"strategy":"synthetic_3x_qqq_buy_hold"})
-    for dma in DMAS:
-        ma=x.adj_close.rolling(dma).mean()
-        for below in BELOW:
-            sig=np.where(x.adj_close>=ma,1.0,below); sig[:dma-1]=0
-            final,dd,exp=equity(x,sig)
-            cagr=(final/INITIAL)**(1/years)-1
-            rows.append({"dma":dma,"below_exposure":below,"final":final,"cagr":cagr,"max_dd":dd,"avg_exposure":exp,"strategy":"dma_partial_exposure"})
-    out=pd.DataFrame(rows).sort_values("final",ascending=False)
-    OUT.mkdir(parents=True,exist_ok=True); out.to_csv(OUT/"tqqq_partial_dma_matrix.csv",index=False)
+    full=build()
+    out,start,end=run_matrix(full)
+    OUT.mkdir(parents=True,exist_ok=True)
+    out.to_csv(OUT/"tqqq_partial_dma_matrix.csv",index=False)
+    print("COMMON EVALUATION WINDOW",start.date(),"to",end.date(),
+          "| initial capital",INITIAL,"| warmup",max(DMAS)-1,"sessions")
     print(out.to_string(index=False))
     print("\nBY DMA")
     print(out.sort_values(["dma","below_exposure"],ascending=[True,False]).to_string(index=False))
+
 
 if __name__=="__main__":
     main()
