@@ -41,11 +41,10 @@ def download_qqq():
     return x.dropna(subset=["Open", "Close", "Adj Close"])
 
 
-def synthetic_3x_legs(qqq):
-    """Return daily-reset 3x overnight/intraday returns, clipped at -100%."""
-    adj_open = (qqq["Open"].astype(float) * qqq["Adj Close"].astype(float)
-                / qqq["Close"].astype(float))
-    adj_close = qqq["Adj Close"].astype(float)
+def synthetic_3x_legs_from_adjusted_prices(adj_open, adj_close):
+    """Build causal legs for a daily-reset 3x fund from adjusted QQQ prices."""
+    adj_open = pd.Series(adj_open, index=getattr(adj_open, "index", None), dtype=float)
+    adj_close = pd.Series(adj_close, index=adj_open.index, dtype=float)
     overnight = (adj_open / adj_close.shift(1) - 1.0).fillna(0.0).to_numpy()
     intraday = (adj_close / adj_open - 1.0).fillna(0.0).to_numpy()
     # The fund has 3x exposure set at the prior close. After the overnight
@@ -62,6 +61,13 @@ def synthetic_3x_legs(qqq):
     intraday_gross[overnight_gross <= 0.0] = 0.0
     intraday_3x = intraday_gross - 1.0
     return overnight_3x, intraday_3x
+
+
+def synthetic_3x_legs(qqq):
+    """Return daily-reset 3x overnight/intraday returns, clipped at -100%."""
+    adj_open = (qqq["Open"].astype(float) * qqq["Adj Close"].astype(float)
+                / qqq["Close"].astype(float))
+    return synthetic_3x_legs_from_adjusted_prices(adj_open, qqq["Adj Close"])
 
 
 def first_crossing(dates, values, threshold):
