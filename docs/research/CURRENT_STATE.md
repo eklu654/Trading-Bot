@@ -334,3 +334,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Audit found the overlay scripts computed rolling QQQ indicators from a separate QQQ download before aligning to the canonical frozen QQQ/TQQQ input. That was a small but real mismatch with the same-input protocol.
 - Corrected the combined matrix, standalone matrix, state ablation, interval attribution, recovery-gate, and bounded-delay scripts: retain pre-TQQQ QQQ history for rolling lookbacks, overwrite all live-period QQQ adjusted closes with the frozen baseline input, and recompute DMA/return/drawdown indicators from that merged series.
 - New runs are triggered for the affected workflows. Earlier numerical results remain provisional until the corrected runs finish; reports identify this caveat. This is a methodology fix, not a strategy change.
+
+
+### Frozen-input correction rerun complete — 2026-10-09
+
+- Corrected actual indicator construction now retains pre-2010 QQQ history for rolling lookbacks, overwrites live dates with the frozen QQQ adjusted closes used by B0, and recomputes DMA/return/drawdown features from that merged series.
+- Corrected runs succeeded: combined matrix [37914258527](https://github.com/eklu654/Trading-Bot/actions/runs/37914258527), state ablation [37914285510](https://github.com/eklu654/Trading-Bot/actions/runs/37914285510), interval attribution [37914289809](https://github.com/eklu654/Trading-Bot/actions/runs/37914289809), recovery gate [37914294832](https://github.com/eklu654/Trading-Bot/actions/runs/37914294832), bounded delay [37914300654](https://github.com/eklu654/Trading-Bot/actions/runs/37914300654), and standalone matrix [37914263604](https://github.com/eklu654/Trading-Bot/actions/runs/37914263604).
+- Recomputed actual-TQQQ results match the earlier results to displayed precision. The rejection conclusions are unchanged; the earlier signal-input mismatch is now corrected in code and rerun artifacts.
