@@ -201,3 +201,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Top synthetic QQQ 3x row: ending balance **$2,377,711.47** from $5,000, CAGR 25.05%, max drawdown -91.21%; structural DMA 100, fast DMA 50, 63-session return trigger -20%, 252-session drawdown trigger -20%, VIX trigger 30, structural exposure 25%. This is a synthetic series, not actual TQQQ and its extreme drawdown illustrates the model risk.
 - Both figures are best-in-grid exploratory results selected across 144 combinations per source on the same evaluation history; they are subject to multiple-comparison/selection bias and are not independently validated. The CSV reports empty dot-com/GFC fields for actual TQQQ because TQQQ did not exist then. Do not present these as proof the matrix beats the canonical 4.5%/10% shock-recovery baseline; the strategy and benchmark differ.
 - Repository visibility checked via GitHub API at 2026-10-09: `private=false`, `visibility=public`, repository created 2026-09-27T11:20:05Z. Creation time does not reveal when visibility was changed; available metadata does not establish who changed it or when. User should review repository history for committed secrets/data before deciding privacy.
+
+
+## Combined canonical + structural matrix — 2026-10-09
+
+- Implemented `research/canonical_plus_structural_matrix.py` and workflow `.github/workflows/canonical-plus-structural-matrix.yml`.
+- Combined exposure is explicitly `min(B0 shock/recovery signal, overlay signal)`; the matrix cannot add exposure or cancel B0's defensive state.
+- Compared structural+fast-shock matrix and fast-shock-only ablation over the previous 144-configuration grid, with B0 controls, actual TQQQ on the aligned live-fund window, and a separately labeled hypothetical 3x QQQ proxy for pre-TQQQ history.
+- Experiment note: [CANONICAL_PLUS_STRUCTURAL_MATRIX_EXPERIMENT_2026-10-09.md](CANONICAL_PLUS_STRUCTURAL_MATRIX_EXPERIMENT_2026-10-09.md).
+- Workflow run: https://github.com/eklu654/Trading-Bot/actions/runs/37912413316. At checkpoint, run was in progress during dependency installation; no combined performance results are claimed yet. Inspect the completed artifact and update the experiment note before interpreting any winner.
