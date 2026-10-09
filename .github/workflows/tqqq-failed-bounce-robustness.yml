@@ -20,4 +20,7 @@ jobs:
             data/research/failed_bounce_robustness_summary.csv
             data/research/failed_bounce_robustness_periods.csv
             data/research/failed_bounce_robustness_event_contributions.csv
+            data/research/failed_bounce_frozen_qqq.csv
+            data/research/failed_bounce_frozen_tqqq.csv
+            data/research/failed_bounce_daily_equity.csv
             data/research/failed_bounce_robustness_costs.csv
