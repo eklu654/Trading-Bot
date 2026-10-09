@@ -80,3 +80,10 @@ Do not select this as the final TQQQ overlay yet. Next:
 3. Add a total-return index cross-check if a consistently sourced, sufficiently long series can be obtained.
 4. Test turnover/slippage/cash assumptions and episode concentration.
 5. Only after those gates, decide whether this supports another actual-TQQQ candidate test on 2010+ data.
+
+## Execution and debugging audit
+
+- Initial workflow [37892097538](https://github.com/eklu654/Trading-Bot/actions/runs/37892097538) failed because Pandas 4 returned incompatible datetime resolutions for the index and FRED merge keys. Source date keys were normalized before the as-of joins.
+- Workflow [37892320969](https://github.com/eklu654/Trading-Bot/actions/runs/37892320969) reached the analysis but failed at the final console summary because the displayed transition-column name did not match the newly separated signal/executed-transition metrics. The reporting column was corrected.
+- Final workflow [37892712141](https://github.com/eklu654/Trading-Bot/actions/runs/37892712141) passed all steps and uploaded the complete artifact.
+- The final code explicitly downloads and archives real index open and close prices. A signal observed at close only changes exposure at the next session's open; prior exposure is applied to the overnight gap and the new exposure intraday. The no-defense control matches the actual index close-to-close path.
