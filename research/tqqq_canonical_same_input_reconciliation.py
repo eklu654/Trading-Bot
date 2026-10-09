@@ -81,6 +81,32 @@ def build_events_and_signal(close):
     return events, signal
 
 
+def independently_rebuild_events(close):
+    """Separate event-state implementation used only for reconciliation."""
+    px = close.to_numpy(dtype=float)
+    daily = close.pct_change().fillna(0.0).to_numpy()
+    event_rows = []
+    position = 1.0
+    trigger = low = None
+    signal = np.ones(len(close), dtype=float)
+    for i, r in enumerate(daily):
+        if i == 0:
+            continue
+        if position == 1.0 and r <= SHOCK:
+            position = 0.0
+            trigger = i
+            low = i
+        if position == 0.0:
+            if px[i] < px[low]:
+                low = i
+            if px[i] / px[low] - 1.0 >= RECOVERY:
+                event_rows.append((trigger, low, i))
+                position = 1.0
+        if position == 0.0:
+            signal[trigger:i + 1] = 0.0
+    return event_rows, signal
+
+
 def independent_daily_returns(signal, overnight, intraday):
     """Explicit independent loop: close[t] signal executes at open[t+1]."""
     n = len(signal)
@@ -107,6 +133,11 @@ def main():
     x, frozen_path = make_frozen_input()
     close = x.qqq_adj_close.astype(float)
     events, signal = build_events_and_signal(close)
+    independent_events, independent_signal = independently_rebuild_events(close)
+    if events != independent_events:
+        raise AssertionError(f"Event ledger mismatch: {events} != {independent_events}")
+    if not np.array_equal(signal, independent_signal):
+        raise AssertionError("Independent event builders produced different signal arrays")
     t_adj_close = x.tqqq_adj_close.to_numpy(dtype=float)
     t_adj_open = x.tqqq_adj_open.to_numpy(dtype=float)
     overnight = np.zeros(len(x), dtype=float)
@@ -117,7 +148,7 @@ def main():
     intraday[0] = 0.0
 
     shared_daily = next_open_daily_returns(signal, overnight, intraday)
-    independent_daily = independent_daily_returns(signal, overnight, intraday)
+    independent_daily = independent_daily_returns(independent_signal, overnight, intraday)
     if not np.allclose(shared_daily, independent_daily, rtol=1e-12, atol=1e-12):
         i = int(np.flatnonzero(~np.isclose(shared_daily, independent_daily,
                                           rtol=1e-12, atol=1e-12))[0])
@@ -182,6 +213,8 @@ def main():
         "frozen_input_file": frozen_path.name,
         "frozen_input_sha256": digest,
         "event_count": len(events),
+        "independent_event_builder_match": events == independent_events,
+        "independent_signal_match": bool(np.array_equal(signal, independent_signal)),
         "max_abs_daily_return_diff": float(np.max(np.abs(shared_daily-independent_daily))),
         "max_abs_equity_diff": float(np.max(np.abs(shared_eq-independent_eq))),
         "summary": summary.to_dict(orient="records"),
