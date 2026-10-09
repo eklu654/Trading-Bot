@@ -1,0 +1,42 @@
+name: Canonical shock recovery plus structural matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/canonical_plus_structural_matrix.py"
+      - "research/tqqq_canonical_same_input_reconciliation.py"
+      - "research/causal_execution.py"
+      - "research/requirements.txt"
+      - ".github/workflows/canonical-plus-structural-matrix.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-plus-structural-matrix
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - run: python -m pip install -r research/requirements.txt
+      - run: |
+          python -m py_compile research/canonical_plus_structural_matrix.py
+          python -m py_compile research/tqqq_canonical_same_input_reconciliation.py
+          python -m py_compile research/causal_execution.py
+      - run: PYTHONPATH=research python research/canonical_plus_structural_matrix.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: canonical-plus-structural-matrix
+          if-no-files-found: error
+          path: |
+            data/research/canonical_plus_structural_matrix_results.csv
+            data/research/canonical_plus_structural_matrix_manifest.json
+            data/research/tqqq_canonical_frozen_common_input.csv
