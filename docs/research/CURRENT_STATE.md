@@ -240,3 +240,23 @@ Detailed evidence and run IDs are in [the dated re-verification log](TQQQ_SHOCK_
 Thus the extraordinary synthetic wealth result is **REJECTED**, not a strategy result. The Fed layer remains an unvalidated hypothesis. The separate simple shock/recovery ~$4.04M candidate remains **PROVISIONALLY REPRODUCED**, and the remembered ~$3.3M anti-fakeout baseline remains **UNRECOVERED**.
 
 See the dated log for full failure analysis and run evidence: [TQQQ shock/recovery re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
+
+
+## Latest verified checkpoint — 2026-10-09 04:24 UTC
+
+### Canonical ~$4.04M result: VERIFIED ON A FROZEN INPUT SNAPSHOT
+- Same-input run [37883989658](https://github.com/eklu654/Trading-Bot/actions/runs/37883989658), artifact 11594464513, passed with two independent event builders and two independent execution engines.
+- Frozen dataset: 4,189 aligned observations, 2010-02-11 through 2026-10-07, SHA-256 `fa28ea933475d843cb8daf6bdd8d7aeca3c4ed20b9a0e55f8bec5eaaf68f7d00`.
+- Exact final balances on that snapshot: canonical $4,040,311.69; actual TQQQ buy-and-hold $2,094,668.80. Event lists and signals match; max absolute daily-return and equity differences are both 0.0.
+- **Important qualification:** separate fresh adjusted-price downloads have changed the result by about a dollar. The ~$4.04M headline is verified for the frozen snapshot and convention; terminal dollars remain snapshot-dependent.
+
+### Original ~$3.3M anti-fakeout strategy: still UNRECOVERED
+An older artifact reports $3,270,343.84 for `baseline_10pct`, but its code uses unadjusted Close-to-close returns and has no added anti-fakeout rule. It is a candidate source of the remembered number, not the strategy we need to reconstruct. Do not treat it as the recovered baseline.
+
+### Long-history signal-only stress labels
+- S&P 500 daily-shock rule: 18 events from 1970–2026; 10 failed, 6 successful, 2 censored. No 1970s events because the single-day -4.5% trigger is too narrow for that decade.
+- Separate S&P 500 -10% drawdown trigger: 24 events; 12 failed, 9 successful, 3 censored. It captures the 1971 drawdown (censored under the 252-session label), the 1973 rally (failed), 1987 (failed), two 2000–2002 rallies (failed), two 2022 rallies (failed), and successful 2020 recovery episodes.
+- These are outcome labels only, not proof that a classifier can predict failures. No pre-2010 TQQQ portfolio returns are claimed.
+- Drawdown audit run: [37883989726](https://github.com/eklu654/Trading-Bot/actions/runs/37883989726). Daily-shock audit run: [37883989671](https://github.com/eklu654/Trading-Bot/actions/runs/37883989671).
+
+Detailed run IDs, hashes, event ledger, limitations, and next steps are recorded in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
