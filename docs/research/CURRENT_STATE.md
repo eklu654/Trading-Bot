@@ -319,3 +319,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Report: [long-history bear-rally signal audit](LONG_HISTORY_BEAR_RALLY_SIGNAL_AUDIT_RESULTS_2026-10-09.md).
 - S&P 500 signal-only sample: 18 events (10 failed, 6 successful, 2 censored). Failed versus successful events had weaker 60-session returns at recovery (mean -14.4% vs -4.6%) and price farther below the 100/200-DMA. Recovery speed did not separate overall: mean 17.6 sessions for failed vs 20.3 for successful; the 1987 fast failures break a speed-only rule.
 - Treat this as a small descriptive clue, not a validated rule or TQQQ backtest. Next review the actual-TQQQ feature and three-layer validation/attribution artifacts before deciding whether any next candidate merits implementation.
+
+
+### Actual-TQQQ failed-bounce feature audit — 2026-10-09
+
+- Workflow passed: [run 37913829194](https://github.com/eklu654/Trading-Bot/actions/runs/37913829194), artifact ID `11608750829`, digest `d4ce774670f11686207d016be509afb5a7495125fc0cc45d6452af8757ced60e`.
+- Report: [actual-TQQQ feature audit results](FAILED_BOUNCE_FEATURE_AUDIT_RESULTS_2026-10-09.md).
+- Nine canonical events: 7 successful, 1 failed, 1 censored. The only resolved failure is 2022-07-19; that event had negative 60/120/200-session QQQ returns and price 13.8% below its 200-DMA, but several successful recoveries also had substantial trend damage.
+- Decision: insufficient sample to fit or select a detector. No feature threshold is promoted; B0 remains the control. Do not confuse this retrospective feature-label audit with a prospective strategy test.
