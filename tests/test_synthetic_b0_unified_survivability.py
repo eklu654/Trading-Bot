@@ -74,3 +74,22 @@ def test_existing_dotcom_builder_uses_same_daily_reset_open_close_path():
     assert np.isclose(got["synthetic_tqqq_open"].iloc[1], 6500.0, atol=1e-9)
     assert np.isclose(got["synthetic_tqqq_close"].iloc[1], 8150.0, atol=1e-9)
     assert np.isclose(got["synthetic_tqqq_close"].iloc[2] / got["synthetic_tqqq_close"].iloc[1] - 1.0, 0.30, atol=1e-12)
+
+
+def test_partial_dma_matrix_uses_one_post_warmup_window_and_includes_b0():
+    from research.tqqq_partial_dma_matrix import run_matrix
+
+    idx = pd.bdate_range("1999-03-10", periods=300)
+    frame = pd.DataFrame({
+        "adj_close": np.linspace(100.0, 120.0, len(idx)),
+        "on3": np.zeros(len(idx)),
+        "in3": np.zeros(len(idx)),
+    }, index=idx)
+    out, start, end = run_matrix(frame)
+    assert start == idx[249]
+    assert end == idx[-1]
+    assert out["evaluation_start"].nunique() == 1
+    assert out["evaluation_end"].nunique() == 1
+    assert "B0_SHOCK_RECOVERY" in set(out["strategy"])
+    assert set(out["observations"]) == {len(idx) - 249}
+    assert set(out["starting_balance"]) == {5000.0}
