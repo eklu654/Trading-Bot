@@ -172,3 +172,16 @@ Next step is not to change strategy based on that disproved hypothesis. Continue
   - independent audit 37876820452 (in progress, SHA de2a6b4...)
   - research-tests 37876820261 (in progress, SHA de2a6b4...)
 - Next: retrieve the artifacts from successful canonical-SHA runs; compare frozen QQQ/TQQQ files (dates and values) and align equity curves. If independent downloads differ in values, refactor to one shared downloaded snapshot. Also standardize CAGR to actual aligned dates in both scripts.
+
+
+## Artifact review and correction — 2026-10-09
+- The new strategy runs completed successfully on SHA `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`:
+  - robustness run 37876820205 success; artifact 11592487962.
+  - independent audit run 37876820452 success; artifact 11592288195.
+- Results from these fresh runs: robustness canonical $4,040,314.42 vs buy-and-hold $2,094,668.80; independent audit canonical $4,040,316.26 vs buy-and-hold $2,094,669.10. Nine events in both.
+- The downloaded artifacts initially contained only summary/event/cost files. The newly added frozen-input and daily-equity CSVs were NOT being uploaded because the workflow YAML artifact path lists had not been updated. This omission has now been corrected:
+  - robustness workflow commit `add975c991600a29e6a1052d132a8a29582e77d8`
+  - independent audit workflow commit `5c212af28bcd501eb9ccf0d2a7f17f542f81c65c`
+- These results show the headline balance reproduces, but the independent scripts independently download market data; their final values differ by about $1.84 and controls by about $0.30. That is small, but demonstrates the need for a shared frozen input dataset before claiming exact daily-curve equality.
+- research-tests run `37876820261` was cancelled. Do not call the whole test suite passed.
+- Next step: inspect fresh runs after workflow artifact path changes, download frozen data/equity CSVs, compare row counts, date indices, OHLC/adjusted-close columns, event indices and daily equity. If the files are still generated from separate downloads and differ, use one shared dataset artifact or a workflow that downloads once and invokes both engines on those same files.
