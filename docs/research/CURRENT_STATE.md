@@ -108,3 +108,16 @@ At artifact SHA `87e74d008884d475248263a9510fa39ef300517c`, the two scripts annu
 - `failed_bounce_robustness.py` computes the main summary CAGR using `(t.index[-1] - t.index[0]).days / 365.25` (actual TQQQ data endpoints).
 - `audit_failed_bounce_canonical_independent.py` computes CAGR using `(END_DATE - START_DATE).days / 365.25`, i.e. requested 2010-01-01 to 2026-10-08, regardless of actual first TQQQ observation.
 This explains why ending balances and drawdowns agree while CAGR differs. Do not treat CAGR difference as evidence of a return-path mismatch; standardize CAGR to actual first/last observation dates and disclose that period. The user requested a consistent date range, so the scripts should explicitly report requested range AND actual traded-data range, and both annualization formulas should use the same declared convention.
+
+
+## Critical newly identified risk: QQQ event indices may be applied to TQQQ by row number, not date
+At commit `87e74d008884d475248263a9510fa39ef300517c`, both `research/failed_bounce_robustness.py` and `research/audit_failed_bounce_canonical_independent.py` download QQQ and TQQQ separately from requested START=`2010-01-01`. They calculate event row indices from QQQ (`build_events(q)` / `events(q)`) and pass those integer indices to `build_signal(len(t), events)` / `build_signal(len(t), evs)` for TQQQ. No explicit join/reindex by calendar date is present in the inspected code paths.
+Because TQQQ began trading after QQQ, QQQ's first available session and TQQQ's first available session are not the same. This creates a serious potential index-offset bug: event dates in the QQQ ledger may be correct, but the defensive signal can be applied to a different TQQQ session. The exact offset and impact must be confirmed using the actual workflow data; do not infer a corrected final balance without replaying.
+This may be the remembered price/execution discrepancy that led to concern over the ~$4M result, but the original conversation has not been recovered, so that connection is a hypothesis, not a fact.
+Required fix before any verification:
+1. Join QQQ and TQQQ data explicitly on shared trading-date index (inner join), preserving a single date index.
+2. Generate events on aligned QQQ observations and build the signal on that same aligned index.
+3. Assert each shock/low/decision timestamp maps to the same date in the TQQQ table; assert no integer-only cross-symbol indexing.
+4. Compare old vs aligned results using identical downloaded snapshots and print the first/last observation and all mapped execution dates.
+5. Add regression test where QQQ contains extra leading dates before TQQQ; verify the event is mapped by date, not shifted by row count.
+Until this replay is done, the ~$4.04M figure should be labelled REPRODUCIBLE UNDER THE EXISTING IMPLEMENTATION, BUT NOT TRUSTWORTHY AS A CORRECTLY DATE-ALIGNED BACKTEST.
