@@ -108,6 +108,10 @@ def main():
     idx = q.index.intersection(t.index)
     q = q.reindex(idx).dropna()
     t = t.reindex(idx).dropna()
+    if not q.index.equals(t.index):
+        raise RuntimeError("QQQ and TQQQ dates are not aligned after intersection/dropna")
+    if len(q) != len(t) or len(idx) == 0:
+        raise RuntimeError("QQQ/TQQQ aligned dataset is empty or has unequal lengths")
 
     evs = events(q)
     signal = build_signal(len(t), evs)
