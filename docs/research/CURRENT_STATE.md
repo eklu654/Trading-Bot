@@ -327,3 +327,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Report: [actual-TQQQ feature audit results](FAILED_BOUNCE_FEATURE_AUDIT_RESULTS_2026-10-09.md).
 - Nine canonical events: 7 successful, 1 failed, 1 censored. The only resolved failure is 2022-07-19; that event had negative 60/120/200-session QQQ returns and price 13.8% below its 200-DMA, but several successful recoveries also had substantial trend damage.
 - Decision: insufficient sample to fit or select a detector. No feature threshold is promoted; B0 remains the control. Do not confuse this retrospective feature-label audit with a prospective strategy test.
+
+
+### Frozen-input indicator correction — 2026-10-09
+
+- Audit found the overlay scripts computed rolling QQQ indicators from a separate QQQ download before aligning to the canonical frozen QQQ/TQQQ input. That was a small but real mismatch with the same-input protocol.
+- Corrected the combined matrix, standalone matrix, state ablation, interval attribution, recovery-gate, and bounded-delay scripts: retain pre-TQQQ QQQ history for rolling lookbacks, overwrite all live-period QQQ adjusted closes with the frozen baseline input, and recompute DMA/return/drawdown indicators from that merged series.
+- New runs are triggered for the affected workflows. Earlier numerical results remain provisional until the corrected runs finish; reports identify this caveat. This is a methodology fix, not a strategy change.
