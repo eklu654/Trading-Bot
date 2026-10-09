@@ -108,12 +108,13 @@ def main():
         assert np.all(sig<=b0+1e-12)
         rows.append(evaluate("synthetic_qqq_3x",name,sig,q.index,q.on3.to_numpy(),q.in3.to_numpy()))
     x,path=make_frozen_input()
-    feat=q.reindex(q.index.union(x.index)).sort_index().ffill().reindex(x.index)
-    # Recompute all QQQ-derived overlay indicators from the same frozen close series as B0.
-    feat["adj_close"]=x.qqq_adj_close.to_numpy(float)
+    feat=q.reindex(q.index.union(x.index)).sort_index().ffill()
+    # Keep pre-inception lookback history; live-period QQQ closes are frozen to B0's input.
+    feat.loc[x.index,"adj_close"]=x.qqq_adj_close.to_numpy(float)
     for d in (FD,SD): feat[f"dma{d}"]=feat.adj_close.rolling(d,min_periods=d).mean()
     feat["ret63"]=feat.adj_close/feat.adj_close.shift(63)-1
     feat["dd252"]=feat.adj_close/feat.adj_close.rolling(252,min_periods=252).max()-1
+    feat=feat.reindex(x.index)
     events_actual,b0_actual=build_events_and_signal(x.qqq_adj_close.astype(float))
     on=np.zeros(len(x)); intr=np.zeros(len(x))
     on[1:]=x.tqqq_adj_open.to_numpy()[1:]/x.tqqq_adj_close.to_numpy()[:-1]-1
