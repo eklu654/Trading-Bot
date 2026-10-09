@@ -88,9 +88,15 @@ def build_signal(n, evs):
     return s
 
 
-def stats(eq):
+def stats(eq, dates):
     peak = np.maximum.accumulate(eq)
-    years = (len(eq) and (END_DATE - START_DATE).days / 365.25)
+    # Match the primary robustness script: annualize over the actual aligned
+    # data interval, not the broader requested download window.
+    if len(eq) != len(dates) or len(eq) < 2:
+        raise ValueError("equity and dates must have equal length >= 2")
+    years = (pd.Timestamp(dates[-1]) - pd.Timestamp(dates[0])).days / 365.25
+    if years <= 0:
+        raise ValueError("CAGR interval must be positive")
     return {
         "final_balance": float(eq[-1]),
         "cagr": float((eq[-1] / INITIAL) ** (1 / years) - 1),
@@ -124,7 +130,7 @@ def main():
 
     rows = []
     for name, eq in [("canonical_failed_bounce", audit_eq), ("tqqq_buy_hold", bh_eq)]:
-        rows.append({"strategy": name, **stats(eq)})
+        rows.append({"strategy": name, **stats(eq, t.index)})
     summary = pd.DataFrame(rows)
     summary.to_csv(OUT / "failed_bounce_independent_audit_summary.csv", index=False)
 
