@@ -115,8 +115,12 @@ def main():
 
     evs = events(q)
     signal = build_signal(len(t), evs)
+    OUT.mkdir(parents=True, exist_ok=True)
+    q.to_csv(OUT / "failed_bounce_independent_frozen_qqq.csv", index_label="Date", float_format="%.12g")
+    t.to_csv(OUT / "failed_bounce_independent_frozen_tqqq.csv", index_label="Date", float_format="%.12g")
     audit_eq = explicit_equity(t, signal)
     bh_eq = explicit_equity(t, np.ones(len(t)))
+    pd.DataFrame({"Date": t.index, "signal_close": signal, "strategy_equity": audit_eq, "buy_hold_equity": bh_eq}).to_csv(OUT / "failed_bounce_independent_daily_equity.csv", index=False, float_format="%.12g")
 
     rows = []
     for name, eq in [("canonical_failed_bounce", audit_eq), ("tqqq_buy_hold", bh_eq)]:
