@@ -220,3 +220,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Decision: reject this sticky matrix family as a production candidate; no more parameter sweeping of the same rule. It improves drawdown by sacrificing far too much compounding and COVID rebound capture.
 - Historical 1999+ outputs remain a hypothetical 3x QQQ proxy, not actual TQQQ returns. Proxy B0 drawdown approached -99.4%, so do not interpret it as calibrated fund simulation.
 - Root cause hypothesis to test next: the fast-shock override remains hard-defensive until QQQ closes above the structural DMA, even after the shock condition fades. A recovery-aware/non-sticky ablation is more useful than more threshold tuning.
+
+
+### Next diagnostic experiment — sticky-state ablation — 2026-10-09
+
+- Frozen representative parameters; no new grid search: structural DMA 150, fast DMA 100, 63-session return -20%, 252-session drawdown -20%, VIX 30, structural exposure 25%.
+- Compared B0 with (1) original sticky hard defense, (2) hard 0% only while the fast-shock condition is currently true while structural 25% defense remains sticky, and (3) fully daily/non-sticky structural and fast-shock conditions.
+- All candidates remain `min(B0, overlay)`; none can increase exposure above B0.
+- Experiment plan and audit trail: [CANONICAL_STRUCTURAL_STATE_ABLATION_2026-10-09.md](CANONICAL_STRUCTURAL_STATE_ABLATION_2026-10-09.md). Workflow will record results before interpretation.
