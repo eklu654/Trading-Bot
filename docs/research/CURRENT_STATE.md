@@ -204,3 +204,25 @@ User explicitly authorized proceeding with the ~$4.04M QQQ shock/recovery result
 - Then inspect slow-bear misses, test frozen Fed lifecycle / existing 200-DMA / existing macro-state families separately, and only combine features if at least one has incremental value. Do not restart a broad DMA or re-entry-delay search.
 - Previously tested Fed+macro+DMA composite is not a current candidate: documented as modern-era over-defensive. It may inform diagnostics but must not be presumed to solve the $4M baseline's weak spots.
 - Keep actual-TQQQ period and synthetic pre-2010 3x proxy separate; TQQQ did not exist in 2000–2002.
+
+
+## Latest checkpoint — 2026-10-09 04:12 UTC
+
+The latest CI sweep on commit `b6d8e24c486de2dcb4925398580438f84167ddf7` is complete and all inspected workflows succeeded, including the research-tests run [37881243283](https://github.com/eklu654/Trading-Bot/actions/runs/37881243283). This supersedes the older note that the regression test run was still in progress.
+
+### Current result classifications
+- **Canonical QQQ shock/recovery rule, ~$4.04M: PROVISIONALLY REPRODUCED, NOT FULLY VERIFIED.** Latest robustness [37881243286](https://github.com/eklu654/Trading-Bot/actions/runs/37881243286) reports $4,040,313.07; latest independent audit [37881243328](https://github.com/eklu654/Trading-Bot/actions/runs/37881243328) reports $4,040,314.45. Their ~$1.38 gap is small but the inputs are separate downloads. Frozen same-input, daily-curve equality remains a required gate.
+- **Remembered ~$3.3M anti-fakeout baseline: UNRECOVERED / NOT REPRODUCED.** Do not substitute a current structural-matrix winner.
+- **Structural matrix top row, ~$3.763M: EXPLORATORY / IN-SAMPLE ONLY.** Many rules/targets/exposures were compared; this is not a holdout estimate.
+- **Synthetic three-layer $128B–$205B figures: REJECTED FOR PERFORMANCE CLAIMS.** Actual-TQQQ validation [37881243323](https://github.com/eklu654/Trading-Bot/actions/runs/37881243323) reports $84,635 base, $106,888 Fed-conditioned, $91,785 three-layer, versus $2,029,289 actual TQQQ buy-and-hold. Synthetic three-layer attribution also contradicts its own synthetic terminal results and must be reconciled.
+- **Feature classifier: INSUFFICIENT SAMPLE.** Canonical event set has only nine events, with one failed and seven successful resolved outcomes. Not enough evidence to establish or tune a general anti-fakeout classifier.
+- **Partial DMA matrix:** available run [37881243315](https://github.com/eklu654/Trading-Bot/actions/runs/37881243315) completed; outputs remain exploratory and should be read alongside the user’s preference for offensive growth and consistent-date final-balance comparisons.
+
+### Immediate work queue
+1. Freeze one common QQQ/TQQQ dataset and hashes; assert identical event dates, position series, daily returns and equity curves across the canonical engines.
+2. Recover the historical ~$3.3M anti-fakeout rule from commit/workflow history instead of guessing.
+3. Reconcile or retire the synthetic three-layer result and its inconsistent event-attribution artifact.
+4. Build separate causal signal-only historical tests for 1971, 1987, 2000–2002 and 2022. QQQ begins in 1999 and TQQQ in 2010, so pre-inception tests must not be represented as actual TQQQ returns.
+5. Do not begin AI selection or paper trading until the canonical replay and original baseline have cleared these gates.
+
+Detailed evidence and run IDs are in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
