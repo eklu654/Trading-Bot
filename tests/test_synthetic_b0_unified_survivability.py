@@ -57,3 +57,20 @@ def test_synthetic_legs_reconcile_to_three_times_daily_return_without_clipping()
     # The synthetic daily-reset proxy must return 3 * 21% = 63%, not 69%.
     combined = (1.0 + overnight[1]) * (1.0 + intraday[1]) - 1.0
     assert np.isclose(combined, 3.0 * (121.0 / 100.0 - 1.0), atol=1e-12)
+
+
+def test_existing_dotcom_builder_uses_same_daily_reset_open_close_path():
+    from research.test_tqqq_dotcom_survivability import build_synthetic
+
+    idx = pd.bdate_range("2024-01-02", periods=3)
+    q = pd.DataFrame({
+        "open": [100.0, 110.0, 121.0],
+        "close": [100.0, 121.0, 133.1],
+        "adj_close": [100.0, 121.0, 133.1],
+    }, index=idx)
+    got = build_synthetic(q)
+    # +10% overnight and +10% intraday is +21% for QQQ, hence +63% for
+    # the synthetic daily-reset 3x fund, not the +69% from double re-levering.
+    assert np.isclose(got["synthetic_tqqq_open"].iloc[1], 6500.0, atol=1e-9)
+    assert np.isclose(got["synthetic_tqqq_close"].iloc[1], 8150.0, atol=1e-9)
+    assert np.isclose(got["synthetic_tqqq_close"].iloc[2] / got["synthetic_tqqq_close"].iloc[1] - 1.0, 0.30, atol=1e-12)
