@@ -46,5 +46,6 @@ jobs:
             data/research/canonical_active_tightening_overlay_stress_windows.csv
             data/research/canonical_active_tightening_overlay_baseline_events.csv
             data/research/canonical_active_tightening_overlay_transitions.csv
+            data/research/canonical_active_tightening_overlay_episode_contributions.csv
             data/research/canonical_active_tightening_overlay_costs.csv
             data/research/canonical_active_tightening_overlay_manifest.json
