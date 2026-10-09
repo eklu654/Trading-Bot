@@ -161,6 +161,30 @@ def run_one(close: pd.Series, fed: pd.Series, cash: np.ndarray, label: str, inpu
                 if not mask.any(): continue
                 er=portret[mask]; ee=np.cumprod(1+er); dd=(ee/np.maximum.accumulate(ee)-1).min()
                 episodes.append({"index":label,"episode":ep,"mechanic":mode,"defensive_index_exposure":exposure,"start":close.index[mask][0].date().isoformat(),"end":close.index[mask][-1].date().isoformat(),"return":float(ee[-1]-1),"local_max_drawdown":float(dd),"defensive_sessions":int(st_exec[mask].sum())})
+    # Unprotected 100%-index control, measured on the exact same sessions.
+    control = calc_metrics(rets, close.index, label)
+    control.update({"mechanic":"no_defense","defensive_index_exposure":1.0,"defensive_sessions":0,"defensive_fraction":0.0,"signal_transitions":0,"executed_exposure_transitions":0,"input_hashes":json.dumps(input_hashes,sort_keys=True)})
+    rows.append(control)
+    for ep, start, end in EPISODES:
+        mask=(close.index>=start)&(close.index<=end)
+        if not mask.any(): continue
+        er=rets[mask]; ee=np.cumprod(1+er); dd=(ee/np.maximum.accumulate(ee)-1).min()
+        episodes.append({"index":label,"episode":ep,"mechanic":"no_defense","defensive_index_exposure":1.0,"start":close.index[mask][0].date().isoformat(),"end":close.index[mask][-1].date().isoformat(),"return":float(ee[-1]-1),"local_max_drawdown":float(dd),"defensive_sessions":0})
+    # Zero-yield cash sensitivity for the combined mechanic, alongside the
+    # primary TB3MS-cash scenario above.
+    st = states["combined"]
+    st_exec = np.r_[False, st[:-1]]
+    for exposure in EXPOSURES:
+        zero_cash = np.zeros_like(cash)
+        portret = np.where(st_exec, exposure, 1.0) * rets + (1.0-np.where(st_exec, exposure, 1.0))*zero_cash
+        m = calc_metrics(portret, close.index, label)
+        m.update({"mechanic":"combined_zero_yield_cash","defensive_index_exposure":exposure,"defensive_sessions":int(st_exec.sum()),"defensive_fraction":float(st_exec.mean()),"signal_transitions":int(np.count_nonzero(st[1:]!=st[:-1])),"executed_exposure_transitions":int(np.count_nonzero(st_exec[1:]!=st_exec[:-1])),"input_hashes":json.dumps(input_hashes,sort_keys=True)})
+        rows.append(m)
+        for ep, start, end in EPISODES:
+            mask=(close.index>=start)&(close.index<=end)
+            if not mask.any(): continue
+            er=portret[mask]; ee=np.cumprod(1+er); dd=(ee/np.maximum.accumulate(ee)-1).min()
+            episodes.append({"index":label,"episode":ep,"mechanic":"combined_zero_yield_cash","defensive_index_exposure":exposure,"start":close.index[mask][0].date().isoformat(),"end":close.index[mask][-1].date().isoformat(),"return":float(ee[-1]-1),"local_max_drawdown":float(dd),"defensive_sessions":int(st_exec[mask].sum())})
     return pd.DataFrame(rows),pd.concat(trans,ignore_index=True) if trans else pd.DataFrame(),pd.DataFrame(episodes)
 
 def main():
