@@ -58,3 +58,8 @@ The 3-session cap is close to B0 but does not improve the stated objective; 5/10
 
 ## Methodology audit follow-up
 The actual-TQQQ scripts aligned feature dates to the frozen QQQ/TQQQ frame, but the overlay indicators were originally calculated from a separate QQQ download before alignment. This means the overlay's adjusted-close-derived indicators were not literally calculated from the same frozen QQQ series as B0. Differences appear small in the reported summaries, but exact same-input comparisons require recalculating the actual overlay indicators from `x.qqq_adj_close` after alignment. Treat the above result as provisional until that causal input alignment is corrected and rerun.
+
+
+## Same-input correction rerun
+- Corrected run: [37914300654](https://github.com/eklu654/Trading-Bot/actions/runs/37914300654); artifact ID `11609410614`, SHA-256 `ceae85991294ac293ae869f7e9c64d25b1bedf362064872f36615813d7424c48`.
+- Actual-period indicators now use B0's frozen QQQ closes with pre-inception lookback retained. Results match to displayed precision: B0 $4.040M; 3/5/10-session caps $3.921M/$3.774M/$3.451M. Rejection remains.
