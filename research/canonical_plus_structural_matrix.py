@@ -140,9 +140,10 @@ def main():
     # Actual TQQQ, exactly the frozen aligned input used by the canonical comparison.
     x, frozen_path = make_frozen_input()
     # Align QQQ signal features onto frozen dates; indicators are computed with prior history.
-    aq = q.reindex(q.index.union(x.index)).sort_index().ffill().reindex(x.index)
-    # Actual overlay indicators must use the exact frozen QQQ close series used by B0.
-    aq["adj_close"] = x.qqq_adj_close.to_numpy(float)
+    # Retain pre-inception QQQ history for rolling lookbacks, but overwrite
+    # every live-TQQQ date with the exact frozen QQQ closes used by B0.
+    aq = q.reindex(q.index.union(x.index)).sort_index().ffill()
+    aq.loc[x.index, "adj_close"] = x.qqq_adj_close.to_numpy(float)
     for d in (50, 100, 150, 200):
         aq[f"dma{d}"] = aq.adj_close.rolling(d, min_periods=d).mean()
     aq["ret63"] = aq.adj_close / aq.adj_close.shift(63) - 1.0
