@@ -1,0 +1,48 @@
+name: Re-entry isolation experiment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/reentry_isolation.py"
+      - "research/causal_execution.py"
+      - "tests/test_reentry_isolation.py"
+      - ".github/workflows/reentry-isolation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reentry-isolation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  reentry-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r research/requirements.txt
+      - name: Test re-entry state transitions
+        run: PYTHONPATH=. pytest -q tests/test_reentry_isolation.py
+      - name: Run isolated re-entry backtest
+        run: python research/reentry_isolation.py
+      - name: Upload frozen inputs and results
+        uses: actions/upload-artifact@v4
+        with:
+          name: reentry-isolation-results
+          path: |
+            data/research/reentry_frozen_qqq.csv
+            data/research/reentry_frozen_tqqq.csv
+            data/research/reentry_isolation_summary.csv
+            data/research/reentry_isolation_equity.csv
+          if-no-files-found: error
+          retention-days: 30
