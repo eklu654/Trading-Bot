@@ -130,3 +130,9 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - F50/F75 pass the numerical 25 bp wealth/downside screen but do not advance under the frozen multi-gate protocol. They remain documented diagnostic candidates, not recommended strategies. Do not optimize away the 2018–2019 losses using this same full-sample evidence and then call the revision validated.
 - Updated report: [frozen-input overlay comparison result](CANONICAL_SHOCK_RECOVERY_FROZEN_OVERLAY_COMPARISON_RESULT_2026-10-09.md).
 
+## Regression tests after comparison additions
+
+- Added synthetic unit tests for episode-contribution counterfactual behavior and the summary metric calculation in `research/test_frozen_overlay_comparison.py`.
+- Main research CI passed on commit `241131edd2cf7de64e3f543b4e7898227aed6233`: [research-tests run 37889166998](https://github.com/eklu654/Trading-Bot/actions/runs/37889166998). This includes `PYTHONPATH=. pytest -q` and the existing three-layer event-attribution script.
+- The dedicated corrected comparison workflow also passed on code/workflow commit `1083830aece25d82ed79ba7a1b19a258ef512617`: [run 37888844274](https://github.com/eklu654/Trading-Bot/actions/runs/37888844274).
+
