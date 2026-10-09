@@ -161,3 +161,6 @@ def main():
 
 if __name__=="__main__":
     main()
+
+
+# Re-run audit checkpoint: 2026-10-09; no strategy logic changed.
