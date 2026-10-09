@@ -2,8 +2,10 @@
 
 Run: python research/reentry_isolation.py
 This script downloads QQQ/TQQQ once, aligns and saves the exact inputs, then runs
-B0, immediate re-entry (R1), and staged +5%/+10% re-entry (R2) on that snapshot.
-Signals are close-known and execute at the next open via causal_execution.py.
+B0, immediate re-entry (R1), guarded staged re-entry (R2), and preregistered
+staged re-entry (R2P) on that snapshot. Signals are close-known and execute at
+the next open via causal_execution.py. R2P preserves the 50% tranche after
+renewed declines, matching the original preregistration.
 """
 from pathlib import Path
 import numpy as np
@@ -40,9 +42,10 @@ def target_exposure(qqq, candidate):
     """Return close-known target exposure; actual execution occurs next open.
 
     R1 goes back to 100% at the first close after a shock (unless that close
-    itself is another qualifying shock). R2 enters 50% at +5% from the running
-    low, then 100% at +10%. The running low continues to update until full
-    recovery, including after the half-exposure tranche is active.
+    itself is another qualifying shock). R2 and R2P enter 50% at +5% from the
+    running low, then 100% at +10%. R2 resets its tranche on a renewed shock;
+    preregistered R2P retains 50% after its tranche has activated. The running
+    low continues to update until full recovery.
     """
     if candidate not in {"B0", "R1", "R2", "R2P"}:
         raise ValueError(f"unknown candidate: {candidate}")
