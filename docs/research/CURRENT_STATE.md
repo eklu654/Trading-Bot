@@ -368,3 +368,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - The verified canonical control on actual TQQQ (2010-02-11 to 2026-10-07, $5,000 start) ended at $4,040,314 with max drawdown -73.5343%; independent engines matched exactly. Therefore this verified TQQQ-era run did **not** reach -99.9%.
 - The long-history audit is a signal-only S&P 500 study from 1970-01-02 through 2026-10-07; it does not simulate the canonical strategy's portfolio equity in 2000–02. TQQQ did not exist in 2000. Thus whether the canonical rule survives 2000–02 on a synthetic 3x proxy, and whether that proxy hits -99.9%, remain **unanswered** by these artifacts. Do not treat the signal audit as portfolio evidence.
 - Next required experiment: explicitly run the unchanged -4.5% daily QQQ shock / +10% from running low strategy on a clearly labeled synthetic 3x QQQ daily-return proxy from at least 1999, reporting equity curve, maximum drawdown, lowest equity as a fraction of peak, dates of maximum drawdown, 2000–02 terminal value, and any first crossing of -99%, -99.9%, or zero. Compare only within the proxy's own assumptions; do not call it actual TQQQ.
+
+
+### Historical proxy result now located — 2026-10-09
+
+- Recovered the synthetic 3x QQQ B0 control row from artifact for [recovery-gated test run 37913598899](https://github.com/eklu654/Trading-Bot/actions/runs/37913598899), artifact ID `11607946132`, SHA-256 `0e9e84b2492c26692a3c0f7194e8ae0cdb8d71f41f5bca5448e945de942d916a`.
+- **Synthetic 3x QQQ B0 control (1999-03-10 to 2026-10-07):** $5,000 to $836,044; maximum drawdown `-99.3720%`; during the 2000–02 window return was `-98.1713%`, and max drawdown within that window was `-99.1484%`. Thus this particular proxy remained above zero and did not cross -99.9%, but came perilously close to total loss.
+- Important caveat: this is a simplified synthetic daily 3x QQQ return proxy, not actual TQQQ and not a validated fund simulation. The proxy's near-ruin result is a warning, not a claim about what a real TQQQ-like product would precisely have done before inception. Actual TQQQ control from 2010-02-11 to 2026-10-07 had max DD `-73.5343%`.
+- Source report: [CANONICAL_RECOVERY_GATE_2026-10-09.md](CANONICAL_RECOVERY_GATE_2026-10-09.md); this result is the unchanged B0 row, not any overlay candidate.
