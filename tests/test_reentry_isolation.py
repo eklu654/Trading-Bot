@@ -48,3 +48,17 @@ def test_r2_resets_partial_tranche_on_renewed_shock():
     got = target_exposure(q, "R2").tolist()
     # A renewed -4.5% shock resets the low and staged tranche.
     assert got[3:] == [0.0, 0.0, 0.0, 0.5]
+
+
+def test_r2p_preregistered_tranche_survives_new_low_after_partial_entry():
+    # 99 is +5.3% from 94, activating 50%; 94 is a new -5.05% shock.
+    # Preregistered R2P retains 50% and resets the full-recovery reference low.
+    q = qqq_path([100.0, 94.0, 99.0, 94.0, 98.0, 103.5])
+    got = target_exposure(q, "R2P").tolist()
+    assert got == [1.0, 0.0, 0.5, 0.5, 0.5, 1.0]
+
+
+def test_r2_guarded_variant_still_resets_partial_tranche_on_renewed_shock():
+    q = qqq_path([100.0, 94.0, 99.0, 94.0, 90.0, 94.0, 95.0])
+    got = target_exposure(q, "R2").tolist()
+    assert got[3:] == [0.0, 0.0, 0.0, 0.5]
