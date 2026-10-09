@@ -288,3 +288,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Audit detail: artifact manifest reports actual aligned input 2010-02-11 through 2026-10-07 (4,189 rows), SHA-256 `1b4993c21e5dd211a71d0bda23934e07ade383d00eeb17f24645f9c03f8095b1`. Synthetic 1999+ output is an uncalibrated hypothetical 3x QQQ proxy, not actual TQQQ.
 - Full event-level review: 2019-01-07 and 2020-03-26 recovery attempts were vetoed at N=5 but released at N=8/10; the 2022-07-19 recovery was vetoed through 2022-08-10. Vetoed checks repeat daily and are not independent events.
 - No more threshold tuning of this design. If testing a bounded delay next, predeclare it separately and compare against B0 on the same frozen input.
+
+
+### Bounded recovery-delay follow-up — 2026-10-09
+
+- The prior recovery-gated test kept exposure at 0% until the matrix cleared after a slow flagged recovery; this lost too much upside in 2022. The next experiment caps that wait at 3/5/10 sessions, with an 8-session fast-recovery exception held fixed.
+- Reentry still requires QQQ to be at least 10% above the current running low; any new low resets the pending wait.
+- Frozen plan: [CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md](CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md). Workflow: `.github/workflows/canonical-bounded-recovery-delay.yml`. Results pending.
