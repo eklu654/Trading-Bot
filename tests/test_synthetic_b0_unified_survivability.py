@@ -1,0 +1,45 @@
+import numpy as np
+import pandas as pd
+
+from research.synthetic_b0_unified_survivability import (
+    first_crossing,
+    run_on_frame,
+    synthetic_3x_legs,
+)
+
+
+def test_synthetic_3x_leg_returns_are_floored_at_minus_100_percent():
+    idx = pd.bdate_range("2024-01-02", periods=4)
+    q = pd.DataFrame({
+        "Open": [100.0, 100.0, 10.0, 10.0],
+        "Close": [100.0, 100.0, 10.0, 10.0],
+        "Adj Close": [100.0, 100.0, 10.0, 10.0],
+    }, index=idx)
+    overnight, intraday = synthetic_3x_legs(q)
+    assert np.all(overnight >= -1.0)
+    assert np.all(intraday >= -1.0)
+    assert overnight[2] == -1.0
+
+
+def test_first_crossing_returns_first_date_or_empty_string():
+    dates = pd.bdate_range("2024-01-02", periods=4)
+    assert first_crossing(dates, [0.0, -0.5, -0.99, -0.999], -0.99) == dates[2].date().isoformat()
+    assert first_crossing(dates, [0.0, -0.5, -0.8, -0.9], -0.99) == ""
+
+
+def test_b0_and_buy_hold_share_one_execution_path_and_summary_schema():
+    dates = pd.bdate_range("1999-03-10", "2003-01-10")
+    prices = np.full(len(dates), 100.0)
+    # Add a gentle decline and recovery through the required dot-com window.
+    mask = (dates >= "2000-03-01") & (dates <= "2002-10-01")
+    prices[mask] = np.linspace(100.0, 70.0, mask.sum())
+    after = dates > "2002-10-01"
+    prices[after] = np.linspace(70.0, 90.0, after.sum())
+    q = pd.DataFrame({"Open": prices, "Close": prices, "Adj Close": prices}, index=dates)
+
+    summary, paths = run_on_frame(q)
+    assert set(summary.strategy) == {"B0_QQQ_shock_recovery", "synthetic_3x_QQQ_buy_hold"}
+    assert len(paths) == 2 * len(q)
+    assert summary["first_crossing_dd_99pct"].eq("").all()
+    assert summary["first_crossing_dd_99_9pct"].eq("").all()
+    assert summary["dotcom_trough_date"].notna().all()
