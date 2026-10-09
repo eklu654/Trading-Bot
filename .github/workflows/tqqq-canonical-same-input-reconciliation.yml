@@ -1,0 +1,26 @@
+name: TQQQ canonical same-input reconciliation
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy pandas yfinance
+      - name: Run frozen-input independent reconciliation
+        run: PYTHONPATH=research python research/tqqq_canonical_same_input_reconciliation.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tqqq-canonical-same-input-reconciliation
+          path: |
+            data/research/tqqq_canonical_frozen_common_input.csv
+            data/research/tqqq_canonical_same_input_summary.csv
+            data/research/tqqq_canonical_same_input_events.csv
+            data/research/tqqq_canonical_same_input_daily.csv
+            data/research/tqqq_canonical_same_input_manifest.json
