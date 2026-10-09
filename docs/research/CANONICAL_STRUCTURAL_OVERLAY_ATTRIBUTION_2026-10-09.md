@@ -36,3 +36,8 @@ Quantify when the fixed representative structural overlay reduces TQQQ exposure 
   - The overlay also helps in other 2022 intervals (e.g. 2022-03-30 to 2022-05-04, conditional contribution about +$258k / +$280k / +$426k respectively), showing the trade-off is highly path-dependent.
 - Interpretation: the structural matrix's biggest failure is not simply remaining defensive after B0 recovery. It is **blocking B0's re-entry exactly on the recovery decision close**, including the sharp COVID rebound. Yet the same signal helps during some 2022 stretches. A useful future candidate must distinguish these contexts; merely changing sticky state does not do so.
 - Do not sum interval contributions: they are conditional leave-one-out counterfactuals under compounding and are explicitly non-additive.
+
+
+## Same-input correction rerun
+- Corrected run: [37914289809](https://github.com/eklu654/Trading-Bot/actions/runs/37914289809); artifact ID `11609275446`, SHA-256 `3de7635eb34768f492dfea9f6201d3f16ceb6ddd169afcbb31426bdf61f26e06`.
+- Actual-period indicators now use B0's exact frozen QQQ closes, with earlier QQQ history retained for rolling windows. Interval attribution and conclusions are unchanged to displayed precision. Use this artifact for future reference.
