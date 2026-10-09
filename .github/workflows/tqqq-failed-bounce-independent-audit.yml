@@ -18,4 +18,7 @@ jobs:
           name: tqqq-failed-bounce-independent-audit
           path: |
             data/research/failed_bounce_independent_audit_summary.csv
+            data/research/failed_bounce_independent_frozen_qqq.csv
+            data/research/failed_bounce_independent_frozen_tqqq.csv
+            data/research/failed_bounce_independent_daily_equity.csv
             data/research/failed_bounce_independent_audit_events.csv
