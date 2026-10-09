@@ -123,3 +123,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Remaining blocker is not numerical reproduction but concentration/generalization: F50's conditional terminal contribution for 2022-04-05–2023-01-25 was about +$1.066M and its 2018-12-04–2019-02-04 episode about -$410k; F75's corresponding effects were about +$613k and -$200k. These counterfactual effects are non-additive; the apparent advantage is highly episode-sensitive. Candidate selection remains open.
 - B0 remains WORKING CONTROL. F50/F75 remain WORKING DEVELOPMENT CANDIDATES only. No live/paper-trading approval. The full modern sample has been inspected and is not an untouched holdout.
 
+## Candidate concentration gate evaluated
+
+- The 2022-04-05–2023-01-25 overlay episode is the dominant positive counterfactual for F50/F75. Removing it in the leave-one-overlay-episode-out diagnostic lowers F50 to about $3.022M and F75 to about $3.511M, both below B0's ~$4.040M on the same artifact path.
+- Since episode counterfactual effects are non-additive, this is a sensitivity diagnostic rather than a causal profit decomposition. It is still sufficient to mark the protocol's episode-diversification gate **FAILED in this retrospective screen**.
+- F50/F75 pass the numerical 25 bp wealth/downside screen but do not advance under the frozen multi-gate protocol. They remain documented diagnostic candidates, not recommended strategies. Do not optimize away the 2018–2019 losses using this same full-sample evidence and then call the revision validated.
+- Updated report: [frozen-input overlay comparison result](CANONICAL_SHOCK_RECOVERY_FROZEN_OVERLAY_COMPARISON_RESULT_2026-10-09.md).
+
