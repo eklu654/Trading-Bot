@@ -38,3 +38,15 @@ A second source review found that `research/failed_bounce_robustness.py` estimat
 The robustness script now uses that exact equity helper and reconstructs adjusted overnight/intraday legs for its 0/5/10/25/50-bps table. Commit: `5981710d8ff6a542aa9991175b126fd3bf0e35fa`.
 
 This is a cost-accounting correction only; it does not change the B0 signal or no-cost return path. Any prior failed-bounce cost table is superseded by the workflow artifact produced from this commit. Wait for the corresponding workflow and compare its 0-bps result with the headline path before accepting the cost table. The helper's 0-bps output should reconcile to the strategy equity path within numerical tolerance; if it does not, investigate before further interpretation.
+
+
+## Validation results from commit `5981710d8ff6a542aa9991175b126fd3bf0e35fa`
+
+- Robustness workflow [37917831852](https://github.com/eklu654/Trading-Bot/actions/runs/37917831852) completed successfully and uploaded artifact `11610696744`.
+- The corrected 0-bps cost-equity path exactly reproduced the primary no-cost headline: final balance about **$4,040,315**, CAGR **49.4874%**, maximum drawdown **-73.5343%**. This is the key consistency check for the cost helper.
+- Updated exact next-open cost sensitivity: 5 bps **$4,002,104**; 10 bps **$3,964,236**; 25 bps **$3,852,657**; 50 bps **$3,673,278**. The rule remains economically sensitive to friction at these high terminal wealth levels; cost modeling should remain explicit.
+- Independent audit workflow [37917832008](https://github.com/eklu654/Trading-Bot/actions/runs/37917832008) completed successfully after the CAGR fix. It reports CAGR **49.4874%** and max drawdown **-73.5343%**, matching the primary script's annualization and drawdown. Its final balance was about **$4,040,311**, roughly $4 below the primary script. This tiny residual is not yet a same-input cross-script reconciliation: the independent audit downloads its own data, while the canonical same-input workflow freezes its own one-download file. Do not describe the two different downloads as exact terminal-equity agreement.
+- Canonical same-input reconciliation [37917832059](https://github.com/eklu654/Trading-Bot/actions/runs/37917832059) also completed successfully. Its own shared-helper and independent-loop implementations use one frozen input and assert event-ledger, daily-return and equity agreement. This verifies that workflow's internal engines; it does not by itself eliminate the $4 difference between separately downloaded robustness and independent-audit data.
+
+## Workflow scheduling note
+Several commits in quick succession caused push-triggered workflow fan-out. A research-tests run on an earlier commit was cancelled while later commit runs queued; this is not a test failure, but neither is it a pass. The latest research-tests run on commit `420429a12ec69f159aee964ba7a9aeb8e02619a0` must reach a completed conclusion before the code changes are called fully test-verified. Avoid further documentation-only commits until that run is checked, to reduce unnecessary duplicate workflow churn.
