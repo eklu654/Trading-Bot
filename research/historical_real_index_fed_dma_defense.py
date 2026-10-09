@@ -240,6 +240,7 @@ def main():
     episodes.to_csv(OUT/"episodes.csv",index=False)
     for ticker,close in indexes.items():
         close.rename("close").to_csv(OUT/f"{ticker.replace('^','')}_daily_close.csv")
+        opens[ticker].rename("open").to_csv(OUT/f"{ticker.replace('^','')}_daily_open.csv")
     fedframe.to_csv(OUT/"fed_state_daily.csv")
     (OUT/"manifest.json").write_text(json.dumps({"created_utc":pd.Timestamp.utcnow().isoformat(),"start":START,"end_exclusive":END,"rows":{k:len(v) for k,v in indexes.items()},"first_dates":{k:v.index.min().date().isoformat() for k,v in indexes.items()},"last_dates":{k:v.index.max().date().isoformat() for k,v in indexes.items()},"sha256":sources,"policy_state_definition":"historical proxy: DFF is available one calendar day later; lagged index-session state is TIGHTENING_ACTIVE when effective federal funds rate is >1 basis point above its value 90 calendar days earlier; this is NOT the modern DFEDTAR-based state builder","cash_definition":"TB3MS annualized percent yield lagged one month, converted to effective daily accrual using (1+y)^(1/252)-1; missing cash yield is zero","caveats":["price-index returns exclude dividends","index exposure is unleveraged; not TQQQ","Nasdaq Composite and S&P 500 are not QQQ","Yahoo Finance is the price data source and may revise historical observations"]},indent=2))
     print(summary[["index","mechanic","defensive_index_exposure","final_normalized_wealth","cagr","max_drawdown","worst_rolling_252d_return","defensive_sessions","executed_exposure_transitions"]].to_string(index=False))
