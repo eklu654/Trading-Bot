@@ -48,8 +48,19 @@ def synthetic_3x_legs(qqq):
     adj_close = qqq["Adj Close"].astype(float)
     overnight = (adj_open / adj_close.shift(1) - 1.0).fillna(0.0).to_numpy()
     intraday = (adj_close / adj_open - 1.0).fillna(0.0).to_numpy()
-    overnight_3x = np.clip(1.0 + 3.0 * overnight, 0.0, None) - 1.0
-    intraday_3x = np.clip(1.0 + 3.0 * intraday, 0.0, None) - 1.0
+    # The fund has 3x exposure set at the prior close. After the overnight
+    # move, its notional-to-NAV ratio changes; do not independently multiply
+    # both sub-day returns by 3 (that would effectively reset leverage twice).
+    overnight_gross = 1.0 + 3.0 * overnight
+    overnight_3x = np.clip(overnight_gross, 0.0, None) - 1.0
+    intraday_leverage = np.divide(
+        3.0 * (1.0 + overnight), overnight_gross,
+        out=np.zeros_like(overnight), where=overnight_gross > 0.0,
+    )
+    intraday_gross = np.clip(1.0 + intraday_leverage * intraday, 0.0, None)
+    # If the synthetic fund was wiped out overnight, it remains at zero.
+    intraday_gross[overnight_gross <= 0.0] = 0.0
+    intraday_3x = intraday_gross - 1.0
     return overnight_3x, intraday_3x
 
 
