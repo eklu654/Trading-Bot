@@ -260,3 +260,6 @@ An older artifact reports $3,270,343.84 for `baseline_10pct`, but its code uses 
 - Drawdown audit run: [37883989726](https://github.com/eklu654/Trading-Bot/actions/runs/37883989726). Daily-shock audit run: [37883989671](https://github.com/eklu654/Trading-Bot/actions/runs/37883989671).
 
 Detailed run IDs, hashes, event ledger, limitations, and next steps are recorded in [the dated re-verification log](TQQQ_SHOCK_RECOVERY_REVERIFICATION_LOG_2026-10-08.md).
+
+
+**Additional forensic caution:** the older `ret60_ret-10_target15` row is $3.138M, and its code does not persist the stricter target after the +10% decision. The two chronological folds selected the baseline. This candidate is not the remembered anti-fakeout strategy. See the detailed audit note in the dated log.
