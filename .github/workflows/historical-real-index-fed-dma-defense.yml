@@ -1,0 +1,33 @@
+name: Historical real-index Fed-DMA defense study
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'research/historical_real_index_fed_dma_defense.py'
+      - '.github/workflows/historical-real-index-fed-dma-defense.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  historical-real-index-study:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install --upgrade pip pandas numpy yfinance
+      - name: Run historical index study
+        run: python research/historical_real_index_fed_dma_defense.py
+      - name: Upload reproducible results
+        uses: actions/upload-artifact@v4
+        with:
+          name: historical-real-index-fed-dma-defense
+          path: data/research/historical_real_index_fed_dma_2026-10-09/
+          if-no-files-found: error
+          retention-days: 90
