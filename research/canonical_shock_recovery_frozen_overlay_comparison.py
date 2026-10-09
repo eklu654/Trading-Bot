@@ -1,4 +1,4 @@
-"""Same-frozen-input comparison of canonical baseline and F50/F75 overlays.
+"""Same-frozen-input comparison of the baseline, Fed-gated overlays, and DMA-only ablations.
 
 Market prices are downloaded once by tqqq_canonical_same_input_reconciliation.make_frozen_input,
 then all candidates are calculated from that exact reloaded CSV. Fed state is downloaded
@@ -242,7 +242,7 @@ def main() -> None:
     fed_sha = hashlib.sha256(fed_bytes).hexdigest()
     manifest = {
         "status": "PASS",
-        "commit_note": "Same frozen QQQ/TQQQ market input for B0, F00, F25, F50, F75, and buy-and-hold.",
+        "commit_note": "Same frozen QQQ/TQQQ market input for B0, F00, F25, F50, F75, D50, D75, and buy-and-hold.",
         "market_input_file": frozen_path.name,
         "market_input_sha256": input_sha,
         "lagged_fed_state_file": "canonical_frozen_overlay_comparison_fed_state.csv",
