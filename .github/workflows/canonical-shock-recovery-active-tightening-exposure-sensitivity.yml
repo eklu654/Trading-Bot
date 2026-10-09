@@ -1,0 +1,52 @@
+name: Canonical Shock Recovery — Active Tightening Partial Exposure Sensitivity
+
+on:
+  push:
+    paths:
+      - "research/canonical_shock_recovery_active_tightening_exposure_sensitivity.py"
+      - "research/canonical_shock_recovery_active_tightening_overlay.py"
+      - "research/canonical_shock_recovery_fed_dma_overlay.py"
+      - "research/causal_execution.py"
+      - ".github/workflows/canonical-shock-recovery-active-tightening-exposure-sensitivity.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: canonical-shock-recovery-active-tightening-exposure-sensitivity
+  cancel-in-progress: false
+
+jobs:
+  compare-exposures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile research scripts
+        run: python -m py_compile research/canonical_shock_recovery_active_tightening_exposure_sensitivity.py research/canonical_shock_recovery_active_tightening_overlay.py research/canonical_shock_recovery_fed_dma_overlay.py research/causal_execution.py
+      - name: Run predeclared exposure sensitivity
+        run: python research/canonical_shock_recovery_active_tightening_exposure_sensitivity.py
+      - name: Upload full audit artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-shock-recovery-active-tightening-exposure-sensitivity
+          if-no-files-found: error
+          path: |
+            data/research/canonical_active_tightening_exposure_frozen_inputs.csv
+            data/research/canonical_active_tightening_exposure_daily.csv
+            data/research/canonical_active_tightening_exposure_summary.csv
+            data/research/canonical_active_tightening_exposure_periods.csv
+            data/research/canonical_active_tightening_exposure_stress_windows.csv
+            data/research/canonical_active_tightening_exposure_episode_contributions.csv
+            data/research/canonical_active_tightening_exposure_baseline_events.csv
+            data/research/canonical_active_tightening_exposure_transitions.csv
+            data/research/canonical_active_tightening_exposure_costs.csv
+            data/research/canonical_active_tightening_exposure_manifest.json
