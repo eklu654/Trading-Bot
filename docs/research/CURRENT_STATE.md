@@ -147,3 +147,14 @@ Next step is not to change strategy based on that disproved hypothesis. Continue
   - Earlier commit's [robustness run 37874731205](https://github.com/eklu654/Trading-Bot/actions/runs/37874731205): success.
 - Thus the explicit alignment assertions passed and did not change the headline result. The previously raised row-index-offset concern is retracted; code already intersected/reindexed both series before building events.
 - Remaining high-value work: (a) ensure research-tests run 37874744026 completes and passes; (b) make both scripts export daily equity curves and aligned input data with hashes, or create a single shared frozen-data artifact; (c) compare daily return/equity curves, not only final balances; (d) recover the exact earlier conversational rejection message if possible.
+
+
+## 2026-10-09 follow-up: test suite cancellation and daily-curve artifacts
+- Rechecked prior run 37874744026: research-tests conclusion is `cancelled`, not passed. Do not describe the full suite as green. Both strategy-specific workflows did succeed (37874744047 robustness; 37874744058 independent audit).
+- Inspected canonical source: both scripts intersect QQQ/TQQQ indices and reindex before building events, confirming the earlier row-offset hypothesis was false. Explicit index-equality assertions pass.
+- Added reproducibility exports to both canonical scripts:
+  - robustness script exports aligned QQQ/TQQQ input CSVs plus `failed_bounce_daily_equity.csv` with daily returns/equity and close signal.
+  - independent audit exports its aligned QQQ/TQQQ input CSVs plus `failed_bounce_independent_daily_equity.csv`.
+  - Commits: `1464f0133cffb88e09a41c14b62a3972a276b845`, `de2a6b4acecd08e168a7654ffd123f1daf74b2dd`.
+- Next action: wait for/inspect strategy workflows after these commits; download the two input/equity artifacts; compare frozen input files and daily equity curves. The scripts currently download independently, so compare hashes/values and only then refactor to a single shared snapshot if data differs.
+- Caution: robustness `metrics` still uses requested START/END in its now-unused helper, but main summary uses actual aligned t-index dates. Independent audit stats still annualizes over requested range. CAGR must be standardized to actual common first/last dates before final report.
