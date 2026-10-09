@@ -35,3 +35,16 @@ def test_r2_updates_running_low_before_partial_reentry():
     # New low resets the +5% and +10% levels; 94 is not +5% from 90,
     # 95 is, so partial exposure starts at that close; 99.1 is > +10%.
     assert got == [1.0, 0.0, 0.0, 0.0, 0.5, 1.0]
+
+
+def test_r1_does_not_reenter_during_consecutive_shock_days():
+    q = qqq_path([100.0, 94.0, 89.5, 91.0])
+    got = target_exposure(q, "R1").tolist()
+    assert got == [1.0, 0.0, 0.0, 1.0]
+
+
+def test_r2_resets_partial_tranche_on_renewed_shock():
+    q = qqq_path([100.0, 94.0, 99.0, 94.0, 90.0, 94.0, 95.0])
+    got = target_exposure(q, "R2").tolist()
+    # A renewed -4.5% shock resets the low and staged tranche.
+    assert got[3:] == [0.0, 0.0, 0.0, 0.5]
