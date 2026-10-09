@@ -20,25 +20,17 @@ Start from the current, reproducible ~$4.04M candidate and let evidence determin
 - No DMA, Fed, MACD, golden-cross, macro, inverse ETF, or AI filter is part of the baseline.
 - Initial balance $5,000; actual-TQQQ history used here is 2010-02-11 through 2026-10-07.
 
-Do not change the baseline when testing candidates. Every candidate must use the same dates, fields, execution, initial capital, and costs.
+Every candidate must use the same dates, fields, execution, initial capital, and costs as the baseline. Never change the baseline to improve a candidate's score.
 
-## Verification status and headline
+## Baseline verification and stress diagnostics
 
 - **Same-input daily-curve reconciliation passed:** [run 37884245700](https://github.com/eklu654/Trading-Bot/actions/runs/37884245700). Shared and independently coded engines agreed exactly on daily returns, daily equity, and all nine event transitions.
 - Frozen input SHA-256: `a7e63d7d936d9fcb44a4f928b8f9dcd8d31f621e7d4a0082bd217b2543d03ad2`.
-- Exact same-input result: strategy **$4,040,313.79**, CAGR 49.49%, max drawdown -73.53%; TQQQ buy-and-hold **$2,094,668.95**, CAGR 43.70%, max drawdown -81.66%.
-- Latest independent robustness run [37884245678](https://github.com/eklu654/Trading-Bot/actions/runs/37884245678) reported $4,040,311.91 vs $2,094,668.80 from a separately downloaded dataset. Treat the small difference as separate-input variation; the same-input run is the strict reconciliation.
-- **Status: WORKING historical candidate, not live-approved.** The ~73.5% max drawdown is severe; slow-bear robustness is unresolved.
+- Same-input result: baseline **$4,040,313.79**, CAGR 49.49%, max drawdown -73.53%; TQQQ buy-and-hold **$2,094,668.95**, CAGR 43.70%, max drawdown -81.66%.
+- [First stress scorecard](CANONICAL_SHOCK_RECOVERY_FIRST_STRESS_SCORECARD_2026-10-09.md) records period returns, event counterfactuals, and cost sensitivity.
+- [Stress windows and slow-bear audit](CANONICAL_SHOCK_RECOVERY_STRESS_WINDOWS_AND_SLOW_BEAR_AUDIT_2026-10-09.md) records inherited account returns and a mechanical drawdown screen.
 
-## Completed diagnostics
-
-1. [First stress scorecard](CANONICAL_SHOCK_RECOVERY_FIRST_STRESS_SCORECARD_2026-10-09.md) — period returns, drawdowns, event-level counterfactual contributions, and cost sensitivity.
-2. [Stress windows and slow-bear audit](CANONICAL_SHOCK_RECOVERY_STRESS_WINDOWS_AND_SLOW_BEAR_AUDIT_2026-10-09.md) — inherited account returns during acute/slow-bear windows and mechanical QQQ drawdown episodes.
-3. [Same-input reconciliation](https://github.com/eklu654/Trading-Bot/actions/runs/37884245700) — exact shared-vs-independent daily curve match on 4,189 rows.
-
-### Findings from the stress audit
-
-Period returns are calculated independently within each period; period drawdown resets at the period start:
+Period returns are independently compounded within each named period; period drawdowns are local to that window:
 
 | Period | Baseline return | TQQQ buy-and-hold | Baseline max DD | Buy-and-hold max DD |
 |---|---:|---:|---:|---:|
@@ -48,38 +40,44 @@ Period returns are calculated independently within each period; period drawdown 
 | 2022–2024 | +42.3% | -1.4% | -72.6% | -81.0% |
 | 2025–2026-10-07 | +100.2% | +114.4% | -56.1% | -56.8% |
 
-The baseline beat the control in the first four windows but lagged in 2025-current. Event counterfactuals show large benefits in 2018 Q4, the initial COVID crash, and 2022, but large opportunity costs in June 2020 and April 2025.
+Slow-bear screen findings:
+- 2010 episode: QQQ -15.6%, no -4.5% daily shock.
+- Early 2016 episode: QQQ -16.1%, no -4.5% daily shock.
+- 2018 episode: QQQ -22.8%, first shock 4 sessions after the -5% episode start.
+- COVID: QQQ -28.6%, first shock 3 sessions after the -5% episode start.
+- 2022: QQQ -35.1%, first shock 77 sessions after the -5% episode start.
+- 2025: QQQ -22.8%, first shock 25 sessions after the -5% episode start.
 
-Mechanical slow-bear screen uses QQQ adjusted close, a rolling 252-session high, episode entry at -5%, rearm at 95% of the reference peak, and reports troughs of at least -15%. It found:
-- 2010 episode: -15.6%, no -4.5% daily shock.
-- Early 2016 episode: -16.1%, no -4.5% daily shock.
-- 2018 episode: -22.8%, shock 4 sessions after episode start.
-- COVID: -28.6%, shock 3 sessions after episode start.
-- 2022: -35.1%, first shock 77 sessions after episode start.
-- 2025: -22.8%, first shock 25 sessions after episode start.
+The rule's main structural weakness is now explicit: a single-day-shock trigger can miss slow declines or trigger late. In 2022, the inherited strategy account still lost 69.8% over the calendar year, although TQQQ buy-and-hold lost 79.1%.
 
-Thus, the most important known weakness is structural: a single-day-shock trigger can miss slow declines or trigger late. The 2022 inherited account still lost 69.8% in the calendar year, though less than the buy-and-hold account's 79.1% loss. This is a diagnostic, not proof that a moving-average or Fed overlay will help.
+## First overlay result — rejected
+
+The first predeclared candidate was baseline + a sticky defensive overlay entered when QQQ was below the existing 200-DMA and the previous session's Fed state was TIGHTENING_PAUSED; exit was QQQ close back at/above the 200-DMA.
+
+- Workflow: [37885392208](https://github.com/eklu654/Trading-Bot/actions/runs/37885392208)
+- Detailed report: [Fed-paused/200-DMA overlay result](CANONICAL_SHOCK_RECOVERY_FED_DMA_OVERLAY_RESULT_2026-10-09.md)
+- Candidate ending balance: **$2,908,571**, versus baseline **$4,040,316** on the candidate run's common data.
+- CAGR: 46.57% vs 49.49%.
+- Maximum drawdown: -73.53% for both.
+- The overlay activated six times, all during brief 2016 and 2019 corrections. It did not activate in the 2022 tightening bear and did not change COVID or 2025 exposure.
+
+**Decision: REJECT this exact overlay.** It reduced ending wealth by about 28% and did not improve maximum drawdown. This rejects the paused-only × below-200-DMA rule as an overlay on this baseline, not all Fed-based research.
+
+## Next action
+
+Before testing another candidate, perform a diagnostic-only Fed lifecycle attribution on the frozen baseline input:
+1. Record lagged daily Fed states (TIGHTENING_ACTIVE, TIGHTENING_PAUSED, EASING, NEUTRAL) during each mechanically identified drawdown episode and around the baseline's nine shock/recovery events.
+2. Show when state transitions occurred relative to each episode start, QQQ 200-DMA crossings, and first -4.5% shock.
+3. Answer whether the existing Fed state has any causal ability to warn earlier in 2022 or the 2010/2016 slow corrections, or whether it only generates false positives during benign pauses.
+4. Do not backtest a new Fed overlay until this diagnostic supports a specific causal hypothesis. If no useful signal is present, move to the already-defined macro state as a separate hypothesis; do not add indicators indiscriminately.
 
 ## Historical study boundaries
 
-- Pre-2010 periods (1970s, 1987, 2000–2002) are signal-only index diagnostics unless a leveraged proxy is explicitly labeled synthetic with assumptions disclosed. TQQQ did not exist then.
+- Pre-2010 periods (1970s, 1987, 2000–2002) are signal-only index diagnostics unless a leveraged proxy is explicitly labeled synthetic. TQQQ did not exist then.
 - Future outcome labels may be used for diagnostics only, never to decide whether a signal trades.
 - The prior structural matrix's future-label/censored-event gate has been removed; optimized matrix rows remain exploratory/in-sample.
 - The old ~$3.3M anti-fakeout strategy is a distinct historical variant and is no longer a blocker or active baseline.
 - The separate synthetic ~$3.7M Fed/DMA study and extraordinary synthetic-wealth outputs are not evidence of actual-TQQQ results.
-
-## Next actions
-
-1. **Candidate overlay A:** evaluate the existing 200-DMA relationship combined with the live-safe Fed lifecycle state (including TIGHTENING_PAUSED) as a narrow slow-bear candidate. Freeze the exact causal rule before running; never use the eventual final hike date as a real-time feature.
-2. Compare the overlay against baseline on the same frozen input. Report whole-period ending balance, CAGR, max DD, rolling 12-month worst return, exposure, and exact incremental results for COVID, 2018, 2022, June/September 2020, and April 2025.
-3. If and only if overlay A shows evidence of incremental value, test the existing frozen macro deterioration/crisis state as a separate candidate. Combine only if individual features show value.
-4. Keep a chronological holdout untouched. If rules are revised after seeing it, the period becomes development data and a new future holdout is required.
-5. No broad indicator fishing, fresh DMA-length sweep, re-entry-delay search, AI selector, or paper trading yet. The aim is higher ending wealth; drawdown diagnoses failure modes, not the sole optimization target.
-6. Update this file after each meaningful step with exact rule ID, commit SHA, workflow run, input hash, results, status label, and next action.
-
-## Latest CI sweep
-
-At commit `207213dea6e4dde44a89f68daa044e7f213fe202`, the following completed successfully: robustness, independent audit, structural matrix, long-history drawdown audit, feature audit, actual three-layer validation, partial-DMA matrix, event attribution, research tests, and same-input reconciliation. The documentation commits for this checkpoint are `e2780545292964b96ab6005b3b4e2fc238e15e3c` (first scorecard), `e25e6237cea668a39ca4de7a480a1d73d131b328` (stress windows/slow-bear audit), and this update.
 
 ## Result labels
 
@@ -90,3 +88,11 @@ At commit `207213dea6e4dde44a89f68daa044e7f213fe202`, the following completed su
 - **UNRESOLVED:** evidence is insufficient.
 
 Current baseline status: **WORKING**. Same-input numerical reconciliation is supported; generalization across slow/prolonged bears and live execution remains unresolved.
+
+## Key recent commits
+
+- First stress scorecard: `e2780545292964b96ab6005b3b4e2fc238e15e3c`
+- Stress windows/slow-bear audit: `e25e6237cea668a39ca4de7a480a1d73d131b328`
+- Fed-paused/200-DMA candidate code: `9cdd2066014f5bd8f97883803963c83ad413d189`
+- Candidate workflow: `67bc0c8f4c5921416f41721d388b0d58466b0737`
+- Overlay result report: `0afd787b546f5a63ca06278ad32cbd09926af0a9`
