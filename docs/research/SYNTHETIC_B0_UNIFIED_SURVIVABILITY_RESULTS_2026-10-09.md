@@ -43,6 +43,21 @@
 | Prior peak date | 2000-03-27 | 2000-03-27 |
 | Prior peak recovered by end of sample? | Yes, 2018-01-22 | Yes, 2025-10-28 |
 
+## Regime-level exposure diagnostic
+
+| Window | Strategy | Average target exposure | Cash-target sessions | Window return | Minimum equity in window | Window max drawdown |
+|---|---|---:|---:|---:|---:|---:|
+| 2000–2002 | B0 | 50.93% | 369 / 752 | -98.44% | $154.41 | -99.196% |
+| 2000–2002 | Synthetic buy-and-hold | 100.00% | 0 / 752 | -99.86% | $21.50 | -99.944% |
+| 2007–2009 | B0 | 89.81% | 58 / 569 | -55.05% | $113.87 | -99.407% |
+| 2007–2009 | Synthetic buy-and-hold | 100.00% | 0 / 569 | -66.01% | $14.61 | -99.962% |
+| 2020 | B0 | 73.28% | 62 / 232 | +110.91% | $29,178.29 | -46.66% |
+| 2020 | Synthetic buy-and-hold | 100.00% | 0 / 232 | +102.44% | $1,776.60 | -95.356% |
+| 2022 | B0 | 62.95% | 93 / 251 | -69.69% | $52,279.01 | -72.593% |
+| 2022 | Synthetic buy-and-hold | 100.00% | 0 / 251 | -78.18% | $3,714.93 | -90.288% |
+
+This reinforces a structural weakness: B0 is often defensive during the fast dot-com shock phase, but it was exposed about 89.8% of the 2007–2009 window and still reached its overall minimum during the GFC. A daily shock threshold does not reliably detect a slow bear market. Conversely, B0's lower exposure improved the modeled 2022 decline while preserving substantial 2020 recovery participation. This is descriptive in-sample evidence only, and it does not validate a new overlay.
+
 ## Interpretation
 
 1. **B0 did not hit -99.9% drawdown or zero in this unified replay.** It did cross -99% drawdown in September 2002 and its dot-com trough was about $154 from a prior peak of about $19,215. It later suffered its overall minimum of about $114 during the 2008–2009 crisis, at a full-period drawdown of -99.4074%.
