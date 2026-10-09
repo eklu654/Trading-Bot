@@ -101,3 +101,10 @@ Artifact summaries:
 - The scripts use `yfinance.download(... auto_adjust=False)` and reconstruct adjusted open as `Open * Adj Close / Close`. The independent audit computes overnight return with `signal[i-2]` and intraday with `signal[i-1]`; this aligns with close signal -> next-open execution.
 - Important caveat: each script independently downloads QQQ and TQQQ, rather than sharing one frozen input snapshot. Dates align in the event ledger but this is not the requested frozen-dataset test. Next fix: persist both exact downloaded tables with index and adjustment columns, hash them, and feed those same files to both engines.
 - Classification remains: result is provisionally reproduced. Event ledger recovered. Still not fully verified until frozen-data, daily-curve, event-index, and CAGR conventions reconcile. Original conversation rejection message still not recovered.
+
+
+### CAGR discrepancy resolved at code level
+At artifact SHA `87e74d008884d475248263a9510fa39ef300517c`, the two scripts annualize over different durations:
+- `failed_bounce_robustness.py` computes the main summary CAGR using `(t.index[-1] - t.index[0]).days / 365.25` (actual TQQQ data endpoints).
+- `audit_failed_bounce_canonical_independent.py` computes CAGR using `(END_DATE - START_DATE).days / 365.25`, i.e. requested 2010-01-01 to 2026-10-08, regardless of actual first TQQQ observation.
+This explains why ending balances and drawdowns agree while CAGR differs. Do not treat CAGR difference as evidence of a return-path mismatch; standardize CAGR to actual first/last observation dates and disclose that period. The user requested a consistent date range, so the scripts should explicitly report requested range AND actual traded-data range, and both annualization formulas should use the same declared convention.
