@@ -4,12 +4,12 @@
 
 ## Run and artifact provenance
 
-- Corrected workflow: [TQQQ Dot-Com Survivability Research, run 37923199785](https://github.com/eklu654/Trading-Bot/actions/runs/37923199785), completed successfully.
-- Corrected research code commit: `fb731e3d070062254809f0c5367c3de28a9008d7`.
+- Corrected workflow: [TQQQ Dot-Com Survivability Research, run 37923204992](https://github.com/eklu654/Trading-Bot/actions/runs/37923199785), completed successfully.
+- Corrected research code commit: `3ec8f679b1ecb57dbb738965b80be7b44ccc7c54`.
 - Full research test suite: [run 37923205463](https://github.com/eklu654/Trading-Bot/actions/runs/37923205463), completed successfully: **131 passed, 1 existing warning**.
 - Artifact: `tqqq-dotcom-survivability`, ID `11612419144`, SHA-256 `1dc4292720f1779969f4d7518cbd4f14369b0db45bfe4fb3823abd0e3cfd13fc`.
-- Frozen QQQ CSV SHA-256: `dcc400342d016babb4307438c0fec913992125244e91de8e8aadc2dd5926fc58`.
-- Summary CSV SHA-256: `bed486e0288c876a923ee1dcc79a872e86f71bb0fe1bb2bfd3aee2b6cd789160`.
+- Frozen QQQ CSV SHA-256: `dc1a36980348aa568455402c1c64c78a66db2919a6bdf45112dd5e287fb4edb7`.
+- Summary CSV SHA-256: `73113d46f87396873fd1cff99b3d8d5f91be8eb59283c8371c42f2898b23d532`.
 
 ## Frozen common methodology
 
@@ -24,9 +24,9 @@
 
 | Metric | B0 shock/recovery | Synthetic 3× QQQ buy-and-hold |
 |---|---:|---:|
-| Ending balance | $861,124.79 | $64,245.23 |
-| CAGR | 20.52% | 9.70% |
-| Full-period max drawdown | -99.3440% | -99.9564% |
+| Ending balance | $861,126.36 | $64,245.39 |
+| CAGR | 20.52399% | 9.69935% |
+| Full-period max drawdown | -99.34403% | -99.95639% |
 | Minimum equity | $126.98 | $16.62 |
 | Minimum-equity date | 2009-03-09 | 2009-03-09 |
 | First crossing of -99% drawdown | 2002-09-23 | 2001-04-03 |
@@ -41,7 +41,7 @@
 | 2000-window start to 2002-window end return | -98.36% | -99.85% |
 | Trough date | 2002-10-09 | 2002-10-09 |
 | Trough equity | $162.99 | $23.27 |
-| Drawdown from prior peak to trough | -99.1580% | -99.9389% |
+| Drawdown from prior peak to trough | -99.15798% | -99.93894% |
 | Prior peak date | 2000-03-27 | 2000-03-27 |
 | Prior peak recovered by end of sample? | Yes, 2018-01-05 | Yes, 2025-10-06 |
 
@@ -60,7 +60,7 @@
 
 ## Interpretation
 
-1. **B0 did not hit -99.9% drawdown or zero in this corrected unified replay.** It did cross -99% drawdown in September 2002. Its dot-com trough was about $163 from a prior peak of about $19,357. It later suffered its overall minimum of about $127 during the 2008–2009 crisis, at a full-period drawdown of -99.3440%.
+1. **B0 did not hit -99.9% drawdown or zero in this corrected unified replay.** It did cross -99% drawdown in September 2002. Its dot-com trough was about $162.99 from a prior peak of about $19,356.98. It later suffered its overall minimum of about $127 during the 2008–2009 crisis, at a full-period drawdown of -99.3440%.
 2. **“Survives” is a weak pass condition.** The synthetic B0 control nearly lost everything in this model. It eventually recovered its prior dot-com peak in January 2018 and compounded to about $861k by October 2026, but the drawdown from its peak was extreme.
 3. Synthetic buy-and-hold crossed -99.9% drawdown in July 2002 and fell to about $16.62 in March 2009. B0 finished about 13.4 times higher and avoided the -99.9% threshold in this same-engine comparison, but still experienced a -99.34% full-period drawdown.
 4. B0's fast-shock rule reduced exposure during parts of the dot-com decline, but it was invested about 89.8% of the 2007–2009 window and still reached its full-period minimum during the GFC. The rule does not reliably detect a slow bear market. Conversely, it preserved strong modeled rebound participation in 2020 and reduced losses in 2022; these are descriptive in-sample results, not validation of a new overlay.
