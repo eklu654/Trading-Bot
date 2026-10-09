@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
 INITIAL = 5000.0
 START = "1999-03-10"
-END = "2026-10-09"
+END = "2026-10-03"
 DOTCOM_START = "2000-01-01"
 DOTCOM_END = "2002-12-31"
 
