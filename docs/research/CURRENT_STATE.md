@@ -114,3 +114,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Corrected workflow run: [37888844274](https://github.com/eklu654/Trading-Bot/actions/runs/37888844274). It was pending at this checkpoint; do not treat the corrected artifact as available until the run completes successfully.
 - First-pass data is development-only, because the same modern sample has been inspected. No winner is selected and no live/paper-trading approval follows from this work.
 
+## Corrected frozen-input comparison completed — 2026-10-09
+
+- Corrected workflow passed: [run 37888844274](https://github.com/eklu654/Trading-Bot/actions/runs/37888844274), artifact ID `11597820453`.
+- Results and gate decision: [frozen-input overlay comparison report](CANONICAL_SHOCK_RECOVERY_FROZEN_OVERLAY_COMPARISON_RESULT_2026-10-09.md).
+- Same run/hash used for all candidates: market input `e79530cf7bda1557adee2eacbdf9b8621f8cde16daf7c533a444be46c68ee2c0`; lagged Fed state `cb6d59cc792ceedfd561a4e64780b4807192a546f7fc9d0d38eb60b4d1de0ea1`; 4,189 rows from 2010-02-11 through 2026-10-07.
+- At 25 bp per full exposure change: B0 $3.853M; F50 $3.830M; F75 $3.899M. F50/F75 both clear the protocol's numerical 95%-wealth and 5-percentage-point downside-improvement thresholds in this run.
+- Remaining blocker is not numerical reproduction but concentration/generalization: F50's conditional terminal contribution for 2022-04-05–2023-01-25 was about +$1.066M and its 2018-12-04–2019-02-04 episode about -$410k; F75's corresponding effects were about +$613k and -$200k. These counterfactual effects are non-additive; the apparent advantage is highly episode-sensitive. Candidate selection remains open.
+- B0 remains WORKING CONTROL. F50/F75 remain WORKING DEVELOPMENT CANDIDATES only. No live/paper-trading approval. The full modern sample has been inspected and is not an untouched holdout.
+
