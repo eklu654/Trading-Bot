@@ -182,8 +182,8 @@ def build_events(p, f, shock):
 def signal_for_rule(p, events, rule, target, exposure):
     w = np.ones(len(p), dtype=float)
     for row in events.itertuples(index=False):
-        if row.label == "censored":
-            continue
+        # Outcome labels are diagnostic only. Never let future censoring/outcome
+        # information determine whether a live event is traded.
         decision_i = int(row.decision_i)
         armed_end = decision_i
         # The strategy remains defensive from the original shock until the
