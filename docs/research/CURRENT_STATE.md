@@ -185,3 +185,13 @@ Next step is not to change strategy based on that disproved hypothesis. Continue
 - These results show the headline balance reproduces, but the independent scripts independently download market data; their final values differ by about $1.84 and controls by about $0.30. That is small, but demonstrates the need for a shared frozen input dataset before claiming exact daily-curve equality.
 - research-tests run `37876820261` was cancelled. Do not call the whole test suite passed.
 - Next step: inspect fresh runs after workflow artifact path changes, download frozen data/equity CSVs, compare row counts, date indices, OHLC/adjusted-close columns, event indices and daily equity. If the files are still generated from separate downloads and differ, use one shared dataset artifact or a workflow that downloads once and invokes both engines on those same files.
+
+
+## 2026-10-09 user decision: resume strategy refinement using ~$4.04M working reference
+User explicitly authorized proceeding with the ~$4.04M QQQ shock/recovery result rather than blocking progress on the remaining frozen-input reconciliation. This changes the workflow priority: treat the rule/result as the working baseline for strategy research while preserving the outstanding audit caveat.
+- Created canonical specification: `docs/research/FAILED_BOUNCE_CANONICAL_STRATEGY_SPEC.md` (commit `69e8651e3b01d32a3f196b07f2b3f43501fa4f31`).
+- Frozen baseline: QQQ adjusted-close daily return <= -4.5% triggers defense; track the low; re-enter after the first close >= 10% above the low; close signals execute at the next open; otherwise hold 100% TQQQ. No DMA, inverse ETF, AI, or Fed overlay in the baseline.
+- Recorded reference: about $4.04M from $5,000 vs about $2.095M TQQQ buy-and-hold; nine recorded events. Use as reference, not as a promise or claim that all accounting audits are complete.
+- Primary research objective restored: test whether a predeclared structural rule can identify 2022-style prolonged Fed-tightening bear regimes without sacrificing acute V-shaped recoveries such as COVID, and find holes in the strategy.
+- Crucial historical limitation: TQQQ did not exist in 2000–2002. A dot-com-era test requires a labelled synthetic 3x daily leveraged QQQ proxy with financing/expense/rebalance assumptions and validation against live TQQQ. Never describe it as actual TQQQ history.
+- Immediate sequence: stress scorecard; quantify baseline false positives/missed rebounds; define candidate feature families and thresholds before holdout testing; chronological development/holdout; preserve full results and run IDs. The 4M result is not to be discarded because frozen-data reconciliation remains incomplete.
