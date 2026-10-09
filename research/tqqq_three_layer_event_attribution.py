@@ -51,7 +51,7 @@ def one_day_impact(x, sig, idx):
  return equity(x,s)[-1]
 
 def main():
- x=build(); base=equity(x,x.base); cond=equity(x,x.conditioned); three=equity(x,x.three)
+ x=build()\n # Freeze the exact downloaded market data and signals so the following cost\n # script consumes identical inputs instead of independently re-downloading.\n OUT.mkdir(parents=True,exist_ok=True)\n x[["on3","in3","base","conditioned","three"]].to_csv(OUT/"tqqq_three_layer_frozen_inputs.csv", index_label="date", float_format="%.15g")\n base=equity(x,x.base); cond=equity(x,x.conditioned); three=equity(x,x.three)
  rows=[{"comparison":"conditioned_minus_base","base_final":base[-1],"comparison_final":cond[-1],"terminal_delta":cond[-1]-base[-1],"terminal_ratio":cond[-1]/base[-1]},
        {"comparison":"three_layer_minus_conditioned","base_final":cond[-1],"comparison_final":three[-1],"terminal_delta":three[-1]-cond[-1],"terminal_ratio":three[-1]/cond[-1]}]
  pd.DataFrame(rows).to_csv(OUT/"tqqq_three_layer_attribution_summary.csv",index=False)
