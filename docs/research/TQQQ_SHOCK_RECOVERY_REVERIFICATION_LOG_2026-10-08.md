@@ -129,3 +129,29 @@ All following runs completed successfully on main at commit `b6d8e24c486de2dcb49
 4. Audit synthetic three-layer model: reconcile the contradictory attribution artifact, inspect daily return construction and date alignment, then either repair or explicitly retire synthetic wealth figures.
 5. Run long-history signal diagnostics for 1971, 1987, 2000–2002, and 2022 with the same causal feature definitions where the data supports them. Keep signal-only evaluation separate from actual TQQQ portfolio returns.
 6. Keep the initial benchmark non-AI. Do not advance to AI selection or paper trading until the original baseline, exact-input replay, and stress/holdout evidence are resolved.
+
+
+## 2026-10-09 follow-up: synthetic three-layer cost-stress timing bug corrected
+
+### Failure and root cause
+The first attempt to freeze the cost-stress inputs introduced a Python syntax/indentation error in the event-attribution script. The failed run was [37883273299](https://github.com/eklu654/Trading-Bot/actions/runs/37883273299); its failure was inspected from the job log, corrected, and is not being treated as a strategy result. The subsequent successful run is [37883372240](https://github.com/eklu654/Trading-Bot/actions/runs/37883372240).
+
+The substantive bug was in the old `tqqq_three_layer_cost_robustness.py`: it used the same day's signal for that day's intraday return and the prior day's signal for the overnight return. That violates the required close[t] -> open[t+1] execution model and introduces look-ahead into the intraday leg. This was the cause of the absurd $128B-$205B synthetic cost-stress results. Those figures are invalid and must be retired, not quoted as strategy outcomes.
+
+### Corrective implementation and validation
+- Commit `ed95b70bf7bac5ecbd5ccf555fca8691a6390dab` changed cost stress to the shared causal execution helper and added a zero-cost consistency assertion.
+- Commit `533525a0ad4946ca8e918098ab077d0736e7d061` added an export of the exact QQQ-derived synthetic return streams and frozen signals.
+- Commit `6b3e1ab75b4f2b5b68171c321b8723eed346826d` changed cost stress to consume frozen inputs instead of downloading a second price series.
+- Commit `e88a3ac17c67a1725f0acd86ef0b90551b088337` corrected the export block indentation/syntax.
+- The latest attribution run succeeded, with artifact 11594948023 (SHA-256 `033b29012dc57634d7cf7002c2224c02627a4f776deb9a0f1141a3016bcb981c`). The artifact includes `tqqq_three_layer_frozen_inputs.csv`, `tqqq_three_layer_attribution_summary.csv`, and `tqqq_three_layer_cost_robustness.csv`.
+- The zero-cost balances agree on identical frozen inputs to numerical tolerance:
+  - base: attribution $207,067.983120 vs cost audit $207,067.983120;
+  - Fed-conditioned: $110,128.569156 vs $110,128.569156;
+  - three-layer: $89,973.174122 vs $89,973.174122.
+- The causal synthetic result is therefore about $207k / $110k / $90k—not $128B / $183B / $205B. With modeled costs, the three-layer terminal balance declines to about $76.5k at 5 bps, $65.0k at 10 bps, $39.9k at 25 bps, and $17.6k at 50 bps per exposure transition.
+- Research-tests [37883372312](https://github.com/eklu654/Trading-Bot/actions/runs/37883372312) and actual-TQQQ validation [37883372269](https://github.com/eklu654/Trading-Bot/actions/runs/37883372269) also passed on commit `e88a3ac17c67a1725f0acd86ef0b90551b088337`.
+
+### Updated conclusion
+The synthetic three-layer study is now REJECTED FOR PERFORMANCE CLAIMS on two independent grounds: (1) its prior cost script leaked same-day signal information into intraday returns, creating the extraordinary wealth claims; and (2) after correcting timing, the causal synthetic variant still performs poorly and the actual-TQQQ version remains far below actual TQQQ buy-and-hold. Keep the Fed-layer hypothesis as a research question, not as a validated strategy.
+
+The separate ~$4.04M shock/recovery candidate is unaffected by this particular synthetic-script defect, but remains only provisionally reproduced until the canonical implementations run on one immutable shared dataset and their daily curves match. The remembered ~$3.3M anti-fakeout strategy is still unrecovered.
