@@ -155,3 +155,41 @@ The substantive bug was in the old `tqqq_three_layer_cost_robustness.py`: it use
 The synthetic three-layer study is now REJECTED FOR PERFORMANCE CLAIMS on two independent grounds: (1) its prior cost script leaked same-day signal information into intraday returns, creating the extraordinary wealth claims; and (2) after correcting timing, the causal synthetic variant still performs poorly and the actual-TQQQ version remains far below actual TQQQ buy-and-hold. Keep the Fed-layer hypothesis as a research question, not as a validated strategy.
 
 The separate ~$4.04M shock/recovery candidate is unaffected by this particular synthetic-script defect, but remains only provisionally reproduced until the canonical implementations run on one immutable shared dataset and their daily curves match. The remembered ~$3.3M anti-fakeout strategy is still unrecovered.
+
+
+## 2026-10-09 continuation: exact common-input replay passes; long-history rally cases recovered
+
+### Canonical same-input audit — PASS
+The dedicated workflow [37883989658](https://github.com/eklu654/Trading-Bot/actions/runs/37883989658) passed after adding a second, independently coded event-state builder in addition to the independent daily execution loop. Artifact 11594464513 contains the frozen common input, full daily curve, event ledger, and manifest.
+- Window: 2010-02-11 through 2026-10-07, 4,189 aligned sessions.
+- Initial balance: $5,000.
+- Canonical rule: QQQ adjusted-close daily return <= -4.5% triggers defense; remain defensive through the post-shock low until the first close >=10% above that low; TQQQ trades at the next open.
+- Frozen input SHA-256: `fa28ea933475d843cb8daf6bdd8d7aeca3c4ed20b9a0e55f8bec5eaaf68f7d00`.
+- Independent event builders agree on all nine events and the full signal series.
+- Maximum absolute daily-return difference: 0.0. Maximum absolute equity-curve difference: 0.0.
+- Strategy final: $4,040,311.69; TQQQ buy-and-hold on the exact same data: $2,094,668.80. CAGR: 49.487% vs 43.705%; maximum drawdown: -73.53% vs -81.66%.
+- A prior frozen dataset/run produced $4,040,312.84, so separate fresh yfinance downloads still vary by roughly a dollar due adjusted-price revisions/precision. The precise claim is: **the ~$4.04M headline is verified for a frozen dataset with exact independent event/signal/return/equity agreement; the exact terminal dollars are data-snapshot-dependent.**
+
+### Historical anti-rally audit results
+Two signal-only S&P 500 studies were run from 1970-01-02 through 2026-10-07. They are explicitly not QQQ/TQQQ portfolio backtests.
+1. Daily shock rule (S&P 500 daily close return <= -4.5%, then +10% from the post-shock low) generated 18 events: 10 failed, 6 successful, 2 censored. It produced no events in the 1970s because the trigger is a single-day shock threshold; this does not cover the prolonged 1970s bear by itself.
+2. Complementary drawdown rule (cross below -10% from a 252-session high, then +10% from the trough; rearm only after regaining 95% of the trigger peak) generated 24 events: 12 failed, 9 successful, 3 censored. Key examples:
+   - 1971-08-04 trigger; +10% recovery on 1971-12-16; outcome censored within the 252-session horizon.
+   - 1973-04-27 trigger; recovery decision 1973-10-11; failed 28 sessions later.
+   - 1987-10-15 trigger; recovery decision 1987-10-21; failed 3 sessions later.
+   - 2000-04-14 trigger; recovery decision 2000-07-12; failed 65 sessions later.
+   - 2000-10-11 trigger; recovery decision 2001-04-18; failed 98 sessions later.
+   - 2022-02-22 trigger; recovery decision 2022-03-29; failed 22 sessions later.
+   - 2022-04-22 trigger; recovery decision 2022-07-28; failed 41 sessions later.
+   - 2020's two recovery events in this broad-market signal study were labeled successful; 2023-10 and 2025-03 drawdown episodes also labeled successful.
+- The new workflow is [37883989726](https://github.com/eklu654/Trading-Bot/actions/runs/37883989726), artifact 11595481898. Daily-shock study: [37883989671](https://github.com/eklu654/Trading-Bot/actions/runs/37883989671).
+- These are outcome labels, not proof that the currently defined MA/MACD features can predict the labels. The event sample is small, the index differs from QQQ, and feature separation is diagnostic only. The 1971 case is censored rather than classified as a failed rally under this specific 252-session definition.
+
+### Historical ~$3.3M figure: a plausible but not equivalent artifact found
+Old workflow artifact 11537006525 from run [37748373915](https://github.com/eklu654/Trading-Bot/actions/runs/37748373915) reports `baseline_10pct` at $3,270,343.84 from $5,000. It does **not** identify an additional anti-fakeout rule; the code at that revision uses unadjusted QQQ Close for signals and unadjusted TQQQ Close-to-close returns, not the current adjusted OHLC / close-to-next-open method. Another exploratory variant, `slow_18_target25`, reports $3,782,916.98 but is also selected from a full-period grid. Therefore this old $3.27M result is a candidate source of the remembered number, not a recovered or verified version of the user's remembered anti-fakeout strategy.
+
+### Updated next steps
+1. Preserve the same-input audit artifact/hash as the reference snapshot; do not compare runs from fresh data pulls as if the raw adjusted series were immutable.
+2. Recover the exact old anti-fakeout strategy/rule from the historical run that the user remembers, with particular attention to its code revision, price basis, and execution convention. Do not relabel `baseline_10pct` as that strategy.
+3. Evaluate the fixed MA/MACD/trend features against the historical failed/successful labels only with chronological separation; do not fit or select a rule on the same events used to report success.
+4. Keep all pre-2010 conclusions signal-only. No TQQQ balance may be attributed to 1971, 1973, or 1987.
