@@ -11,6 +11,7 @@ Immediate re-entry when QQQ closes back above DMA.
 from pathlib import Path
 import numpy as np, pandas as pd, yfinance as yf
 from causal_execution import next_open_equity
+from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"data"/"research"
@@ -20,15 +21,20 @@ END="2026-10-05"
 DMAS=[100,125,150,175,200,250]
 BELOW=[1.0,0.75,0.50,0.25,0.0]
 
-def dl(t):
-    x=yf.download(t,start=START,end=END,auto_adjust=False,progress=False,actions=False)
+def dl(t, start=START):
+    x=yf.download(t,start=start,end=END,auto_adjust=False,progress=False,actions=False)
     if isinstance(x.columns,pd.MultiIndex): x.columns=x.columns.get_level_values(0)
     x.index=pd.to_datetime(x.index).tz_localize(None)
     return x.rename(columns={"Open":"open","Close":"close","Adj Close":"adj_close"}).sort_index().dropna()
 
 def main():
-    q=dl("QQQ"); t=dl("TQQQ")
+    # QQQ starts before TQQQ so B0's running-low state is initialized from
+    # the full signal history; evaluation capital still begins on the shared
+    # post-250-DMA date below.
+    q=dl("QQQ",start="1999-03-10"); t=dl("TQQQ",start=START)
+    b0_signal=target_exposure(q.rename(columns={"adj_close":"Adj Close"}),"B0")
     x=q.join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
+    x["b0_signal"]=b0_signal.reindex(x.index)
     t_adj_open=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
     x["on"]=(t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
     x["in"]=(x.tqqq_adj_close/t_adj_open-1).fillna(0)
@@ -56,6 +62,7 @@ def main():
                      "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
 
     record("BUY_HOLD",0,1.0,np.ones(len(x)))
+    record("B0_SHOCK_RECOVERY",-1,np.nan,x.b0_signal.to_numpy(dtype=float))
     for dma in DMAS:
         ma=x[f"ma_{dma}"].to_numpy()
         above=(x.adj_close.to_numpy()>=ma)
