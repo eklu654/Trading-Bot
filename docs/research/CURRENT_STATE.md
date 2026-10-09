@@ -236,3 +236,10 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Full result table: [state ablation results](CANONICAL_STRUCTURAL_STATE_ABLATION_RESULTS_2026-10-09.md).
 - Actual-TQQQ results at the fixed representative setting: B0 $4.040M; original sticky overlay $727k; hard-nonsticky $892k; fully daily/non-sticky $1.355M. Max drawdown improves from -73.53% to between -57.81% and -60.49%, but all three overlays turn B0's +24.58% COVID window into roughly -8.6% to -9.9% and materially reduce long-run wealth.
 - Decision: sticky hard defense is not the only problem. Reject this structural matrix family and stop tuning its thresholds. Next step is episode attribution around B0 recovery decisions, especially COVID and 2022, before considering any narrowly scoped recovery-aware candidate.
+
+
+### Next step: interval attribution — 2026-10-09
+
+- Added a no-search attribution run to identify contiguous dates when the matrix overlay cuts exposure after B0 has returned to 100%, with leave-one-interval-out terminal-wealth counterfactuals.
+- Frozen representative settings; no threshold tuning. Report/plan: [CANONICAL_STRUCTURAL_OVERLAY_ATTRIBUTION_2026-10-09.md](CANONICAL_STRUCTURAL_OVERLAY_ATTRIBUTION_2026-10-09.md).
+- Workflow: `.github/workflows/canonical-structural-overlay-attribution.yml`; awaiting run artifact before adding conclusions.
