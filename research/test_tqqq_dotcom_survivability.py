@@ -31,7 +31,10 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
+try:
+    from .synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
+except ImportError:
+    from synthetic_b0_unified_survivability import synthetic_3x_legs_from_adjusted_prices
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
