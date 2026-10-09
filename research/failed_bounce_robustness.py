@@ -132,6 +132,12 @@ def main():
     signal = build_signal(len(t), events)
     r = daily_returns(t, signal)
     bh = daily_returns(t, np.ones(len(t)))
+    OUT.mkdir(parents=True, exist_ok=True)
+    # Persist exact aligned inputs and daily curves for reproducible reconciliation.
+    q.to_csv(OUT / "failed_bounce_frozen_qqq.csv", index_label="Date", float_format="%.12g")
+    t.to_csv(OUT / "failed_bounce_frozen_tqqq.csv", index_label="Date", float_format="%.12g")
+    pd.DataFrame({"Date": t.index, "signal_close": signal, "strategy_daily_return": r, "buy_hold_daily_return": bh,
+                  "strategy_equity": INITIAL * np.cumprod(1 + r), "buy_hold_equity": INITIAL * np.cumprod(1 + bh)}).to_csv(OUT / "failed_bounce_daily_equity.csv", index=False, float_format="%.12g")
 
     years = (t.index[-1] - t.index[0]).days / 365.25
     summary = []
