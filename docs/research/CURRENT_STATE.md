@@ -295,3 +295,12 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - The prior recovery-gated test kept exposure at 0% until the matrix cleared after a slow flagged recovery; this lost too much upside in 2022. The next experiment caps that wait at 3/5/10 sessions, with an 8-session fast-recovery exception held fixed.
 - Reentry still requires QQQ to be at least 10% above the current running low; any new low resets the pending wait.
 - Frozen plan: [CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md](CANONICAL_BOUNDED_RECOVERY_DELAY_2026-10-09.md). Workflow: `.github/workflows/canonical-bounded-recovery-delay.yml`. Results pending.
+
+
+### Long-history drawdown/recovery-rally diagnostic — 2026-10-09
+
+- Workflow passed: [run 37913801136](https://github.com/eklu654/Trading-Bot/actions/runs/37913801136); artifact ID `11607489248`, digest `e3433b3d57435e4c99ec16ecbdd845db6c7b298b201ef4418b1ada3aa0efd0b0`.
+- Report: [long-history diagnostic results](LONG_HISTORY_DRAWDOWN_RALLY_DIAGNOSTIC_RESULTS_2026-10-09.md).
+- S&P 500 signal-only sample, 1970-01-02 to 2026-10-07: 24 drawdown/recovery events, 12 failed, 9 successful, 3 censored. Failed events averaged 38.5 sessions low-to-recovery (median 31.5) versus 20.8 (median 16) for successful events.
+- 1987 is a clear counterexample to speed-only logic: recovery threshold occurred two sessions after the low, yet another -10% decline followed within three sessions. 2000–2002 produced two failed events with slow average recovery (34.5 sessions).
+- This is not the canonical QQQ event set, no TQQQ balance is computed, and the small retrospective sample cannot validate a trading rule. Use speed only as one hypothesis; any next test needs a causal confirmation signal and fast-rebound exception.
