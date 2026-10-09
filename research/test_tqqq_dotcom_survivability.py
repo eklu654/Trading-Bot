@@ -92,9 +92,9 @@ def build_synthetic(frame: pd.DataFrame) -> pd.DataFrame:
     synthetic_close = np.empty(len(out), dtype=float)
     synthetic_open[0] = INITIAL
     synthetic_close[0] = INITIAL
-    if len(out) > 1:
-        synthetic_open[1:] = synthetic_close[:-1] * (1.0 + overnight_3x[1:])
-        synthetic_close[1:] = synthetic_open[1:] * (1.0 + intraday_3x[1:])
+    for i in range(1, len(out)):
+        synthetic_open[i] = synthetic_close[i - 1] * (1.0 + overnight_3x[i])
+        synthetic_close[i] = synthetic_open[i] * (1.0 + intraday_3x[i])
     out["synthetic_tqqq_open"] = synthetic_open
     out["synthetic_tqqq_close"] = synthetic_close
     return out
