@@ -58,7 +58,7 @@ The episode-contribution artifact compares each full candidate against a counter
 
 The 2022 episode lasted 203 sessions, of which 110 were incremental defensive sessions and 93 overlapped the baseline's own shock defense. It is the dominant positive episode for both candidates. Several 2018–2019 whipsaw episodes were negative, with larger opportunity costs at 50% than at 75% exposure.
 
-This is an important warning: the whole-period net advantage over B0 is small compared with the conditional contribution attributed to the 2022 defense episode. Since these effects are non-additive, this does not prove that the entire advantage is literally caused by one event, but it makes concentration risk a central unresolved concern. The protocol's diversification-across-episodes gate is **not yet demonstrated**.
+This is an important warning: the whole-period net advantage over B0 is small compared with the conditional contribution attributed to the 2022 defense episode. In the leave-one-episode-out counterfactual, removing that 2022 overlay episode reduces F50's terminal balance to about $3.022M and F75's to about $3.511M, both below B0's roughly $4.040M. Because episode effects are non-additive, this is not a causal decomposition of profits; it is nevertheless direct evidence that the apparent overlay advantage is highly concentrated in one episode. The protocol's diversification-across-episodes gate **fails in this retrospective screen**.
 
 ## 5. Chronological segment trade-off
 
@@ -75,7 +75,7 @@ The figures make the trade-off explicit: F50 buys stronger defense in the 2022 t
 - **B0:** remains the frozen control.
 - **F00:** reject as a practical candidate because it fails the wealth-retention gate.
 - **F25:** do not advance; it narrowly misses the 95% wealth gate after 25 bp costs.
-- **F50/F75:** retain as development candidates only. They pass the numerical wealth/downside screen, but episode concentration and historical selection bias remain unresolved. No winner selected.
+- **F50/F75:** do not advance under the frozen gate. They pass the numerical wealth/downside screen, but fail the episode-diversification gate: removing the 2022 overlay episode makes both finish below B0 in the corresponding counterfactual. Keep their artifacts as diagnostic evidence; any changed rule is a new development candidate and cannot be declared validated on this same sample. No winner selected.
 - **No AI, paper trading, or broad indicator search** until this compact comparison has been audited and the strategy decision gate is explicitly revisited.
 
 The full daily curve, exposure timeline, event ledger, Fed/DMA transitions, cost sensitivity, and hashes are preserved in the workflow artifact. The entire 2010–2026 sample has already been inspected; these are retrospective development findings, not out-of-sample validation.
