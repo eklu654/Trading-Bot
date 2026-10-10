@@ -62,3 +62,11 @@ Any new strategy modification after examining these same dates is development da
 - Classifier, one-session lag, and overlay state machine were checked against `research/canonical_shock_recovery_fed_dma_overlay.py`. Diagnostic classifies the full FRED history before mapping, unlike the portfolio script's start-date clipping; this boundary difference does not affect the 2015/2016 comparison dates.
 - Report: [targeted Fed effective-date signal diagnostic](FED_2015_2016_EFFECTIVE_DATE_SIGNAL_DIAGNOSTIC_2026-10-10.md).
 - Decision unchanged: keep B0 as the control, retain the conservative one-session lag and current Fed source convention, do not promote the Fed/200-DMA overlay, and do not authorize paper/live trading.
+
+## Actual-TQQQ partial-DMA matrix audit
+
+- Inspected completed workflow [run 38089556724](https://github.com/eklu654/Trading-Bot/actions/runs/38089556724), artifact [11682898823](https://github.com/eklu654/Trading-Bot/actions/runs/38089556724/artifacts/11682898823). Manifest status PASS; frozen input SHA-256 `8b2b45074b9608ecd08ee2bb2242d4f8ebd61480ac2bf00c653cf2d29c1bd35d`; 4,186 rows; common evaluation 2011-02-07–2026-10-02; $5,000 reset after 250-session warmup.
+- Tested 100/125/150/175/200/250-session DMAs and 100/75/50/25/0% exposure below DMA at 0/10/25/50 bp, combining DMA exposure with B0 by taking the minimum exposure. Close signals execute at next open.
+- Best wealth-retaining reduced-exposure candidate at 25 bp was 150-DMA/75% below: $1.374M vs B0 $1.732M (79.3% retained), max DD -66.16% vs -73.80% (7.64 pp improvement). A more defensive 175-DMA/25% candidate reached -48.11% max DD but ended at only $658k (38.0% of B0).
+- No partial-DMA candidate meets the existing >=95% of B0 terminal-wealth gate at 25 bp. Decision: reject this simple overlay family; do not tune further parameters on this same matrix.
+- Report: [actual-TQQQ partial-DMA matrix audit](ACTUAL_TQQQ_PARTIAL_DMA_MATRIX_AUDIT_2026-10-10.md). This is retrospective, not an untouched holdout. B0 remains the working control; no paper/live trading is authorized.
