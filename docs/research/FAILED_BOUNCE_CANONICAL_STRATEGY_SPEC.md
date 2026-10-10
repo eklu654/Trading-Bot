@@ -114,3 +114,32 @@ Include sideways/choppy periods and quick recoveries where defensive rules can s
 - 2026-10-09: Retracted the false QQQ/TQQQ row-index concern after confirming both scripts align dates.
 - 2026-10-09: Added aligned input and daily-equity exports; corrected workflow artifact paths. Frozen-input daily-curve reconciliation remains pending.
 - User decision: proceed using ~$4.04M as the working result and resume robustness/refinement research rather than blocking all progress on remaining audit work.
+
+## Audit checkpoint — failed-bounce structural research, 2026-10-10
+
+Latest commit checked: `da050c046b86f805d790e48680bc77c647ddaa7b`.
+
+All five relevant runs succeeded on this same commit:
+- [Research tests 38036168898](https://github.com/eklu654/Trading-Bot/actions/runs/38036168898)
+- [Feature audit 38036168915](https://github.com/eklu654/Trading-Bot/actions/runs/38036168915)
+- [Independent audit 38036168911](https://github.com/eklu654/Trading-Bot/actions/runs/38036168911)
+- [Structural matrix 38036168926](https://github.com/eklu654/Trading-Bot/actions/runs/38036168926)
+- [Robustness/cost stress 38036168962](https://github.com/eklu654/Trading-Bot/actions/runs/38036168962)
+- [Aggregate structural matrix 38036169020](https://github.com/eklu654/Trading-Bot/actions/runs/38036169020)
+
+### Confirmed results
+
+- Independent audit reproduces the canonical result: $4,040,315 final balance, 49.4874% CAGR, -73.5343% maximum drawdown. TQQQ buy-and-hold: $2,094,669, 43.7047% CAGR, -81.6598% max drawdown. Both use the same live-TQQQ aligned window and initial $5,000.
+- Canonical signal/execution ledger has nine QQQ shock/recovery events. Every shock signal is zero exposure at the next open; every +10% recovery signal restores exposure at the next open.
+- Structural signal stats for a QQQ -3% shock sample: 30 events, 29 resolved; 8 negative 60-session outcomes among the 29 resolved (27.6%). Structural score >=7 flagged 17 events, 4 of which had negative 60-session outcomes (23.5%). That threshold did not improve the observed failure rate; this small event sample does not support a classifier or a hard re-entry veto.
+- Best canonical structural-matrix rows include the unchanged baseline at $4.040M / -73.53% drawdown and a family of structural overlays near $3.763M / -70.23% drawdown. The overlay buys about 3.3 percentage points of max-drawdown improvement at the cost of about $277K (6.9%) in terminal wealth. This is a trade-off, not a clear win, and no candidate is promoted.
+- Counterfactual event contributions are mixed. The baseline defense helped materially in 2018 Q4, February–March 2020, and 2022; it hurt terminal wealth during the June 2020, September 2020, April 2025, and June–August 2026 episodes. Contributions interact through compounding and must not be summed as independent additive gains.
+- Robustness report's period block: 2025-current canonical return factor 1.002 versus buy-and-hold 1.144, showing the baseline's recent opportunity cost; in 2022–2024 canonical return factor 0.423 versus buy-and-hold -0.014, showing strong relative defense in that block. Cost stress is monotonic but not catastrophic: $4.040M at 0 bps, $3.964M at 10 bps, $3.853M at 25 bps, $3.673M at 50 bps.
+
+### Decision
+
+**WORKING baseline retained; structural feature veto UNRESOLVED / not promoted.** The baseline remains superior on the main objective of terminal wealth versus buy-and-hold in the tested live-TQQQ window, and reduces maximum drawdown relative to buy-and-hold, but -73.5% is still an extreme drawdown. The tested structural score threshold does not identify failed recoveries reliably enough to justify slower re-entry. Do not add it to the trading rule.
+
+### Next action
+
+Proceed with the predeclared baseline stress scorecard and slow-bear failure audit. Identify missed gradual declines mechanically from QQQ peak-to-trough drawdown and shock triggers, then report exposure and leveraged loss accumulated before the first -4.5% daily shock. Keep the nine-event feature table diagnostic only. Do not launch another broad indicator/threshold search or promote a rule on the basis of 2022 alone.
