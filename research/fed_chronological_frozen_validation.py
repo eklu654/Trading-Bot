@@ -82,6 +82,20 @@ if __name__=="__main__":
  done=e[e.recovered].copy(); s=done.groupby(["era","retrospective_warning_label"],as_index=False).agg(events=("recovery_date","size"),median_fwd120=("fwd_120d","median"),median_duration=("shock_to_recovery_td","median"),complete_120d_horizons=("fwd_120d","count"))
  s["negative_share_120d"]=s.apply(lambda x: np.nan if x.events==0 else (done.loc[(done.era==x.era)&(done.retrospective_warning_label==x.retrospective_warning_label),"fwd_120d"]<0).mean(),axis=1)
  s.to_csv(OUT/"fed_chronological_frozen_summary.csv",index=False)
+ def_hash=lambda x: __import__('hashlib').sha256(x.to_csv(index=True,date_format='%Y-%m-%d',float_format='%.12g').encode()).hexdigest()
+ ep=OUT/'fed_chronological_frozen_event_ledger.csv'; sp=OUT/'fed_chronological_frozen_summary.csv'
+ manifest={'status':'PASS','classification':'retrospective episode diagnostic; not a trading signal or TQQQ backtest',
+  'requested_start':START,'requested_end_exclusive':END,'ndx_rows':int(len(px)),'ndx_first':str(px.index.min().date()),
+  'ndx_last':str(px.index.max().date()),'ndx_sha256_normalized':def_hash(px.to_frame('close')),
+  'fed_rows':int(len(fr)),'fed_first':str(fr.index.min().date()),'fed_last':str(fr.index.max().date()),
+  'fed_sha256_normalized':def_hash(fr.to_frame('target')),'event_rows':int(len(e)),
+  'completed_episodes':int(e.recovered.sum()),'right_censored_episodes':int(e.right_censored.sum()),
+  'complete_60d_horizons':int(e.fwd_60d.notna().sum()),'complete_120d_horizons':int(e.fwd_120d.notna().sum()),
+  'complete_252d_horizons':int(e.fwd_252d.notna().sum()),'python':platform.python_version(),
+  'pandas':pd.__version__,'numpy':np.__version__,'yfinance':yf.__version__,'requests':requests.__version__,
+  'event_ledger_sha256':hashlib.sha256(ep.read_bytes()).hexdigest(),'summary_sha256':hashlib.sha256(sp.read_bytes()).hexdigest()}
+ (OUT/'fed_chronological_frozen_manifest.json').write_text(json.dumps(manifest,indent=2)+'\\n',encoding='utf-8')
+ print('MANIFEST'); print(json.dumps(manifest,indent=2))
  print("FROZEN RULE: aggressive >=50bp/63d AND shock-to-+10% >30 trading days")
  print("\nALL EVENTS"); print(e.to_string(index=False))
  print("\nSUMMARY"); print(s.to_string(index=False))
