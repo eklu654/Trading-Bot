@@ -53,3 +53,12 @@ Any new strategy modification after examining these same dates is development da
 - Report: [Fed-state timing sensitivity result](FED_STATE_TIMING_SENSITIVITY_RESULT_2026-10-10.md). Artifacts: [reconciliation run 38042891664](https://github.com/eklu654/Trading-Bot/actions/runs/38042891664) and [timing run 38043580560](https://github.com/eklu654/Trading-Bot/actions/runs/38043580560).
 - Decision: retain B0, retain the existing one-session Fed lag, and do not optimize the paused-Fed/200-DMA candidate. Its drawdown did not improve in this test and its terminal-wealth penalty was about 28% at zero costs.
 
+## Targeted 2015/2016 announcement-versus-effective-date check
+
+- Workflow [run 38089561632](https://github.com/eklu654/Trading-Bot/actions/runs/38089561632) completed successfully; artifact [11683576764](https://github.com/eklu654/Trading-Bot/actions/runs/38089561632/artifacts/11683576764).
+- Changed only the FRED announcement-date target observations for 2015-12-16 (0.375% -> prior 0.125%) and 2016-12-14 (0.625% -> prior 0.375%), leaving the documented effective-date observations intact.
+- Compared 4,216 QQQ sessions from 2010-01-04 through 2026-10-07. Fed-state labels changed on four dates (2015-12-17, 2016-03-16, 2016-12-15, 2017-03-15), but the sticky Fed-paused/200-DMA overlay exposure changed on **zero** sessions.
+- Because no candidate position changes, no portfolio backtest was run. This is a signal-level result, not a return estimate.
+- Classifier, one-session lag, and overlay state machine were checked against `research/canonical_shock_recovery_fed_dma_overlay.py`. Diagnostic classifies the full FRED history before mapping, unlike the portfolio script's start-date clipping; this boundary difference does not affect the 2015/2016 comparison dates.
+- Report: [targeted Fed effective-date signal diagnostic](FED_2015_2016_EFFECTIVE_DATE_SIGNAL_DIAGNOSTIC_2026-10-10.md).
+- Decision unchanged: keep B0 as the control, retain the conservative one-session lag and current Fed source convention, do not promote the Fed/200-DMA overlay, and do not authorize paper/live trading.
