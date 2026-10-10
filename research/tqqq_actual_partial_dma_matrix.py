@@ -8,7 +8,7 @@ diagnostic rows, not candidate strategies.
 """
 from pathlib import Path
 import numpy as np, pandas as pd, yfinance as yf
-from causal_execution import next_open_equity
+from causal_execution import next_open_cost_equity
 from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -18,6 +18,7 @@ START="2010-01-01"
 END="2026-10-05"
 DMAS=[100,125,150,175,200,250]
 BELOW=[1.0,0.75,0.50,0.25,0.0]
+COSTS=(0,10,25,50)
 
 def dl(t, start=START):
     x=yf.download(t,start=start,end=END,auto_adjust=False,progress=False,actions=False)
@@ -49,26 +50,29 @@ def main():
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
 
-    def record(label,dma,below,sig):
-        eq=next_open_equity(sig,x.on,x["in"],INITIAL)
+    def record(label,dma,below,sig,cost_bps):
+        eq=next_open_cost_equity(sig,x.on,x["in"],cost_bps,INITIAL)
         dd=eq/np.maximum.accumulate(eq)-1
         rows.append({"strategy":label,"dma":dma,"below_exposure":below,
+                     "cost_bps_per_exposure_change":cost_bps,
                      "evaluation_start":x.index[0].date().isoformat(),
                      "evaluation_end":x.index[-1].date().isoformat(),
                      "final":float(eq[-1]),
                      "cagr":(float(eq[-1])/INITIAL)**(1/years)-1,
                      "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
 
-    record("BUY_HOLD",0,1.0,np.ones(len(x)))
-    record("B0_SHOCK_RECOVERY",-1,np.nan,x.b0_signal.to_numpy(dtype=float))
-    for dma in DMAS:
-        ma=x[f"ma_{dma}"].to_numpy()
-        above=(x.adj_close.to_numpy()>=ma)
-        for below in BELOW:
-            sig=np.where(above,1.0,below)
-            combined=np.minimum(x.b0_signal.to_numpy(dtype=float),sig)
-            record("B0_PLUS_DMA_PARTIAL",dma,below,combined)
-            record("DMA_ONLY_DIAGNOSTIC",dma,below,sig)
+    for cost_bps in COSTS:
+        record("BUY_HOLD",0,1.0,np.ones(len(x)),cost_bps)
+        b0=x.b0_signal.to_numpy(dtype=float)
+        record("B0_SHOCK_RECOVERY",-1,np.nan,b0,cost_bps)
+        for dma in DMAS:
+            ma=x[f"ma_{dma}"].to_numpy()
+            above=(x.adj_close.to_numpy()>=ma)
+            for below in BELOW:
+                sig=np.where(above,1.0,below)
+                combined=np.minimum(b0,sig)
+                record("B0_PLUS_DMA_PARTIAL",dma,below,combined,cost_bps)
+                record("DMA_ONLY_DIAGNOSTIC",dma,below,sig,cost_bps)
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     OUT.mkdir(parents=True,exist_ok=True)
