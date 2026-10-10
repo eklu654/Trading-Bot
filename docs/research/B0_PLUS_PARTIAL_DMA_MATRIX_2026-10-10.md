@@ -13,9 +13,9 @@ The earlier partial-DMA matrix tested DMA exposure rules as standalone strategie
 
 ## Validation
 
-- Synthetic matrix run: [38032784211](https://github.com/eklu654/Trading-Bot/actions/runs/38032784211), success; common evaluation window 2000-03-03 to 2026-10-02, 6,686 observations, post-249-session warm-up.
-- Actual-TQQQ cost-stress run: [38032784174](https://github.com/eklu654/Trading-Bot/actions/runs/38032784174), success; common evaluation window 2011-02-07 to 2026-10-02, $5,000 reset at the 250-session warm-up.
-- Research tests: [38032877292](https://github.com/eklu654/Trading-Bot/actions/runs/38032877292), success, **150 passed, 1 warning**.
+- Synthetic matrix run: [38033073261](https://github.com/eklu654/Trading-Bot/actions/runs/38033073261), success; common evaluation window 2000-03-03 to 2026-10-02, 6,686 observations, post-249-session warm-up.
+- Actual-TQQQ cost-stress run: [38033073266](https://github.com/eklu654/Trading-Bot/actions/runs/38033073266), success; common evaluation window 2011-02-07 to 2026-10-02, $5,000 reset at the 250-session warm-up.
+- Research tests: [38033073292](https://github.com/eklu654/Trading-Bot/actions/runs/38033073292), success, **151 passed, 1 warning**.
 - Earlier assertion-only test failure on run [38032468104](https://github.com/eklu654/Trading-Bot/actions/runs/38032468104) was caused by a brittle test expecting the old inline expression. The test was corrected to match the factored `b0` variable; the subsequent test run passed. No strategy-code defect was indicated by that failure.
 
 ## Synthetic 3x-QQQ proxy: long-history survivability
@@ -24,22 +24,22 @@ The proxy is a daily-reset 3x QQQ return approximation before TQQQ's 2010 incept
 
 | Strategy | Cost | Ending balance | Max drawdown |
 |---|---:|---:|---:|
-| B0 alone | 0 bps | $253,406 | -99.344% |
-| B0 alone | 10 bps | $236,503 | -99.376% |
-| B0 alone | 25 bps | $213,210 | -99.421% |
-| B0 alone | 50 bps | $179,312 | -99.490% |
-| B0 + 250-DMA / 25% below DMA | 0 bps | $905,730 | -85.986% |
-| B0 + 250-DMA / 25% below DMA | 10 bps | $797,270 | -86.270% |
-| B0 + 250-DMA / 25% below DMA | 25 bps | $658,323 | -86.687% |
-| B0 + 250-DMA / 25% below DMA | 50 bps | $478,213 | -87.378% |
-| B0 + 175-DMA / 25% below DMA | 0 bps | $685,998 | -95.019% |
-| B0 + 175-DMA / 25% below DMA | 10 bps | $588,642 | -95.207% |
-| B0 + 175-DMA / 25% below DMA | 25 bps | $467,790 | -95.476% |
-| B0 + 175-DMA / 25% below DMA | 50 bps | $318,764 | -95.892% |
-| B0 + 150-DMA / 25% below DMA | 0 bps | $547,730 | -95.393% |
-| B0 + 150-DMA / 25% below DMA | 10 bps | $457,472 | -95.640% |
-| B0 + 150-DMA / 25% below DMA | 25 bps | $349,104 | -95.985% |
-| B0 + 150-DMA / 25% below DMA | 50 bps | $222,322 | -96.502% |
+| B0 alone | 0 bps | $253,405 | -99.344% |
+| B0 alone | 10 bps | $236,502 | -99.376% |
+| B0 alone | 25 bps | $213,209 | -99.421% |
+| B0 alone | 50 bps | $179,312 | -99.489% |
+| B0 + 250-DMA / 25% below DMA | 0 bps | $905,733 | -85.986% |
+| B0 + 250-DMA / 25% below DMA | 10 bps | $797,273 | -86.270% |
+| B0 + 250-DMA / 25% below DMA | 25 bps | $658,325 | -86.687% |
+| B0 + 250-DMA / 25% below DMA | 50 bps | $478,215 | -87.378% |
+| B0 + 175-DMA / 25% below DMA | 0 bps | $686,007 | -95.019% |
+| B0 + 175-DMA / 25% below DMA | 10 bps | $588,649 | -95.207% |
+| B0 + 175-DMA / 25% below DMA | 25 bps | $467,796 | -95.476% |
+| B0 + 175-DMA / 25% below DMA | 50 bps | $318,768 | -95.892% |
+| B0 + 150-DMA / 25% below DMA | 0 bps | $547,731 | -95.393% |
+| B0 + 150-DMA / 25% below DMA | 10 bps | $457,473 | -95.640% |
+| B0 + 150-DMA / 25% below DMA | 25 bps | $349,105 | -95.985% |
+| B0 + 150-DMA / 25% below DMA | 50 bps | $222,323 | -96.502% |
 
 **2000-bear-market survivability answer:** in this full proxy run, B0's worst drawdown is -99.344% at zero costs and -99.376% at 10 bps, so it does **not** cross -99.9% in the tested path. However, it comes within roughly 0.6 percentage points of total loss; that is economically near-ruin even though the ending balance later recovers. The combined 250-DMA / 25% candidate has materially better proxy survivability, but its pre-2010 results remain synthetic.
 
@@ -51,18 +51,18 @@ The actual-TQQQ matrix uses 2011-02-07 through 2026-10-02 and the same $5,000 re
 
 | Strategy | Cost | Ending balance | Max drawdown |
 |---|---:|---:|---:|
-| B0 alone | 0 bps | $1,816,681 | -73.534% |
-| B0 alone | 10 bps | $1,782,473 | -73.640% |
-| B0 alone | 25 bps | $1,732,303 | -73.798% |
-| B0 alone | 50 bps | $1,651,647 | -74.060% |
-| B0 + 150-DMA / 75% below DMA | 0 bps | $1,517,184 | -65.708% |
-| B0 + 150-DMA / 75% below DMA | 10 bps | $1,458,409 | -65.887% |
-| B0 + 150-DMA / 75% below DMA | 25 bps | $1,374,436 | -66.155% |
-| B0 + 150-DMA / 75% below DMA | 50 bps | $1,244,963 | -66.597% |
-| B0 + 175-DMA / 75% below DMA | 0 bps | $1,485,550 | -64.173% |
-| B0 + 175-DMA / 75% below DMA | 10 bps | $1,432,291 | -64.307% |
-| B0 + 175-DMA / 75% below DMA | 25 bps | $1,355,909 | -64.507% |
-| B0 + 175-DMA / 75% below DMA | 50 bps | $1,237,427 | -64.839% |
+| B0 alone | 0 bps | $1,816,679 | -73.534% |
+| B0 alone | 10 bps | $1,782,471 | -73.640% |
+| B0 alone | 25 bps | $1,732,301 | -73.798% |
+| B0 alone | 50 bps | $1,651,645 | -74.060% |
+| B0 + 150-DMA / 75% below DMA | 0 bps | $1,517,183 | -65.708% |
+| B0 + 150-DMA / 75% below DMA | 10 bps | $1,458,408 | -65.887% |
+| B0 + 150-DMA / 75% below DMA | 25 bps | $1,374,435 | -66.155% |
+| B0 + 150-DMA / 75% below DMA | 50 bps | $1,244,962 | -66.597% |
+| B0 + 175-DMA / 75% below DMA | 0 bps | $1,485,548 | -64.172% |
+| B0 + 175-DMA / 75% below DMA | 10 bps | $1,432,289 | -64.307% |
+| B0 + 175-DMA / 75% below DMA | 25 bps | $1,355,908 | -64.507% |
+| B0 + 175-DMA / 75% below DMA | 50 bps | $1,237,425 | -64.839% |
 
 At 10 bps, the 150-DMA / 75% candidate retains about 81.8% of B0's ending wealth and improves maximum drawdown by about 7.75 percentage points. The 175-DMA / 75% candidate retains about 80.4% of B0's ending wealth and improves maximum drawdown by about 9.33 points. At 50 bps, both still show a meaningful drawdown reduction, but with lower terminal wealth than B0.
 
