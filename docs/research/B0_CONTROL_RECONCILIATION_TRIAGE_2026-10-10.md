@@ -62,3 +62,19 @@ The code inspection establishes different windows and costs. It does **not** yet
 - Workflow `.github/workflows/tqqq-dotcom-survivability.yml` updated to run the reconciliation and archive its input, summary, paths, event ledger, and manifest.
 - Package-import compatibility fixed in `research/tqqq_canonical_same_input_reconciliation.py`.
 - The common 2026-10-02 cutoff view was added so cost and date-window effects can be compared on identical frozen inputs.
+
+
+## Same-end-date reconciliation result — 2026-10-10
+
+- Successful full experiment workflow: [run 38030890249](https://github.com/eklu654/Trading-Bot/actions/runs/38030890249), success; it ran the cutoff-capable reconciliation script and uploaded artifact `11661993293`. The frozen input hash for this run was `a1c07e6cc3696a5b0f293a39ba73a42ee8e4412d0b1156d6715ca74a5cd12885`.
+- Test suite: [run 38030952802](https://github.com/eklu654/Trading-Bot/actions/runs/38030952802), **142 passed, 1 warning**. The first cutoff-view test had a fixture/path-set assertion error; that assertion was corrected. The manifest was subsequently updated to enumerate the six summary views, and its final syntax/test rerun is tracked separately.
+- On the identical frozen input, with the identical B0 signal and identical last observation date of 2026-10-02:
+  - At 0 bps, inception-start B0 ends at **$3,914,205**; resetting $5,000 at the 250-session warm-up date ends at **$1,816,680**.
+  - At 10 bps, inception-start B0 ends at **$3,840,500**; resetting $5,000 at the warm-up date ends at **$1,782,472**.
+  - The warm-up-carried-equity view ends at the same amount as inception-start B0, because it preserves the equity accumulated before the warm-up date rather than resetting capital.
+- The warm-up date is 2011-02-07. At that date, the no-cost inception-grown equity is already **$10,769**, compared with a newly reset $5,000. This is why the warm-up-reset run ends at roughly half the inception-start run: it discards the growth accumulated during the first year.
+- On the 2026-10-02 window, the $1,782,472 at 10 bps exactly matches the hybrid scripts' B0 control. This materially resolves the apparent $4.04M-versus-$1.78M mismatch: the headline numbers used different starting dates/capital initialization, costs, and end dates. It is not evidence of a B0 signal/execution code defect.
+- The latest canonical same-input run independently reproduced $4,040,316 from inception through 2026-10-07, with shared and independent execution engines agreeing exactly (zero max absolute daily-return and equity differences). The $4.04M result is reproducible under its stated no-cost, inception-start assumptions.
+
+## Decision
+The balance gap is now explained on a controlled same-input basis. Keep the evaluation basis explicit in every future table: (a) inception-start equity, or (b) fresh $5,000 at 250-session warm-up; state cost assumption and last observation date. Do not compare those terminal balances without this metadata. This reconciliation does not validate the strategy for live trading; it only resolves the accounting/window comparison.
