@@ -14,21 +14,21 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 try:
-    from .causal_execution import next_open_equity
+    from .causal_execution import next_open_cost_equity
     from .tqqq_three_layer_event_attribution import build, INITIAL
     from .reentry_isolation import target_exposure
 except ImportError:
-    from causal_execution import next_open_equity
+    from causal_execution import next_open_cost_equity
     from tqqq_three_layer_event_attribution import build, INITIAL
     from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
-DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]
+DMAS=[100,125,150,175,200,250]; BELOW=[1.0,0.75,0.50,0.25,0.0]; COSTS=(0,10,25,50)
 
 
-def equity(x,sig):
+def equity(x,sig,cost_bps=0):
     w=np.asarray(sig,float)
-    eq=next_open_equity(w,x.on3,x.in3,INITIAL)
+    eq=next_open_cost_equity(w,x.on3,x.in3,cost_bps,INITIAL)
     dd=eq/np.maximum.accumulate(eq)-1
     return float(eq[-1]),float(dd.min()),float(w.mean())
 
@@ -64,23 +64,25 @@ def run_matrix(full):
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
 
-    def record(label,dma,below,sig):
-        final,dd,exp=equity(x,sig)
+    def record(label,dma,below,sig,cost_bps):
+        final,dd,exp=equity(x,sig,cost_bps)
         rows.append({"strategy":label,"dma":dma,"below_exposure":below,
+                     "cost_bps_per_exposure_change":cost_bps,
                      "evaluation_start":x.index[0].date().isoformat(),
                      "evaluation_end":x.index[-1].date().isoformat(),
                      "observations":len(x),"starting_balance":INITIAL,
                      "final":final,"cagr":(final/INITIAL)**(1/years)-1,
                      "max_dd":dd,"avg_exposure":exp})
 
-    record("B0_SHOCK_RECOVERY",-1,np.nan,b0)
-    record("synthetic_3x_qqq_buy_hold",0,1.0,np.ones(len(x),dtype=float))
-    for dma in DMAS:
-        for below in BELOW:
-            dma_signal = signals[(dma,below)][start:]
-            combined = combine_b0_and_dma(b0, dma_signal)
-            record("B0_PLUS_DMA_PARTIAL_EXPOSURE",dma,below,combined)
-            record("DMA_ONLY_DIAGNOSTIC",dma,below,dma_signal)
+    for cost_bps in COSTS:
+        record("B0_SHOCK_RECOVERY",-1,np.nan,b0,cost_bps)
+        record("synthetic_3x_qqq_buy_hold",0,1.0,np.ones(len(x),dtype=float),cost_bps)
+        for dma in DMAS:
+            for below in BELOW:
+                dma_signal = signals[(dma,below)][start:]
+                combined = combine_b0_and_dma(b0, dma_signal)
+                record("B0_PLUS_DMA_PARTIAL_EXPOSURE",dma,below,combined,cost_bps)
+                record("DMA_ONLY_DIAGNOSTIC",dma,below,dma_signal,cost_bps)
     return pd.DataFrame(rows).sort_values("final",ascending=False),x.index[0],x.index[-1]
 
 
