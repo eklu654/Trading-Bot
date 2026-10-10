@@ -78,9 +78,9 @@ At 10 bps, the 150-DMA / 75% candidate retains about 81.8% of B0's ending wealth
 
 The matrix now emits separate period summaries and explicit full-window maximum-drawdown peak/trough dates. Period returns are rebased to $5,000 at the start of each period; they are **not chained across periods**. This is intentional for era comparison, and must not be confused with the full-window terminal balance.
 
-- Latest synthetic matrix run: [38032784211](https://github.com/eklu654/Trading-Bot/actions/runs/38032784211), success; artifact includes both full-window matrix and period CSV. Artifact ID `11662267386`, ZIP SHA-256 `cca7835512b80564d0676cf366c2108aea90abc926a6a0e0e18fb1e89616555a`.
-- Latest actual-TQQQ matrix run: [38032784174](https://github.com/eklu654/Trading-Bot/actions/runs/38032784174), success; artifact includes both full-window matrix and period CSV. Artifact ID `11662158391`, ZIP SHA-256 `eed731bb4d8adae0e0f8c0f117b5efcaf1fe75eead679614701c5f4711d4c86f`.
-- Latest research tests after the matrix-period contract fix: [38032877292](https://github.com/eklu654/Trading-Bot/actions/runs/38032877292), success, **150 passed, 1 warning**.
+- Latest synthetic matrix run: [38033073261](https://github.com/eklu654/Trading-Bot/actions/runs/38033073261), success; artifact ID `11663241877`, ZIP SHA-256 `74a0eed85943992a5affbb30eed3086bf36acff710932b3a9ee8911ab42963f4`. Artifact includes frozen input, full-window matrix, period CSV, and manifest. Frozen-input SHA-256: `882fbed45c55f0aa0694b28e58dd1ddf4ced36f609a3b363d85f6a58a4efa944`; matrix SHA-256: `e71bdf6e0332c498ef57737e907deba32aca950e9df0b08c7206901b87f0b417`; period SHA-256: `141005972f54b7f4ec7cdec7350189bbf249c751ca87253a668eb9f320a8fcd0`. Frozen input: 6,935 rows.
+- Latest actual-TQQQ matrix run: [38033073266](https://github.com/eklu654/Trading-Bot/actions/runs/38033073266), success; artifact ID `11663067050`, ZIP SHA-256 `6248c3c6aabf614079d19bc117a661c8406ca3aef9cf35c27277681be0ccff78`. Artifact includes frozen input, full-window matrix, period CSV, and manifest. Frozen-input SHA-256: `42ee24b2060d4d7b67308c030fc58d6fd72dc48b36053937db24349588f7708c`; matrix SHA-256: `14792062a0e2c6d29ca868fc89a1d286f7f7da9ea900d93a8c30461564ae6669`; period SHA-256: `012c8bc31d8db14b280f26027f23693ba84d313dc431610816b10f74802ec687`. Frozen input: 4,186 rows.
+- Latest research tests after adding frozen-input manifests: [38033073292](https://github.com/eklu654/Trading-Bot/actions/runs/38033073292), success, **151 passed, 1 warning**.
 
 ### Dot-com bear and maximum-drawdown timing
 
