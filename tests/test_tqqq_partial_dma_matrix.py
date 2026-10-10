@@ -40,4 +40,4 @@ def test_actual_tqqq_matrix_also_tests_b0_combinations():
     source = Path("research/tqqq_actual_partial_dma_matrix.py").read_text()
     assert '"B0_PLUS_DMA_PARTIAL"' in source
     assert '"DMA_ONLY_DIAGNOSTIC"' in source
-    assert "np.minimum(x.b0_signal.to_numpy(dtype=float),sig)" in source
+    assert "np.minimum(b0,sig)" in source
