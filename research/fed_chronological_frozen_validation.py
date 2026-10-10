@@ -74,15 +74,15 @@ def era(d):
  if d<pd.Timestamp("2020-01-01"): return "2008-2019"
  return "2020-2026"
 if __name__=="__main__":
- OUT.mkdir(parents=True,exist_ok=True); e=ledger(market(),fed()); e["era"]=e.recovery_date.map(era)
- e["outcome_120"]=np.where(e.fwd_120d<0,"negative","nonnegative")
- e.to_csv(OUT/"fed_chronological_frozen_event_ledger.csv",index=False)
- s=e.groupby(["era","warning_rule"],as_index=False).agg(events=("recovery_date","size"),median_fwd120=("fwd_120d","median"),median_duration=("shock_to_recovery_td","median"))
- s["negative_share_120d"]=s.apply(lambda x: np.nan if x.events==0 else (e.loc[(e.era==x.era)&(e.warning_rule==x.warning_rule),"fwd_120d"]<0).mean(),axis=1)
+ OUT.mkdir(parents=True,exist_ok=True); px=market(); fr=fed(); e=ledger(px,fr); e["era"]=e.episode_end_date.map(era)
+ e["outcome_120"]=np.where(e.fwd_120d.isna(),"censored_horizon",np.where(e.fwd_120d<0,"negative","nonnegative"))
+ e.to_csv(OUT/"fed_chronological_frozen_event_ledger.csv",index=False,date_format="%Y-%m-%d")
+ done=e[e.recovered].copy(); s=done.groupby(["era","retrospective_warning_label"],as_index=False).agg(events=("recovery_date","size"),median_fwd120=("fwd_120d","median"),median_duration=("shock_to_recovery_td","median"),complete_120d_horizons=("fwd_120d","count"))
+ s["negative_share_120d"]=s.apply(lambda x: np.nan if x.events==0 else (done.loc[(done.era==x.era)&(done.retrospective_warning_label==x.retrospective_warning_label),"fwd_120d"]<0).mean(),axis=1)
  s.to_csv(OUT/"fed_chronological_frozen_summary.csv",index=False)
  print("FROZEN RULE: aggressive >=50bp/63d AND shock-to-+10% >30 trading days")
  print("\nALL EVENTS"); print(e.to_string(index=False))
  print("\nSUMMARY"); print(s.to_string(index=False))
- print("\nCURRENT FROZEN WARNING-HIT EVENTS"); print(e[e.warning_rule].to_string(index=False))
+ print("\nCURRENT FROZEN WARNING-HIT EVENTS"); print(e[e.retrospective_warning_label].to_string(index=False))
  print("\nEXPLORATORY PERSISTENT-TIGHTENING CANDIDATE (NOT FROZEN)"); print(e[e.candidate_persistent_tightening].to_string(index=False))
  print("\nEXPLORATORY CANDIDATE SUMMARY"); print(e.groupby("candidate_persistent_tightening").agg(events=("recovery_date","size"),negative_120d=("fwd_120d",lambda x:(x<0).sum()),median_fwd120=("fwd_120d","median"),median_fwd252=("fwd_252d","median")).to_string())
