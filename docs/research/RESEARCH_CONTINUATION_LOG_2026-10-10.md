@@ -70,3 +70,13 @@ Any new strategy modification after examining these same dates is development da
 - Best wealth-retaining reduced-exposure candidate at 25 bp was 150-DMA/75% below: $1.374M vs B0 $1.732M (79.3% retained), max DD -66.16% vs -73.80% (7.64 pp improvement). A more defensive 175-DMA/25% candidate reached -48.11% max DD but ended at only $658k (38.0% of B0).
 - No partial-DMA candidate meets the existing >=95% of B0 terminal-wealth gate at 25 bp. Decision: reject this simple overlay family; do not tune further parameters on this same matrix.
 - Report: [actual-TQQQ partial-DMA matrix audit](ACTUAL_TQQQ_PARTIAL_DMA_MATRIX_AUDIT_2026-10-10.md). This is retrospective, not an untouched holdout. B0 remains the working control; no paper/live trading is authorized.
+
+
+## Frozen Fed chronological validation code audit
+
+- Audited `research/fed_chronological_frozen_validation.py`, its workflow, and the pre-registered shock/recovery validation protocol. Full findings: [Fed chronological validation code audit](FED_CHRONOLOGICAL_VALIDATION_CODE_AUDIT_2026-10-10.md).
+- **Material lookahead:** `warning_rule` combines a Fed change measured at recovery with a “prolonged” duration that is only known after the +10% recovery. This is a retrospective event label, not an executable signal at the shock.
+- **Censoring issue:** the ledger appends only episodes that recover; a shock still armed at the final data date is silently omitted. Forward 60/120/252-session returns also use whatever shorter tail remains, so incomplete horizons can enter the same summaries as full horizons.
+- Event unit is one shock-to-recovery episode; overlapping forward-return windows are not independent and must not be summed as additive portfolio gains.
+- Current workflow run listing had no matching completed or active run, so no artifact/result is claimed. This pass was code review and documentation only; no backtest was run and no strategy rule was changed.
+- Decision: do not interpret/promote this “warning rule” as tradable evidence. Fix explicit right-censoring, full-horizon labels, signal naming, and input provenance before running or interpreting the event summary. Any tradable candidate needs a separate causal rule and actual-TQQQ portfolio test under the existing protocol. B0 remains the working control; paper/live trading remains unauthorized.
