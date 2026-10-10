@@ -62,19 +62,25 @@ def main() -> None:
     intraday = adj_close / adj_open - 1
     daily_returns = {lag: base.next_open_daily_returns(signals[lag], overnight, intraday) for lag in (0,1)}
     rows=[]
+    baseline_returns = base.next_open_daily_returns(baseline, overnight, intraday)
+    baseline_eq = base.INITIAL * np.cumprod(1 + baseline_returns)
+    rows.append({"variant":"B0_BASELINE_CONTROL","lag_sessions":None,
+      **equity_metrics(baseline_eq,common.index),"defensive_signal_days":int((baseline < 1).sum()),
+      "fed_state_days_different_from_lag1":0})
     for lag in (0,1):
         name = "same_session_mapped_state_DIAGNOSTIC" if lag == 0 else "one_session_lag_CONTROL"
         eq = base.INITIAL * np.cumprod(1 + daily_returns[lag])
         rows.append({"variant":name,"lag_sessions":lag,**equity_metrics(eq,common.index),
           "defensive_signal_days":int((signals[lag] < 1).sum()),
           "fed_state_days_different_from_lag1":int((states[lag] != states[1]).sum())})
-    for lag in (0,1):
-        name = "same_session_mapped_state_DIAGNOSTIC" if lag == 0 else "one_session_lag_CONTROL"
+    for name, signal, lag in [("B0_BASELINE_CONTROL", baseline, None),
+                              ("same_session_mapped_state_DIAGNOSTIC", signals[0], 0),
+                              ("one_session_lag_CONTROL", signals[1], 1)]:
         for bps in (0,10,25):
-            eq = base.next_open_cost_equity(signals[lag],overnight,intraday,bps)
+            eq = base.next_open_cost_equity(signal,overnight,intraday,bps)
             rows.append({"variant":name,"lag_sessions":lag,"cost_bps":bps,
-              **equity_metrics(eq,common.index),"defensive_signal_days":int((signals[lag] < 1).sum()),
-              "fed_state_days_different_from_lag1":int((states[lag] != states[1]).sum())})
+              **equity_metrics(eq,common.index),"defensive_signal_days":int((signal < 1).sum()),
+              "fed_state_days_different_from_lag1":0 if lag is None else int((states[lag] != states[1]).sum())})
     pd.DataFrame(rows).to_csv(OUT/"fed_timing_sensitivity_summary.csv",index=False)
     daily = pd.DataFrame({"date":common.index,"fed_state_same_session":states[0].to_numpy(),
       "fed_state_lag1":states[1].to_numpy(),"fed_state_diff":(states[0].to_numpy()!=states[1].to_numpy()),
