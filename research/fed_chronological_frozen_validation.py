@@ -52,6 +52,21 @@ def ledger(px,fr):
     row["candidate_persistent_tightening_slow"]=row["candidate_persistent_tightening"] and row["prolonged"]
     row["warning_rule"]=row["aggressive"] and row["prolonged"]
     rows.append(row); armed=False;low=np.nan;li=si=None
+ # Preserve an unresolved terminal episode instead of silently dropping it.
+ if armed:
+  d=px.index[-1]; f=fr.loc[:d]; cur=float(f.iloc[-1]) if len(f) else np.nan
+  p=f.loc[:d-pd.Timedelta(days=FED_DAYS)]; old=float(p.iloc[-1]) if len(p) else np.nan
+  fs=fr.loc[:px.index[si]]; shock_rate=float(fs.iloc[-1]) if len(fs) else np.nan
+  rows.append({"shock_date":px.index[si],"low_date":px.index[li],"recovery_date":pd.NaT,
+   "shock_to_recovery_td":np.nan,"low_to_recovery_td":np.nan,"fed_target_at_shock":shock_rate,
+   "fed_target_at_recovery":np.nan,"fed_change_shock_to_recovery_bp":np.nan,
+   "fed_63d_bp":(cur-old)*100 if np.isfinite(cur) and np.isfinite(old) else np.nan,
+   "aggressive":bool(np.isfinite(cur) and np.isfinite(old) and (cur-old)*100>=FED_BP),
+   "prolonged":False,"tightening_persisted_to_recovery":False,"candidate_persistent_tightening":False,
+   "candidate_persistent_tightening_slow":False,"warning_rule":False,"recovered":False,
+   "right_censored":True,"episode_end_date":d,"censor_date":d,"retrospective_warning_label":False,
+   "tightening_persisted_to_episode_end":bool(np.isfinite(cur) and np.isfinite(shock_rate) and cur>shock_rate),
+   **{f"fwd_{n}d":np.nan for n in [60,120,252]}})
  return pd.DataFrame(rows)
 def era(d):
  if d<pd.Timestamp("2000-01-01"): return "1985-1999"
