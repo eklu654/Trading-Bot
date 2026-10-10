@@ -1,10 +1,14 @@
-"""Predeclared partial-exposure DMA matrix for synthetic 3x QQQ.
+"""Predeclared B0 + partial-exposure DMA matrix for synthetic 3x QQQ.
 
-Tests DMA lengths 125/150/175/200/250 with fixed below-DMA exposures
-75%, 50%, and 25%. Above DMA is always 100%; re-entry is immediate.
-All strategies start with the same $5,000 on the same post-250-session
-evaluation date. Signal history is computed before the evaluation slice.
-No optimization, costs, or cash yield.
+Primary candidates combine the canonical QQQ -4.5% shock / +10% recovery
+control (B0) with a DMA exposure overlay: B0's defensive signal always
+takes precedence; outside B0 defensive windows, exposure is 100% above DMA
+and the predeclared partial level below DMA. Re-entry from B0 is immediate.
+
+DMA-only variants are retained as diagnostics only, not candidate strategies.
+All candidates start with $5,000 on the same post-250-session evaluation
+date. Signal history is computed before the evaluation slice. No optimization,
+costs, or cash yield.
 """
 from pathlib import Path
 import numpy as np
@@ -29,8 +33,21 @@ def equity(x,sig):
     return float(eq[-1]),float(dd.min()),float(w.mean())
 
 
+def combine_b0_and_dma(b0_signal, dma_signal):
+    """B0 defensive state takes precedence; otherwise apply DMA exposure."""
+    b0 = np.asarray(b0_signal, dtype=float)
+    dma = np.asarray(dma_signal, dtype=float)
+    if b0.shape != dma.shape:
+        raise ValueError("B0 and DMA signals must have identical shapes")
+    if not (np.isfinite(b0).all() and np.isfinite(dma).all()):
+        raise ValueError("signals must be finite")
+    if ((b0 < 0) | (b0 > 1) | (dma < 0) | (dma > 1)).any():
+        raise ValueError("signals must be exposures in [0, 1]")
+    return np.minimum(b0, dma)
+
+
 def run_matrix(full):
-    """Evaluate all candidates on one shared post-warm-up date range."""
+    """Evaluate combined candidates and diagnostic DMA-only variants."""
     full=full.copy()
     max_dma=max(DMAS)
     b0_full=target_exposure(full.rename(columns={"adj_close":"Adj Close"}),"B0").to_numpy(dtype=float)
@@ -60,7 +77,10 @@ def run_matrix(full):
     record("synthetic_3x_qqq_buy_hold",0,1.0,np.ones(len(x),dtype=float))
     for dma in DMAS:
         for below in BELOW:
-            record("dma_partial_exposure",dma,below,signals[(dma,below)][start:])
+            dma_signal = signals[(dma,below)][start:]
+            combined = combine_b0_and_dma(b0, dma_signal)
+            record("B0_PLUS_DMA_PARTIAL_EXPOSURE",dma,below,combined)
+            record("DMA_ONLY_DIAGNOSTIC",dma,below,dma_signal)
     return pd.DataFrame(rows).sort_values("final",ascending=False),x.index[0],x.index[-1]
 
 
