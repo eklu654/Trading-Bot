@@ -7,8 +7,8 @@ and the predeclared partial level below DMA. Re-entry from B0 is immediate.
 
 DMA-only variants are retained as diagnostics only, not candidate strategies.
 All candidates start with $5,000 on the same post-250-session evaluation
-date. Signal history is computed before the evaluation slice. No optimization,
-costs, or cash yield.
+date. Signal history is computed before the evaluation slice. No parameter
+optimization; cost stress is 0/10/25/50 bps per exposure change; no cash yield.
 """
 from pathlib import Path
 import numpy as np

@@ -41,3 +41,13 @@ def test_actual_tqqq_matrix_also_tests_b0_combinations():
     assert '"B0_PLUS_DMA_PARTIAL"' in source
     assert '"DMA_ONLY_DIAGNOSTIC"' in source
     assert "np.minimum(b0,sig)" in source
+
+def test_both_dma_matrices_include_transaction_cost_stress():
+    from pathlib import Path
+
+    synthetic = Path("research/tqqq_partial_dma_matrix.py").read_text()
+    actual = Path("research/tqqq_actual_partial_dma_matrix.py").read_text()
+    for source in (synthetic, actual):
+        assert "COSTS=(0,10,25,50)" in source
+        assert "next_open_cost_equity" in source
+        assert '"cost_bps_per_exposure_change":cost_bps' in source
