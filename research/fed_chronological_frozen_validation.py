@@ -11,6 +11,7 @@ rule across chronological eras and reports every event, including counterexample
 Important: this is a diagnostic regime test, NOT a TQQQ trading backtest.
 """
 from pathlib import Path
+import hashlib, json, platform
 import io, requests, numpy as np, pandas as pd, yfinance as yf
 ROOT=Path(__file__).resolve().parents[1]; OUT=ROOT/"data"/"research"
 START="1985-01-01"; END="2026-10-09"; SHOCK=-.045; REC=.10; FED_DAYS=63; FED_BP=50; DUR=30
@@ -43,7 +44,7 @@ def ledger(px,fr):
          "fed_change_shock_to_recovery_bp":(cur-shock_rate)*100,
          "fed_63d_bp":bp,"aggressive":bp>=FED_BP,"prolonged":(i-si)>DUR}
     for n in [60,120,252]:
-     q=px.loc[d:].iloc[:n+1]; row[f"fwd_{n}d"]=float(q.iloc[-1]/q.iloc[0]-1) if len(q)>1 else np.nan
+     q=px.loc[d:].iloc[:n+1]; row[f"fwd_{n}d"]=float(q.iloc[-1]/q.iloc[0]-1) if len(q)==n+1 else np.nan
     # Diagnostic only: whether the target was still higher at recovery than at shock.
     # This is NOT yet a trading rule or selection criterion.
     row["tightening_persisted_to_recovery"]=row["fed_change_shock_to_recovery_bp"]>0
