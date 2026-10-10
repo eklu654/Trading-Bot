@@ -2,6 +2,11 @@ name: TQQQ partial DMA matrix
 on:
   push:
     branches: [main]
+    paths:
+      - "research/*.py"
+      - "research/**/*.py"
+      - "research/requirements.txt"
+      - ".github/workflows/tqqq-partial-dma-matrix.yml"
   workflow_dispatch:
 jobs:
   matrix:

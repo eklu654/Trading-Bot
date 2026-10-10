@@ -2,7 +2,9 @@ name: Actual TQQQ partial DMA matrix
 on:
   push:
     paths:
-      - "research/tqqq_actual_partial_dma_matrix.py"
+      - "research/*.py"
+      - "research/**/*.py"
+      - "research/requirements.txt"
       - ".github/workflows/tqqq-actual-partial-dma-matrix.yml"
   workflow_dispatch:
 jobs:
