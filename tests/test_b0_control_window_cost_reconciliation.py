@@ -34,7 +34,7 @@ def test_reconcile_reports_all_costs_and_three_window_views():
         "warmup_carried_equity_through_2026-10-02",
     }.issubset(set(summary.view))
     assert len(summary) == len(COSTS) * 6
-    assert set(paths.view) == set(summary.view)
+    assert set(paths.view) == {"inception_full", "warmup_reset", "warmup_carried_equity"}
     assert len(events) >= 1
 
 
