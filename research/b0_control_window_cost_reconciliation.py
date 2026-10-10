@@ -28,6 +28,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
 COSTS = (0, 10, 25, 50)
 WARMUP_SESSIONS = 250
+COMPARISON_END = pd.Timestamp("2026-10-02")
 
 
 def make_legs(frame):
@@ -93,11 +94,12 @@ def reconcile(frame):
 
         # Warm-up carried: same dates, but retain the equity accumulated since inception.
         carried = full[warm:].copy()
-        for view, dates, eq, start_balance in (
+        views = (
             ("inception_full", frame.index, full, INITIAL),
             ("warmup_reset", frame.index[warm:], reset, INITIAL),
             ("warmup_carried_equity", frame.index[warm:], carried, float(full[warm])),
-        ):
+        )
+        for view, dates, eq, start_balance in views:
             rows.append(metric_row(dates, eq, bps, view, start_balance))
             paths.append(pd.DataFrame({
                 "date": dates,
@@ -106,6 +108,18 @@ def reconcile(frame):
                 "signal_at_close": signal if view == "inception_full" else w_signal,
                 "equity": eq,
             }))
+
+        # Recompute the same summaries at the hybrid experiments' exclusive-end
+        # convention (last observation on or before 2026-10-02), using identical
+        # signals/return legs and without refitting or redownloading inputs.
+        for view, dates, eq, start_balance in views:
+            mask = dates <= COMPARISON_END
+            if not np.any(mask):
+                continue
+            rows.append(metric_row(
+                dates[mask], np.asarray(eq)[mask], bps,
+                view + "_through_2026-10-02", start_balance
+            ))
 
     summary = pd.DataFrame(rows)
     path = pd.concat(paths, ignore_index=True)
