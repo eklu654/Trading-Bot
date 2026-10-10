@@ -1,0 +1,42 @@
+name: Fed 2015/2016 Effective-Date Signal Diagnostic
+
+on:
+  push:
+    paths:
+      - "research/fed_2015_2016_effective_date_signal_diff.py"
+      - ".github/workflows/fed-2015-2016-effective-date-signal-diff.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: fed-2015-2016-effective-date-signal-diff
+  cancel-in-progress: false
+
+jobs:
+  signal-diff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile diagnostic
+        run: python -m py_compile research/fed_2015_2016_effective_date_signal_diff.py
+      - name: Compare only affected Fed-state and overlay signals
+        run: python research/fed_2015_2016_effective_date_signal_diff.py
+      - name: Upload diagnostic ledger
+        uses: actions/upload-artifact@v4
+        with:
+          name: fed-2015-2016-effective-date-signal-diagnostic
+          if-no-files-found: error
+          path: |
+            data/research/fed_2015_2016_effective_date_signal_diff.csv
+            data/research/fed_2015_2016_effective_date_transform.csv
+            data/research/fed_2015_2016_effective_date_signal_diff_manifest.json
