@@ -40,3 +40,25 @@ Continue the control discrepancy audit before any further candidate selection. T
 
 ## Audit caution
 The code inspection establishes different windows and costs. It does **not** yet establish how much of the balance gap each factor explains, whether there is any additional input/logic discrepancy, or whether the original $4.040M value can be exactly reproduced from the current vendor download. This requires the same-frozen-input rerun above.
+
+
+## New controlled reconciliation run — 2026-10-10
+
+- Workflow: [TQQQ Dot-Com Survivability run 38030782533](https://github.com/eklu654/Trading-Bot/actions/runs/38030782533), success; artifact ID `11661993293`, ZIP digest `sha256:173c3ea552d977006f949f8c2120a57286578378dc323f7d1b4179a3a2fcd52c`.
+- Frozen input hash: `7d9190d22433351845a7e8a07252c135f07a5a95201eaf848d9dd9e3f0b2b51d`.
+- This run confirms the current canonical same-input calculation again: $4,040,314 at 0 bps, with the shared execution engine and independently coded loop agreeing exactly (maximum absolute daily-return and equity differences both 0).
+- On the *same newly frozen data and B0 signal*, 250-session warm-up reset produced:
+  - $1,875,211 at 0 bps;
+  - $1,839,900 at 10 bps;
+  - $1,788,114 at 25 bps;
+  - $1,704,859 at 50 bps.
+- The warm-up begins 2011-02-07, while inception starts 2010-02-11. The carried-equity view retains $4.040M / $3.964M / $3.853M / $3.673M through 2026-10-07 at 0/10/25/50 bps respectively; it starts that post-warm-up view with the equity accumulated since inception rather than resetting capital.
+- These outputs show that changing the evaluation start and resetting capital explains a large share of the apparent $4.04M versus ~$1.8M difference. The exact hybrid comparisons still require a common end date: the hybrid runs end 2026-10-02, whereas this reconciliation run ends 2026-10-07. A follow-up was added to report both end cutoffs from the same frozen input without redownloading.
+- Initial pytest collection failed because the canonical reconciliation module imported `causal_execution` only as a top-level script. Fixed that import to support package imports. The subsequent test run and same-input cutoff rerun are pending/under verification as of this note; do not mark the full audit complete until they finish.
+
+## Implementation commits
+- Audit note initially committed as `12ae0bc658b502881626f829b5af26eb3f3a2917`.
+- Reconciliation script `research/b0_control_window_cost_reconciliation.py` and tests `tests/test_b0_control_window_cost_reconciliation.py` added.
+- Workflow `.github/workflows/tqqq-dotcom-survivability.yml` updated to run the reconciliation and archive its input, summary, paths, event ledger, and manifest.
+- Package-import compatibility fixed in `research/tqqq_canonical_same_input_reconciliation.py`.
+- The common 2026-10-02 cutoff view was added so cost and date-window effects can be compared on identical frozen inputs.
