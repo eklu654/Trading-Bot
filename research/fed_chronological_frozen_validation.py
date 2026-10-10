@@ -42,7 +42,8 @@ def ledger(px,fr):
          "shock_to_recovery_td":i-si,"low_to_recovery_td":i-li,
          "fed_target_at_shock":shock_rate,"fed_target_at_recovery":cur,
          "fed_change_shock_to_recovery_bp":(cur-shock_rate)*100,
-         "fed_63d_bp":bp,"aggressive":bp>=FED_BP,"prolonged":(i-si)>DUR}
+         "fed_63d_bp":bp,"aggressive":bp>=FED_BP,"prolonged":(i-si)>DUR,
+         "recovered":True,"right_censored":False,"episode_end_date":d,"censor_date":pd.NaT}
     for n in [60,120,252]:
      q=px.loc[d:].iloc[:n+1]; row[f"fwd_{n}d"]=float(q.iloc[-1]/q.iloc[0]-1) if len(q)==n+1 else np.nan
     # Diagnostic only: whether the target was still higher at recovery than at shock.
@@ -51,6 +52,7 @@ def ledger(px,fr):
     row["candidate_persistent_tightening"]=row["aggressive"] and row["tightening_persisted_to_recovery"]
     row["candidate_persistent_tightening_slow"]=row["candidate_persistent_tightening"] and row["prolonged"]
     row["warning_rule"]=row["aggressive"] and row["prolonged"]
+    row["retrospective_warning_label"]=row["warning_rule"]
     rows.append(row); armed=False;low=np.nan;li=si=None
  # Preserve an unresolved terminal episode instead of silently dropping it.
  if armed:
