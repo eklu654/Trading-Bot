@@ -21,3 +21,5 @@ jobs:
           path: |
             data/research/tqqq_actual_partial_dma_matrix.csv
             data/research/tqqq_actual_partial_dma_periods.csv
+            data/research/tqqq_actual_partial_dma_frozen_input.csv
+            data/research/tqqq_actual_partial_dma_manifest.json

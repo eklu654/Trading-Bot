@@ -7,6 +7,7 @@ partial level below DMA. B0 re-entry is immediate. DMA-only variants remain
 diagnostic rows, not candidate strategies.
 """
 from pathlib import Path
+import hashlib, json
 import numpy as np, pandas as pd, yfinance as yf
 from causal_execution import next_open_cost_equity
 from reentry_isolation import target_exposure
@@ -42,6 +43,7 @@ def main():
     x=q.join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
     x["b0_signal"]=b0_signal.reindex(x.index)
     t_adj_open=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
+    x["tqqq_adj_open"]=t_adj_open
     x["on"]=(t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
     x["in"]=(x.tqqq_adj_close/t_adj_open-1).fillna(0)
 
@@ -53,6 +55,14 @@ def main():
     x["eval_date"] = x.index
     for dma in DMAS:
         x[f"ma_{dma}"] = x.adj_close.rolling(dma).mean()
+
+    frozen_cols=["adj_close","tqqq_adj_open","tqqq_adj_close","on","in","b0_signal"]+[f"ma_{dma}" for dma in DMAS]
+    frozen=x[frozen_cols].copy()
+    frozen.index.name="date"
+    OUT.mkdir(parents=True,exist_ok=True)
+    frozen_path=OUT/"tqqq_actual_partial_dma_frozen_input.csv"
+    frozen.to_csv(frozen_path,index_label="date",float_format="%.15g")
+
     x=x.iloc[max_dma-1:].copy()
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
@@ -112,9 +122,33 @@ def main():
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     periods=pd.DataFrame(period_rows)
-    OUT.mkdir(parents=True,exist_ok=True)
-    out.to_csv(OUT/"tqqq_actual_partial_dma_matrix.csv",index=False)
-    periods.to_csv(OUT/"tqqq_actual_partial_dma_periods.csv",index=False)
+    matrix_path=OUT/"tqqq_actual_partial_dma_matrix.csv"
+    periods_path=OUT/"tqqq_actual_partial_dma_periods.csv"
+    manifest_path=OUT/"tqqq_actual_partial_dma_manifest.json"
+    out.to_csv(matrix_path,index=False,float_format="%.15g")
+    periods.to_csv(periods_path,index=False,float_format="%.15g")
+    manifest={
+        "status":"PASS",
+        "frozen_input_file":frozen_path.name,
+        "frozen_input_sha256":hashlib.sha256(frozen_path.read_bytes()).hexdigest(),
+        "matrix_sha256":hashlib.sha256(matrix_path.read_bytes()).hexdigest(),
+        "periods_sha256":hashlib.sha256(periods_path.read_bytes()).hexdigest(),
+        "input_rows":int(len(frozen)),
+        "evaluation_start":x.index[0].date().isoformat(),
+        "evaluation_end":x.index[-1].date().isoformat(),
+        "initial_balance":INITIAL,
+        "warmup_sessions":max_dma,
+        "cost_bps_per_exposure_change":list(COSTS),
+        "dma_sessions":DMAS,
+        "below_dma_exposures":BELOW,
+        "b0_shock_threshold":-0.045,
+        "b0_recovery_threshold":0.10,
+        "execution":"close signal executes next open; prior exposure earns overnight return, new exposure earns intraday return",
+        "combined_exposure":"min(B0 exposure, DMA exposure); standalone DMA rows are diagnostics only",
+        "trade_asset":"actual TQQQ; DMA signal asset QQQ adjusted close",
+    }
+    manifest_path.write_text(json.dumps(manifest,indent=2),encoding="utf-8")
+    print(json.dumps(manifest,indent=2))
     print("ACTUAL TQQQ; QQQ DMA signal; next-open execution")
     print("COMMON EVALUATION WINDOW",x.index[0].date(),"to",x.index[-1].date(),
           "| initial capital",INITIAL)

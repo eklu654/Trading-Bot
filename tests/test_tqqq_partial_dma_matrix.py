@@ -62,3 +62,16 @@ def test_matrix_outputs_include_period_and_drawdown_diagnostics():
         assert "period_rows.append" in source or '"period":period_name' in source
     assert "tqqq_partial_dma_periods.csv" in synthetic
     assert "tqqq_actual_partial_dma_periods.csv" in actual
+
+def test_both_dma_matrices_archive_frozen_inputs_and_hash_manifests():
+    from pathlib import Path
+
+    synthetic = Path("research/tqqq_partial_dma_matrix.py").read_text()
+    actual = Path("research/tqqq_actual_partial_dma_matrix.py").read_text()
+    for source in (synthetic, actual):
+        assert "frozen_input_sha256" in source
+        assert "matrix_sha256" in source
+        assert "periods_sha256" in source
+        assert "manifest_path.write_text" in source
+    assert "tqqq_partial_dma_frozen_input.csv" in synthetic
+    assert "tqqq_actual_partial_dma_frozen_input.csv" in actual

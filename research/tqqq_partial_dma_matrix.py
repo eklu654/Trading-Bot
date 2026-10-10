@@ -11,6 +11,7 @@ date. Signal history is computed before the evaluation slice. No parameter
 optimization; cost stress is 0/10/25/50 bps per exposure change; no cash yield.
 """
 from pathlib import Path
+import hashlib, json
 import numpy as np
 import pandas as pd
 try:
@@ -133,10 +134,42 @@ def run_matrix(full):
 
 def main():
     full=build()
-    out,periods,start,end=run_matrix(full)
     OUT.mkdir(parents=True,exist_ok=True)
-    out.to_csv(OUT/"tqqq_partial_dma_matrix.csv",index=False)
-    periods.to_csv(OUT/"tqqq_partial_dma_periods.csv",index=False)
+    frozen=full[["adj_close","on3","in3"]].copy()
+    frozen["b0_signal"]=target_exposure(full.rename(columns={"adj_close":"Adj Close"}),"B0").to_numpy(dtype=float)
+    for dma in DMAS:
+        frozen[f"qqq_{dma}dma"]=full.adj_close.rolling(dma).mean()
+    frozen.index.name="date"
+    frozen_path=OUT/"tqqq_partial_dma_frozen_input.csv"
+    frozen.to_csv(frozen_path,index_label="date",float_format="%.15g")
+
+    out,periods,start,end=run_matrix(full)
+    matrix_path=OUT/"tqqq_partial_dma_matrix.csv"
+    periods_path=OUT/"tqqq_partial_dma_periods.csv"
+    manifest_path=OUT/"tqqq_partial_dma_manifest.json"
+    out.to_csv(matrix_path,index=False,float_format="%.15g")
+    periods.to_csv(periods_path,index=False,float_format="%.15g")
+    manifest={
+        "status":"PASS",
+        "frozen_input_file":frozen_path.name,
+        "frozen_input_sha256":hashlib.sha256(frozen_path.read_bytes()).hexdigest(),
+        "matrix_sha256":hashlib.sha256(matrix_path.read_bytes()).hexdigest(),
+        "periods_sha256":hashlib.sha256(periods_path.read_bytes()).hexdigest(),
+        "input_rows":int(len(frozen)),
+        "evaluation_start":start.date().isoformat(),
+        "evaluation_end":end.date().isoformat(),
+        "initial_balance":INITIAL,
+        "warmup_sessions":max(DMAS),
+        "cost_bps_per_exposure_change":list(COSTS),
+        "dma_sessions":DMAS,
+        "below_dma_exposures":BELOW,
+        "b0_shock_threshold":-0.045,
+        "b0_recovery_threshold":0.10,
+        "execution":"close signal executes next open; prior exposure earns overnight return, new exposure earns intraday return",
+        "combined_exposure":"min(B0 exposure, DMA exposure); standalone DMA rows are diagnostics only",
+    }
+    manifest_path.write_text(json.dumps(manifest,indent=2),encoding="utf-8")
+    print(json.dumps(manifest,indent=2))
     print("COMMON EVALUATION WINDOW",start.date(),"to",end.date(),
           "| initial capital",INITIAL,"| warmup",max(DMAS)-1,"sessions")
     print(out.to_string(index=False))
