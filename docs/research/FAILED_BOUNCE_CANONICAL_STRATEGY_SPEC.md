@@ -143,3 +143,20 @@ All five relevant runs succeeded on this same commit:
 ### Next action
 
 Proceed with the predeclared baseline stress scorecard and slow-bear failure audit. Identify missed gradual declines mechanically from QQQ peak-to-trough drawdown and shock triggers, then report exposure and leveraged loss accumulated before the first -4.5% daily shock. Keep the nine-event feature table diagnostic only. Do not launch another broad indicator/threshold search or promote a rule on the basis of 2022 alone.
+
+
+## Audit checkpoint — follow-through validation, 2026-10-10
+
+Latest audited commit: `203ae4fcd0dea1e6a797f5360d6b067bbc854272`.
+
+The full workflow batch triggered by the prior documentation commit has now completed successfully. The checked runs include research tests (38037156365), robustness (38037156361), structural matrix (38037156364 and 38037156431), long-history bear-rally signal audit (38037156367), long-history drawdown/rally audit (38037156369), actual three-layer validation (38037156376), independent audit (38037156394), three-layer event attribution (38037156398), canonical same-input reconciliation (38037156419), and feature audit (38037156441). No failures were reported in the checked batch.
+
+The latest same-input reconciliation again reproduced the canonical result to within a few dollars across engines: approximately $4.0403M final balance, 49.487% CAGR, and -73.534% max drawdown, versus approximately $2.0947M, 43.705% CAGR, and -81.660% max drawdown for live-TQQQ buy-and-hold on the same aligned window and $5,000 start. This confirms computational reproducibility; it does not make the extreme drawdown acceptable by itself.
+
+The long-history drawdown/rally script also completed, but its instrument is **S&P 500 index (^GSPC), not QQQ or TQQQ**. It covers 1970-01-02 through 2026-10-07 and identifies 24 signal episodes using a 10% decline from a trailing 252-session high, a recovery of 10% from the post-trigger low, and re-arming after the index regains 95% of the trigger peak. Labels were 12 failed, 9 successful, and 3 censored under the script's 252-session outcome rule. Both 2020 events were labeled successful; both identified 2022 events were labeled failed. This is useful only as a historical signal diagnostic: it is not a leveraged portfolio backtest, cannot be directly transferred to QQQ, and does not validate the canonical -4.5% daily QQQ trigger.
+
+The separate long-history bear-rally signal audit also completed and reported 85 veto-only events, 5 events overlapping shock signals, and $114,675 net sum of event-level terminal counterfactual deltas (positive $268,919; negative -$154,244). Effects are highly concentrated and mixed across eras: dot-com +$121,941 across 45 events, GFC -$14,683 across 23, and post-COVID +$7,417 across 17. These overlapping counterfactual event impacts are diagnostic, not additive portfolio attribution and not evidence to promote a veto.
+
+### Decision / next step
+
+Validation status is green for this commit. No new overlay is promoted. The remaining high-priority gap is still the **direct QQQ slow-bear audit**: measure drawdowns that accumulate without a -4.5% one-day shock, determine when the baseline first exits (if it does), and quantify the TQQQ loss/exposure accumulated before that exit. Keep the S&P 500 long-history results explicitly separated as signal-only proxy evidence. Avoid launching another broad parameter sweep until this direct failure mode is quantified.
