@@ -15,4 +15,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: tqqq-partial-dma-matrix
-          path: data/research/tqqq_partial_dma_matrix.csv
+          path: |
+            data/research/tqqq_partial_dma_matrix.csv
+            data/research/tqqq_partial_dma_periods.csv

@@ -51,3 +51,14 @@ def test_both_dma_matrices_include_transaction_cost_stress():
         assert "COSTS=(0,10,25,50)" in source
         assert "next_open_cost_equity" in source
         assert '"cost_bps_per_exposure_change":cost_bps' in source
+
+def test_matrix_outputs_include_period_and_drawdown_diagnostics():
+    from pathlib import Path
+
+    synthetic = Path("research/tqqq_partial_dma_matrix.py").read_text()
+    actual = Path("research/tqqq_actual_partial_dma_matrix.py").read_text()
+    for source in (synthetic, actual):
+        assert "max_dd_trough_date" in source
+        assert "period_rows.append" in source or '"period":period_name' in source
+    assert "tqqq_partial_dma_periods.csv" in synthetic
+    assert "tqqq_actual_partial_dma_periods.csv" in actual

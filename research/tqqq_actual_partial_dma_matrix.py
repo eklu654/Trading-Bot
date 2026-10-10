@@ -19,6 +19,13 @@ END="2026-10-05"
 DMAS=[100,125,150,175,200,250]
 BELOW=[1.0,0.75,0.50,0.25,0.0]
 COSTS=(0,10,25,50)
+PERIODS=(
+    ("2011_2015","2011-02-07","2015-12-31"),
+    ("2016_2019","2016-01-01","2019-12-31"),
+    ("covid","2020-01-01","2021-12-31"),
+    ("2022_2024","2022-01-01","2024-12-31"),
+    ("2025_to_latest","2025-01-01","2026-10-02"),
+)
 
 def dl(t, start=START):
     x=yf.download(t,start=start,end=END,auto_adjust=False,progress=False,actions=False)
@@ -49,17 +56,46 @@ def main():
     x=x.iloc[max_dma-1:].copy()
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
+    period_rows=[]
 
     def record(label,dma,below,sig,cost_bps):
         eq=next_open_cost_equity(sig,x.on,x["in"],cost_bps,INITIAL)
         dd=eq/np.maximum.accumulate(eq)-1
+        trough=int(np.argmin(dd))
+        peak=int(np.argmax(eq[:trough+1]))
         rows.append({"strategy":label,"dma":dma,"below_exposure":below,
                      "cost_bps_per_exposure_change":cost_bps,
                      "evaluation_start":x.index[0].date().isoformat(),
                      "evaluation_end":x.index[-1].date().isoformat(),
                      "final":float(eq[-1]),
                      "cagr":(float(eq[-1])/INITIAL)**(1/years)-1,
-                     "max_dd":float(dd.min()),"avg_exposure":float(np.mean(sig))})
+                     "max_dd":float(dd.min()),
+                     "max_dd_peak_date":x.index[peak].date().isoformat(),
+                     "max_dd_trough_date":x.index[trough].date().isoformat(),
+                     "avg_exposure":float(np.mean(sig))})
+        for period_name,period_start,period_end in PERIODS:
+            dates=pd.DatetimeIndex(x.index)
+            mask=(dates>=pd.Timestamp(period_start))&(dates<=pd.Timestamp(period_end))
+            positions=np.flatnonzero(mask)
+            if len(positions)<2:
+                continue
+            first,last=int(positions[0]),int(positions[-1])
+            prior_equity=INITIAL if first==0 else float(eq[first-1])
+            segment=np.concatenate(([INITIAL],INITIAL*eq[first:last+1]/prior_equity))
+            segment_dd=segment/np.maximum.accumulate(segment)-1
+            span_days=(dates[last]-(dates[first-1] if first>0 else dates[first])).days
+            period_years=max(span_days/365.25,1/365.25)
+            period_rows.append({
+                "strategy":label,"dma":dma,"below_exposure":below,
+                "cost_bps_per_exposure_change":cost_bps,"period":period_name,
+                "period_start":dates[first].date().isoformat(),
+                "period_end":dates[last].date().isoformat(),
+                "observations":int(len(positions)),
+                "ending_balance":float(segment[-1]),
+                "cagr":float((segment[-1]/INITIAL)**(1/period_years)-1),
+                "max_drawdown":float(segment_dd.min()),
+                "minimum_equity":float(segment.min()),
+            })
 
     for cost_bps in COSTS:
         record("BUY_HOLD",0,1.0,np.ones(len(x)),cost_bps)
@@ -75,8 +111,10 @@ def main():
                 record("DMA_ONLY_DIAGNOSTIC",dma,below,sig,cost_bps)
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
+    periods=pd.DataFrame(period_rows)
     OUT.mkdir(parents=True,exist_ok=True)
     out.to_csv(OUT/"tqqq_actual_partial_dma_matrix.csv",index=False)
+    periods.to_csv(OUT/"tqqq_actual_partial_dma_periods.csv",index=False)
     print("ACTUAL TQQQ; QQQ DMA signal; next-open execution")
     print("COMMON EVALUATION WINDOW",x.index[0].date(),"to",x.index[-1].date(),
           "| initial capital",INITIAL)
