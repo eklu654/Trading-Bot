@@ -12,7 +12,10 @@ import json
 import numpy as np
 import pandas as pd
 import yfinance as yf
-from causal_execution import next_open_daily_returns
+try:
+    from .causal_execution import next_open_daily_returns
+except ImportError:
+    from causal_execution import next_open_daily_returns
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "data" / "research"
