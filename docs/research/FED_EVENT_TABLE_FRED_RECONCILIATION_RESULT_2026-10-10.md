@@ -38,7 +38,7 @@ Official-source review confirms the distinction for both flagged hikes:
 
 Therefore, the two one-day flags are consistent with the event table using **effective dates** while the FRED daily target-rate observation reflects the newly announced target on the **announcement date**. This is a real difference in timestamp convention, but not evidence that either source is inherently incorrect. Because the statements were released at 2:00 p.m. ET, whether the new state can be used for a close-based signal depends on the strategy's explicit information-availability and execution convention. The current audit has not established that these two rows alter any strategy result.
 
-The current script checks nearby rate values, not every official announcement timestamp or the portfolio impact of different timing conventions. It also does not report the full duration of every discrepancy between a table-implied daily series and FRED.
+The current script checks nearby rate values, not every official announcement timestamp or the portfolio impact of different timing conventions. It also does not report the full duration of every discrepancy between a table-implied daily series and FRED. For these two specific hikes, the FRED announcement-date observation followed by the canonical overlay's one-QQQ-session lag appears to align with the hand-maintained table's effective-date transition. This is a boundary-level timing reconciliation, not proof that the two Fed classifiers are otherwise equivalent.
 
 ## Decision / next step
 
