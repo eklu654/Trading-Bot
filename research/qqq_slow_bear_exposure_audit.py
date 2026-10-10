@@ -72,23 +72,26 @@ def make_row(x, threshold, trigger_i, shock_i, status):
     if shock_i is None:
         end_i = len(x) - 1
         end_date = x.index[end_i]
-        t_exit_return = float(np.prod(1.0 + x.t_overnight.iloc[trigger_i+1:end_i+1].to_numpy()) - 1.0)
+        # Total adjusted-price return from trigger close to final available open.
+        # Includes every intervening close-to-close move plus the final overnight gap.
+        t_exit_return = float(x.t_adj_open.iloc[end_i] / trig.t_adj - 1.0)
         elapsed = end_i - trigger_i
         exit_price = float(x.t_adj_open.iloc[end_i])
         exit_dd = float(exit_price / trig.t_adj - 1.0)
     elif status == "same_day_shock":
         end_i = shock_i
         end_date = x.index[end_i]
-        t_exit_return = float(x.t_adj_open.iloc[end_i] / trig.t_adj - 1.0) if end_i > trigger_i else 0.0
+        # Same-day threshold/shock is not a gradual-warning window; do not
+        # misreport the trigger-close-to-exit-open return as a zero loss.
+        t_exit_return = np.nan
         elapsed = 0
-        exit_dd = t_exit_return
+        exit_dd = np.nan
     else:
         end_i = shock_i
         end_date = x.index[end_i]
-        # B0 holds overnight through the shock close's preceding close, then
-        # exits at that session's adjusted open. This isolates the return
-        # actually experienced before the next-open exit.
-        t_exit_return = float(np.prod(1.0 + x.t_overnight.iloc[trigger_i+1:end_i+1].to_numpy()) - 1.0)
+        # Include all intervening close-to-close moves and the final overnight
+        # gap through B0's next-open exit, not only overnight segments.
+        t_exit_return = float(x.t_adj_open.iloc[end_i] / trig.t_adj - 1.0)
         elapsed = end_i - trigger_i
         exit_dd = t_exit_return
     q_ret_to_exit = float(x.q_adj.iloc[end_i] / trig.q_adj - 1.0) if shock_i is not None else float(x.q_adj.iloc[end_i] / trig.q_adj - 1.0)
@@ -133,7 +136,7 @@ def main():
         "instrument_execution": "actual TQQQ adjusted open/close",
         "window": [str(x.index[0].date()), str(x.index[-1].date())],
         "rule": "cross below -10/-15/-20% from trailing 252-session QQQ high; measure until first later QQQ daily return <= -4.5%, with B0 exit at next open",
-        "note": "TQQQ return is measured only over overnight segments actually held before next-open exit; intraday movement after the exit open is excluded. No-shock episodes are measured through final available open.",
+        "note": "TQQQ return uses adjusted open divided by trigger adjusted close, including intervening close-to-close moves and the final overnight gap. Same-day threshold/shock crossings are excluded from return summaries because they are not gradual-warning windows. No-shock episodes are measured through final available open.",
         "summary": summary,
     }
     (OUT / "qqq_slow_bear_exposure_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
