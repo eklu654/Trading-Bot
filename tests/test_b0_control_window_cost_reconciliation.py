@@ -27,10 +27,13 @@ def synthetic_frame(n=320):
 def test_reconcile_reports_all_costs_and_three_window_views():
     summary, paths, events = reconcile(synthetic_frame())
     assert set(summary.cost_bps) == set(COSTS)
-    assert set(summary.view) == {
-        "inception_full", "warmup_reset", "warmup_carried_equity"
-    }
-    assert len(summary) == len(COSTS) * 3
+    assert {
+        "inception_full", "warmup_reset", "warmup_carried_equity",
+        "inception_full_through_2026-10-02",
+        "warmup_reset_through_2026-10-02",
+        "warmup_carried_equity_through_2026-10-02",
+    }.issubset(set(summary.view))
+    assert len(summary) == len(COSTS) * 6
     assert set(paths.view) == set(summary.view)
     assert len(events) >= 1
 
