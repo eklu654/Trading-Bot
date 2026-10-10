@@ -112,3 +112,18 @@ The overlay sacrifices wealth during the earlier bull-market eras, but reduces d
 2. Carry forward a small, predeclared Pareto set for walk-forward/holdout evaluation: 150-DMA / 75% below DMA (more wealth, smaller drawdown improvement), 175-DMA / 75% (slightly less wealth, lower drawdown), and 175-DMA / 50% (larger drawdown improvement, lower terminal wealth). Retain 250-DMA / 25% only as a separate synthetic-survivability candidate pending actual-TQQQ validation.
 3. Compare candidate behavior by era and cost on identical frozen inputs; do not optimize exposure thresholds using the reported test eras.
 4. No paper or live-trading approval follows from these results.
+
+
+## B0 control cross-check and event-level attribution
+
+A separate successful robustness run, [38032984399](https://github.com/eklu654/Trading-Bot/actions/runs/38032984399), used the canonical inception-start actual-TQQQ path from 2010-03-11 through 2026-10-02 (not the warm-up-reset window used by the DMA matrix). Its cost-free results were:
+
+- B0 / canonical shock-recovery: **$4,040,312**, max drawdown **-73.534%**.
+- TQQQ buy-and-hold: **$2,094,669**, max drawdown **-81.660%**.
+- At 10 bps, B0 ends near **$3,964,233**, max drawdown **-73.640%**, across 19 trades.
+
+The period audit shows B0 outperforming buy-and-hold in 2010–2014, 2015–2019, 2020–2021, and 2022–2024, but lagging buy-and-hold in 2025 through the current cutoff. This supports keeping B0 as the control, while avoiding the claim that every exit event helps.
+
+Event-level counterfactual attribution makes that limitation concrete. The 2020-02-27 shock event (low 2020-03-16, decision 2020-03-26) added about **$1.345M** of terminal wealth relative to removing that one defensive event. But the 2020-06-11 event (decision 2020-07-06) cost about **$1.019M** versus its no-defense counterfactual, and the 2020-09-03 event cost about **$328k**. Later negative event contributions included approximately **-$236k** for the 2025-04-03 signal and **-$47k** for the 2026-06-05 signal. These are single-event counterfactuals, not additive causal components; removing one event changes the compounding path.
+
+**Implication:** B0's broad protection is valuable over the full sample, but its fixed trigger can exit during recoveries and miss upside. The DMA overlay changes the wealth/drawdown tradeoff; it does not solve the signal-quality problem by itself. Future work should test fixed candidates without tuning on the same reported eras, then examine whether a separate regime/context layer can distinguish crash-protection events from false-positive exits.
