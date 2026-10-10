@@ -3,7 +3,7 @@
 FROZEN before this run:
   Fed aggressive = >=50 bp target-rate increase over prior 63 calendar days.
   Prolonged recovery = >30 NDX trading sessions from shock to first +10%.
-  Structural-warning cell = both conditions true.
+  Retrospective episode label = both conditions true; not knowable at shock time.
 
 No thresholds are selected from this script. It only evaluates the already-frozen
 rule across chronological eras and reports every event, including counterexamples.
@@ -96,9 +96,9 @@ if __name__=="__main__":
   'event_ledger_sha256':hashlib.sha256(ep.read_bytes()).hexdigest(),'summary_sha256':hashlib.sha256(sp.read_bytes()).hexdigest()}
  (OUT/'fed_chronological_frozen_manifest.json').write_text(json.dumps(manifest,indent=2)+'\\n',encoding='utf-8')
  print('MANIFEST'); print(json.dumps(manifest,indent=2))
- print("FROZEN RULE: aggressive >=50bp/63d AND shock-to-+10% >30 trading days")
- print("\nALL EVENTS"); print(e.to_string(index=False))
+ print("RETROSPECTIVE LABEL ONLY (not an executable signal): Fed >=50bp/63d at episode end AND completed recovery after >30 sessions")
+ print("\nALL EVENTS (completed plus explicitly right-censored)"); print(e.to_string(index=False))
  print("\nSUMMARY"); print(s.to_string(index=False))
- print("\nCURRENT FROZEN WARNING-HIT EVENTS"); print(e[e.retrospective_warning_label].to_string(index=False))
+ print("\nCOMPLETED EPISODES WITH RETROSPECTIVE LABEL"); print(e[e.retrospective_warning_label].to_string(index=False))
  print("\nEXPLORATORY PERSISTENT-TIGHTENING CANDIDATE (NOT FROZEN)"); print(e[e.candidate_persistent_tightening].to_string(index=False))
  print("\nEXPLORATORY CANDIDATE SUMMARY"); print(e.groupby("candidate_persistent_tightening").agg(events=("recovery_date","size"),negative_120d=("fwd_120d",lambda x:(x<0).sum()),median_fwd120=("fwd_120d","median"),median_fwd252=("fwd_252d","median")).to_string())
