@@ -33,3 +33,11 @@ def test_partial_dma_matrix_marks_standalone_variants_as_diagnostic_only():
     assert '"B0_PLUS_DMA_PARTIAL_EXPOSURE"' in source
     assert '"DMA_ONLY_DIAGNOSTIC"' in source
     assert "combine_b0_and_dma(b0, dma_signal)" in source
+
+def test_actual_tqqq_matrix_also_tests_b0_combinations():
+    from pathlib import Path
+
+    source = Path("research/tqqq_actual_partial_dma_matrix.py").read_text()
+    assert '"B0_PLUS_DMA_PARTIAL"' in source
+    assert '"DMA_ONLY_DIAGNOSTIC"' in source
+    assert "np.minimum(x.b0_signal.to_numpy(dtype=float),sig)" in source
