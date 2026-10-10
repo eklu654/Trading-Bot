@@ -19,9 +19,15 @@ jobs:
       - run: python -m pip install -r research/requirements.txt
       - name: Run direct QQQ slow-bear exposure audit
         run: PYTHONPATH=research python research/qqq_slow_bear_exposure_audit.py
+      - name: Run B0 drawdown-warning counterfactual
+        run: PYTHONPATH=research python research/qqq_drawdown_warning_b0_counterfactual.py
       - uses: actions/upload-artifact@v4
         with:
           name: qqq-slow-bear-exposure-audit
           path: |
             data/research/qqq_slow_bear_exposure_events.csv
             data/research/qqq_slow_bear_exposure_manifest.json
+            data/research/qqq_drawdown_warning_b0_counterfactual_summary.csv
+            data/research/qqq_drawdown_warning_b0_counterfactual_costs.csv
+            data/research/qqq_drawdown_warning_b0_counterfactual_daily.csv
+            data/research/qqq_drawdown_warning_b0_counterfactual_manifest.json
