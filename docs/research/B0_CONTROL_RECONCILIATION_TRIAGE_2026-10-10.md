@@ -21,7 +21,7 @@ Continue the control discrepancy audit before any further candidate selection. T
 - Scripts: `research/b0_250dma_hybrid_validation.py`, `research/b0_fed200_hybrid_validation.py`, and `research/b0_vix30_hybrid_validation.py`.
 - These use the shared causal *cost* engine and report costs of 0/10/25/50 bps.
 - They intentionally start actual-TQQQ evaluation on 2011-02-07 after the 250-session warm-up, rather than at TQQQ inception. At 10 bps, their B0 control is $1,782,472; at 0 bps it is $1,816,680.
-- Therefore $4.040M and $1.782M are **not a like-for-like comparison**: they differ in evaluation start and transaction-cost assumptions, as well as input end dates by a few sessions. The gap is not yet explained quantitatively by a same-window replay. Do not describe it as a confirmed calculation error, and do not claim it is fully reconciled.
+- Therefore $4.040M and $1.782M are **not a like-for-like comparison**: they differ in evaluation start/capital initialization, transaction-cost assumptions, and input end dates. The later controlled same-input replay below quantifies these effects on the common 2026-10-02 cutoff and resolves this balance gap; this earlier paragraph is retained only as the original triage hypothesis.
 
 ## VIX-30 experiment result recovered from the successful workflow log
 - Workflow: [run 37925744760](https://github.com/eklu654/Trading-Bot/actions/runs/37925744760), successful; artifact ID `11613702733`, ZIP digest `sha256:49ad6a14dcf69b3126a99382105468690eec2d5f2af8b45885726d6107efd0f8`.
@@ -78,3 +78,12 @@ The code inspection establishes different windows and costs. It does **not** yet
 
 ## Decision
 The balance gap is now explained on a controlled same-input basis. Keep the evaluation basis explicit in every future table: (a) inception-start equity, or (b) fresh $5,000 at 250-session warm-up; state cost assumption and last observation date. Do not compare those terminal balances without this metadata. This reconciliation does not validate the strategy for live trading; it only resolves the accounting/window comparison.
+
+
+## Final validation of reconciliation code — 2026-10-10
+
+- Latest code commit containing the corrected six-view manifest: `b8c3859e7bdbe30614d081a7aad445e3089dbe7e`.
+- [TQQQ Dot-Com Survivability run 38031031710](https://github.com/eklu654/Trading-Bot/actions/runs/38031031710) completed **successfully** on that commit. The `Reconcile B0 windows and transaction costs` step and artifact upload both succeeded. Artifact: `11662235342`, SHA-256 digest `b202db2af81f885ad162518b8ffb8d23b261af48481ae281c85bbaf9a101e08a` (14,549,326 bytes).
+- [Research tests run 38031053883](https://github.com/eklu654/Trading-Bot/actions/runs/38031053883) completed **successfully** on documentation commit `5683c0a0589f79aa5078f25990752acdbd33be5b`. This is the current mainline test validation after the manifest correction; the earlier 142-pass result is superseded by this successful rerun.
+- An intermediate workflow failed on commit `362d5a4d9431ad39e1721ad1db7a2c9ea73baae8` because of a malformed manifest string. The source was corrected in `b8c3859e7bdbe30614d081a7aad445e3089dbe7e`, and the subsequent survivability workflow succeeded. Keep this failure in the audit trail rather than deleting it.
+- Current conclusion: the reconciliation script, manifest, and workflow are validated by successful Actions runs. The B0 result is still a research control only—not live-trading approval.
