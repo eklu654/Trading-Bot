@@ -12,7 +12,7 @@ Is the active-Fed × below-200-DMA overlay's 2018–2019 opportunity cost concen
 
 ## Reproduction and validation
 
-The source artifact includes frozen QQQ/TQQQ inputs and the daily signal/equity ledger, but did **not** include the episode-contribution CSV named in the research script. I reconstructed the leave-one-overlay-episode-out table from those frozen inputs and the checked-in `research/causal_execution.py` next-open execution convention.
+The source artifact includes frozen QQQ/TQQQ inputs and the daily signal/equity ledger, but did **not** include the episode-contribution CSV. The source run was on main commit `e633377371fafe08af6510044bbefd8f9fba04ba`, whose script predates the leave-one-episode-out output now present on the research branch. I reconstructed the table from those frozen inputs and the checked-in `research/causal_execution.py` next-open execution convention.
 
 Before interpreting counterfactuals, the reconstruction reproduced the source run's terminal balances:
 - B0 baseline: $4,040,313.15 reconstructed versus $4,040,313.15 reported.
@@ -76,4 +76,4 @@ This agrees with the existing stress-window report: the overlay helps substantia
 2. The clearest cost concentration is the 2018-12-04–2019-02-04 interval, with additional conditional costs in the February and March 2019 episodes. This is evidence about *where* the opportunity cost arose, not proof that a revised exit rule can preserve 2022 protection.
 3. The 2022-04-05–2023-01-25 episode is the largest positive conditional contribution in this leave-one-out analysis, showing the trade-off is real: removing that long defense would have reduced final wealth by about $1.501M, all else unchanged.
 4. Do not add a new threshold or tune the 200-DMA based on these same intervals. Any new rule needs a newly frozen prospective/chronological validation and the existing synthetic-tail gates; no paper/live trading authorization follows.
-5. Artifact packaging note: the source script writes `canonical_active_tightening_overlay_episode_contributions.csv`, but that file was absent from artifact 11595834480. This reconstruction is documented here so the attribution remains auditable; future workflow packaging should include that CSV if the diagnostic is rerun.
+5. Provenance note: the historical source artifact predates the leave-one-episode-out output added to the research-branch script. The current workflow already lists `canonical_active_tightening_overlay_episode_contributions.csv` among its artifact paths; no workflow packaging change was needed for this finding.
