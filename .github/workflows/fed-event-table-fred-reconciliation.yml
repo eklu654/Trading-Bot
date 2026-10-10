@@ -1,0 +1,40 @@
+name: Fed Event Table vs FRED Reconciliation
+
+on:
+  push:
+    paths:
+      - "research/fed_event_table_fred_reconciliation.py"
+      - "research/tqqq_three_layer_event_attribution.py"
+      - ".github/workflows/fed-event-table-fred-reconciliation.yml"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+concurrency:
+  group: fed-event-table-fred-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Compile audit
+        run: python -m py_compile research/fed_event_table_fred_reconciliation.py
+      - name: Reconcile hand-maintained events to FRED daily rates
+        run: python research/fed_event_table_fred_reconciliation.py
+      - name: Upload reconciliation ledger and manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: fed-event-table-fred-reconciliation
+          if-no-files-found: error
+          path: |
+            data/research/fed_event_table_fred_reconciliation.csv
+            data/research/fed_event_table_fred_reconciliation_manifest.json
