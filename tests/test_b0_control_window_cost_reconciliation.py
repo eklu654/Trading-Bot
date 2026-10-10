@@ -6,8 +6,8 @@ from research.b0_control_window_cost_reconciliation import (
 )
 
 
-def synthetic_frame(n=320):
-    dates = pd.bdate_range("2020-01-01", periods=n)
+def synthetic_frame(n=360):
+    dates = pd.bdate_range("2025-06-02", periods=n)
     # Smooth deterministic series with one qualifying shock/recovery event.
     qqq = np.full(n, 100.0)
     for i in range(1, n):
