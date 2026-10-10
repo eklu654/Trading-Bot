@@ -158,7 +158,12 @@ def main():
         "warmup_sessions": WARMUP_SESSIONS,
         "warmup_date": frame.index[WARMUP_SESSIONS - 1].date().isoformat(),
         "cost_bps": list(COSTS),
-        "views": [\n            "inception_full", "warmup_reset", "warmup_carried_equity",\n            "inception_full_through_2026-10-02",\n            "warmup_reset_through_2026-10-02",\n            "warmup_carried_equity_through_2026-10-02",\n        ],
+        "views": [
+            "inception_full", "warmup_reset", "warmup_carried_equity",
+            "inception_full_through_2026-10-02",
+            "warmup_reset_through_2026-10-02",
+            "warmup_carried_equity_through_2026-10-02",
+        ],
         "checks": {
             "zero_cost_engine_matches_plain_causal_equity": True,
             "same_signal_and_frozen_input_for_all_views": True,
