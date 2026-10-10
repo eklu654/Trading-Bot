@@ -31,7 +31,7 @@ This is a small retrospective counterfactual, not a walk-forward-selected or pro
 | DD15 | 50% | $2,484,391 | -$1,555,925 (-38.5%) | -67.34% | +6.19 pp |
 | DD15 | 0% | $1,278,202 | -$2,762,113 (-68.4%) | -65.69% | +7.84 pp |
 | DD10 | 75% | $1,834,217 | -$2,206,099 (-54.6%) | -64.79% | +8.74 pp |
-| DD10 | 50% | $761,916 | -$3,278,399 (-81.1%) | -55.47% | +17.06 pp |
+| DD10 | 50% | $761,916 | -$3,278,399 (-81.1%) | -55.47% | +18.06 pp |
 | DD10 | 0% | $100,639 | -$3,939,676 (-97.5%) | -61.04% | +12.50 pp |
 
 DD10 warning state was active for 801 sessions over 23 episodes. DD15 was active for 376 sessions over 9 episodes.
