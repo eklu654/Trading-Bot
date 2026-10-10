@@ -1,12 +1,10 @@
-"""Actual-TQQQ partial-exposure DMA matrix.
+"""Actual-TQQQ validation of B0 + partial-exposure DMA combinations.
 
-Continuation rerun marker: compare the corrected synthetic 150-DMA/25% row with actual TQQQ.
-
-Signal: QQQ adjusted close vs its DMA.
-Execution: actual TQQQ at next session open.
-Above DMA: 100% TQQQ.
-Below DMA: fixed predeclared exposure.
-Immediate re-entry when QQQ closes back above DMA.
+Primary candidates combine the QQQ -4.5% shock / +10% recovery control (B0)
+with a QQQ-DMA exposure overlay. B0's defensive state takes precedence;
+outside B0 defensive windows, exposure is 100% above DMA and the predeclared
+partial level below DMA. B0 re-entry is immediate. DMA-only variants remain
+diagnostic rows, not candidate strategies.
 """
 from pathlib import Path
 import numpy as np, pandas as pd, yfinance as yf
@@ -68,7 +66,9 @@ def main():
         above=(x.adj_close.to_numpy()>=ma)
         for below in BELOW:
             sig=np.where(above,1.0,below)
-            record("DMA_PARTIAL",dma,below,sig)
+            combined=np.minimum(x.b0_signal.to_numpy(dtype=float),sig)
+            record("B0_PLUS_DMA_PARTIAL",dma,below,combined)
+            record("DMA_ONLY_DIAGNOSTIC",dma,below,sig)
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
     OUT.mkdir(parents=True,exist_ok=True)
