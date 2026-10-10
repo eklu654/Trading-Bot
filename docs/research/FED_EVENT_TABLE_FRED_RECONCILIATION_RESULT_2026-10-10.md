@@ -31,15 +31,20 @@ The three prior-rate flags are:
 
 ## Interpretation and limits
 
-The 2015 and 2016 flags suggest a date-convention/alignment question: the hand-maintained table may use an announcement/action date while the daily FRED target series reflects the new rate on the preceding observation date. These flags alone do **not** establish that the table dates are wrong; announcement timestamps, effective dates, and FRED's daily observation convention must be checked against official Federal Reserve records before changing anything.
+Official-source review confirms the distinction for both flagged hikes:
 
-The current script checks nearby rate values, not whether every event has the correct official announcement timestamp or whether the difference changes a causal strategy signal. It also does not yet report the full duration of every discrepancy between a table-implied daily series and FRED. That is the next validation step if the official date convention confirms a meaningful difference.
+- **2015:** The FOMC statement was released on December 16, 2015 at 2:00 p.m.; the new target range was effective December 17. The official implementation note explicitly states the December 17 effective date. [FOMC statement](https://www.federalreserve.gov/newsevents/pressreleases/monetary20151216a.htm) · [Implementation note](https://www.federalreserve.gov/newsevents/pressreleases/20151216a1.htm)
+- **2016:** The FOMC statement was released on December 14, 2016 at 2:00 p.m.; the new target range was effective December 15. The official implementation note explicitly states the December 15 effective date. [FOMC statement](https://www.federalreserve.gov/newsevents/pressreleases/monetary20161214a.htm) · [Implementation note](https://www.federalreserve.gov/newsevents/pressreleases/20161214a1.htm)
+
+Therefore, the two one-day flags are consistent with the event table using **effective dates** while the FRED daily target-rate observation reflects the newly announced target on the **announcement date**. This is a real difference in timestamp convention, but not evidence that either source is inherently incorrect. Because the statements were released at 2:00 p.m. ET, whether the new state can be used for a close-based signal depends on the strategy's explicit information-availability and execution convention. The current audit has not established that these two rows alter any strategy result.
+
+The current script checks nearby rate values, not every official announcement timestamp or the portfolio impact of different timing conventions. It also does not report the full duration of every discrepancy between a table-implied daily series and FRED.
 
 ## Decision / next step
 
-1. Keep the hand-maintained event table unchanged for now.
-2. Manually verify the 2015-12-16/17 and 2016-12-14/15 cases against official FOMC statements and implementation notes, including release time and effective date.
-3. Establish and document one explicit convention for when a rate change becomes usable by a close-based signal.
-4. Only if that convention changes the causal Fed-state series, create a separately versioned input and rerun the frozen Fed validation. Do not retune on the already-inspected 2018/2022 episodes.
+1. Keep the hand-maintained event table unchanged; it records effective dates for these two moves.
+2. Preserve the distinction between announcement-date information and effective-date state in future Fed-state construction.
+3. Before changing any strategy inputs, define whether the close signal may use an announcement released at 2:00 p.m. ET that same trading day, and test that convention causally (signal at close, execution no earlier than next open).
+4. Only if a separately specified timing test changes the causal Fed-state series, create a versioned input and rerun frozen validation. Do not retune on the already-inspected 2018/2022 episodes.
 
-This check found **two one-day alignment flags plus one missing prior-rate annotation**, not a demonstrated strategy defect. B0 and all promotion gates remain unchanged.
+This check found **two explained announcement/effective-date convention differences plus one missing prior-rate annotation**, not a demonstrated strategy defect. B0 and all promotion gates remain unchanged.
