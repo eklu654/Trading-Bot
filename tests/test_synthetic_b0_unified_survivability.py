@@ -85,7 +85,7 @@ def test_partial_dma_matrix_uses_one_post_warmup_window_and_includes_b0():
         "on3": np.zeros(len(idx)),
         "in3": np.zeros(len(idx)),
     }, index=idx)
-    out, start, end = run_matrix(frame)
+    out, periods, start, end = run_matrix(frame)
     assert start == idx[249]
     assert end == idx[-1]
     assert out["evaluation_start"].nunique() == 1
@@ -93,3 +93,6 @@ def test_partial_dma_matrix_uses_one_post_warmup_window_and_includes_b0():
     assert "B0_SHOCK_RECOVERY" in set(out["strategy"])
     assert set(out["observations"]) == {len(idx) - 249}
     assert set(out["starting_balance"]) == {5000.0}
+    assert not periods.empty
+    assert "period" in periods.columns
+    assert "max_dd_trough_date" in out.columns
