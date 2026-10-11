@@ -6,7 +6,6 @@ on:
       - "research/fed_dma_chronological_robustness.py"
       - "research/canonical_shock_recovery_active_tightening_overlay.py"
       - "research/canonical_shock_recovery_fed_dma_overlay.py"
-      - "research/canonical_shock_recovery_fed_dma_overlay.py"
       - "research/causal_execution.py"
       - "research/requirements.txt"
       - ".github/workflows/fed-dma-chronological-robustness.yml"
