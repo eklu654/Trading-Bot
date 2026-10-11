@@ -1,7 +1,7 @@
 # Fixed Structural Risk-Budget Results — 2026-10-11
 
 ## Run status
-- Workflow: [run #38](https://github.com/eklu654/Trading-Bot/actions/runs/38119997272) — **success**.
+- Workflow: [validated workflow run](https://github.com/eklu654/Trading-Bot/actions/runs/38119997272) — **success**.
 - Tested commit: `52caf4852f5e48041b07f2d315bd0ca71e8ffd14`.
 - Tests: 16 passed, including risk-budget cap rules and re-entry state transitions.
 - Actual TQQQ, QQQ adjusted-close B0 signals, $5,000 initial capital.
@@ -35,3 +35,7 @@ Keep B0 as the unchanged research control. None of the tested defenses is approv
 - Summary SHA-256: `edc7804c2ff397d4a79cfeda84c1f876e39751e8e3bdf8a37ce8c8a30b827791`
 - Equity curves SHA-256: `67de0b87ec10b56b63a9b01e17531c1b0864bd9af29e26979e1763887f49dc49`
 - Manifest SHA-256: `13c68fc80e70ea838a9ebc11010cd20014f78c09e07f33ee7658ba810b51d148`
+
+
+## Initial workflow failure
+The first attempt, workflow run ID `38119950698`, passed all 16 tests but failed at script startup because direct execution could not resolve the `research` package import. The script now supports both package and direct-script imports; the corrected workflow run ID `38119997272` passed and produced the artifact cited above.
