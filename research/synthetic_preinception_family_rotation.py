@@ -183,10 +183,9 @@ def main():
         family: raw[spec["symbol"]]["close"].reindex(index)
         for family, spec in FAMILIES.items()
     }, index=index)
-    benchmark_return_price = pd.DataFrame({
-        family: raw[spec["symbol"]]["adj_close"].reindex(index)
-        for family, spec in FAMILIES.items()
-    }, index=index)
+    # Use close-to-close price returns for every family so ETF and index
+    # benchmarks share one convention; dividends are intentionally excluded.
+    benchmark_return_price = benchmark_close.copy()
     benchmark_returns = benchmark_return_price.pct_change().fillna(0.0)
     funding_yield = raw[FUNDING_SYMBOL]["close"].reindex(index).ffill()
     if funding_yield.isna().any():
