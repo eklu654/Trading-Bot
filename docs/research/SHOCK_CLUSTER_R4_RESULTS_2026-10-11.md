@@ -1,12 +1,12 @@
 # Shock-Cluster R4 Results and Decision — 2026-10-11
 
 ## Run status and implementation audit
-- Validated workflow: [run #34](https://github.com/eklu654/Trading-Bot/actions/runs/38119818755) — **success**.
+- Validated workflow: [validated workflow run](https://github.com/eklu654/Trading-Bot/actions/runs/38119818755) — **success**.
 - Tested commit: `e66f74d240aadd1f4b4a2c76635399b39fd2f322`.
 - Unit tests passed, including isolated-shock control equivalence and staged clustered recovery. Backtest and artifact upload succeeded.
 - Artifact ID: `11694724448`, name `reentry-isolation-results`.
 - Evaluation: 4,189 aligned sessions, 2010-02-11 through 2026-10-07; actual TQQQ, QQQ adjusted-close signals; $5,000 initial capital.
-- Important audit note: earlier run [#31](https://github.com/eklu654/Trading-Bot/actions/runs/38119708845) used a faulty R4 implementation that re-entered isolated shocks before B0's +10% threshold. Its R4 performance numbers are invalid and must not be used. The corrected logic is covered by the final run's tests.
+- Important audit note: earlier run [invalid preliminary workflow run](https://github.com/eklu654/Trading-Bot/actions/runs/38119708845) used a faulty R4 implementation that re-entered isolated shocks before B0's +10% threshold. Its R4 performance numbers are invalid and must not be used. The corrected logic is covered by the final run's tests.
 
 ## Fixed R4 rule
 - Keep B0's -4.5% QQQ daily-shock exit and +10% running-low recovery unchanged for isolated shocks.
@@ -37,3 +37,7 @@ This run uses actual TQQQ history only; it is not a test of the 2000 bear market
 - TQQQ frozen input SHA-256: `7f778f6dcd15db47c931392ee2fff20020d33efe70391aa3a88480943d6b8335`
 - Summary SHA-256: `55be410551a307d553fcb31482352cbdbaecba3e9ed26cafb3dbf33d6414c196`
 - Equity curves SHA-256: `7bca455170174533ebddab6f338c7e6cc9af13a580681113d9ded310f0fb0114`
+
+
+## Invalid preliminary implementation
+The earlier workflow run ID `38119708845` passed its then-current tests but used an incorrect R4 branch that re-entered isolated shocks before B0's +10% recovery threshold. Its R4 performance figures are explicitly invalid and excluded from this decision. The corrected implementation restored the B0 threshold, added a regression test, and passed in workflow run ID `38119818755`.
