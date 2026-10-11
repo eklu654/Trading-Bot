@@ -1,0 +1,51 @@
+name: Synthetic pre-inception family rotation stress
+
+on:
+  push:
+    branches: [research/qqq-slow-bear-audit]
+    paths:
+      - "research/synthetic_preinception_family_rotation.py"
+      - "tests/test_synthetic_preinception_family_rotation.py"
+      - ".github/workflows/synthetic-preinception-family-rotation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: synthetic-preinception-family-rotation-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  synthetic-stress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r research/requirements.txt
+      - name: Test synthetic accounting and selector invariants
+        run: PYTHONPATH=. pytest -q tests/test_synthetic_preinception_family_rotation.py
+      - name: Run frozen synthetic 2000-2002 stress test
+        run: PYTHONPATH=. python research/synthetic_preinception_family_rotation.py
+      - name: Upload synthetic inputs and results
+        uses: actions/upload-artifact@v4
+        with:
+          name: synthetic-preinception-family-rotation
+          path: |
+            data/research/synthetic_preinception_inputs/
+            data/research/synthetic_preinception_family_summary.csv
+            data/research/synthetic_preinception_family_equity.csv
+            data/research/synthetic_preinception_family_weights.csv
+            data/research/synthetic_preinception_proxy_returns.csv
+            data/research/synthetic_preinception_proxy_wealth.csv
+            data/research/synthetic_preinception_benchmark_close.csv
+            data/research/synthetic_preinception_family_manifest.json
+          if-no-files-found: error
+          retention-days: 30
