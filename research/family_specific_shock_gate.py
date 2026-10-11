@@ -76,12 +76,19 @@ def rotating_gate_weights(base: pd.DataFrame, scores: pd.DataFrame,
     last_rebalance = -cadence
     for i, date in enumerate(base.index):
         if i - last_rebalance >= cadence:
-            allowed = eligible.loc[date].astype(bool) & ~gate_states.loc[date].astype(bool)
+            eligible_today = eligible.loc[date].astype(bool)
+            blocked_eligible = eligible_today & gate_states.loc[date].astype(bool)
+            allowed = eligible_today & ~gate_states.loc[date].astype(bool)
             candidates = scores.loc[date].where(allowed).dropna()
             current[:] = 0.0
             if len(candidates):
                 selected = candidates.nlargest(min(top_n, len(candidates))).index
-                current.loc[selected] = 1.0 / len(selected)
+                # If a gate actually blocks an eligible family, preserve the
+                # frozen two-slot budget: each replacement gets 1/top_n and
+                # any unfilled slot stays cash. With no relevant gate, exactly
+                # reproduce the base strategy's original normalization.
+                per_family = 1.0 / top_n if blocked_eligible.any() else 1.0 / len(selected)
+                current.loc[selected] = per_family
             last_rebalance = i
         # Immediate family-specific exit; the slot remains empty until the
         # next scheduled rebalance, even if its recovery gate clears earlier.
