@@ -54,3 +54,11 @@
 
 - Run [38132031780](https://github.com/eklu654/Trading-Bot/actions/runs/38132031780) passed with fail-closed report reconciliation enabled; `episodes_accounting_validated=5`, confirming all five measured episode rows satisfy return/terminal-equity and incremental-metric identities. Artifact ID `11699711470`; digest `sha256:8e6b1a1763c4dd845ec56841aad2bfcb255475948b6afc1a310c6d3cf448f51e`.
 - A further regression test was committed at `78c2ca827ed582b0528136e7d5026d060dad5f88` to prove the validator rejects inconsistent terminal equity. Workflow run [38132039628](https://github.com/eklu654/Trading-Bot/actions/runs/38132039628) is the validation of that final test commit; await its result before declaring the latest branch head green.
+
+## Next audit extension — full-period compounded comparison
+
+- Added `_full_period_comparison` to compute B0 and frozen F75 compounded terminal equity, total return, max drawdown, average realized exposure, defensive sessions, and incremental differences at 0/25/50 bp costs over the full actual-TQQQ history.
+- The output is `data/research/b0_f75_full_period_compounded.csv`; the JSON summary includes the rows, date bounds, and session count. The workflow uploads this file alongside episode attribution.
+- Added a synthetic regression test for return/terminal consistency and cost sensitivity.
+- Commits: `7dae2bc711b783fe9a5b75f42053926735cde163` (full-period metrics), `a9837231f34b00a4cfe8d61628ba49ef464c7080` (artifact upload), `d72256b0b66d778ddad4aba5507eb371e231e222` (test).
+- These full-period figures must be checked against previously reported B0/F75 balances before interpretation; if they differ, reconcile execution timing, start/end dates, and cost conventions rather than silently choosing one result.
