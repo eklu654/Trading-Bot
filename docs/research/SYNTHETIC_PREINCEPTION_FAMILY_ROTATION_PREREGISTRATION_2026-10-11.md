@@ -5,7 +5,7 @@ Test whether the frozen DMA-250/top-2/5-session family-rotation selector would h
 
 ## Frozen selector
 - Benchmark families: SPY proxy (SPY), Nasdaq-100 (QQQ), semiconductor index (^SOX), Dow (DIA), Russell 2000 index (^RUT).
-- Signals use benchmark close versus its 250-session simple moving average, calculated only through the prior close.
+- Signals use benchmark close versus its 250-session simple moving average, calculated only through the prior close. Synthetic benchmark returns use close-to-close price returns for all five families, excluding dividends consistently across ETF and index proxies.
 - Eligible families rank by prior close / prior 250-DMA minus one; equal-weight the top two eligible families; rebalance every five common sessions; otherwise hold cash.
 - Warm-up: begin scored performance on the first common session where all five 250-session moving averages are valid. End 2002-12-31. No parameter search.
 
