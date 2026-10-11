@@ -36,3 +36,10 @@
 - The plan fixes B0/F75 rules, 25-bps primary costs, 0/50-bps sensitivity, $5,000 shadow starting equity, canonical market input through 2026-10-07, causal close-to-next-open execution, and a 252-return-bearing-session observation horizon.
 - No orders are placed. The next implementation task is a shadow-only scheduled monitor with persistent daily ledger, exact B0 reconciliation, stale-data fail-closed behavior, and no tuning during the observation window.
 - Narrowed the partial-DMA matrix workflow's push filters to its actual script and dependencies so unrelated research edits no longer trigger the expensive matrix replay.
+
+
+## Final housekeeping verification — 2026-10-11
+
+- Partial-DMA matrix workflow filter cleanup validated by successful [run #61](https://github.com/eklu654/Trading-Bot/actions/runs/38129305559); its push trigger now targets only the matrix script and its two direct Python dependencies, plus the workflow file.
+- Exact-canonical Fed-DMA run #15 remains successful and is the authoritative result. The historical F75 gate passes do not override the 2022-2024 concentration warning.
+- Forward shadow plan is registered but the scheduled/persistent ledger implementation has not been started. Keep it separate from broker execution; the current branch is a research branch, and GitHub scheduled workflows only run from the repository's default branch, so do not imply a daily schedule is active without resolving branch placement.
