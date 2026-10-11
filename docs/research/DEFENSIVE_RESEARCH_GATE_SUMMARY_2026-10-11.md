@@ -35,7 +35,7 @@ Frozen control: DMA-250 eligible families, top two, 5-session cadence; SPXL/SPY,
 | Permanent SOXL 25% cap with replacement family | $183,713 | -63.92% | Reject: 4.61-point DD improvement, ~26.4% wealth loss; misses both preregistered gates |
 | SOXL 25% cap only during SOXX 60-session drawdown stress (-15% entry / -10% exit) | $237,314 | -67.69% | Reject: preserves ~95% of wealth but improves DD by less than one point |
 
-Event-level attribution found the SOXL family was the largest family-level dollar-loss contributor in the deepest recent drawdowns. However, permanent caps miss too much upside; the stress-conditioned cap preserves upside but barely changes drawdown. This is evidence against further tuning of these simple family gates, not proof that all risk controls are futile.
+Corrected selector attribution shows the deepest drawdowns are multi-family events: SOXL was a large contributor, but SPXL, TQQQ and TNA also produced substantial losses in different episodes. The COVID crash caused a 65.5% drawdown in 16 sessions while the strategy held TQQQ/SOXL at 50% each. The slow DMA eligibility rule is not an account-level crash circuit breaker. Permanent caps miss too much upside; the stress-conditioned SOXL cap preserves upside but barely changes drawdown. See [frozen selector attribution audit](SELECTOR_ATTRIBUTION_AUDIT_RESULTS_2026-10-11.md). This is evidence against further tuning of these simple family gates, not proof that all risk controls are futile.
 
 References:
 - [Family-specific shock gate results and event attribution](FAMILY_SPECIFIC_SHOCK_GATE_RESULTS_2026-10-11.md)
@@ -45,8 +45,8 @@ References:
 
 ## What to do next
 1. Freeze the rejected rules and stop threshold sweeps.
-2. Audit the existing frozen family-rotation selector and risk-overlay replay for family concentration, selected-family exposure during drawdown episodes, and recovery participation. The purpose is diagnosis, not parameter optimization.
-3. If that audit reveals a genuinely different mechanism, preregister one bounded structural hypothesis with a terminal-wealth gate and a drawdown gate before running it.
+2. Selector attribution is complete: the 250-DMA filter does not prevent fast crashes, leveraged family losses are multi-family, and strong recovery participation is important. Do not tune DMA/top-N/cadence or the rejected family gates from this audit.
+3. Audit existing volatility-targeting/risk-overlay workflow results before proposing anything new. Do not repeat its parameter grid. Only proceed to a structurally distinct risk budget if the previous results leave a real unanswered hypothesis; preregister wealth and drawdown gates first.
 4. Build a separate, clearly labeled synthetic daily-reset Nasdaq/S&P/semiconductor stress dataset for pre-inception episodes such as 2000-2002. Never label simulated pre-inception returns as actual TQQQ/SOXL/SPXL history.
 5. Keep live/paper trading downstream of data validation, execution realism, walk-forward stability, and a defensible account-level risk limit.
 
