@@ -37,7 +37,7 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt
       - name: Compile frozen replay and dependencies
-        run: python -m py_compile research/fed_dma_chronological_robustness.py research/canonical_shock_recovery_active_tightening_overlay.py research/canonical_shock_recovery_fed_dma_overlay.py research/causal_execution.py
+        run: python -m py_compile research/fed_dma_chronological_robustness.py research/test_fed_dma_terminal_shock_censoring.py research/canonical_shock_recovery_active_tightening_overlay.py research/canonical_shock_recovery_fed_dma_overlay.py research/causal_execution.py
       - name: Download canonical frozen B0 input
         env:
           GH_TOKEN: ${{ github.token }}
@@ -52,6 +52,8 @@ jobs:
           name: fed-dma-chronological-robustness
           if-no-files-found: error
           path: |
+            data/research/canonical_b0/tqqq_actual_partial_dma_frozen_input.csv
+            data/research/canonical_b0/tqqq_actual_partial_dma_manifest.json
             data/research/fed_dma_chronological_robustness_frozen_inputs.csv
             data/research/fed_dma_chronological_robustness_summary.csv
             data/research/fed_dma_chronological_robustness_windows.csv
