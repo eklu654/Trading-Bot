@@ -131,3 +131,10 @@
 
 - The historical repeatability workflow also passed on commit `609385e0e440b8b05ffce88252eb8fd346da839e`: run [38133265384](https://github.com/eklu654/Trading-Bot/actions/runs/38133265384), 10/10 tests passed, fixed attribution completed, and artifact ID `11700315891` uploaded (ZIP SHA-256 `3173e6b3c533aab427821d64ff6b9c0c86f7a72fdc52925c0fa3738d29f5fe8f`). The latest monitor-specific run [38133271821](https://github.com/eklu654/Trading-Bot/actions/runs/38133271821) passed 14/14 tests, including the new integrity and idempotency cases.
 
+## 2026-10-11 — final shadow ledger invariants added
+
+- Extended the persisted-ledger validator to verify the initialization marker occurs only on the first row, B0 and overlay state signals are binary, every stored F75 close signal exactly matches the frozen 75%-partial-exposure formula, and realized B0/F75 exposure is the prior session's close signal.
+- Added regression tests for a full-exit value incorrectly recorded as F75, non-lagged realized exposure, and invalid initialization markers. These checks directly guard against reintroducing the historical-versus-prospective rule mismatch.
+- Final validation run [38133368499](https://github.com/eklu654/Trading-Bot/actions/runs/38133368499) passed **17/17 shadow-monitor tests**, validated the existing ledger and state manifest, and completed an idempotent no-new-sessions run successfully. The ledger was not rewritten.
+- Intermediate run [38133358288](https://github.com/eklu654/Trading-Bot/actions/runs/38133358288) failed because the validator was committed before the synthetic test fixture was updated to include the newly required signal columns. The fixture update and full 17-test run above supersede that expected sequencing failure.
+
