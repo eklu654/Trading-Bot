@@ -30,12 +30,14 @@ class ShadowMonitorGuardrails(unittest.TestCase):
             "f75_signal_close": [1.0, 1.0],
             "b0_exposure": [0.0, 1.0],
             "f75_exposure": [0.0, 1.0],
-            "b0_equity_0bps": [5000.0, 4973.0],
-            "b0_equity_25bps": [5000.0, 4960.5],
-            "b0_equity_50bps": [5000.0, 4948.0],
-            "f75_equity_0bps": [5000.0, 4973.0],
-            "f75_equity_25bps": [5000.0, 4960.5],
-            "f75_equity_50bps": [5000.0, 4948.0],
+            "overnight_return": [0.0, 0.0185715792275],
+            "intraday_return": [0.0, -0.00538426865925],
+            "b0_equity_0bps": [5000.0, 4973.07865670375],
+            "b0_equity_25bps": [5000.0, 4960.64596006199],
+            "b0_equity_50bps": [5000.0, 4948.21326342023],
+            "f75_equity_0bps": [5000.0, 4973.07865670375],
+            "f75_equity_25bps": [5000.0, 4960.64596006199],
+            "f75_equity_50bps": [5000.0, 4948.21326342023],
         })
         state = {
             "canonical_input_sha256": EXPECTED_HASH,
@@ -84,6 +86,18 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         prior.loc[0, "initialization_session"] = False
         with self.assertRaisesRegex(RuntimeError, "initialization marker"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_existing_ledger_daily_equity_reconciliation_fails_closed(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "f75_equity_25bps"] = 4800.0
+        with self.assertRaisesRegex(RuntimeError, "equity accounting mismatch"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_existing_ledger_nonpositive_equity_fails_closed(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "b0_equity_50bps"] = 0.0
+        with self.assertRaisesRegex(RuntimeError, "non-positive"):
             validate_existing_ledger(prior, state, ledger_bytes)
 
     def test_existing_ledger_hash_mismatch_fails_closed(self):
