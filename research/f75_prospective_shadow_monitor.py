@@ -56,6 +56,39 @@ def compose_f75_signal(b0, overlay_state, partial_exposure=0.75):
     return np.minimum(baseline, overlay_weight)
 
 
+def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_HASH):
+    """Fail closed if an existing append-only ledger or its state manifest is stale."""
+    required = {
+        "date", "source_canonical_sha256", "initialization_session",
+        "b0_exposure", "f75_exposure",
+        "b0_equity_0bps", "b0_equity_25bps", "b0_equity_50bps",
+        "f75_equity_0bps", "f75_equity_25bps", "f75_equity_50bps",
+    }
+    missing = required - set(prior.columns)
+    if missing:
+        raise RuntimeError(f"Existing shadow ledger columns missing: {sorted(missing)}")
+    dates = pd.to_datetime(prior["date"], errors="coerce")
+    if dates.isna().any() or dates.duplicated().any() or not dates.is_monotonic_increasing:
+        raise RuntimeError("Existing shadow ledger dates invalid")
+    if prior["source_canonical_sha256"].astype(str).ne(expected_hash).any():
+        raise RuntimeError("Existing shadow ledger canonical source hash mismatch")
+    if state.get("canonical_input_sha256") != expected_hash:
+        raise RuntimeError("Shadow state canonical source hash mismatch")
+    actual_ledger_hash = hashlib.sha256(ledger_bytes).hexdigest()
+    if state.get("ledger_sha256") != actual_ledger_hash:
+        raise RuntimeError("Shadow state ledger SHA-256 mismatch")
+    if state.get("last_observation") != dates.iloc[-1].date().isoformat():
+        raise RuntimeError("Shadow state tail date does not match ledger")
+    if state.get("mode") != "SHADOW_ONLY_NO_ORDERS":
+        raise RuntimeError("Shadow state mode is not shadow-only")
+    numeric = prior.select_dtypes(include=[np.number])
+    if not np.isfinite(numeric.to_numpy(dtype=float)).all():
+        raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
+    if not prior["b0_exposure"].between(0.0, 1.0).all() or not prior["f75_exposure"].between(0.0, 1.0).all():
+        raise RuntimeError("Existing shadow ledger contains invalid realized exposure")
+    return True
+
+
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
     if not CANON.exists(): raise RuntimeError("Canonical frozen input is missing")
@@ -102,9 +135,18 @@ def main():
     overnight = np.zeros(len(prices)); overnight[1:] = adj_open[1:] / adj_close[:-1] - 1
     intraday = adj_close / adj_open - 1
     # Existing ledger carries shadow account state forward. Never rewrite past rows.
-    prior = pd.read_csv(LEDGER, parse_dates=["date"]) if LEDGER.exists() else pd.DataFrame()
+    if LEDGER.exists():
+        if not STATE.exists():
+            raise RuntimeError("Existing shadow ledger has no state manifest")
+        prior_bytes = LEDGER.read_bytes()
+        prior = pd.read_csv(LEDGER, parse_dates=["date"])
+        prior_state = json.loads(STATE.read_text(encoding="utf-8"))
+        validate_existing_ledger(prior, prior_state, prior_bytes)
+    else:
+        if STATE.exists():
+            raise RuntimeError("Shadow state exists but its ledger is missing")
+        prior = pd.DataFrame()
     if not prior.empty:
-        if prior["date"].duplicated().any(): raise RuntimeError("Existing ledger has duplicate dates")
         if prior["date"].max() >= fresh.index.min(): raise RuntimeError("New sessions overlap or precede ledger tail")
         last = prior.sort_values("date").iloc[-1]
         eq = {("B0", b): float(last[f"b0_equity_{b}bps"]) for b in COSTS}
