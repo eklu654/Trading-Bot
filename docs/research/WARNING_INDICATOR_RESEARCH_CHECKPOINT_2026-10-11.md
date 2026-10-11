@@ -67,3 +67,9 @@ Do not claim the discriminator is validated and do not launch another parameter 
 - Script freezes its retrieved QQQ adjusted-close CSV into the artifact set and records SHA-256, retrieval timestamp, source, coverage, 20% peak-to-trough event coverage, first warning date, sessions from peak to warning, drawdown at warning, warning episodes, and warning-day fraction.
 - Important limitation: this is a signal-only screen. It does not yet simulate B0/TQQQ portfolio effects, re-entry, false-alarm cost, or opportunity cost. Those require a separate predeclared overlay test after inspecting event results. Do not choose a threshold from the full history and call it out-of-sample validation.
 - No B0 changes; no candidate promoted. Benchmark remains frozen at about $4.04M / -73.53% max DD as the current recorded control.
+
+
+### Rolling-decline audit execution note / correction
+- First workflow run `38113063154` completed successfully and produced artifacts, but inspection found the original event segmenter merged the 2000–02 decline with later years until the old peak recovered, hiding the 2007–09 bear as a separate event. Its five-event detection-rate table is therefore invalid for comparing broad bear-event coverage and must not be used as a result.
+- Fixed the event ledger in commit `62c772e6ddb3e2d73b5d95ed9e50866412083bfc`: events now begin when QQQ falls at least 20% below a trailing 252-session high and close after drawdown stays shallower than 10% for 20 consecutive sessions. This is an explicit operational event definition, not the only possible definition; inspect the resulting event dates before interpreting detection rates.
+- Corrected workflow run `38113127827` was queued after the fix. Do not rely on the first run's event count or detection rates. After corrected run completes, inspect the event ledger, especially 2000–02, 2007–09, 2020, 2022, and 2025, before interpreting threshold trade-offs.
