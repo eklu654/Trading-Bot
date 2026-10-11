@@ -110,8 +110,25 @@ def main():
     fresh["tqqq_adj_open"] = (t["Open"] * t["Adj Close"] / t["Close"]).reindex(fresh.index).astype(float)
     fresh["tqqq_adj_close"] = t["Adj Close"].reindex(fresh.index).astype(float)
     fresh = fresh.loc[fresh.index > cutoff].dropna()
+    # Validate the persisted ledger before deciding whether this invocation is a no-op.
+    if LEDGER.exists():
+        if not STATE.exists():
+            raise RuntimeError("Existing shadow ledger has no state manifest")
+        prior_bytes = LEDGER.read_bytes()
+        prior = pd.read_csv(LEDGER, parse_dates=["date"])
+        prior_state = json.loads(STATE.read_text(encoding="utf-8"))
+        validate_existing_ledger(prior, prior_state, prior_bytes)
+    else:
+        if STATE.exists():
+            raise RuntimeError("Shadow state exists but its ledger is missing")
+        prior = pd.DataFrame()
+    # Market feeds overlap the already-recorded tail on every rerun. Keep only
+    # strictly newer sessions so scheduled/manual reruns are idempotent.
+    if not prior.empty:
+        prior_tail = pd.to_datetime(prior["date"]).max()
+        fresh = fresh.loc[fresh.index > prior_tail]
     if fresh.empty:
-        print("No new completed market sessions after frozen cutoff; no ledger change.")
+        print("No new completed market sessions after frozen cutoff and ledger tail; no ledger change.")
         return
     if fresh.index.has_duplicates or not fresh.index.is_monotonic_increasing: raise RuntimeError("Fresh market dates invalid")
     old = c.rename(columns={"adj_close":"qqq_adj_close"})[["qqq_adj_close","tqqq_adj_open","tqqq_adj_close"]].copy()
@@ -135,17 +152,6 @@ def main():
     overnight = np.zeros(len(prices)); overnight[1:] = adj_open[1:] / adj_close[:-1] - 1
     intraday = adj_close / adj_open - 1
     # Existing ledger carries shadow account state forward. Never rewrite past rows.
-    if LEDGER.exists():
-        if not STATE.exists():
-            raise RuntimeError("Existing shadow ledger has no state manifest")
-        prior_bytes = LEDGER.read_bytes()
-        prior = pd.read_csv(LEDGER, parse_dates=["date"])
-        prior_state = json.loads(STATE.read_text(encoding="utf-8"))
-        validate_existing_ledger(prior, prior_state, prior_bytes)
-    else:
-        if STATE.exists():
-            raise RuntimeError("Shadow state exists but its ledger is missing")
-        prior = pd.DataFrame()
     if not prior.empty:
         if prior["date"].max() >= fresh.index.min(): raise RuntimeError("New sessions overlap or precede ledger tail")
         last = prior.sort_values("date").iloc[-1]
