@@ -387,3 +387,11 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - QA: first diagnostic run was superseded because it started one session early and reported split equity on a continuous curve; the corrected report explicitly resets each split to $5,000 and starts 2010-03-12. First unit-test failure was strict float equality; fixed with tolerance. Only corrected run is authoritative.
 - Results report: [SELECTOR_ATTRIBUTION_AUDIT_RESULTS_2026-10-11.md](SELECTOR_ATTRIBUTION_AUDIT_RESULTS_2026-10-11.md). Preregistration: [SELECTOR_ATTRIBUTION_AUDIT_PREREGISTRATION_2026-10-11.md](SELECTOR_ATTRIBUTION_AUDIT_PREREGISTRATION_2026-10-11.md). Consolidated decision summary updated.
 - Next: do not tune DMA/top-N/cadence or the rejected family caps/gates. Audit whether the existing multi-family volatility-targeting matrix has a recoverable validated artifact/report before any new experiment. If already tested, do not repeat its grid; otherwise run only the already predeclared experiment once if needed. Synthetic pre-2010 leveraged ETF stress remains a separately labeled study.
+
+
+### Prior multi-family volatility overlay results recovered — 2026-10-11
+
+- Located the existing risk-overlay matrix and robustness results in the main README and the account replay in `docs/02-research/dma-family-rotation-5000-account-replay.md`; do not rerun the broad matrix.
+- The V30/L20/DD20–30 cluster reduced full-period max DD to roughly 39–48% but ended at only about $23k–$34k at 25 bps in the $5,000 whole-share replay, compared with about $177k under next-open and $228k under prior-close raw family rotation. This is a known return/DD tradeoff, not an untested candidate.
+- Important comparability note: the latest selector-attribution diagnostic uses daily adjusted-close arithmetic and ends at $249,490; it is not directly comparable to the older whole-share account replay's ending balances. Keep execution/accounting model labels attached to every metric.
+- Next bounded work: a distinct synthetic daily-reset family-rotation stress study for 2000–2002, explicitly modeling 3x daily reset, fees, and financing; do not call it actual TQQQ/SOXL/SPXL and do not tune the selector to this single event.
