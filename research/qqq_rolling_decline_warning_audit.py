@@ -37,53 +37,71 @@ def download():
 
 
 def events_from_close(close, threshold=EVENT_DD):
-    """Non-overlapping peak-to-recovery events; peak-to-trough drawdown >= threshold."""
+    """Independent rolling-252-session drawdown episodes.
+
+    Event starts on the first close at least 20% below the highest close in
+    the trailing 252 sessions. It ends after drawdown from that rolling high
+    stays shallower than 10% for 20 consecutive sessions. This permits a later
+    bear to be counted even if an older secular peak has not yet been regained.
+    """
     vals = close.to_numpy()
     dates = close.index
-    out = []
-    peak_i = 0
-    i = 1
     n = len(vals)
-    while i < n:
-        if vals[i] >= vals[peak_i]:
-            peak_i = i
-            i += 1
-            continue
-        dd = vals[i] / vals[peak_i] - 1.0
-        if dd > -threshold:
-            i += 1
-            continue
-        start_i = peak_i
-        peak_val = vals[start_i]
-        trough_i = i
-        j = i + 1
-        while j < n and vals[j] < peak_val:
-            if vals[j] < vals[trough_i]:
-                trough_i = j
-            j += 1
-        recovered = j < n
-        end_i = j if recovered else n - 1
+    roll_high = close.rolling(252, min_periods=1).max().to_numpy()
+    out = []
+    active = False
+    peak_i = trough_i = None
+    shallow_count = 0
+    for i in range(n):
+        dd = vals[i] / roll_high[i] - 1.0
+        if not active and dd <= -threshold:
+            lo = max(0, i - 251)
+            peak_i = lo + int(np.argmax(vals[lo:i + 1]))
+            trough_i = i
+            active = True
+            shallow_count = 0
+        elif active:
+            if vals[i] < vals[trough_i]:
+                trough_i = i
+            if dd > -0.10:
+                shallow_count += 1
+            else:
+                shallow_count = 0
+            if shallow_count >= 20:
+                end_i = i
+                peak_val = vals[peak_i]
+                out.append({
+                    "event_id": len(out) + 1,
+                    "peak_date": str(pd.Timestamp(dates[peak_i]).date()),
+                    "peak_close": float(peak_val),
+                    "trough_date": str(pd.Timestamp(dates[trough_i]).date()),
+                    "trough_close": float(vals[trough_i]),
+                    "trough_drawdown_pct": float((vals[trough_i] / peak_val - 1) * 100),
+                    "recovery_date": str(pd.Timestamp(dates[end_i]).date()),
+                    "recovered_to_prior_peak": bool(vals[end_i] >= peak_val),
+                    "_peak_i": peak_i,
+                    "_trough_i": trough_i,
+                    "_end_i": end_i,
+                })
+                active = False
+                peak_i = trough_i = None
+                shallow_count = 0
+    if active and peak_i is not None:
+        peak_val = vals[peak_i]
         out.append({
             "event_id": len(out) + 1,
-            "peak_date": str(pd.Timestamp(dates[start_i]).date()),
+            "peak_date": str(pd.Timestamp(dates[peak_i]).date()),
             "peak_close": float(peak_val),
             "trough_date": str(pd.Timestamp(dates[trough_i]).date()),
             "trough_close": float(vals[trough_i]),
             "trough_drawdown_pct": float((vals[trough_i] / peak_val - 1) * 100),
-            "recovery_date": str(pd.Timestamp(dates[end_i]).date()) if recovered else "",
-            "recovered_to_prior_peak": bool(recovered),
-            "_peak_i": start_i,
+            "recovery_date": "",
+            "recovered_to_prior_peak": False,
+            "_peak_i": peak_i,
             "_trough_i": trough_i,
-            "_end_i": end_i,
+            "_end_i": n - 1,
         })
-        # A completed event ends at prior peak recovery; continue from that point.
-        if recovered:
-            peak_i = end_i
-            i = end_i + 1
-        else:
-            break
     return out
-
 
 def main():
     close = download()
