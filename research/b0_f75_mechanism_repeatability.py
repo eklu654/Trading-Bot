@@ -48,6 +48,38 @@ def _max_dd(eq):
     peaks = np.maximum.accumulate(eq)
     return float(np.min(eq / peaks - 1.0))
 
+def _validate_report(report, initial=INITIAL, costs=COSTS):
+    """Fail closed on accounting identities before the artifact is published."""
+    measured = report[report.status.eq("MEASURED")]
+    for _, row in measured.iterrows():
+        for label in ("b0", "f75"):
+            for cost in costs:
+                ret = float(row[f"{label}_return_{cost}bps"])
+                terminal = float(row[f"{label}_terminal_equity_{cost}bps"])
+                if not np.isclose(terminal, initial * (1.0 + ret), rtol=1e-9, atol=1e-7):
+                    raise RuntimeError(f"{label} return/terminal mismatch for {row['episode']} at {cost} bp")
+        for cost in costs:
+            expected_equity = float(row[f"f75_terminal_equity_{cost}bps"]) - float(row[f"b0_terminal_equity_{cost}bps"])
+            expected_return = float(row[f"f75_return_{cost}bps"]) - float(row[f"b0_return_{cost}bps"])
+            expected_dd = float(row[f"f75_maxdd_{cost}bps"]) - float(row[f"b0_maxdd_{cost}bps"])
+            for field, actual, expected in (
+                ("incremental_equity", float(row[f"incremental_equity_{cost}bps"]), expected_equity),
+                ("incremental_return", float(row[f"incremental_return_{cost}bps"]), expected_return),
+                ("incremental_maxdd", float(row[f"incremental_maxdd_{cost}bps"]), expected_dd),
+            ):
+                if not np.isclose(actual, expected, rtol=1e-9, atol=1e-8):
+                    raise RuntimeError(f"{field} reconciliation failed for {row['episode']} at {cost} bp")
+        for horizon in (20, 60):
+            n = int(row[f"recovery_sessions_next_{horizon}s"])
+            if not 0 <= n <= horizon:
+                raise RuntimeError(f"Invalid recovery sample count for {row['episode']} ({horizon}s)")
+            for label in ("b0", "f75"):
+                value = float(row[f"{label}_exposure_next_{horizon}s"])
+                if n > 0 and not 0.0 <= value <= 1.0:
+                    raise RuntimeError(f"Invalid realized recovery exposure for {row['episode']} ({horizon}s)")
+    return int(len(measured))
+
+
 def _episode_path(path, episode_start_index, initial=INITIAL):
     """Normalize a full-history equity path to the episode's starting balance.
 
@@ -98,8 +130,9 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
     for horizon in (20, 60):
         first = low_global + 1
         stop_exclusive = min(hi + 1, low_global + horizon + 1)
-        rec[f"b0_exposure_next_{horizon}s"] = float(np.mean(b0_exposure[first:stop_exclusive])) if first < stop_exclusive else None
-        rec[f"f75_exposure_next_{horizon}s"] = float(np.mean(f75_exposure[first:stop_exclusive])) if first < stop_exclusive else None
+        rec[f"recovery_sessions_next_{horizon}s"] = int(max(0, stop_exclusive - first))
+        rec[f"b0_exposure_next_{horizon}s"] = float(np.mean(b0_exposure[first:stop_exclusive])) if first < stop_exclusive else 0.0
+        rec[f"f75_exposure_next_{horizon}s"] = float(np.mean(f75_exposure[first:stop_exclusive])) if first < stop_exclusive else 0.0
     for cost in costs:
         rec[f"incremental_equity_{cost}bps"] = rec[f"f75_terminal_equity_{cost}bps"] - rec[f"b0_terminal_equity_{cost}bps"]
         rec[f"incremental_return_{cost}bps"] = rec[f"f75_return_{cost}bps"] - rec[f"b0_return_{cost}bps"]
@@ -132,6 +165,7 @@ def main():
     f75 = np.minimum(b0, overlay)
     rows = [_one_episode(n,s,e,prices.index,prices,b0,f75,COSTS) for n,s,e in EPISODES]
     report = pd.DataFrame(rows)
+    validated_episodes = _validate_report(report)
     OUT.mkdir(parents=True, exist_ok=True)
     target = OUT / "b0_f75_mechanism_episode_attribution.csv"
     report.to_csv(target, index=False, float_format="%.12g")
@@ -140,6 +174,7 @@ def main():
         "canonical_sha256": digest,
         "episodes_defined": len(EPISODES),
         "episodes_measured": int(len(measured)),
+        "episodes_accounting_validated": validated_episodes,
         "episodes_unavailable": int((report.status != "MEASURED").sum()),
         "frozen_candidate": "F75",
         "control": "B0",
