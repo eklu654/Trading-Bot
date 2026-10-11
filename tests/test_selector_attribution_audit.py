@@ -11,7 +11,7 @@ def test_drawdown_episode_finds_trough_and_recovery():
     assert got.iloc[0]["peak_date"] == idx[0]
     assert got.iloc[0]["trough_date"] == idx[2]
     assert got.iloc[0]["recovery_date"] == idx[4]
-    assert got.iloc[0]["max_drawdown"] == -0.2
+    assert abs(got.iloc[0]["max_drawdown"] - (-0.2)) < 1e-12
 
 
 def test_unrecovered_drawdown_is_marked_open():
