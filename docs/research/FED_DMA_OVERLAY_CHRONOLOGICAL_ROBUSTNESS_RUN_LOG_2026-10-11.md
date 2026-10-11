@@ -28,3 +28,11 @@
 - F75 still loses to B0 in the fixed exclusion diagnostic outside 2022–2024: `$2,528,413` vs `$2,733,976`. Keep F75 research-only and do not tune thresholds.
 - The initial run #8 performance report is superseded for baseline reproducibility by run #15. The strategy decision is unchanged; only canonical source control and precise terminal balances have been corrected.
 - Updated results: [FED_DMA_OVERLAY_CHRONOLOGICAL_ROBUSTNESS_RESULTS_2026-10-11.md](FED_DMA_OVERLAY_CHRONOLOGICAL_ROBUSTNESS_RESULTS_2026-10-11.md).
+
+
+## Forward evaluation registered
+
+- Added preregistration: [F75 Prospective Shadow Evaluation](F75_PROSPECTIVE_SHADOW_EVALUATION_PREREGISTRATION_2026-10-11.md).
+- The plan fixes B0/F75 rules, 25-bps primary costs, 0/50-bps sensitivity, $5,000 shadow starting equity, canonical market input through 2026-10-07, causal close-to-next-open execution, and a 252-return-bearing-session observation horizon.
+- No orders are placed. The next implementation task is a shadow-only scheduled monitor with persistent daily ledger, exact B0 reconciliation, stale-data fail-closed behavior, and no tuning during the observation window.
+- Narrowed the partial-DMA matrix workflow's push filters to its actual script and dependencies so unrelated research edits no longer trigger the expensive matrix replay.
