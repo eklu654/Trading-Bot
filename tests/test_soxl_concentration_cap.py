@@ -14,7 +14,7 @@ def test_soxl_is_capped_and_released_weight_goes_to_next_eligible_family():
         "SEMICONDUCTORS": [3.0] * 4,
         "SP500": [2.0] * 4,
         "NASDAQ100": [1.0] * 4,
-    }, index=idx)
+    }, index=idx)[cols]
     eligible = pd.DataFrame(True, index=idx, columns=cols)
     got = soxl_cap_weights(base, scores, eligible, cap=0.25, top_n=2, cadence=2)
     assert got.loc[idx[0], cols].tolist() == [0.5, 0.25, 0.25]
@@ -32,7 +32,7 @@ def test_soxl_cap_leaves_unfilled_replacement_weight_in_cash():
         "SEMICONDUCTORS": [3.0] * 2,
         "SP500": [2.0] * 2,
         "NASDAQ100": [1.0] * 2,
-    }, index=idx)
+    }, index=idx)[cols]
     eligible = pd.DataFrame({
         "SP500": [True] * 2,
         "NASDAQ100": [False] * 2,
