@@ -3,7 +3,7 @@ import hashlib
 import numpy as np
 import pandas as pd
 from f75_prospective_shadow_monitor import (
-    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, only_unrecorded_sessions, EXPECTED_HASH,
+    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, only_unrecorded_sessions, exclude_current_session, EXPECTED_HASH,
 )
 
 class ShadowMonitorGuardrails(unittest.TestCase):
@@ -80,6 +80,19 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         )
         result = only_unrecorded_sessions(fresh, prior)
         self.assertEqual(list(result.index), list(pd.to_datetime(["2026-10-12", "2026-10-13"])))
+
+    def test_current_session_bar_is_excluded(self):
+        fresh = pd.DataFrame(
+            {"price": [10, 11, 12]},
+            index=pd.to_datetime(["2026-10-09", "2026-10-12", "2026-10-13"]),
+        )
+        result = exclude_current_session(fresh, today="2026-10-12")
+        self.assertEqual(list(result.index), list(pd.to_datetime(["2026-10-09"])))
+
+    def test_current_session_guard_handles_empty_input(self):
+        fresh = pd.DataFrame(columns=["price"], index=pd.DatetimeIndex([]))
+        result = exclude_current_session(fresh, today="2026-10-12")
+        self.assertTrue(result.empty)
 
     def test_existing_ledger_and_state_manifest_validate(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
