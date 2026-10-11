@@ -1,6 +1,9 @@
 name: F75 Shadow Scheduler (research branch)
 
 on:
+  push:
+    paths:
+      - ".github/workflows/f75-shadow-scheduler.yml"
   workflow_dispatch:
   schedule:
     - cron: "35 22 * * 1-5"
