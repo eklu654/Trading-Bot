@@ -139,6 +139,37 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
         rec[f"incremental_maxdd_{cost}bps"] = rec[f"f75_maxdd_{cost}bps"] - rec[f"b0_maxdd_{cost}bps"]
     return rec
 
+def _full_period_comparison(prices, b0, f75, costs=COSTS):
+    """Compare compounded B0/F75 equity over the full actual-TQQQ history."""
+    rows = []
+    for cost in costs:
+        metrics = {}
+        for label, signal in (("b0", b0), ("f75", f75)):
+            path, exposure = _equity_path(prices, signal, cost)
+            terminal = float(path[-1])
+            ret = terminal / INITIAL - 1.0
+            metrics[label] = {
+                "terminal_equity": terminal,
+                "total_return": ret,
+                "max_drawdown": _max_dd(path),
+                "average_exposure": float(np.mean(exposure[1:])) if len(exposure) > 1 else 0.0,
+                "defensive_sessions": int(np.sum(exposure[1:] < 0.999)),
+            }
+            if not np.isclose(terminal, INITIAL * (1.0 + ret), rtol=1e-9, atol=1e-7):
+                raise RuntimeError(f"Full-period terminal/return mismatch for {label} at {cost} bp")
+        rows.append({
+            "start": str(prices.index[0].date()),
+            "end": str(prices.index[-1].date()),
+            "sessions": int(len(prices)),
+            "cost_bps": int(cost),
+            **{f"b0_{k}": v for k, v in metrics["b0"].items()},
+            **{f"f75_{k}": v for k, v in metrics["f75"].items()},
+            "incremental_terminal_equity": metrics["f75"]["terminal_equity"] - metrics["b0"]["terminal_equity"],
+            "incremental_total_return": metrics["f75"]["total_return"] - metrics["b0"]["total_return"],
+            "incremental_max_drawdown": metrics["f75"]["max_drawdown"] - metrics["b0"]["max_drawdown"],
+        })
+    return pd.DataFrame(rows)
+
 def main():
     if not CANON.exists():
         raise RuntimeError(f"Canonical B0 artifact missing: {CANON}")
@@ -166,7 +197,10 @@ def main():
     rows = [_one_episode(n,s,e,prices.index,prices,b0,f75,COSTS) for n,s,e in EPISODES]
     report = pd.DataFrame(rows)
     validated_episodes = _validate_report(report)
+    full_period = _full_period_comparison(prices, b0, f75, COSTS)
     OUT.mkdir(parents=True, exist_ok=True)
+    full_target = OUT / "b0_f75_full_period_compounded.csv"
+    full_period.to_csv(full_target, index=False, float_format="%.12g")
     target = OUT / "b0_f75_mechanism_episode_attribution.csv"
     report.to_csv(target, index=False, float_format="%.12g")
     measured = report[report.status.eq("MEASURED")]
@@ -184,7 +218,12 @@ def main():
         "median_incremental_return_25bps": float(measured["incremental_return_25bps"].median()) if len(measured) else None,
         "median_incremental_equity_25bps": float(measured["incremental_equity_25bps"].median()) if len(measured) else None,
         "report": str(target.relative_to(ROOT)),
-        "interpretation": "Episode attribution only; not a promotion decision."
+        "full_period_report": str(full_target.relative_to(ROOT)),
+        "full_period_start": str(prices.index[0].date()),
+        "full_period_end": str(prices.index[-1].date()),
+        "full_period_sessions": int(len(prices)),
+        "full_period_compounded": full_period.to_dict(orient="records"),
+        "interpretation": "Episode attribution plus full-period compounded comparison; not a promotion decision."
     }
     (OUT / "b0_f75_mechanism_episode_summary.json").write_text(json.dumps(summary, indent=2)+"\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
