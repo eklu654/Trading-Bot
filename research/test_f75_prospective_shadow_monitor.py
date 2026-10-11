@@ -25,6 +25,9 @@ class ShadowMonitorGuardrails(unittest.TestCase):
             "date": ["2026-10-08", "2026-10-09"],
             "source_canonical_sha256": [EXPECTED_HASH, EXPECTED_HASH],
             "initialization_session": [True, False],
+            "b0_signal_close": [1.0, 1.0],
+            "f75_overlay_signal_close": [1.0, 1.0],
+            "f75_signal_close": [1.0, 1.0],
             "b0_exposure": [0.0, 1.0],
             "f75_exposure": [0.0, 1.0],
             "b0_equity_0bps": [5000.0, 4973.0],
@@ -63,6 +66,25 @@ class ShadowMonitorGuardrails(unittest.TestCase):
     def test_existing_ledger_and_state_manifest_validate(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
+
+    def test_existing_ledger_rejects_full_exit_masquerading_as_f75(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "f75_overlay_signal_close"] = 0.0
+        prior.loc[1, "f75_signal_close"] = 0.0
+        with self.assertRaisesRegex(RuntimeError, "partial-exposure rule"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_existing_ledger_requires_lagged_realized_exposure(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "f75_exposure"] = 0.75
+        with self.assertRaisesRegex(RuntimeError, "not lagged"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_existing_ledger_requires_initialization_marker_only_on_first_row(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[0, "initialization_session"] = False
+        with self.assertRaisesRegex(RuntimeError, "initialization marker"):
+            validate_existing_ledger(prior, state, ledger_bytes)
 
     def test_existing_ledger_hash_mismatch_fails_closed(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
