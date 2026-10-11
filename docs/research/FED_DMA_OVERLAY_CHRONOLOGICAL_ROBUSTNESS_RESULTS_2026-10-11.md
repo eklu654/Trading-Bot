@@ -1,21 +1,23 @@
 # Frozen Fed-DMA Chronological Robustness Results — 2026-10-11
 
+> **Authoritative rerun update (2026-10-11):** Use [workflow run #15](https://github.com/eklu654/Trading-Bot/actions/runs/38129135473), artifact ID `11699001137`, for the canonical-input result. The earlier run #8 used a fresh market-data download and is superseded for exact baseline reconciliation. Run #15 loaded the canonical frozen input from matrix run #29, verified SHA-256 `6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`, matched all 4,189 B0 signal values exactly, and matched the canonical zero-cost terminal balance to within $0.0000003. The strategy decision and gate outcomes did not change.
+
 ## Run and reproducibility
 
-- GitHub Actions run: [#8 — Frozen Fed-DMA Chronological Robustness](https://github.com/eklu654/Trading-Bot/actions/runs/38128578754)
-- Run ID: `38128578754`; commit: `debbeeb2b1873ae4b3821a3c537fa4914dea39fb`
+- Authoritative GitHub Actions run: [#15 — Frozen Fed-DMA Chronological Robustness](https://github.com/eklu654/Trading-Bot/actions/runs/38129135473) (the original execution was run #8)
+- Run ID: `38129135473`; commit: `e275c8b8d9adf05e26c9bb55e998b713c095ee60`
 - Result: **success**. Dependency installation, Python compilation, replay, and artifact upload all completed.
-- Artifact: `fed-dma-chronological-robustness` (9 files, including daily replay, gates, windows, frozen inputs, and manifest).
-- Frozen input: 4,189 common QQQ/TQQQ sessions, 2010-02-11 through 2026-10-07; input CSV SHA-256 `d632ca3613395464a5f80bf050d4080cc767b383838d60620d9bf53e7c2b99ed`.
+- Artifact: `fed-dma-chronological-robustness` (ID `11699001137`; 11 files, including the canonical source input, daily replay, gates, windows, and manifest).
+- Canonical frozen input: 4,189 common QQQ/TQQQ sessions, 2010-02-11 through 2026-10-07; source CSV SHA-256 `6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`. Reconstructed B0 signal matched all 4,189 canonical signal values exactly; zero-cost ending equity was `$4,040,314.667614814` versus canonical `$4,040,314.667614526` (absolute difference under $0.000001).
 - Initial equity: $5,000. No parameters were tuned in this run.
 
 ## Full-period results at preregistered 25 bps per full exposure change
 
 | Strategy | Ending equity | Max drawdown | Worst rolling 252-session return | Avg. exposure |
 |---|---:|---:|---:|---:|
-| B0 baseline | $3,852,660 | -73.80% | -72.91% | 93.46% |
-| F50 | $3,829,981 | -61.62% | -60.33% | 91.08% |
-| F75 | $3,898,855 | -67.99% | -66.91% | 92.27% |
+| B0 baseline | $3,852,657 | -73.80% | -72.91% | 93.46% |
+| F50 | $3,829,979 | -61.62% | -60.33% | 91.08% |
+| F75 | $3,898,853 | -67.99% | -66.91% | 92.27% |
 
 At 25 bps, F50 retained 99.41% of B0 terminal wealth and improved max drawdown by 12.18 percentage points and worst rolling-year return by 12.59 points. However, it underperformed B0 by 22.58 percentage points in the fixed 2018-12-04 to 2019-03-29 recovery-risk window, failing the preregistered 15-point limit.
 
@@ -25,10 +27,10 @@ F75 retained 101.20% of B0 terminal wealth, improved max drawdown by 5.80 points
 
 | Cost (bps) | B0 ending equity | F50 ending equity | F75 ending equity |
 |---:|---:|---:|---:|
-| 0 | $4,040,318 | $4,087,455 | $4,124,684 |
-| 10 | $3,964,239 | $3,982,511 | $4,032,878 |
-| 25 | $3,852,660 | $3,829,981 | $3,898,855 |
-| 50 | $3,673,280 | $3,588,276 | $3,684,975 |
+| 0 | $4,040,315 | $4,087,452 | $4,124,681 |
+| 10 | $3,964,236 | $3,982,509 | $4,032,875 |
+| 25 | $3,852,657 | $3,829,979 | $3,898,853 |
+| 50 | $3,673,277 | $3,588,274 | $3,684,972 |
 
 F75 remains slightly ahead of B0 at 50 bps (+$11,694), while F50 is behind at 25 and 50 bps. Both overlays improve drawdown metrics throughout this cost grid; F75's maximum-drawdown improvement ranges from about 5.73 to 5.88 percentage points.
 
