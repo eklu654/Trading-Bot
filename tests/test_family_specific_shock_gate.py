@@ -66,3 +66,22 @@ def test_replacement_rotation_matches_frozen_weights_without_gates():
     base.loc[:, ["A", "B"]] = 0.5
     got = rotating_gate_weights(base, scores, eligible, gates, top_n=2, cadence=3)
     assert np.array_equal(got.to_numpy(), base.to_numpy())
+
+
+
+def test_replacement_rotation_leaves_unfilled_gated_slot_in_cash():
+    from research.family_specific_shock_gate import rotating_gate_weights
+
+    idx = pd.bdate_range("2024-01-02", periods=3)
+    columns = ["A", "B", "C"]
+    base = pd.DataFrame(0.0, index=idx, columns=columns)
+    base.loc[:, ["A", "B"]] = 0.5
+    scores = pd.DataFrame({"A": [3.0] * 3, "B": [2.0] * 3, "C": [1.0] * 3}, index=idx)
+    eligible = pd.DataFrame({"A": [True] * 3, "B": [True] * 3, "C": [False] * 3}, index=idx)
+    gates = pd.DataFrame(False, index=idx, columns=columns)
+    gates.loc[:, "A"] = True
+    got = rotating_gate_weights(base, scores, eligible, gates, top_n=2, cadence=1)
+    assert got["A"].tolist() == [0.0, 0.0, 0.0]
+    assert got["B"].tolist() == [0.5, 0.5, 0.5]
+    assert got["C"].tolist() == [0.0, 0.0, 0.0]
+    assert np.allclose(got.sum(axis=1).to_numpy(), 0.5)
