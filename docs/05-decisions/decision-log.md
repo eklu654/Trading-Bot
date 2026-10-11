@@ -215,3 +215,27 @@ Different families may hold opposite directional states at the same time. Exampl
 Partial inverse exposure is modeled as the configured inverse weight with the remainder in cash: 25%, 50%, 75%, or 100%.
 
 The deterministic research implementation and behavioral tests enforce this family-level rule. See docs/02-research/dma-bull-bear-switching.md.
+
+
+## 2026-10-11 — F75 mechanism repeatability audit (preregistered)
+
+**Decision:** Preserve B0 as the canonical control and freeze F75 exactly as currently implemented. Do not tune thresholds, modify signals, or promote F75 based on its aggregate historical terminal balance.
+
+**Reason:** At 25 bp modeled costs, the current historical comparison is B0 $3,852,657 / -73.80% maximum drawdown versus F75 $3,898,853 / -67.99%. The apparent aggregate F75 advantage is concentrated in 2022–2024; when that interval is excluded, the current stitched comparison is approximately B0 $2.734M versus F75 $2.528M. This is evidence of possible regime specialization, not yet evidence of repeatable general-purpose improvement.
+
+**Preregistered test:** Run an episode-by-episode paired attribution for the fixed episodes 2000–2002, 2007–2009, 2011, 2015–2016, 2018, COVID-19 (2020), and 2022–2024. Keep the same price inputs, execution timing, cost assumptions, and B0/F75 definitions. For each episode report:
+- start/end dates and episode inclusion rule;
+- B0 and F75 start/end equity and return;
+- peak-to-trough drawdown within the episode;
+- days in defensive state and average exposure;
+- losses avoided during B0 drawdowns, gains missed during rebounds, and the net attribution;
+- exit date, re-entry date, re-entry lag, and exposure restored during the first 20 and 60 sessions after each episode low;
+- turnover and modeled transaction costs;
+- whether the result depends on one event or persists across distinct episodes.
+
+**Repeatability standard:** Treat episodes as paired observations, not independent proof from a single aggregate. Summarize win/loss counts, median episode return difference, median drawdown difference, and the share of F75's total incremental P/L contributed by each episode. Include 0 bp, 25 bp, and 50 bp cost views if the canonical artifacts support them. Mark missing/overlapping episode boundaries explicitly rather than silently imputing results.
+
+**Interpretation guardrails:** F75 is provisionally useful only if its risk benefit recurs across multiple slow/prolonged stress episodes and its recovery participation is not systematically impaired. A result dominated by 2022–2024, or a defense benefit offset by delayed re-entry in other episodes, does not pass. COVID is a separate fast-crash/rapid-recovery archetype and must not be pooled uncritically with prolonged bears. No parameter changes are allowed after seeing this audit.
+
+**Next implementation step:** Build the fixed episode attribution report from the canonical B0 artifact and frozen F75 signals, add tests for episode boundaries, causal close-to-next-open execution, equity reconciliation, and recovery-window accounting, then run the report in GitHub Actions. Keep the prospective shadow ledger running independently; its current infrastructure pass is not a live performance result until new market sessions accrue.
+
