@@ -101,3 +101,13 @@ def test_r4_gates_clustered_shock_reentry_until_sma_confirmation():
     assert got[21] == 0.0
     assert got[22] == 0.5
     assert got[23] == 1.0
+
+
+
+def test_r4_clustered_recovery_stages_before_full_even_if_sma_confirmed():
+    prices = [100.0] * 20 + [94.0, 89.0, 101.0, 102.0]
+    got = target_exposure(qqq_path(prices), "R4").tolist()
+    # The first +10% clustered recovery close always starts at 50%; full
+    # exposure requires a later confirmed close.
+    assert got[22] == 0.5
+    assert got[23] == 1.0
