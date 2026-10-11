@@ -146,3 +146,5 @@
 - Final monitor workflow [38133551399](https://github.com/eklu654/Trading-Bot/actions/runs/38133551399) passed **19/19 tests**, verified the current persisted ledger/state, reconciled daily balances across all three cost cases, and completed an idempotent no-new-sessions run without changing the ledger.
 - This closes the current operational-integrity pass: historical and prospective F75 now share the same frozen 75% composition; ledger/state hashes, initialization, lagged exposures, and daily equity accounting are checked before future append operations. F75 still has only one return-bearing prospective session and no active-overlay observation, so there is still no prospective efficacy evidence.
 
+- Historical attribution guardrail workflow [38133551400](https://github.com/eklu654/Trading-Bot/actions/runs/38133551400) also passed on commit `e7f46e3b2b5d4b2571e52781ec56fb0920cdb5fd`: 10/10 tests passed, fixed attribution completed, and artifact ID `11700430203` uploaded (ZIP SHA-256 `7dc88e76bafb4cfaf8c5775b9446104af1293b47e9ced6cef22bf9d784c4043a`).
+
