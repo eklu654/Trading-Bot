@@ -1,0 +1,39 @@
+name: QQQ Rolling-Decline Bounded Overlay Counterfactual
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qqq-rolling-decline-bounded-overlay
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy yfinance tabulate
+      - name: Run bounded overlay counterfactual
+        run: python research/qqq_rolling_decline_bounded_overlay.py
+      - name: Upload summary and daily audit trail
+        uses: actions/upload-artifact@v4
+        with:
+          name: qqq-rolling-decline-bounded-overlay
+          path: |
+            data/research/qqq_rolling_decline_bounded_overlay_summary.csv
+            data/research/qqq_rolling_decline_bounded_overlay_costs.csv
+            data/research/qqq_rolling_decline_bounded_overlay_daily.csv
+            data/research/qqq_rolling_decline_bounded_overlay_metadata.json
+            data/research/qqq_rolling_decline_bounded_overlay_report.md
+          if-no-files-found: error
+          retention-days: 30
