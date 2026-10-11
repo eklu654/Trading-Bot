@@ -57,3 +57,13 @@ The checked-in `data/research/crash_persistent_bear_filter.csv` contains a compl
 
 ### Decision and next test
 Do not claim the discriminator is validated and do not launch another parameter grid. The next useful experiment is a frozen-input, small predeclared evaluation of a *pre-shock* slow-bear warning separately from the post-shock failed-recovery classifier. The warning test must include every qualifying index decline, including those with no -4.5% daily shock, and score lead time, loss accumulated before signal, fraction of event loss avoided, false defenses, and missed fast crashes / V-shaped recoveries. Keep B0 unchanged as the control.
+
+
+## 2026-10-11: QQQ rolling-decline warning candidate added
+
+- Hypothesis: trigger when QQQ adjusted close is X% below its trailing Y-session maximum close. This can capture multi-day/gradual deterioration that never produces a single -4.5% daily shock.
+- Pre-registered 20-cell screen: X = 5%, 7.5%, 10%, 12.5%, 15%; Y = 10, 20, 40, 60 sessions.
+- Signal-only event audit added at `research/qqq_rolling_decline_warning_audit.py`; manual workflow at `.github/workflows/qqq-rolling-decline-warning-audit.yml`; protocol at `docs/research/QQQ_ROLLING_DECLINE_WARNING_HYPOTHESIS_2026-10-11.md`.
+- Script freezes its retrieved QQQ adjusted-close CSV into the artifact set and records SHA-256, retrieval timestamp, source, coverage, 20% peak-to-trough event coverage, first warning date, sessions from peak to warning, drawdown at warning, warning episodes, and warning-day fraction.
+- Important limitation: this is a signal-only screen. It does not yet simulate B0/TQQQ portfolio effects, re-entry, false-alarm cost, or opportunity cost. Those require a separate predeclared overlay test after inspecting event results. Do not choose a threshold from the full history and call it out-of-sample validation.
+- No B0 changes; no candidate promoted. Benchmark remains frozen at about $4.04M / -73.53% max DD as the current recorded control.
