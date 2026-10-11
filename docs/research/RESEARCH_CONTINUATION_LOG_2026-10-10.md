@@ -107,3 +107,30 @@ Any new strategy modification after examining these same dates is development da
 - Checked the latest `TQQQ Fixed Partial OOS Stitched` workflow run [38095488552](https://github.com/eklu654/Trading-Bot/actions/runs/38095488552). It succeeded only because the completion fingerprint matched; Python setup, dataset build, and research execution were all skipped, and no new artifact was produced. The workflow's 5-minute cron therefore does not represent repeated backtests after its completion marker is written; do not mistake green skipped runs for fresh research evidence.
 - The existing comparison protocol has already examined the full 2010–2026 sample and the specific 2018–2019 episodes. No defensible new causal signal follows automatically from the attribution; changing the rule to avoid those known intervals would be data snooping. No new backtest or parameter sweep was started in this pass.
 - Next permitted research step: if continuing the active-tightening hypothesis, write down a new causal candidate and its decision timestamp/holdout before execution; otherwise retain B0. Require exact frozen input, event/exposure ledger, paired costs, and the existing multi-objective gates. Historical slices remain retrospective diagnostics; no paper/live trading authorization.
+
+
+## 2026-10-11 continuation: causal bear-discriminator audit
+
+### Code and dataflow inspected
+- Reviewed `research/bear_discriminator_walkforward.py` and `research/bear_discriminator_modern.py`.
+- The walk-forward candidate does not independently warn before a crash. It arms only after QQQ daily close return <= -4.5%, then modifies the existing +10% recovery trigger if the recovery decision still shows structural weakness.
+- Candidate conditions are (A) QQQ 60-session return below a threshold, or (B) QQQ below 100-DMA AND 60-session return below threshold. The slow recovery targets tested are 15/20/30/40%.
+- Declared chronological splits are train 2010–2017/test 2018–2021 and train 2010–2021/test 2022–2026. The script header says no parameter is selected from a test period.
+- The modern script is a separate experiment with fixed 10/15/20/30/40/50% recovery targets and escalation based on repeated shocks, lower lows, time without recovery, or rebound failures. It is not the same as the walk-forward DMA-vs-no-DMA experiment.
+
+### Causal/timing audit findings
+- The portfolio engine rolls signal-derived exposure forward one session, consistent with close signal -> next-session return.
+- However, the walk-forward script computes `invested[i]` and `exposure=np.roll(invested,1)`; when a recovery condition is met at close i, `invested[i]` is left at its default 1 and next-session exposure is 1. This is internally coherent as close-based re-entry.
+- Major limitation: the structural override only affects a state already armed by a -4.5% daily shock. It cannot pre-emptively warn of a slow bear that never produces that trigger, so it cannot answer the broad “early warning before prolonged bear” question on its own.
+- The `classify_failed_bounces` routine labels outcomes using forward prices over up to 252 sessions. These labels are retrospective diagnostics and must not enter a live signal. Features are recorded at the recovery decision; this is acceptable for supervised research only if every train/test boundary is enforced and no label horizon leaks into feature selection.
+- Reproducibility gap: both scripts fetch Yahoo Finance data live via yfinance, and the walk-forward script writes result CSVs under data/research, but those expected output CSVs are not present in the current checked-in tree. I found no published result report or retrievable saved artifact for this exact walk-forward workflow in the currently inspected branch history. Therefore its actual out-of-sample performance cannot be honestly stated from checked-in evidence.
+- Modern script loops over candidate variants and reports full-window terminal wealth/DD; no separate chronological held-out evaluation is evident in that script. It must not be called walk-forward evidence.
+
+### Related validated evidence
+- Long-history S&P 500 audit (1970–2026): 18 selected shock/recovery events, 10 failed, 6 successful, 2 censored. Failed versus successful recovery events had weaker 60-session returns and larger 100/200-DMA damage on average. Only 16 resolved events; descriptive and selected, not a validated detector.
+- Actual-TQQQ failed-bounce audit: 9 canonical events, 7 successful, 1 failed, 1 censored. Sole resolved failure was July 2022; successful counterexamples include 2018–2019, COVID-2020, and April 2025. Too small to fit/validate a veto.
+- Structural-state ablation on aligned actual TQQQ (2010-02-11–2026-10-07): B0 $4,040,317, max DD -73.53%. Tested sticky/nonsticky structural overlays reduced DD but ended $727k/$892k/$1.355M and flipped B0's +24.58% COVID window to about -9% to -10%. All rejected.
+- No change to B0; no candidate promoted. The ~ $4.04M control remains frozen.
+
+### Decision / next step
+Do not claim the causal walk-forward discriminator is validated: source exists, but result artifact/report is missing and its trigger is conditional on a prior shock. Next research should first recover/reproduce its fixed-split outputs from frozen, hashable input data. In parallel, a genuinely independent slow-bear detector must be tested on the full historical index event ledger, including events with no -4.5% daily shock. Avoid more broad grids until these gaps are closed.
