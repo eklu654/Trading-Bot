@@ -187,5 +187,14 @@
 - Merged PR [#26](https://github.com/eklu654/Trading-Bot/pull/26) as commit `271bb26eeef3a430927ff3c1cbbda5017b07fcb1`. The scheduler is now on `main`; this is the first main-branch change for the shadow monitor and is limited to `.github/workflows/f75-shadow-scheduler.yml`.
 - Reverified `main` points at the merge commit and the scheduler file is present on `main`. Workflow requests `contents: write` and `actions: read`, schedule `35 22 * * 1-5`, and has a manual dispatch trigger.
 - Merge triggered existing `research-tests` workflow run [38178501790](https://github.com/eklu654/Trading-Bot/actions/runs/38178501790), initially queued at 2026-10-11 21:57:59 UTC. This is a repository test workflow, not the F75 scheduler itself.
-- The F75 scheduler has not yet run on the default branch; its next cron is Monday 2026-10-12 at 22:35 UTC unless manually dispatched. Therefore runtime artifact-download, test, and research-branch push permissions remain unverified until a scheduler run completes.
+- At the time this note was first committed, the F75 scheduler had not yet run. The first default-branch validation run is now recorded below; because no new completed session was available, it correctly made no ledger write, so the token's push permission remains untested.
 - Safety unchanged: frozen F75 shadow-only, no broker connection/orders, no strategy threshold changes. At each run, validate the exact result and push behavior; do not infer a ledger write if no new completed session exists.
+
+
+## 2026-10-11 — first default-branch scheduler run passed
+
+- Added a path-scoped `push` trigger for changes to `.github/workflows/f75-shadow-scheduler.yml`, causing immediate validation after activation. This avoids waiting until the next weekday cron to find deployment defects.
+- Run [38178529295](https://github.com/eklu654/Trading-Bot/actions/runs/38178529295) completed **successfully** on the default branch. Checkout/refresh of `research/qqq-slow-bear-audit`, Python setup, dependency installation, canonical artifact download, compile/tests, monitor, and final cleanup all passed.
+- Job log confirms **23/23 tests passed**. Canonical artifact download succeeded using the workflow token. Monitor reported: `No new completed market sessions after frozen cutoff and ledger tail; no ledger change.` Commit step confirmed: `No new completed sessions; ledger unchanged.`
+- Re-read persisted ledger and state: ledger still ends at 2026-10-09; state records 2 sessions, frozen cutoff 2026-10-07, canonical SHA-256 `6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`, and mode `SHADOW_ONLY_NO_ORDERS`. No data was fabricated or force-appended.
+- Remaining check is narrowly scoped: because the first run had no ledger delta, the `git push` branch was not entered. The next run that appends a real completed session will verify that the workflow token can push to the research branch. Scheduled cadence is weekdays at 22:35 UTC, plus manual dispatch and path-scoped workflow-file validation.
