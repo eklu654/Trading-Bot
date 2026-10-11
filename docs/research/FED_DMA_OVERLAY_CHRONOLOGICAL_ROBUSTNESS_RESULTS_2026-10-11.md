@@ -64,3 +64,26 @@ The run artifact contains:
 - `fed_dma_chronological_robustness_transitions.csv`
 - `fed_dma_chronological_robustness_frozen_inputs.csv`
 - `fed_dma_chronological_robustness_manifest.json`
+
+
+## Interpretation clarification — regime specialization versus concentration risk
+
+The 2022–2024 exclusion diagnostic is descriptive and is **not a rejection test by itself**. Excluding those returns while leaving the original signals and all other returns intact shows that F75's small full-period terminal-wealth edge depends on this window; it does not establish that the overlay is overfit or that its defense is ineffective in other bear markets.
+
+This concentration can be consistent with the intended thesis: reduce leveraged exposure during a prolonged tightening / below-200-DMA regime. The key unanswered question is whether the gain reflects repeatable protection in the target regime or a one-episode interaction specific to 2022–2024.
+
+The existing metrics give a mixed but promising risk/return trade-off at 25 bps:
+- F75 ending wealth: $3,898,853 vs B0 $3,852,657 (+$46,196, +1.20% relative terminal wealth).
+- Maximum drawdown: -67.99% vs -73.80% (5.80 percentage-point improvement).
+- Worst rolling 252-session return: -66.91% vs -72.91% (6.00-point improvement).
+- Excluding the 2022–2024 returns: F75 $2,528,414 vs B0 $2,733,976. This signals regime dependence, not necessarily overfitting.
+
+Therefore, retain F75 as a serious defensive-specialization candidate rather than rejecting it solely on this exclusion test. Do not promote it yet: the full-sample maximum drawdown is still nearly 68%, and all historical windows are retrospective/descriptive rather than untouched holdouts.
+
+Next analysis should be predeclared and mechanism-focused, not a broad parameter sweep:
+1. Quantify defensive-state days, turnover, entry/exit dates, and P&L contribution by fixed calendar regime.
+2. Compare B0 and F75 specifically across independently specified slow/prolonged bear episodes and their recoveries, reporting absolute loss, relative return, max drawdown, time under water, and missed rebound participation.
+3. Distinguish the 2022–2024 tightening bear from 2000–2002, 2007–2009, 2011, 2015–2016, 2018, and COVID; do not claim these were tested with equivalent real TQQQ history. Use underlying index returns for pre-TQQQ periods, clearly label any leveraged simulation as synthetic, and never present it as actual TQQQ performance.
+4. Preserve the frozen rules and the 252-session prospective shadow plan. Do not tune F75 in response to any one episode.
+
+Decision framing: the 2022–2024 concentration warning is a reason to test whether the defense generalizes, not a reason to dismiss a candidate whose stated purpose is regime-specific defense.
