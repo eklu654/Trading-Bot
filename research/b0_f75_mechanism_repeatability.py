@@ -65,7 +65,7 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
             path, exp = _equity_path(prices.iloc[left:hi+1], sig[left:hi+1], cost)
             local = path[lo-left:]
             peak = np.maximum.accumulate(local)
-            rec[f"{label}_return_{cost}bps"] = float(local[-1] / local[0] - 1)
+            rec[f"{label}_return_{cost}bps"] = float(local[-1] / local[lo-left] - 1)
             rec[f"{label}_maxdd_{cost}bps"] = _max_dd(local)
             rec[f"{label}_avg_exposure"] = float(np.mean(exp[lo-left:]))
             rec[f"{label}_defensive_sessions"] = int(np.sum(exp[lo-left:] < 0.999))
