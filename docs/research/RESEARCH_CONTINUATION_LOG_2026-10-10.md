@@ -145,3 +145,11 @@ Do not claim the causal walk-forward discriminator is validated: source exists, 
 - Recovery participation also matters: during the 63 sessions after the 2021–2023 trough, average SOXL/TQQQ weights were 54.0%/45.2%, with additive contribution sums +0.381/+0.216. These sums are attribution diagnostics, not compounded counterfactual returns.
 - Reports updated: `SELECTOR_ATTRIBUTION_AUDIT_RESULTS_2026-10-11.md`, `DEFENSIVE_RESEARCH_GATE_SUMMARY_2026-10-11.md`, and `CURRENT_STATE.md`.
 - Next: do not tune rejected family gates/caps, DMA, top-N, or cadence. Inspect existing risk-overlay evidence before proposing anything new. The multi-family volatility-targeting workflow/code exists, but no corresponding result summary is checked into the inspected branch tree; do not rerun its full matrix until we determine whether a valid prior artifact can be recovered. Keep pre-2010 leveraged ETF results explicitly synthetic.
+
+
+## 2026-10-11 continuation: prior volatility overlay evidence reconciled
+
+- Audited the checked-in main README and `docs/02-research/dma-family-rotation-5000-account-replay.md`; the prior V30/L20/DD20–30 risk-overlay matrix, era robustness, and whole-share next-open account replay have already run. No repeat grid is justified.
+- At 25 bps, raw family rotation account replay ended around $176,531 next-open / $228,285 prior-close; V30/L20/DD20–30 ended around $23,294–$33,781 prior-close and $24,622–$33,039 next-open, with max DD around 39–48% versus about 70% raw. This is a substantial, known terminal-wealth tradeoff, not an untested candidate.
+- The new selector audit's $249,490 result uses daily adjusted-close arithmetic, not whole-share execution. Do not compare it directly with the account-replay ending balances.
+- Decision: keep the raw rotation and existing overlay cluster as distinct controls, but do not retune or rerun the existing matrix. The next separate diagnostic is a synthetic daily-reset family-rotation stress study for 2000–2002, clearly labeled non-actual leveraged ETF history with fixed daily financing/fee assumptions and no parameter tuning.
