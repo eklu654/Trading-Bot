@@ -1,0 +1,13 @@
+{
+  "canonical_input_sha256": "6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55",
+  "frozen_cutoff": "2026-10-07",
+  "last_observation": "2026-10-09",
+  "sessions_appended": 2,
+  "ledger_sha256": "5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e",
+  "mode": "SHADOW_ONLY_NO_ORDERS",
+  "cost_sensitivity_bps": [
+    0,
+    25,
+    50
+  ]
+}
