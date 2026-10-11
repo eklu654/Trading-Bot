@@ -25,3 +25,11 @@
 - Existing ledger rows are preserved and new rows must be strictly later than the prior ledger tail.
 - After first successful run, verify the artifact download, test step, live-data step, and ledger commit behavior in the Actions logs. Inspect the resulting ledger and state JSON before treating the monitor as validated.
 - Do not use prospective results to tune thresholds. At 252 return-bearing sessions, publish a full-path review and separate operational/risk review before considering any paper-trading proposal.
+
+
+## Validation update
+
+- [Run #3](https://github.com/eklu654/Trading-Bot/actions/runs/38129886801) completed successfully: artifact download passed; Python compilation and three guardrail tests passed; canonical/fresh-data check completed; because the latest completed market session did not exceed the 2026-10-07 frozen cutoff, the monitor correctly reported “No new completed sessions; ledger unchanged” and did not fabricate a row.
+- [Run #1](https://github.com/eklu654/Trading-Bot/actions/runs/38129869684) failed because its triggering commit preceded the test file and unittest discovery returned exit code 5 (“Ran 0 tests”). The test file was added, and the workflow was changed to execute it directly so missing tests cannot silently pass.
+- [Run #4](https://github.com/eklu654/Trading-Bot/actions/runs/38129922083) is validating the direct-test command and final workflow revision. Confirm its final status before closing this implementation checkpoint.
+- The successful no-new-session run verifies setup, frozen artifact retrieval, compilation, guardrails, and safe no-op behavior; it does **not** yet validate appending a real new session or committing a populated ledger. That requires a completed market session after the frozen cutoff.
