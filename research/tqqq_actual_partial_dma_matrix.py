@@ -9,7 +9,7 @@ diagnostic rows, not candidate strategies.
 from pathlib import Path
 import hashlib, json
 import numpy as np, pandas as pd, yfinance as yf
-from causal_execution import next_open_cost_equity
+from causal_execution import next_open_cost_equity, next_open_daily_returns
 from reentry_isolation import target_exposure
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -34,6 +34,30 @@ def dl(t, start=START):
     x.index=pd.to_datetime(x.index).tz_localize(None)
     return x.rename(columns={"Open":"open","Close":"close","Adj Close":"adj_close"}).sort_index().dropna()
 
+def canonical_b0_signal(close):
+    """Independent implementation of canonical -4.5% shock / +10% recovery."""
+    px = close.to_numpy(dtype=float)
+    daily = close.pct_change().fillna(0.0).to_numpy()
+    signal = np.ones(len(close), dtype=float)
+    armed = False
+    low_i = None
+    for i in range(1, len(close)):
+        if not armed and daily[i] <= -0.045:
+            armed = True
+            low_i = i
+            signal[i] = 0.0
+            continue
+        if armed:
+            if px[i] < px[low_i]:
+                low_i = i
+            if px[i] / px[low_i] - 1.0 >= 0.10:
+                armed = False
+                signal[i] = 1.0
+            else:
+                signal[i] = 0.0
+    return signal
+
+
 def main():
     # QQQ starts before TQQQ so B0's running-low state is initialized from
     # the full signal history; evaluation capital still begins on the shared
@@ -42,6 +66,12 @@ def main():
     b0_signal=target_exposure(q.rename(columns={"adj_close":"Adj Close"}),"B0")
     x=q.join(t[["open","close","adj_close"]].add_prefix("tqqq_"),how="inner")
     x["b0_signal"]=b0_signal.reindex(x.index)
+    canonical_signal=canonical_b0_signal(x.adj_close)
+    if not np.array_equal(x["b0_signal"].to_numpy(dtype=float),canonical_signal):
+        mismatch=np.flatnonzero(x["b0_signal"].to_numpy(dtype=float)!=canonical_signal)
+        i=int(mismatch[0])
+        raise AssertionError(f"Canonical B0 signal mismatch at {x.index[i]}: "
+                             f"{x['b0_signal'].iloc[i]} vs {canonical_signal[i]}")
     t_adj_open=x.tqqq_open*x.tqqq_adj_close/x.tqqq_close
     x["tqqq_adj_open"]=t_adj_open
     x["on"]=(t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
@@ -124,6 +154,14 @@ def main():
                 record("DMA_ONLY_DIAGNOSTIC",dma,below,sig,cost_bps)
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
+    # Independent same-input B0 equity reconciliation against canonical daily
+    # return construction, not merely B0-versus-itself identity.
+    canonical_daily=next_open_daily_returns(canonical_signal,x["on"].to_numpy(),x["in"].to_numpy())
+    canonical_equity=INITIAL*np.cumprod(1.0+canonical_daily)
+    matrix_b0=float(out[(out["strategy"]=="B0_SHOCK_RECOVERY") &
+                        (out["cost_bps_per_exposure_change"]==0)]["final"].iloc[0])
+    if not np.isclose(matrix_b0,float(canonical_equity[-1]),rtol=1e-10,atol=1e-5):
+        raise AssertionError(f"Canonical B0 terminal mismatch: matrix={matrix_b0}, independent={canonical_equity[-1]}")
     # Baseline reconstruction invariant: a 100% DMA exposure overlay must
     # leave B0 unchanged for every cost assumption and every DMA lookback.
     # This catches accidental signal/combination drift before artifacts publish.
@@ -162,6 +200,9 @@ def main():
         "execution":"close signal executes next open; prior exposure earns overnight return, new exposure earns intraday return",
         "combined_exposure":"min(B0 exposure, DMA exposure); standalone DMA rows are diagnostics only",
         "trade_asset":"actual TQQQ; DMA signal asset QQQ adjusted close",
+        "canonical_b0_signal_match":True,
+        "canonical_b0_final_independent":float(canonical_equity[-1]),
+        "canonical_b0_final_abs_diff":float(abs(matrix_b0-canonical_equity[-1])),
     }
     manifest_path.write_text(json.dumps(manifest,indent=2),encoding="utf-8")
     print(json.dumps(manifest,indent=2))
