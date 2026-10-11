@@ -102,3 +102,14 @@ Do not claim the discriminator is validated and do not launch another parameter 
 - Its report `docs/research/B0_QQQ_DRAWDOWN_WARNING_COUNTERFACTUAL_2026-10-10.md` records B0 at $4,040,315 / -73.53% max DD. DD15 with 75% warning exposure finished $3,239,394 (-19.8% vs B0) and improved max DD by only 3.32 percentage points. DD10 with 75% finished $1,834,217 (-54.6%) despite a 8.74pp max-DD improvement; DD10/0% finished $100,639. All candidates were rejected.
 - That prior overlay uses 252-session peak thresholds (-10%/-15%) and re-entry at -5%/-10%; it is not the same as the new X%-within-10/20-session family. Nevertheless, it demonstrates the central tradeoff: a long-lived drawdown warning can preserve some capital but block powerful recoveries and destroy terminal wealth.
 - Next step should be to audit the exact short-window X/Y signal and test whether a *bounded/temporary* exposure reduction improves tail risk while promptly restoring exposure, rather than simply repeating long-lived hysteresis. First correct report wording, then predeclare only a few candidates (e.g. 7.5%/10 sessions and 10%/10 sessions) and one re-entry rule. Compare against frozen B0 on the same canonical frozen input and costs; no threshold selection from the same holdout.
+
+
+## 2026-10-11 follow-up: bounded short-window overlay implementation added
+
+- Existing canonical B0 drawdown-warning counterfactual showed persistent 252-session warning overlays can sharply damage terminal wealth: DD15/75% ended $3.239M vs B0 $4.040M for only 3.32pp max-DD improvement; DD10/75% ended $1.834M for an 8.74pp improvement. Those variants remain rejected.
+- Added `research/qqq_rolling_decline_bounded_overlay.py` and manual workflow `.github/workflows/qqq-rolling-decline-bounded-overlay.yml`.
+- Four predeclared candidates: 7.5%/10 sessions and 10%/10 sessions, each capping exposure at 75% for 10 or 20 sessions. Repeated triggers extend the window. B0 can always reduce exposure further. Close signal applies from next open; costs tested at 0/10/25 bps per full exposure change.
+- Script uses canonical frozen common QQQ/TQQQ input, independently reconciles B0 events/signal, records the input SHA-256, and writes summary/cost/daily audit/metadata/report artifacts.
+- Workflow is manual-dispatch only, 10-minute timeout. It has been added but has NOT been dispatched or run; no candidate results are available yet.
+- No changes to B0 and no candidate promoted. This is retrospective exploratory work, not an untouched holdout.
+- Interpretation gate: compare terminal wealth, max DD, worst rolling 252-session return, event losses, recovery participation and costs; verify baseline matches canonical B0 exactly and inspect 2000–02, 2007–09, 2018, 2020, 2022, 2025 before interpreting.
