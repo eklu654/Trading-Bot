@@ -119,10 +119,9 @@ def target_exposure(qqq, candidate):
                     weights[i] = 1.0
                 else:
                     weights[i] = 0.5
-            elif rebound >= RECOVERY_FULL and confirmed:
-                defensive = False
-                weights[i] = 1.0
             elif rebound >= RECOVERY_FULL:
+                # Always establish the 50% tranche on the first clustered
+                # recovery trigger; full size can only occur on a later close.
                 staged = True
                 weights[i] = 0.5
             else:
