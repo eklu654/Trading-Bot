@@ -161,6 +161,12 @@ def main():
                 raise AssertionError(f"Invalid equity for {name} at {bps} bps")
             ret = np.zeros(len(equity), dtype=float)
             ret[1:] = equity[1:] / np.maximum(equity[:-1], 1e-300) - 1.0
+            if name == "B0" and bps == 0:
+                expected_b0 = 4040314.667614526
+                if not np.isclose(float(equity[-1]), expected_b0, rtol=0.0, atol=1e-5):
+                    raise RuntimeError(
+                        f"Canonical B0 zero-cost equity mismatch: {equity[-1]:.12f} vs {expected_b0:.12f}"
+                    )
             equity_cache[(name, bps)] = equity
             return_cache[(name, bps)] = ret
             peak = np.maximum.accumulate(equity)
