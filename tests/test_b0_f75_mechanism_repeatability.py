@@ -41,3 +41,27 @@ def test_episode_path_excludes_pre_episode_drawdown_but_keeps_starting_balance()
     episode = _episode_path(full_path, episode_start_index=1)
     assert np.allclose(episode, [5000.0, 5125.0, 5250.0])
     assert np.isclose(_max_dd(episode), 0.0)
+
+
+def test_report_accounting_validator_accepts_consistent_episode_and_rejects_mismatch():
+    import pytest
+    from research.b0_f75_mechanism_repeatability import _validate_report, COSTS
+    row = {"episode": "synthetic", "status": "MEASURED"}
+    for label in ("b0", "f75"):
+        for cost in COSTS:
+            row[f"{label}_return_{cost}bps"] = 0.0
+            row[f"{label}_terminal_equity_{cost}bps"] = 5000.0
+            row[f"{label}_maxdd_{cost}bps"] = 0.0
+        for horizon in (20, 60):
+            row[f"{label}_exposure_next_{horizon}s"] = 0.5
+    for cost in COSTS:
+        row[f"incremental_equity_{cost}bps"] = 0.0
+        row[f"incremental_return_{cost}bps"] = 0.0
+        row[f"incremental_maxdd_{cost}bps"] = 0.0
+    row["recovery_sessions_next_20s"] = 20
+    row["recovery_sessions_next_60s"] = 60
+    frame = pd.DataFrame([row])
+    assert _validate_report(frame) == 1
+    frame.loc[0, "b0_terminal_equity_25bps"] = 4900.0
+    with pytest.raises(RuntimeError, match="return/terminal mismatch"):
+        _validate_report(frame)
