@@ -44,9 +44,9 @@ def summarize_window(name, window, dates, equity, full_returns, signal, bps):
     first, last = int(idx[0]), int(idx[-1])
     inherited = float(equity[first - 1]) if first > 0 else INITIAL
     local_eq = equity[idx] / inherited
-    peak_idx = int(np.argmax(local_eq))
     trough_idx = int(np.argmin(local_eq / np.maximum.accumulate(local_eq)))
     dd_curve = local_eq / np.maximum.accumulate(local_eq) - 1.0
+    peak_idx = int(np.argmax(local_eq[:trough_idx + 1]))
     local_ret = full_returns[idx]
     return {
         "window": label, "strategy": name, "cost_bps": bps,
