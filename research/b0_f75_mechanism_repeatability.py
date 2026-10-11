@@ -48,6 +48,16 @@ def _max_dd(eq):
     peaks = np.maximum.accumulate(eq)
     return float(np.min(eq / peaks - 1.0))
 
+def _episode_path(path, episode_start_offset):
+    """Return episode equity including the pre-session starting balance.
+
+    _equity_path[0] is the initial balance at the prior close. When an episode
+    begins at offset 1, retaining path[0] ensures its first session return is
+    included in both cumulative return and drawdown.
+    """
+    path = np.asarray(path, dtype=float)
+    return path[max(0, int(episode_start_offset) - 1):]
+
 def _one_episode(name, start, end, dates, prices, b0, f75, costs):
     start_ts, end_ts = pd.Timestamp(start), pd.Timestamp(end)
     available = (dates >= start_ts) & (dates <= end_ts)
@@ -63,9 +73,8 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
     for label, sig in (("b0", b0), ("f75", f75)):
         for cost in costs:
             path, exp = _equity_path(prices.iloc[left:hi+1], sig[left:hi+1], cost)
-            local = path[lo-left:]
-            peak = np.maximum.accumulate(local)
-            rec[f"{label}_return_{cost}bps"] = float(local[-1] / local[lo-left] - 1)
+            local = _episode_path(path, lo-left)
+            rec[f"{label}_return_{cost}bps"] = float(local[-1] / INITIAL - 1.0)
             rec[f"{label}_maxdd_{cost}bps"] = _max_dd(local)
             rec[f"{label}_avg_exposure"] = float(np.mean(exp[lo-left:]))
             rec[f"{label}_defensive_sessions"] = int(np.sum(exp[lo-left:] < 0.999))
@@ -74,10 +83,16 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
     q = prices["qqq_adj_close"].iloc[lo:hi+1].to_numpy(float)
     low_local = int(np.argmin(q)); low_global = lo + low_local
     rec["episode_low_date"] = str(dates[low_global].date())
+    # Participation means exposure actually held, not the close signal. The
+    # signal from session t becomes exposure on session t+1. Measure exactly
+    # the next 20/60 sessions after the episode low, excluding the low session.
+    b0_exposure = np.r_[0.0, b0[:-1]]
+    f75_exposure = np.r_[0.0, f75[:-1]]
     for horizon in (20, 60):
-        stop = min(hi, low_global + horizon)
-        rec[f"b0_exposure_next_{horizon}s"] = float(np.mean(b0[low_global:stop+1]))
-        rec[f"f75_exposure_next_{horizon}s"] = float(np.mean(f75[low_global:stop+1]))
+        first = low_global + 1
+        stop_exclusive = min(hi + 1, low_global + horizon + 1)
+        rec[f"b0_exposure_next_{horizon}s"] = float(np.mean(b0_exposure[first:stop_exclusive])) if first < stop_exclusive else None
+        rec[f"f75_exposure_next_{horizon}s"] = float(np.mean(f75_exposure[first:stop_exclusive])) if first < stop_exclusive else None
     for cost in costs:
         rec[f"incremental_equity_{cost}bps"] = rec[f"f75_terminal_equity_{cost}bps"] - rec[f"b0_terminal_equity_{cost}bps"]
         rec[f"incremental_return_{cost}bps"] = rec[f"f75_return_{cost}bps"] - rec[f"b0_return_{cost}bps"]
