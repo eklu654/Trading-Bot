@@ -47,6 +47,7 @@ jobs:
             data/research/fed_dma_chronological_robustness_windows.csv
             data/research/fed_dma_chronological_robustness_comparison.csv
             data/research/fed_dma_chronological_robustness_gates.csv
+            data/research/fed_dma_chronological_robustness_ex_2022_2024.csv
             data/research/fed_dma_chronological_robustness_daily.csv
             data/research/fed_dma_chronological_robustness_transitions.csv
             data/research/fed_dma_chronological_robustness_manifest.json
