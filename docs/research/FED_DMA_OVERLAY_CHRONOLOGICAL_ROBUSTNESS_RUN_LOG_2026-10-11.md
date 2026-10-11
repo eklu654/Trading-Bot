@@ -43,3 +43,12 @@
 - Partial-DMA matrix workflow filter cleanup validated by successful [run #61](https://github.com/eklu654/Trading-Bot/actions/runs/38129305559); its push trigger now targets only the matrix script and its two direct Python dependencies, plus the workflow file.
 - Exact-canonical Fed-DMA run #15 remains successful and is the authoritative result. The historical F75 gate passes do not override the 2022-2024 concentration warning.
 - Forward shadow plan is registered but the scheduled/persistent ledger implementation has not been started. Keep it separate from broker execution; the current branch is a research branch, and GitHub scheduled workflows only run from the repository's default branch, so do not imply a daily schedule is active without resolving branch placement.
+
+
+## Interpretive decision clarification — 2026-10-11
+
+- Do not equate the 2022–2024 exclusion result with proof of overfitting. It shows F75's modest terminal-wealth edge is concentrated in that window; given the strategy's defensive purpose, this may be intended specialization.
+- F75's canonical 25-bps replay improves max drawdown by 5.80 percentage points and worst rolling 252-session return by 6.00 points while ending $46,196 above B0. Those are meaningful candidate signals, although the remaining ~68% max drawdown is still severe.
+- New research framing: determine whether F75's advantage repeats across independently specified prolonged bear regimes and whether it avoids unacceptable rebound impairment. Analyze state timing, turnover, defensive-day P&L, max drawdown, time under water, and recovery participation. Do not launch a broad parameter search.
+- Historical windows are descriptive, not untouched holdouts. Pre-TQQQ periods must use real underlying-index returns or explicitly labeled synthetic leverage simulations; never call them actual TQQQ results.
+- Results file updated in commit `cb1913a72500498759c2c1bcf4d835af944695f3`. F75 remains an active research candidate, not promoted or rejected solely on the concentration diagnostic.
