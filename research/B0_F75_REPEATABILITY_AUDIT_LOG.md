@@ -207,3 +207,11 @@
 - Reconfirmed the current ledger has two rows (2026-10-08 initialization plus 2026-10-09 return-bearing observation), both with the overlay inactive. Thus it contains no F75 efficacy evidence; the preregistered 252-session and 20-session active-reduction gates remain unmet.
 - Operational caveat remains unchanged: run 38178529295 had no new session to append, so the conditional `git commit`/`git push` branch was not entered. Do not mark research-branch write permission as verified until a real new eligible session causes an append and the workflow's push step succeeds. No synthetic ledger row was added to force this test.
 - Decision unchanged: B0 remains the control; F75 remains frozen and `SHADOW_ONLY_NO_ORDERS`. No threshold changes, no live-trading actions.
+
+
+## 2026-10-11 23:24 UTC — unattended-run readiness checkpoint
+
+- Re-read the exact `.github/workflows/f75-shadow-scheduler.yml` now present on `main` and the current research-branch monitor. Scheduler remains configured for weekdays at 22:35 UTC; the first default-branch execution is green (run 38178529295).
+- No later real market session can be expected from Sunday, 2026-10-11; next scheduled weekday execution is Monday, 2026-10-12 at 22:35 UTC. That run should only append if the source feed contains a completed session later than the validated ledger tail (currently 2026-10-09) and all canonical reconciliation, signal, ledger, and equity checks pass.
+- Do not manufacture a ledger delta, rewrite historical rows, or use the connector's independent repository-write permission as a substitute for testing the workflow's `GITHUB_TOKEN`. A no-op `git push --dry-run` is not being treated as conclusive evidence of actual ref-update authorization. The decisive test remains a real, valid append followed by a successful workflow push.
+- Latest audit-log commit is `cbb6b6271e174dbb75f0d286ce4f26a510f7512f`. No strategy files or state/ledger files were changed in this checkpoint. B0 control and frozen F75 shadow-only decision remain unchanged.
