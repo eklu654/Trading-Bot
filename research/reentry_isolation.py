@@ -105,8 +105,13 @@ def target_exposure(qqq, candidate):
             # clustered episodes require 50% at +10%, then SMA confirmation.
             confirmed = np.isfinite(sma20[i]) and px[i] > sma20[i]
             if not clustered:
-                defensive = False
-                weights[i] = 1.0
+                # Preserve B0 exactly for isolated shocks: remain defensive
+                # until the full +10% rebound threshold is reached.
+                if rebound >= RECOVERY_FULL:
+                    defensive = False
+                    weights[i] = 1.0
+                else:
+                    weights[i] = 0.0
             elif staged:
                 if rebound >= RECOVERY_FULL and confirmed:
                     defensive = False
