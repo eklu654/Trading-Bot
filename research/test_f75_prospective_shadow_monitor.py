@@ -19,6 +19,22 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "equal shapes"):
             compose_f75_signal([1, 0], [1])
 
+    def test_f75_rejects_nonbinary_baseline(self):
+        with self.assertRaisesRegex(ValueError, "binary"):
+            compose_f75_signal([1, 0.5], [1, 1])
+
+    def test_f75_rejects_nonbinary_overlay(self):
+        with self.assertRaisesRegex(ValueError, "binary"):
+            compose_f75_signal([1, 1], [1, 0.5])
+
+    def test_f75_rejects_nonfinite_signal(self):
+        with self.assertRaisesRegex(ValueError, "finite binary"):
+            compose_f75_signal([1, np.nan], [1, 0])
+
+    def test_f75_rejects_invalid_partial_exposure(self):
+        with self.assertRaisesRegex(ValueError, "finite and between"):
+            compose_f75_signal([1], [0], partial_exposure=float("nan"))
+
     def _valid_ledger_fixture(self):
         ledger_bytes = b"synthetic-ledger-bytes"
         prior = pd.DataFrame({
