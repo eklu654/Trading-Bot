@@ -25,3 +25,20 @@ def test_full_exposure_path_is_finite():
     eq, exposure = _equity_path(prices, np.ones(3), 25, initial=5000)
     assert np.isfinite(eq).all()
     assert np.allclose(exposure, [0, 1, 1])
+
+
+def test_episode_path_includes_initial_balance_and_first_session_return():
+    from research.b0_f75_mechanism_repeatability import _episode_path
+    # Offset 1 means the first episode session follows path[0], the initial balance.
+    full_path = np.array([5000.0, 4500.0, 4800.0])
+    episode = _episode_path(full_path, episode_start_offset=1)
+    assert np.allclose(episode, [5000.0, 4500.0, 4800.0])
+    assert np.isclose(episode[-1] / 5000.0 - 1.0, -0.04)
+    assert np.isclose(_max_dd(episode), -0.10)
+
+def test_episode_path_excludes_pre_episode_drawdown_but_keeps_starting_balance():
+    from research.b0_f75_mechanism_repeatability import _episode_path
+    full_path = np.array([5000.0, 4000.0, 4100.0, 4200.0])
+    episode = _episode_path(full_path, episode_start_offset=2)
+    assert np.allclose(episode, [4000.0, 4100.0, 4200.0])
+    assert np.isclose(_max_dd(episode), 0.0)
