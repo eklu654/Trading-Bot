@@ -46,8 +46,8 @@ References:
 ## What to do next
 1. Freeze the rejected rules and stop threshold sweeps.
 2. Selector attribution is complete: the 250-DMA filter does not prevent fast crashes, leveraged family losses are multi-family, and strong recovery participation is important. Do not tune DMA/top-N/cadence or the rejected family gates from this audit.
-3. Audit existing volatility-targeting/risk-overlay workflow results before proposing anything new. Do not repeat its parameter grid. Only proceed to a structurally distinct risk budget if the previous results leave a real unanswered hypothesis; preregister wealth and drawdown gates first.
-4. Build a separate, clearly labeled synthetic daily-reset Nasdaq/S&P/semiconductor stress dataset for pre-inception episodes such as 2000-2002. Never label simulated pre-inception returns as actual TQQQ/SOXL/SPXL history.
+3. Existing volatility-targeting evidence has been recovered from the main README and the $5,000 account replay. The V30/L20/DD20–30 cluster reduced drawdown to roughly 39–48% but ended around $23k–$34k at 25 bps, versus roughly $177k next-open / $228k prior-close for the raw family rotation. Do not rerun or broaden that matrix; this is an established wealth-versus-drawdown tradeoff.
+4. A separately preregistered synthetic daily-reset family-rotation stress study is now running for the 2000–2002 technology bear. It uses SPY, QQQ, ^SOX, DIA, and ^RUT benchmark history and explicitly models 3x daily reset, funding drag, and a fixed fee. It is not actual TQQQ/SOXL/SPXL history and must not be used to tune parameters to 2000–2002.
 5. Keep live/paper trading downstream of data validation, execution realism, walk-forward stability, and a defensible account-level risk limit.
 
 ## Audit trail
