@@ -62,6 +62,7 @@ def make_episode_table(equity: pd.Series) -> pd.DataFrame:
 def main():
     apply_family_endpoint_patch()
     weights, returns = base_weights()
+    weights = weights.loc["2010-03-12":"2026-10-02"].copy()
     returns = returns.reindex(index=weights.index, columns=FAMILIES)
     if weights.isna().any().any() or returns.isna().any().any():
         raise AssertionError("weights/returns contain missing values")
@@ -91,15 +92,16 @@ def main():
         w = weights.loc[mask]
         r = returns.loc[mask]
         c = family_contrib.loc[mask]
-        eq = equity.loc[mask]
-        dd = drawdown.loc[mask]
+        segment_net = net.loc[mask]
+        eq = INITIAL * (1.0 + segment_net).cumprod()
+        dd = eq / eq.cummax() - 1.0
         row = {
             "split": split, "start": str(w.index.min().date()), "end": str(w.index.max().date()),
             "sessions": int(len(w)), "ending_equity": float(eq.iloc[-1]),
             "max_drawdown": float(dd.min()), "avg_exposure": float(w.sum(axis=1).mean()),
             "cash_fraction_sessions": float((w.sum(axis=1) < 0.999999).mean()),
             "annualized_turnover": float(turnover.loc[mask].mean() * 252),
-            "avg_daily_net_return": float(net.loc[mask].mean()),
+            "avg_daily_net_return": float(segment_net.mean()),
         }
         for fam in FAMILIES:
             row[f"{fam}_avg_weight"] = float(w[fam].mean())
