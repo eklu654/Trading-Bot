@@ -406,3 +406,9 @@ Current baseline status: **WORKING**. Candidate 2 at 50%/75% overlay exposure is
 - Synthetic 3x QQQ buy-and-hold ended at $4.53 / $4.52 and hit -99.95% max DD; it crossed below $50 in April 2001 and $5 in July 2002. Static unleveraged equal-weight basket ended $2,588.79 with -58.26% max DD.
 - Decision: no strategy promotion, no tuning to 2000–2002. Family rotation outperformed synthetic B0 and QQQ buy-and-hold in this single window, but its ~96% drawdown remains near-ruin territory. Use this as a stress warning, not a design target. Full report: [SYNTHETIC_PREINCEPTION_FAMILY_ROTATION_RESULTS_2026-10-11.md](SYNTHETIC_PREINCEPTION_FAMILY_ROTATION_RESULTS_2026-10-11.md).
 - Next work: stop this event-specific branch of testing. Preserve the frozen actual-era controls and current risk/wealth tradeoffs; any new defensive candidate must have a predeclared survivability gate across multiple regimes and pass actual-era terminal-wealth, execution, and robustness tests.
+
+
+### Synthetic B0 cross-check against prior survivability report — 2026-10-11
+
+- The new fixed B0 close-to-close approximation returned -98.22% in 2000–2002 at 0 bps with -99.13% max DD; this is directionally consistent with the prior synthetic B0 survivability report's -98.1713% window return / -99.1484% max DD under its different model.
+- This is a cross-check, not exact reproduction: the new test adds prior-close ^IRX financing drag and a 0.95% fee, uses consistent price-only benchmark returns for synthetic assets, and approximates execution close-to-close. Do not merge the two outputs as if they were identical.
