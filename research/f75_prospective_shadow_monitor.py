@@ -61,7 +61,7 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
     required = {
         "date", "source_canonical_sha256", "initialization_session",
         "b0_signal_close", "f75_overlay_signal_close", "f75_signal_close",
-        "b0_exposure", "f75_exposure",
+        "b0_exposure", "f75_exposure", "overnight_return", "intraday_return",
         "b0_equity_0bps", "b0_equity_25bps", "b0_equity_50bps",
         "f75_equity_0bps", "f75_equity_25bps", "f75_equity_50bps",
     }
@@ -87,6 +87,31 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
         raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
     if not prior["b0_exposure"].between(0.0, 1.0).all() or not prior["f75_exposure"].between(0.0, 1.0).all():
         raise RuntimeError("Existing shadow ledger contains invalid realized exposure")
+    initialized_equity = prior.iloc[0]
+    if not np.isclose(float(initialized_equity["b0_equity_0bps"]), INITIAL) or not np.isclose(float(initialized_equity["f75_equity_0bps"]), INITIAL):
+        raise RuntimeError("Shadow ledger initialization equity does not match starting balance")
+    for strategy in ("b0", "f75"):
+        for cost in COSTS:
+            equity = prior[f"{strategy}_equity_{cost}bps"].to_numpy(dtype=float)
+            if np.any(equity <= 0.0):
+                raise RuntimeError(f"Existing shadow ledger {strategy} equity is non-positive")
+            if not np.isclose(equity[0], INITIAL, rtol=0, atol=1e-8):
+                raise RuntimeError(f"Shadow ledger {strategy} initialization equity mismatch")
+            exposure = prior[f"{strategy}_exposure"].to_numpy(dtype=float)
+            overnight = prior["overnight_return"].to_numpy(dtype=float)
+            intraday = prior["intraday_return"].to_numpy(dtype=float)
+            for i in range(1, len(prior)):
+                previous_exposure = exposure[i - 1]
+                current_exposure = exposure[i]
+                turnover = abs(current_exposure - previous_exposure)
+                expected_equity = (
+                    equity[i - 1]
+                    * (1.0 + previous_exposure * overnight[i])
+                    * (1.0 - turnover * cost / 10000.0)
+                    * (1.0 + current_exposure * intraday[i])
+                )
+                if not np.isclose(equity[i], expected_equity, rtol=1e-9, atol=1e-6):
+                    raise RuntimeError(f"Existing shadow ledger {strategy} equity accounting mismatch at row {i}, {cost} bp")
     initialized = prior["initialization_session"].astype(bool).to_numpy()
     if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
         raise RuntimeError("Shadow ledger initialization marker is invalid")
