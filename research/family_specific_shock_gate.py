@@ -22,7 +22,7 @@ SPLITS = {
 }
 
 from research.replay_family_rotation_account import apply_family_endpoint_patch
-from research.test_dma_family_rotation_risk_overlay import FAMILIES, aligned_data, base_weights
+from research.test_dma_family_rotation_risk_overlay import FAMILIES, aligned_data, base_weights, score_frame
 
 
 def family_gate_weights(base: pd.DataFrame, benchmarks: pd.DataFrame,
@@ -59,6 +59,35 @@ def family_gate_weights(base: pd.DataFrame, benchmarks: pd.DataFrame,
             if defensive:
                 gated.iat[i, gated.columns.get_loc(family)] = 0.0
     return gated, gate_states
+
+
+def rotating_gate_weights(base: pd.DataFrame, scores: pd.DataFrame,
+                           eligible: pd.DataFrame, gate_states: pd.DataFrame,
+                           top_n: int = 2, cadence: int = 5) -> pd.DataFrame:
+    """Replace gated slots only at the frozen rebalance cadence; never re-enter off-cycle."""
+    axes = (base.index, base.columns)
+    for frame in (scores, eligible, gate_states):
+        if not frame.index.equals(axes[0]) or not frame.columns.equals(axes[1]):
+            raise ValueError("scores, eligibility, and gate states must match base-weight axes")
+    if top_n < 1 or cadence < 1:
+        raise ValueError("top_n and cadence must be positive")
+    weights = pd.DataFrame(0.0, index=base.index, columns=base.columns)
+    current = pd.Series(0.0, index=base.columns, dtype=float)
+    last_rebalance = -cadence
+    for i, date in enumerate(base.index):
+        if i - last_rebalance >= cadence:
+            allowed = eligible.loc[date].astype(bool) & ~gate_states.loc[date].astype(bool)
+            candidates = scores.loc[date].where(allowed).dropna()
+            current[:] = 0.0
+            if len(candidates):
+                selected = candidates.nlargest(min(top_n, len(candidates))).index
+                current.loc[selected] = 1.0 / len(selected)
+            last_rebalance = i
+        # Immediate family-specific exit; the slot remains empty until the
+        # next scheduled rebalance, even if its recovery gate clears earlier.
+        current.loc[gate_states.loc[date].astype(bool)] = 0.0
+        weights.loc[date] = current
+    return weights
 
 
 def metrics(frame: pd.DataFrame, strategy: str, split: str, cost_bps: int) -> dict:
@@ -104,17 +133,27 @@ def main():
     if benchmark.isna().any().any() or returns.isna().any().any():
         raise AssertionError("common family benchmark/return panel contains missing values")
     overlay, gates = family_gate_weights(base, benchmark)
+    scores, eligible = score_frame(250)
+    scores = scores.reindex(index=base.index, columns=base.columns)
+    eligible = eligible.reindex(index=base.index, columns=base.columns)
+    rotated = rotating_gate_weights(base, scores, eligible, gates)
 
     # Baseline identity: the ungated strategy must remain exactly the frozen base weights.
     if not np.array_equal(base.to_numpy(), base_weights()[0].to_numpy()):
         raise AssertionError("frozen family-rotation base weights changed")
-    if not np.all((overlay.to_numpy() >= 0.0) & (overlay.to_numpy() <= base.to_numpy() + 1e-12)):
-        raise AssertionError("overlay increased a family weight or created negative exposure")
+    for candidate in (overlay, rotated):
+        if not np.all((candidate.to_numpy() >= 0.0) & (candidate.to_numpy() <= 1.0 + 1e-12)):
+            raise AssertionError("overlay created negative or above-100% exposure")
+    if not np.all(overlay.to_numpy() <= base.to_numpy() + 1e-12):
+        raise AssertionError("cash gate increased a family weight")
+    if not np.all(rotated.to_numpy().sum(axis=1) <= 1.0 + 1e-12):
+        raise AssertionError("replacement rotation exceeded total portfolio exposure")
 
     rows, curves = [], []
     for cost in COSTS:
         for label, weights in (("BASE_ROTATE_DMA250_TOP2_C5", base),
-                               ("FAMILY_SHOCK_GATE_45_10", overlay)):
+                               ("FAMILY_SHOCK_GATE_45_10", overlay),
+                               ("FAMILY_SHOCK_GATE_ROTATE_45_10", rotated)):
             frame = build_return_frame(weights, returns, cost)
             for split, (start, end) in SPLITS.items():
                 rows.append(metrics(frame.loc[start:end], label, split, cost))
@@ -134,6 +173,7 @@ def main():
     curve.to_csv(DATA / "family_shock_gate_equity.csv", index=False, float_format="%.12g")
     base.to_csv(DATA / "family_shock_gate_base_weights.csv", index_label="Date")
     overlay.to_csv(DATA / "family_shock_gate_overlay_weights.csv", index_label="Date")
+    rotated.to_csv(DATA / "family_shock_gate_rotated_weights.csv", index_label="Date")
     gates.to_csv(DATA / "family_shock_gate_states.csv", index_label="Date")
     benchmark.to_csv(DATA / "family_shock_gate_benchmarks.csv", index_label="Date")
     returns.to_csv(DATA / "family_shock_gate_bull_returns.csv", index_label="Date")
@@ -149,7 +189,7 @@ def main():
     (DATA / "family_shock_gate_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print("FAMILY-SPECIFIC SHOCK GATE RESULTS")
     print(summary.to_string(index=False))
-    print("PASS: frozen base weights preserved; overlay only removes family exposure; no same-family inverse ETFs.")
+    print("PASS: frozen base preserved; cash gate only removes exposure; replacement rotation only selects eligible ungated families at scheduled rebalance dates.")
     print("MANIFEST:", json.dumps(manifest, sort_keys=True))
 
 
