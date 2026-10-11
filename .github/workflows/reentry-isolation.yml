@@ -2,7 +2,7 @@ name: Re-entry isolation experiment
 
 on:
   push:
-    branches: [main]
+    branches: [main, research/qqq-slow-bear-audit]
     paths:
       - "research/reentry_isolation.py"
       - "research/causal_execution.py"
