@@ -3,7 +3,7 @@
 Run: python research/reentry_isolation.py
 This script downloads QQQ/TQQQ once, aligns and saves the exact inputs, then runs
 B0, immediate re-entry (R1), guarded staged re-entry (R2), and preregistered
-staged re-entry (R2P) on that snapshot. Signals are close-known and execute at
+staged re-entry (R2P), SMA-confirmed R3, and shock-cluster R4 on that snapshot. Signals are close-known and execute at
 the next open via causal_execution.py. R2P preserves the 50% tranche after
 renewed declines, matching the original preregistration.
 """
@@ -48,13 +48,15 @@ def target_exposure(qqq, candidate):
     preregistered R2P retains 50% after its tranche has activated. The running
     low continues to update until full recovery.
     """
-    if candidate not in {"B0", "R1", "R2", "R2P", "R3"}:
+    if candidate not in {"B0", "R1", "R2", "R2P", "R3", "R4"}:
         raise ValueError(f"unknown candidate: {candidate}")
     px = qqq["Adj Close"].astype(float).to_numpy()
     daily = qqq["Adj Close"].astype(float).pct_change().fillna(0).to_numpy()
     weights = np.ones(len(qqq), dtype=float)
     sma20 = qqq["Adj Close"].astype(float).rolling(CONFIRM_SMA, min_periods=CONFIRM_SMA).mean().to_numpy()
+    shock_count20 = pd.Series((daily <= SHOCK).astype(int), index=qqq.index).rolling(20, min_periods=1).sum().to_numpy()
     defensive = False
+    clustered = False
     low = np.nan
     staged = False
 
@@ -63,6 +65,7 @@ def target_exposure(qqq, candidate):
             defensive = True
             low = px[i]
             staged = False
+            clustered = bool(shock_count20[i] >= 2)
             weights[i] = 0.0
             continue
 
@@ -76,7 +79,8 @@ def target_exposure(qqq, candidate):
         # R2 is the guarded exploratory variant that resets to cash.
         if daily[i] <= SHOCK:
             low = px[i]
-            if candidate in {"R2P", "R3"} and staged:
+            clustered = clustered or bool(shock_count20[i] >= 2)
+            if candidate in {"R2P", "R3", "R4"} and staged:
                 weights[i] = 0.5
             else:
                 staged = False
@@ -94,6 +98,28 @@ def target_exposure(qqq, candidate):
             if rebound >= RECOVERY_FULL:
                 defensive = False
                 weights[i] = 1.0
+            else:
+                weights[i] = 0.0
+        elif candidate == "R4":
+            # Isolated shocks retain B0's immediate +10% re-entry. Only
+            # clustered episodes require 50% at +10%, then SMA confirmation.
+            confirmed = np.isfinite(sma20[i]) and px[i] > sma20[i]
+            if not clustered:
+                defensive = False
+                weights[i] = 1.0
+            elif staged:
+                if rebound >= RECOVERY_FULL and confirmed:
+                    defensive = False
+                    staged = False
+                    weights[i] = 1.0
+                else:
+                    weights[i] = 0.5
+            elif rebound >= RECOVERY_FULL and confirmed:
+                defensive = False
+                weights[i] = 1.0
+            elif rebound >= RECOVERY_FULL:
+                staged = True
+                weights[i] = 0.5
             else:
                 weights[i] = 0.0
         elif candidate == "R3":
@@ -199,7 +225,7 @@ def main():
     all_rows = []
     curve_rows = []
     candidates = {}
-    for name in ("B0", "R1", "R2", "R2P", "R3"):
+    for name in ("B0", "R1", "R2", "R2P", "R3", "R4"):
         w = target_exposure(q, name)
         candidates[name] = w
         for bps in (0, 10, 25, 50):
@@ -236,7 +262,7 @@ def main():
         )
         if not np.allclose(plain, helper, rtol=1e-11, atol=1e-7):
             raise AssertionError(f"0-bps equity mismatch for {name}")
-    print("\nPASS: 0-bps cost-helper equity reconciles to causal daily returns for B0/R1/R2/R2P/R3.")
+    print("\nPASS: 0-bps cost-helper equity reconciles to causal daily returns for B0/R1/R2/R2P/R3/R4.")
 
 
 if __name__ == "__main__":
