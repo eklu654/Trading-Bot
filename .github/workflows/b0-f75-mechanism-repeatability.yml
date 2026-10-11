@@ -56,4 +56,5 @@ jobs:
           path: |
             data/research/b0_f75_mechanism_episode_attribution.csv
             data/research/b0_f75_mechanism_episode_summary.json
+            data/research/b0_f75_full_period_compounded.csv
           if-no-files-found: error
