@@ -1,0 +1,68 @@
+name: Stress-conditioned SOXL cap
+
+on:
+  push:
+    branches: [main, research/qqq-slow-bear-audit]
+    paths:
+      - "research/soxl_stress_conditioned_cap.py"
+      - "research/soxl_concentration_cap.py"
+      - "research/family_specific_shock_gate.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/replay_family_rotation_account.py"
+      - "research/build_historical_regime_dataset.py"
+      - "research/requirements.txt"
+      - "tests/test_soxl_stress_conditioned_cap.py"
+      - ".github/workflows/soxl-stress-conditioned-cap.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: soxl-stress-conditioned-cap-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  stress-cap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Cache historical research dataset
+        id: dataset-cache
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: dma-family-rotation-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-10-03
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r research/requirements.txt
+      - name: Build historical market dataset
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: python research/build_historical_regime_dataset.py
+      - name: Test stress-conditioned cap
+        run: PYTHONPATH=. pytest -q tests/test_soxl_stress_conditioned_cap.py tests/test_soxl_concentration_cap.py
+      - name: Run fixed stress-conditioned comparison
+        run: PYTHONPATH=. python research/soxl_stress_conditioned_cap.py
+      - name: Upload frozen inputs and results
+        uses: actions/upload-artifact@v4
+        with:
+          name: soxl-stress-conditioned-cap-results
+          path: |
+            data/research/soxl_stress_cap_summary.csv
+            data/research/soxl_stress_cap_equity.csv
+            data/research/soxl_stress_cap_base_weights.csv
+            data/research/soxl_stress_cap_permanent_weights.csv
+            data/research/soxl_stress_cap_conditional_weights.csv
+            data/research/soxl_stress_cap_state.csv
+            data/research/soxl_stress_cap_drawdown_signal.csv
+            data/research/soxl_stress_cap_bull_returns.csv
+            data/research/soxl_stress_cap_manifest.json
+          if-no-files-found: error
+          retention-days: 30
