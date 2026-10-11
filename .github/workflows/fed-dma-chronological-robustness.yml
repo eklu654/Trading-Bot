@@ -13,6 +13,10 @@ on:
       - "docs/research/FED_DMA_OVERLAY_CHRONOLOGICAL_ROBUSTNESS_PREREGISTRATION_2026-10-11.md"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: read
+
 concurrency:
   group: fed-dma-chronological-robustness
   cancel-in-progress: false
@@ -34,6 +38,10 @@ jobs:
         run: python -m pip install -r research/requirements.txt
       - name: Compile frozen replay and dependencies
         run: python -m py_compile research/fed_dma_chronological_robustness.py research/canonical_shock_recovery_active_tightening_overlay.py research/canonical_shock_recovery_fed_dma_overlay.py research/causal_execution.py
+      - name: Download canonical frozen B0 input
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 38117700318 --repo eklu654/Trading-Bot --name tqqq-actual-partial-dma-matrix --dir data/research/canonical_b0
       - name: Test terminal shock censoring guardrails
         run: python -m unittest discover -s research -p "test_fed_dma_terminal_shock_censoring.py" -v
       - name: Run preregistered chronological robustness test
