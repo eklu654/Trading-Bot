@@ -40,3 +40,11 @@
 - Corrected first-run initialization so the $5,000 shadow account is initialized at the close of the first new market session with zero return credited for that initialization session. Subsequent sessions accrue overnight return on the previously held exposure, apply exposure-change cost at the open, and accrue intraday return on the newly executed exposure. This matches the preregistered close-to-next-open convention.
 - The correction is in commit `09a6517c3e6c70f2689558808faf1ec26e3dfe6a`; [run #5](https://github.com/eklu654/Trading-Bot/actions/runs/38129970930) validates it.
 - [Run #4](https://github.com/eklu654/Trading-Bot/actions/runs/38129922083) completed successfully after switching to explicit test execution. Its head predates the initialization correction; use run #5 for the latest code.
+
+
+## Latest validation closed — run #5
+
+- [Run #5](https://github.com/eklu654/Trading-Bot/actions/runs/38129970930) completed successfully on commit `09a6517c3e6c70f2689558808faf1ec26e3dfe6a`.
+- Artifact download, compile, all three explicit guardrail tests, and shadow-monitor execution passed. The monitor safely found no completed session after the frozen 2026-10-07 cutoff and left the ledger unchanged. This is an expected Sunday no-op, not evidence of a forward-return result.
+- The monitor is implemented and its no-new-session path is validated. Real forward-session append, cost/equity progression, and persistent ledger commit remain to be verified after the next completed market session.
+- Schedule caveat remains: scheduled execution is not active while this workflow exists only on the research branch. The default-branch integration step is intentionally not performed here; no changes have been made to `main`.
