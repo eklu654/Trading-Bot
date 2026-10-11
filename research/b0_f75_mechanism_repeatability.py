@@ -139,6 +139,22 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
         rec[f"incremental_maxdd_{cost}bps"] = rec[f"f75_maxdd_{cost}bps"] - rec[f"b0_maxdd_{cost}bps"]
     return rec
 
+def _compose_f75_signal(b0, overlay_state, partial_exposure=0.75):
+    """Apply the frozen F75 partial-exposure rule over the B0 baseline.
+
+    The active tightening overlay is a state indicator (0 when active, 1 otherwise);
+    it is not itself the candidate portfolio weight. F75 holds 75% exposure while
+    that overlay is active, unless B0 independently calls for zero exposure.
+    """
+    baseline = np.asarray(b0, dtype=float)
+    overlay = np.asarray(overlay_state, dtype=float)
+    if baseline.shape != overlay.shape:
+        raise ValueError("B0 and overlay state must have equal shapes")
+    if not 0.0 <= partial_exposure <= 1.0:
+        raise ValueError("partial_exposure must be between 0 and 1")
+    overlay_weight = np.where(overlay == 0.0, partial_exposure, 1.0)
+    return np.minimum(baseline, overlay_weight)
+
 def _full_period_comparison(prices, b0, f75, costs=COSTS):
     """Compare compounded B0/F75 equity over the full actual-TQQQ history."""
     rows = []
@@ -193,7 +209,7 @@ def main():
     fed = download_fed()
     lagged = map_fed_state_to_market(fed, prices.index)
     overlay, _ = build_active_tightening_overlay(prices["qqq_adj_close"], lagged)
-    f75 = np.minimum(b0, overlay)
+    f75 = _compose_f75_signal(b0, overlay, partial_exposure=0.75)
     rows = [_one_episode(n,s,e,prices.index,prices,b0,f75,COSTS) for n,s,e in EPISODES]
     report = pd.DataFrame(rows)
     validated_episodes = _validate_report(report)
