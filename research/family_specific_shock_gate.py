@@ -137,10 +137,15 @@ def main():
     scores = scores.reindex(index=base.index, columns=base.columns)
     eligible = eligible.reindex(index=base.index, columns=base.columns)
     rotated = rotating_gate_weights(base, scores, eligible, gates)
+    ungated_replay = rotating_gate_weights(
+        base, scores, eligible, pd.DataFrame(False, index=base.index, columns=base.columns)
+    )
 
-    # Baseline identity: the ungated strategy must remain exactly the frozen base weights.
+    # Baseline identity: the ungated replay must exactly reproduce the frozen base.
     if not np.array_equal(base.to_numpy(), base_weights()[0].to_numpy()):
         raise AssertionError("frozen family-rotation base weights changed")
+    if not np.array_equal(ungated_replay.to_numpy(), base.to_numpy()):
+        raise AssertionError("replacement-rotation builder does not reproduce the frozen base without gates")
     for candidate in (overlay, rotated):
         if not np.all((candidate.to_numpy() >= 0.0) & (candidate.to_numpy() <= 1.0 + 1e-12)):
             raise AssertionError("overlay created negative or above-100% exposure")
