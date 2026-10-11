@@ -17,3 +17,14 @@
 - Corrected implementation now downloads the immutable frozen input from run #29 (artifact `tqqq-actual-partial-dma-matrix`, ID `11694047458`), verifies its SHA-256 (`6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`), reconstructs B0 independently, asserts exact signal equality to canonical `b0_signal`, and fails unless the 0-bps B0 terminal equity matches $4,040,314.667614526 within $0.00001.
 - Added the artifact-download step and synthetic tests to the workflow. Latest commit at time of note: `0bbd719b94c89419ca5cf8546b31dbf542003672`.
 - Current rerun: [Actions run #14](https://github.com/eklu654/Trading-Bot/actions/runs/38129052911). Do not use the old run #8 performance values as final candidate evidence until this canonical-input rerun completes and the exact B0 reconciliation passes. Run #8 remains an execution-history record, not the final validated result.
+
+
+## Canonical-input rerun completed — 2026-10-11
+
+- Authoritative run #15: [38129135473](https://github.com/eklu654/Trading-Bot/actions/runs/38129135473), conclusion `success`, head commit `e275c8b8d9adf05e26c9bb55e998b713c095ee60`.
+- Artifact ID `11699001137`; all workflow steps passed, including artifact retrieval, exact B0 signal reconciliation, three synthetic terminal-censoring tests, replay, and upload.
+- Exact input hash check passed: source CSV SHA-256 `6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`. Reconstructed B0 matched all 4,189 frozen `b0_signal` values. Zero-cost B0 ending equity was `4040314.667614814`, versus canonical `4040314.667614526` (difference `0.000000288`).
+- Canonical-input 25-bps results: B0 `$3,852,657`, -73.80% max DD; F50 `$3,829,979`, -61.62% max DD; F75 `$3,898,853`, -67.99% max DD. F50 fails the 2018 recovery gate; F75 passes all six preregistered gates.
+- F75 still loses to B0 in the fixed exclusion diagnostic outside 2022–2024: `$2,528,413` vs `$2,733,976`. Keep F75 research-only and do not tune thresholds.
+- The initial run #8 performance report is superseded for baseline reproducibility by run #15. The strategy decision is unchanged; only canonical source control and precise terminal balances have been corrected.
+- Updated results: [FED_DMA_OVERLAY_CHRONOLOGICAL_ROBUSTNESS_RESULTS_2026-10-11.md](FED_DMA_OVERLAY_CHRONOLOGICAL_ROBUSTNESS_RESULTS_2026-10-11.md).
