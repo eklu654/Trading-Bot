@@ -27,3 +27,10 @@ Before inventing another indicator, inspect and report the existing causal walk-
 - No B0 edits or benchmark replacement.
 - No paper/live trading authorization.
 - Clearly label synthetic 3x QQQ results as diagnostics, not historical TQQQ returns.
+
+
+## Existing crash/persistent-bear filter result found after checkpoint
+The checked-in `data/research/crash_persistent_bear_filter.csv` contains a completed 18-row modern actual-TQQQ matrix plus a synthetic diagnostic matrix. The actual-TQQQ rows report ending equity from about $1.13M to $3.27M, all below the recorded B0 ~$4.04M, with max drawdowns from about -62.7% to -80.6%. The strongest wealth row in this matrix is the -4.5% shock / 20-session positive-momentum / 50-DMA confirmation variant: about $3.274M, max DD -72.31%, versus B0 about $4.04M and -73.53%. It therefore sacrifices roughly $766k ending wealth for only about 1.2 percentage points of max-DD improvement; it is not a satisfactory detector.
+- The 100-DMA confirmation variants are notably weaker in this table (about $1.70M–$1.85M ending wealth and roughly -78.5% max DD for the -4.5% shock rows).
+- This filter is specifically a post-shock re-entry confirmation gate, not an independent early warning signal. It cannot protect against a long decline before a qualifying shock arms the defensive state.
+- The code uses close-based conditions and rolls exposure forward one session, which is directionally consistent with next-session execution. However, the checked-in script directly downloads QQQ/TQQQ through yfinance and does not visibly freeze/hash the inputs in the script itself; its matrix is not directly comparable to B0 unless the exact dates, adjusted/close fields, and data snapshots are aligned. Treat the table as a negative screening result, not a final controlled comparison.
