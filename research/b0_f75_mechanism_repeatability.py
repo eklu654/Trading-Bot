@@ -48,15 +48,19 @@ def _max_dd(eq):
     peaks = np.maximum.accumulate(eq)
     return float(np.min(eq / peaks - 1.0))
 
-def _episode_path(path, episode_start_offset):
-    """Return episode equity including the pre-session starting balance.
+def _episode_path(path, episode_start_index, initial=INITIAL):
+    """Normalize a full-history equity path to the episode's starting balance.
 
-    _equity_path[0] is the initial balance at the prior close. When an episode
-    begins at offset 1, retaining path[0] ensures its first session return is
-    included in both cumulative return and drawdown.
+    The start index is the prior close immediately before the episode's first
+    session. Keeping that point includes the starting equity in drawdown and
+    preserves the strategy's actual pre-episode exposure state.
     """
     path = np.asarray(path, dtype=float)
-    return path[max(0, int(episode_start_offset) - 1):]
+    start_index = max(0, int(episode_start_index))
+    baseline = float(path[start_index])
+    if not np.isfinite(baseline) or baseline <= 0:
+        raise RuntimeError("Invalid episode starting equity")
+    return path[start_index:] * (float(initial) / baseline)
 
 def _one_episode(name, start, end, dates, prices, b0, f75, costs):
     start_ts, end_ts = pd.Timestamp(start), pd.Timestamp(end)
@@ -72,12 +76,17 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
            "status": "MEASURED", "sessions": hi-lo+1}
     for label, sig in (("b0", b0), ("f75", f75)):
         for cost in costs:
-            path, exp = _equity_path(prices.iloc[left:hi+1], sig[left:hi+1], cost)
-            local = _episode_path(path, lo-left)
+            # Simulate from actual TQQQ inception through this episode so the
+            # overnight exposure and open rebalance cost inherit the true prior
+            # signal state. Then normalize the episode's prior-close equity to $5k.
+            path, exp = _equity_path(prices.iloc[:hi+1], sig[:hi+1], cost)
+            local = _episode_path(path, left)
+            episode_offset = lo - left
+            local = local[episode_offset:]
             rec[f"{label}_return_{cost}bps"] = float(local[-1] / INITIAL - 1.0)
             rec[f"{label}_maxdd_{cost}bps"] = _max_dd(local)
-            rec[f"{label}_avg_exposure"] = float(np.mean(exp[lo-left:]))
-            rec[f"{label}_defensive_sessions"] = int(np.sum(exp[lo-left:] < 0.999))
+            rec[f"{label}_avg_exposure"] = float(np.mean(exp[lo:hi+1]))
+            rec[f"{label}_defensive_sessions"] = int(np.sum(exp[lo:hi+1] < 0.999))
             rec[f"{label}_terminal_equity_{cost}bps"] = float(local[-1])
     # Recovery participation measured relative to the lowest QQQ close in episode.
     q = prices["qqq_adj_close"].iloc[lo:hi+1].to_numpy(float)
