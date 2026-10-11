@@ -82,3 +82,23 @@ Do not claim the discriminator is validated and do not launch another parameter 
 - These six selected events are not a complete independent benchmark, and 6/6 detection is not a reliable hit-rate estimate. The rule is inherently a drawdown detector; it necessarily triggers once the decline reaches X, so the key question is whether it triggers early enough and whether defensive action improves actual TQQQ portfolio outcomes.
 - First run `38113063154` had an event-ledger bug that merged the 2000 bear through its eventual old-peak recovery and omitted 2007–09 as a separate episode. Do not use that first artifact. The corrected run fixes segmentation; script metadata was subsequently corrected to match the actual 252-session/20%-start/10%-recovery-for-20-sessions event definition.
 - Next step: after metadata-correction workflow completes, confirm the output matches the corrected run, then build a separate frozen-control portfolio simulation with explicit causal defense/re-entry logic and chronological holdout. Do not optimize further based on this six-event screen alone.
+
+
+## Follow-up 2026-10-11: workflow verified; connect signal screen to existing B0 counterfactual
+
+### Run and artifact verification
+- Metadata-correction workflow `38113172397` completed successfully; all steps, including upload, passed. Artifact ID `11692303519`; artifact SHA-256 `670affaea81793171ce58272643a1b3229cceeeb49e2f101f4f6bf4635ddaac9`.
+- Frozen screen input: 6,939 QQQ adjusted-close rows, 1999-03-10 through 2026-10-08; SHA-256 `69820e00b10c43548871c864877a10b8e8544625a4c0cd7c826538a23bfa4b3d`.
+- The six event windows are 2000–02, 2007–09, 2018, COVID-2020, 2022, and 2025 under the operational rule (20% below trailing 252-session high to start; 20 sessions continuously shallower than 10% drawdown to close). This is a small event set, not a broad enough sample to validate 100% detection claims.
+
+### Signal-screen interpretation
+- The 10%-within-10-sessions rule flags all six event troughs before they occur, but it is too late to count as meaningful protection in 2018 and 2025: first signal is 79 and 32 sessions after the event peak, with QQQ already down 20.83% and 21.54%, respectively.
+- It is faster in 2000, 2007, 2020, and 2022 (5, 8, 6, and 20 sessions after the recorded event peak; drawdown at warning -12.58%, -11.45%, -13.22%, and -14.47%).
+- The apparent fraction of peak-to-trough loss "avoided" is a price-path diagnostic only, assuming exit at the warning close. Actual next-open execution, leveraged daily path, B0's existing signal, and re-entry all alter realized portfolio results. Do not treat this metric as simulated TQQQ savings.
+- The report text still contains an older generic event-definition sentence ("non-overlapping peak-to-recovery episodes...") even though metadata and code now state the rolling-252 / 20%-start / 10%-for-20-sessions rule. Correct report-generation wording before relying on generated report text; CSV + metadata have the operational definition.
+
+### Critical existing result discovered: the portfolio counterfactual already exists
+- Do not create a duplicate B0 overlay experiment. Existing script `research/qqq_drawdown_warning_b0_counterfactual.py` already tested 252-session high drawdown warning with next-open execution, hysteresis, exposure caps, costs, and the canonical B0 baseline.
+- Its report `docs/research/B0_QQQ_DRAWDOWN_WARNING_COUNTERFACTUAL_2026-10-10.md` records B0 at $4,040,315 / -73.53% max DD. DD15 with 75% warning exposure finished $3,239,394 (-19.8% vs B0) and improved max DD by only 3.32 percentage points. DD10 with 75% finished $1,834,217 (-54.6%) despite a 8.74pp max-DD improvement; DD10/0% finished $100,639. All candidates were rejected.
+- That prior overlay uses 252-session peak thresholds (-10%/-15%) and re-entry at -5%/-10%; it is not the same as the new X%-within-10/20-session family. Nevertheless, it demonstrates the central tradeoff: a long-lived drawdown warning can preserve some capital but block powerful recoveries and destroy terminal wealth.
+- Next step should be to audit the exact short-window X/Y signal and test whether a *bounded/temporary* exposure reduction improves tail risk while promptly restoring exposure, rather than simply repeating long-lived hysteresis. First correct report wording, then predeclare only a few candidates (e.g. 7.5%/10 sessions and 10%/10 sessions) and one re-entry rule. Compare against frozen B0 on the same canonical frozen input and costs; no threshold selection from the same holdout.
