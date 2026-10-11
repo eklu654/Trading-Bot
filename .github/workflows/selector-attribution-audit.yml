@@ -1,0 +1,64 @@
+name: Frozen selector attribution audit
+
+on:
+  push:
+    branches: [research/qqq-slow-bear-audit]
+    paths:
+      - "research/selector_attribution_audit.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/replay_family_rotation_account.py"
+      - "research/backtest_dynamic_leverage.py"
+      - "research/build_historical_regime_dataset.py"
+      - "research/requirements.txt"
+      - "tests/test_selector_attribution_audit.py"
+      - ".github/workflows/selector-attribution-audit.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: selector-attribution-audit-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Restore historical research dataset
+        id: dataset-cache
+        uses: actions/cache@v4
+        with:
+          path: data/research
+          key: dma-family-rotation-dataset-${{ hashFiles('research/build_historical_regime_dataset.py') }}-2026-10-03
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r research/requirements.txt
+      - name: Build historical market dataset
+        if: steps.dataset-cache.outputs.cache-hit != 'true'
+        run: python research/build_historical_regime_dataset.py
+      - name: Test audit episode accounting
+        run: PYTHONPATH=. pytest -q tests/test_selector_attribution_audit.py
+      - name: Run frozen selector attribution audit
+        run: PYTHONPATH=. python research/selector_attribution_audit.py
+      - name: Upload diagnostic outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: frozen-selector-attribution-audit
+          path: |
+            data/research/selector_audit_summary.csv
+            data/research/selector_audit_worst_drawdowns.csv
+            data/research/selector_audit_daily_weights.csv
+            data/research/selector_audit_daily_family_contributions.csv
+            data/research/selector_audit_worst_100_days.csv
+            data/research/selector_audit_manifest.json
+          if-no-files-found: error
+          retention-days: 30
