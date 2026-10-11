@@ -81,8 +81,6 @@ def _one_episode(name, start, end, dates, prices, b0, f75, costs):
             # signal state. Then normalize the episode's prior-close equity to $5k.
             path, exp = _equity_path(prices.iloc[:hi+1], sig[:hi+1], cost)
             local = _episode_path(path, left)
-            episode_offset = lo - left
-            local = local[episode_offset:]
             rec[f"{label}_return_{cost}bps"] = float(local[-1] / INITIAL - 1.0)
             rec[f"{label}_maxdd_{cost}bps"] = _max_dd(local)
             rec[f"{label}_avg_exposure"] = float(np.mean(exp[lo:hi+1]))
