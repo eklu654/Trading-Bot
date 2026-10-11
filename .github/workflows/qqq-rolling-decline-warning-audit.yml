@@ -1,0 +1,43 @@
+name: QQQ Rolling-Decline Warning Audit
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/qqq_rolling_decline_warning_audit.py"
+      - ".github/workflows/qqq-rolling-decline-warning-audit.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qqq-rolling-decline-warning-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy yfinance tabulate
+      - name: Run fixed 20-cell signal audit
+        run: python research/qqq_rolling_decline_warning_audit.py
+      - name: Upload event-level results and data fingerprint
+        uses: actions/upload-artifact@v4
+        with:
+          name: qqq-rolling-decline-warning-audit
+          path: |
+            data/research/qqq_rolling_decline_input.csv
+            data/research/qqq_rolling_decline_summary.csv
+            data/research/qqq_rolling_decline_events.csv
+            data/research/qqq_rolling_decline_metadata.json
+            data/research/qqq_rolling_decline_audit.md
+          if-no-files-found: error
+          retention-days: 30
