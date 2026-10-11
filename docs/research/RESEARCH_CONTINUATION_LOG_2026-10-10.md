@@ -134,3 +134,14 @@ Any new strategy modification after examining these same dates is development da
 
 ### Decision / next step
 Do not claim the causal walk-forward discriminator is validated: source exists, but result artifact/report is missing and its trigger is conditional on a prior shock. Next research should first recover/reproduce its fixed-split outputs from frozen, hashable input data. In parallel, a genuinely independent slow-bear detector must be tested on the full historical index event ledger, including events with no -4.5% daily shock. Avoid more broad grids until these gaps are closed.
+
+
+## 2026-10-11 continuation: family-rotation selector attribution
+
+- Preregistered the diagnostic scope in `SELECTOR_ATTRIBUTION_AUDIT_PREREGISTRATION_2026-10-11.md`; added `research/selector_attribution_audit.py`, two invariant tests, and `.github/workflows/selector-attribution-audit.yml`.
+- First run failed only on exact float equality. After fixing that, the first successful run exposed an audit-accounting issue: it included 2010-03-11 and reported train/validation/holdout ending equity on the continuous full curve. Fixed start date and made split equity/drawdown local to each split; corrected run [38123681582](https://github.com/eklu654/Trading-Bot/actions/runs/38123681582) succeeded. Artifact ID `11696426826`; only this corrected run is authoritative.
+- Base rotation, actual ETF data 2010-03-12–2026-10-02, $5,000, 25 bps: full ending equity $249,490, max DD -68.53%; train $21,323 / -65.85%; validation $6,827 / -65.48%; holdout $42,845 / -66.50%.
+- Worst 2021–2023 episode: -68.53% DD; SOXL/SOXX-family weighted daily-return contribution sum -0.365, SPXL/SPY -0.294, TNA/IWM -0.129, TQQQ/QQQ -0.089, UDOW/DIA -0.089. COVID episode lost 65.48% in 16 sessions with 50% TQQQ and 50% SOXL. Therefore family concentration matters, but this is multi-family leveraged exposure and the 250-DMA eligibility filter is not an account-level crash stop.
+- Recovery participation also matters: during the 63 sessions after the 2021–2023 trough, average SOXL/TQQQ weights were 54.0%/45.2%, with additive contribution sums +0.381/+0.216. These sums are attribution diagnostics, not compounded counterfactual returns.
+- Reports updated: `SELECTOR_ATTRIBUTION_AUDIT_RESULTS_2026-10-11.md`, `DEFENSIVE_RESEARCH_GATE_SUMMARY_2026-10-11.md`, and `CURRENT_STATE.md`.
+- Next: do not tune rejected family gates/caps, DMA, top-N, or cadence. Inspect existing risk-overlay evidence before proposing anything new. The multi-family volatility-targeting workflow/code exists, but no corresponding result summary is checked into the inspected branch tree; do not rerun its full matrix until we determine whether a valid prior artifact can be recovered. Keep pre-2010 leveraged ETF results explicitly synthetic.
