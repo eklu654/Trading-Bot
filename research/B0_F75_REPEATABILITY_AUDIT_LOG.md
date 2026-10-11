@@ -148,3 +148,10 @@
 
 - Historical attribution guardrail workflow [38133551400](https://github.com/eklu654/Trading-Bot/actions/runs/38133551400) also passed on commit `e7f46e3b2b5d4b2571e52781ec56fb0920cdb5fd`: 10/10 tests passed, fixed attribution completed, and artifact ID `11700430203` uploaded (ZIP SHA-256 `7dc88e76bafb4cfaf8c5775b9446104af1293b47e9ced6cef22bf9d784c4043a`).
 
+## 2026-10-11 — shadow state manifest count semantics clarified
+
+- Code audit found that the manifest field `sessions_appended` was set to `len(new)`, so it represented only the latest invocation's append batch despite sounding cumulative. This was ambiguous for audits and downstream monitoring.
+- Updated the manifest to explicitly record `sessions_appended_this_run`, `ledger_rows_total`, `return_bearing_sessions_total`, and `initialization_date`, alongside the latest observation, pinned canonical hash, ledger hash, cost cases, and shadow-only mode.
+- Change committed as `14a2a796b377f2a2811c418542dd9eb5b9c18e1b`. The push-triggered monitor run must verify compilation/tests and regenerate the manifest; the existing manifest is expected to be refreshed on the next successful append because the idempotent no-new-session path intentionally does not rewrite ledger or state.
+- Scheduling audit: the research-branch workflow is configured for weekdays at 22:35 UTC and explicitly checks out/updates `research/qqq-slow-bear-audit`. GitHub scheduled workflows are evaluated from the repository's default branch; the workflow and monitor script were not found on `main` during this check. Therefore, do not assume this schedule will fire automatically while the workflow exists only on the research branch. Push/manual triggers work independently. Keep `main` unchanged; determine a branch-safe scheduled invocation mechanism before relying on unattended daily collection.
+
