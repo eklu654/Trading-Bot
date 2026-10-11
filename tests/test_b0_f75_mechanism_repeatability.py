@@ -88,3 +88,11 @@ def test_f75_overlay_means_75_percent_exposure_not_full_exit():
     overlay_state = np.array([1.0, 0.0, 0.0, 1.0])
     candidate = _compose_f75_signal(b0, overlay_state, partial_exposure=0.75)
     assert np.allclose(candidate, [1.0, 0.75, 0.0, 1.0])
+
+def test_prospective_shadow_monitor_uses_same_frozen_partial_f75_rule():
+    from research.f75_prospective_shadow_monitor import compose_f75_signal
+    b0 = np.array([1.0, 1.0, 0.0, 1.0])
+    overlay_state = np.array([1.0, 0.0, 0.0, 1.0])
+    assert np.allclose(compose_f75_signal(b0, overlay_state), [1.0, 0.75, 0.0, 1.0])
+    assert np.allclose(compose_f75_signal(b0, overlay_state, partial_exposure=0.5), [1.0, 0.5, 0.0, 1.0])
+
