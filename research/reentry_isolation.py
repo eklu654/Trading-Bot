@@ -101,14 +101,18 @@ def target_exposure(qqq, candidate):
             # rebound from the running low and a close above QQQ's 20-session
             # SMA. Restore full exposure at +10% from that low. On a renewed
             # shock after staging, retain 50% and reset the recovery low.
+            confirmed = np.isfinite(sma20[i]) and px[i] > sma20[i]
             if staged:
-                if rebound >= RECOVERY_FULL:
+                if rebound >= RECOVERY_FULL and confirmed:
                     defensive = False
                     staged = False
                     weights[i] = 1.0
                 else:
                     weights[i] = 0.5
-            elif rebound >= RECOVERY_PARTIAL and np.isfinite(sma20[i]) and px[i] > sma20[i]:
+            elif rebound >= RECOVERY_FULL and confirmed:
+                defensive = False
+                weights[i] = 1.0
+            elif rebound >= RECOVERY_PARTIAL and confirmed:
                 staged = True
                 weights[i] = 0.5
             else:
