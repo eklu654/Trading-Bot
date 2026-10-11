@@ -71,7 +71,11 @@ def download_symbol(symbol: str) -> pd.DataFrame:
 def synthetic_3x_daily_returns(benchmark_returns: pd.Series, annual_yield_pct: pd.Series,
                                annual_fee: float = FEE_ANNUAL) -> tuple[pd.Series, pd.Series]:
     """Return synthetic daily returns and absorbing proxy wealth, both starting at first session."""
-    funding_daily = annual_yield_pct.astype(float) / 100.0 / 252.0
+    # The financing rate applied to session t is the prior session's close-known yield.
+    lagged_yield = annual_yield_pct.astype(float).shift(1)
+    if len(lagged_yield):
+        lagged_yield.iloc[0] = float(annual_yield_pct.iloc[0])
+    funding_daily = lagged_yield / 100.0 / 252.0
     raw = 3.0 * benchmark_returns.astype(float) - 2.0 * funding_daily - annual_fee / 252.0
     raw = raw.replace([np.inf, -np.inf], np.nan).fillna(0.0)
     daily = pd.Series(0.0, index=raw.index, dtype=float, name="synthetic_3x_return")
@@ -184,10 +188,13 @@ def main():
     proxy_wealth = pd.DataFrame(proxy_wealth, index=index)
     weights = selector_weights(benchmark_close, proxy_wealth)
     # Begin only when all benchmark DMAs are warmed up; this is mechanical, not tuned.
-    first_valid = benchmark_close.rolling(DMA, min_periods=DMA).mean().dropna().index[0]
+    first_valid = None
     for family in benchmark_close.columns:
-        valid_dates = benchmark_close[family].rolling(DMA, min_periods=DMA).mean().dropna().index
-        first_valid = max(first_valid, valid_dates[0])
+        # Signals on session t use the prior close and prior-close DMA.
+        valid_dates = benchmark_close[family].rolling(DMA, min_periods=DMA).mean().shift(1).dropna().index
+        if len(valid_dates) == 0:
+            raise RuntimeError(f"No valid prior-close DMA for {family}")
+        first_valid = valid_dates[0] if first_valid is None else max(first_valid, valid_dates[0])
     eval_index = index[(index >= first_valid) & (index <= EVAL_END)]
     if len(eval_index) < 252:
         raise RuntimeError(f"Evaluation window too short after warm-up: {len(eval_index)} sessions")
@@ -263,7 +270,7 @@ def main():
         for f in sorted(p.name for p in INPUTS.glob("*_daily.csv"))
     }
     manifest = {
-        "model": "synthetic 3x daily reset; r3x=3*r-2*(IRX_yield/100)/252-0.0095/252; wealth absorbing at zero",
+        "model": "synthetic 3x daily reset; r3x=3*r-2*(prior_close_IRX_yield/100)/252-0.0095/252; wealth absorbing at zero",
         "not_actual_leveraged_etf_history": True,
         "download_start": DOWNLOAD_START, "download_end_exclusive": DOWNLOAD_END,
         "evaluation_start": eval_index[0].date().isoformat(), "evaluation_end": eval_index[-1].date().isoformat(),
