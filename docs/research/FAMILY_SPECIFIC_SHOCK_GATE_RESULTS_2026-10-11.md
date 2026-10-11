@@ -44,3 +44,21 @@ Do not expand this gate's parameter search. Before proposing another rule, audit
 
 ## Failed initial attempt
 Workflow run ID `38120192425` failed because the dataset-generation step was missing; the runner did not have the required `data/research/*_daily.csv` files. The workflow was corrected to restore/build the historical dataset and apply the pinned endpoint patch before running. The successful run cited above includes that fix.
+
+
+## Event-level attribution follow-up
+
+Using the same frozen base weights, ETF returns, benchmark panel, and equity path, the six deepest completed/observed drawdown episodes show that losses are concentrated in a few family/market episodes:
+
+| Base peak | Trough | Max DD | Equity drop | Largest family contributions to dollar loss |
+|---|---|---:|---:|---|
+| 2021-12-27 | 2023-03-13 | -67.40% | -$73,094 | SOXL family -$33,518; SPXL -$19,666; TQQQ -$9,268 |
+| 2020-02-19 | 2020-03-12 | -65.48% | -$23,378 | SOXL -$12,719; TQQQ -$10,658 |
+| 2024-07-10 | 2025-04-08 | -64.94% | -$103,339 | SOXL -$54,894; TNA -$17,672; TQQQ -$18,105 |
+| 2015-03-02 | 2016-06-27 | -63.66% | -$8,923 | SOXL -$3,778; TQQQ -$2,727 |
+| 2011-04-29 | 2011-12-28 | -59.23% | -$3,127 | TQQQ -$1,810; TNA -$593; UDOW -$309 |
+| 2018-03-12 | 2019-06-03 | -50.00% | -$13,017 | UDOW -$3,972; SOXL -$3,303; TQQQ -$3,227 |
+
+The family shock gate removed exposure on some very bad sessions (notably TQQQ/SOXL in the 2020 crash), but during the largest 2021-2023 and 2024-2025 drawdowns it removed SOXL exposure on only 11 and 13 days, respectively, while SOXL was responsible for roughly 46% and 53% of each episode's dollar loss. This is a selection/timing interaction: a gate can only help when its family is actually selected, and the base rotation's rebalance/ranking schedule can leave much of a prolonged family drawdown outside the gate's active overlap.
+
+The next distinct hypothesis should therefore test **what happens to a gated family slot**, not tune the shock threshold: at the existing 5-session rebalance dates only, replace a gated top-2 family with the next-highest-ranked eligible, ungated family; keep the family-specific shock gate unchanged and leave the slot in cash if fewer than two families qualify. This preserves the base cadence and the no-same-family bull/inverse rule. Preregister this as a separate experiment before running it.
