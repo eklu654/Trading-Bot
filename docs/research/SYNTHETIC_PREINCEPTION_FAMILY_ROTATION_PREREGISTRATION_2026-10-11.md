@@ -19,8 +19,9 @@ This approximates 3x daily reset, financing drag on the extra 2x notional, and a
 ## Controls and outputs
 - Frozen selector with 0 and 25 bps turnover cost.
 - Synthetic 3x QQQ buy-and-hold with 0 and 25 bps (no turnover after entry).
+- Frozen canonical B0 shock/recovery control: QQQ adjusted-close daily return <= -4.5% exits the synthetic QQQ proxy from the next session; re-enter from the next session after QQQ recovers +10% from its running low. Because pre-inception OHLC/ETF prices are synthetic, this is a close-to-close execution approximation, not exact canonical next-open B0.
 - 1x equal-weight buy-and-hold benchmark basket as an unleveraged reference.
-- Report ending equity, max drawdown, minimum equity, worst rolling 252-session return, first crossings below 1% and 0.1% of initial equity, and first zero-equity date. Also report daily equity/weights/returns and each family proxy's ruin status.
+- Treat the first scored close as the account start: no prior-session return is credited on that first row; charge any initial entry turnover. Report ending equity, max drawdown dates, minimum equity, year-end balances, worst rolling 252-session return, first crossings below 1% and 0.1% of initial equity, and first zero-equity date. Also report daily equity/weights/returns and each family proxy's ruin status.
 - Verify all data series are frozen to a manifest with hashes and dates. Use actual underlying benchmark history only; all 3x returns are explicitly synthetic.
 
 ## Decision rules
