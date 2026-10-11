@@ -8,9 +8,9 @@
 - Preregistered episode windows: dot-com 2000–2002, GFC 2007–2009, 2011 stress, 2015–2016 stress, 2018 selloff, COVID-19 2020, and Fed tightening 2022–2024.
 - Pre-inception TQQQ periods must be labeled unavailable; no synthetic TQQQ proxy may be represented as actual TQQQ history.
 - First workflow attempt (run 38131362335) failed at guardrails because `pytest` was absent from the runner environment; canonical artifact download and dependency installation succeeded.
-- A subsequent run (38131400138) also failed before attribution; inspect its job log before drawing conclusions.
+- Run 38131400138 then exposed the next guardrail defect: pytest collection could not resolve the existing sibling import `f75_prospective_shadow_monitor` when tests imported the script as `research.b0_f75_mechanism_repeatability`. No attribution ran.
 - Workflow dependency correction committed as `91c7257542f937c4db2110276d37895ace5b3f4d`: guardrail step installs declared `requirements-dev.txt`, which includes pytest.
-- Corrected workflow run: [38131502311](https://github.com/eklu654/Trading-Bot/actions/runs/38131502311). At log update time it was queued; no repeatability results are validated yet.
+- Run [38131502311](https://github.com/eklu654/Trading-Bot/actions/runs/38131502311) was in progress at last check; it predates the PYTHONPATH correction and may reproduce the import failure. Workflow fix committed as `ee10163d9dc43d94aa6bb7797ded890ec9d1fdd8`; verify the next run. No attribution results are validated yet.
 - Do not promote F75 based on aggregate terminal balance alone. Review episode win counts, drawdown changes, recovery exposure at 20/60 sessions, transaction-cost sensitivity, and input/signal reconciliation.
 - Important implementation caveat to audit in the next pass: confirm episode return windows and recovery horizons are aligned to the intended next-open execution convention, and that each episode's equity normalization is documented clearly.
 
