@@ -20,3 +20,17 @@
 2. Run the attribution and retrieve its CSV/JSON artifacts.
 3. Independently reconcile representative episode calculations against canonical daily rows.
 4. Add validated findings and explicit limitations here before any promotion decision.
+
+## 2026-10-11 — first successful run and methodological corrections
+
+- Run [38131526416](https://github.com/eklu654/Trading-Bot/actions/runs/38131526416) passed all workflow steps; 4 original guardrail tests passed, canonical SHA-256 matched, and the CSV/JSON artifact uploaded (artifact ID `11699346208`).
+- Initial uncorrected summary reported 5 measured episodes, 2 unavailable, 2 F75 return wins at 25 bp, 3 drawdown improvements, and zero median incremental return. These results are **superseded and must not be used**: inspection of the CSV and code found episode-accounting defects.
+- Defect A: episode return divided terminal equity by the equity after the first episode session, excluding that first session's return even though terminal equity included it.
+- Defect B: each episode simulation reset prior exposure to cash, distorting the first session's overnight return and opening rebalance cost versus the actual strategy state entering the episode.
+- Defect C: recovery participation used close signals rather than lagged realized exposure and included the trough session, not exactly the next 20/60 sessions.
+- Fixes committed:
+  - `ac7ab61988a1f3855d717a88391f7d84483411b8`: first-session return baseline and realized recovery exposure.
+  - `a6115b35582d46db2ecae2d1764ad218e0e48ead` and `aa214e6da557d1c9afd65864bf8edad06f5e66b1`: simulate full actual-TQQQ history to preserve pre-episode exposure; normalize each episode at the prior close to $5,000 and retain that baseline for drawdown.
+  - `b26d0295dcf5fbbcfaabcffc22522b37318c0c2f` and `4abd1492d915bb24e8a67226de11eedf62076ce1`: add/update regression tests for episode path normalization and drawdown boundaries.
+- Runs triggered by intermediate commits were cancelled by later commits before completing; the latest run [38131928120](https://github.com/eklu654/Trading-Bot/actions/runs/38131928120) is queued against the test-updated code.
+- Do not cite the original episode metrics as valid. Await a successful run against the corrected accounting, then inspect the new artifact and independently reconcile calculations.
