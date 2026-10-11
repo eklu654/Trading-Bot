@@ -65,3 +65,18 @@ def test_report_accounting_validator_accepts_consistent_episode_and_rejects_mism
     frame.loc[0, "b0_terminal_equity_25bps"] = 4900.0
     with pytest.raises(RuntimeError, match="return/terminal mismatch"):
         _validate_report(frame)
+
+
+def test_full_period_comparison_is_compounded_and_cost_sensitive():
+    from research.b0_f75_mechanism_repeatability import _full_period_comparison
+    prices = pd.DataFrame({
+        "tqqq_adj_open": [100.0, 100.0, 90.0, 100.0],
+        "tqqq_adj_close": [100.0, 100.0, 100.0, 110.0],
+    }, index=pd.to_datetime(["2020-01-01", "2020-01-02", "2020-01-03", "2020-01-06"]))
+    b0 = np.ones(4)
+    f75 = np.array([1.0, 0.0, 0.0, 1.0])
+    report = _full_period_comparison(prices, b0, f75, costs=(0, 25))
+    assert len(report) == 2
+    assert np.allclose(report["b0_terminal_equity"], 5000.0 * (1.0 + report["b0_total_return"]))
+    assert np.allclose(report["f75_terminal_equity"], 5000.0 * (1.0 + report["f75_total_return"]))
+    assert report.loc[report.cost_bps.eq(25), "b0_terminal_equity"].iloc[0] < report.loc[report.cost_bps.eq(0), "b0_terminal_equity"].iloc[0]
