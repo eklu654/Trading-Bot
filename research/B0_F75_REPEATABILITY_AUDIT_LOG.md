@@ -180,3 +180,12 @@
 - Current source of truth remains unchanged: `main` SHA `2644cd8afe167afe2667c7831d3967328f337595`; PR #26 remains open, draft, and unmerged. No change to B0/F75 rules, no broker access, no orders.
 
 - Static syntax check of the draft `.github/workflows/f75-shadow-scheduler.yml` passed with a YAML parser: one job (`shadow-monitor`), schedule `35 22 * * 1-5`, and expected workflow keys. This is a syntax check only—not a live GitHub Actions run—because the draft scheduler is intentionally unmerged and the default-branch workflow cannot be exercised until enabled there.
+
+
+## 2026-10-11 — default-branch scheduler activated
+
+- Merged PR [#26](https://github.com/eklu654/Trading-Bot/pull/26) as commit `271bb26eeef3a430927ff3c1cbbda5017b07fcb1`. The scheduler is now on `main`; this is the first main-branch change for the shadow monitor and is limited to `.github/workflows/f75-shadow-scheduler.yml`.
+- Reverified `main` points at the merge commit and the scheduler file is present on `main`. Workflow requests `contents: write` and `actions: read`, schedule `35 22 * * 1-5`, and has a manual dispatch trigger.
+- Merge triggered existing `research-tests` workflow run [38178501790](https://github.com/eklu654/Trading-Bot/actions/runs/38178501790), initially queued at 2026-10-11 21:57:59 UTC. This is a repository test workflow, not the F75 scheduler itself.
+- The F75 scheduler has not yet run on the default branch; its next cron is Monday 2026-10-12 at 22:35 UTC unless manually dispatched. Therefore runtime artifact-download, test, and research-branch push permissions remain unverified until a scheduler run completes.
+- Safety unchanged: frozen F75 shadow-only, no broker connection/orders, no strategy threshold changes. At each run, validate the exact result and push behavior; do not infer a ledger write if no new completed session exists.
