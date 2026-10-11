@@ -31,3 +31,38 @@ def test_renewed_shock_resets_only_that_family_recovery_low():
     assert got["B"].tolist() == [0.5] * 7
     assert got["A"].iloc[4] == 0.0
     assert got["A"].iloc[6] == 0.5
+
+
+
+def test_replacement_rotation_fills_gated_slot_only_at_scheduled_rebalance():
+    from research.family_specific_shock_gate import rotating_gate_weights
+
+    idx = pd.bdate_range("2024-01-02", periods=6)
+    columns = ["A", "B", "C"]
+    base = pd.DataFrame(0.0, index=idx, columns=columns)
+    base.loc[:, ["A", "B"]] = 0.5
+    scores = pd.DataFrame({"A": [3.0] * 6, "B": [2.0] * 6, "C": [1.0] * 6}, index=idx)
+    eligible = pd.DataFrame(True, index=idx, columns=columns)
+    gates = pd.DataFrame(False, index=idx, columns=columns)
+    gates.loc[idx[1:4], "A"] = True
+
+    got = rotating_gate_weights(base, scores, eligible, gates, top_n=2, cadence=3)
+    # Immediate exit on day 1; at day 3 rebalance, B/C replace gated A.
+    assert got.loc[idx[1], "A"] == 0.0
+    assert got.loc[idx[2], "A"] == 0.0  # recovery before rebalance cannot restore A
+    assert got.loc[idx[3], ["A", "B", "C"]].tolist() == [0.0, 0.5, 0.5]
+    assert got.loc[idx[4], ["A", "B", "C"]].tolist() == [0.0, 0.5, 0.5]
+
+
+def test_replacement_rotation_matches_frozen_weights_without_gates():
+    from research.family_specific_shock_gate import rotating_gate_weights
+
+    idx = pd.bdate_range("2024-01-02", periods=6)
+    columns = ["A", "B", "C"]
+    scores = pd.DataFrame({"A": [3.0] * 6, "B": [2.0] * 6, "C": [1.0] * 6}, index=idx)
+    eligible = pd.DataFrame(True, index=idx, columns=columns)
+    gates = pd.DataFrame(False, index=idx, columns=columns)
+    base = pd.DataFrame(0.0, index=idx, columns=columns)
+    base.loc[:, ["A", "B"]] = 0.5
+    got = rotating_gate_weights(base, scores, eligible, gates, top_n=2, cadence=3)
+    assert np.array_equal(got.to_numpy(), base.to_numpy())
