@@ -129,6 +129,34 @@ def selector_weights(benchmarks: pd.DataFrame, proxy_wealth: pd.DataFrame,
     return weights
 
 
+def b0_shock_recovery_exposure(qqq_signal_close: pd.Series, shock: float = -0.045,
+                               recovery: float = 0.10) -> pd.Series:
+    """Canonical B0 shock/recovery state with close signal -> next-session exposure.
+
+    This pre-inception comparator uses adjusted QQQ close for the signal, but
+    only close-to-close synthetic proxy returns are available for execution.
+    """
+    if not shock < 0 or not recovery > 0:
+        raise ValueError("shock must be negative and recovery positive")
+    signal_close = qqq_signal_close.astype(float)
+    daily = signal_close.pct_change().fillna(0.0)
+    exposure = pd.Series(1.0, index=signal_close.index, name="b0_exposure")
+    defensive = False
+    low = float(signal_close.iloc[0])
+    for i in range(1, len(signal_close)):
+        # Today's exposure is based only on the state known at yesterday's close.
+        exposure.iloc[i] = 0.0 if defensive else 1.0
+        px = float(signal_close.iloc[i])
+        if not defensive and float(daily.iloc[i]) <= shock:
+            defensive = True
+            low = px
+        elif defensive:
+            low = min(low, px)
+            if px / low - 1.0 >= recovery:
+                defensive = False
+    return exposure
+
+
 def first_crossing(equity: pd.Series, threshold: float) -> str:
     hits = equity.index[equity <= threshold]
     return hits[0].date().isoformat() if len(hits) else ""
@@ -199,6 +227,7 @@ def main():
     proxy_returns = pd.DataFrame(proxy_returns, index=index)
     proxy_wealth = pd.DataFrame(proxy_wealth, index=index)
     weights = selector_weights(benchmark_close, proxy_wealth)
+    b0_exposure_full = b0_shock_recovery_exposure(raw["QQQ"]["adj_close"].reindex(index))
     # Begin only when all benchmark DMAs are warmed up; this is mechanical, not tuned.
     first_valid = None
     for family in benchmark_close.columns:
@@ -216,9 +245,12 @@ def main():
     proxy_returns = proxy_returns.loc[eval_index]
     proxy_wealth = proxy_wealth.loc[eval_index]
     weights = weights.loc[eval_index]
+    b0_exposure = b0_exposure_full.loc[eval_index]
     turnover = weights.diff().abs().sum(axis=1)
     turnover.iloc[0] = weights.iloc[0].abs().sum()
     gross = (weights * proxy_returns).sum(axis=1)
+    # Initial equity is marked at the first scored close; no pre-start daily return is credited.
+    gross.iloc[0] = 0.0
     rows, equity_rows = [], []
     for cost in COSTS_BPS:
         row = summarize_returns(gross, "SYNTHETIC_FAMILY_ROTATE_DMA250_TOP2_C5", cost, turnover)
@@ -236,7 +268,8 @@ def main():
                 **{f"{fam}_proxy_return": float(proxy_returns.loc[date, fam]) for fam in FAMILIES},
             })
 
-    qqq_proxy = proxy_returns["NASDAQ100"]
+    qqq_proxy = proxy_returns["NASDAQ100"].copy()
+    qqq_proxy.iloc[0] = 0.0
     # Buy-and-hold controls charge a one-time entry cost on the first scored session.
     for cost in COSTS_BPS:
         bh = qqq_proxy.copy()
@@ -251,6 +284,26 @@ def main():
                 "cost_bps": cost, "equity": float(eq.loc[date]),
                 "net_return": float(bh.loc[date]), "gross_return": float(qqq_proxy.loc[date]),
                 "exposure": 1.0, "turnover": 1.0 if date == eval_index[0] else 0.0,
+            })
+
+    # Same-model comparison with the fixed canonical B0 shock/recovery logic.
+    # Signal is QQQ adjusted-close daily return <= -4.5%; re-entry is +10% from
+    # the running adjusted-close low. Signals only change next-session exposure.
+    b0_turnover = b0_exposure.diff().abs()
+    b0_turnover.iloc[0] = abs(float(b0_exposure.iloc[0]))
+    b0_gross = qqq_proxy * b0_exposure
+    for cost in COSTS_BPS:
+        row = summarize_returns(b0_gross, "SYNTHETIC_B0_QQQ_SHOCK45_RECOVERY10_CLOSE_TO_CLOSE_APPROX", cost, b0_turnover)
+        row["average_exposure"] = float(b0_exposure.mean())
+        rows.append(row)
+        net = b0_gross - b0_turnover * cost / 10000.0
+        eq = INITIAL * (1 + net).cumprod()
+        for date in eval_index:
+            equity_rows.append({
+                "Date": date, "strategy": "SYNTHETIC_B0_QQQ_SHOCK45_RECOVERY10_CLOSE_TO_CLOSE_APPROX",
+                "cost_bps": cost, "equity": float(eq.loc[date]),
+                "net_return": float(net.loc[date]), "gross_return": float(b0_gross.loc[date]),
+                "exposure": float(b0_exposure.loc[date]), "turnover": float(b0_turnover.loc[date]),
             })
 
     # Unleveraged static 20% initial capital in each underlying benchmark.
