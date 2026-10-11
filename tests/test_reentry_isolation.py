@@ -82,3 +82,22 @@ def test_r3_retains_partial_tranche_through_renewed_shock():
     # resets the recovery low but preserves the already-open half position.
     assert got[21] == 0.5
     assert got[22] == 0.5
+
+
+
+def test_r4_preserves_fast_reentry_after_isolated_shock():
+    prices = [100.0] * 20 + [94.0, 103.5]
+    got = target_exposure(qqq_path(prices), "R4").tolist()
+    assert got[20:] == [0.0, 1.0]
+
+
+def test_r4_gates_clustered_shock_reentry_until_sma_confirmation():
+    # Two qualifying shocks within the 20-session window mark clustered stress.
+    # At +10% from the new low, price is still below SMA20, so enter at 50%;
+    # full exposure follows when price reclaims SMA20.
+    prices = [100.0] * 20 + [94.0, 89.0, 98.0, 100.0]
+    got = target_exposure(qqq_path(prices), "R4").tolist()
+    assert got[20] == 0.0
+    assert got[21] == 0.0
+    assert got[22] == 0.5
+    assert got[23] == 1.0
