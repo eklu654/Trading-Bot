@@ -3,7 +3,7 @@ import hashlib
 import numpy as np
 import pandas as pd
 from f75_prospective_shadow_monitor import (
-    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, EXPECTED_HASH,
+    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, only_unrecorded_sessions, EXPECTED_HASH,
 )
 
 class ShadowMonitorGuardrails(unittest.TestCase):
@@ -41,6 +41,24 @@ class ShadowMonitorGuardrails(unittest.TestCase):
             "mode": "SHADOW_ONLY_NO_ORDERS",
         }
         return prior, state, ledger_bytes
+
+    def test_ledger_tail_filter_makes_rerun_idempotent(self):
+        prior = pd.DataFrame({"date": ["2026-10-08", "2026-10-09"]})
+        fresh = pd.DataFrame(
+            {"price": [1, 2]},
+            index=pd.to_datetime(["2026-10-08", "2026-10-09"]),
+        )
+        result = only_unrecorded_sessions(fresh, prior)
+        self.assertTrue(result.empty)
+
+    def test_ledger_tail_filter_keeps_only_new_sessions(self):
+        prior = pd.DataFrame({"date": ["2026-10-08", "2026-10-09"]})
+        fresh = pd.DataFrame(
+            {"price": [1, 2, 3]},
+            index=pd.to_datetime(["2026-10-09", "2026-10-12", "2026-10-13"]),
+        )
+        result = only_unrecorded_sessions(fresh, prior)
+        self.assertEqual(list(result.index), list(pd.to_datetime(["2026-10-12", "2026-10-13"])))
 
     def test_existing_ledger_and_state_manifest_validate(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
