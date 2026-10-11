@@ -50,8 +50,12 @@ def compose_f75_signal(b0, overlay_state, partial_exposure=0.75):
     overlay = np.asarray(overlay_state, dtype=float)
     if baseline.shape != overlay.shape:
         raise ValueError("B0 and overlay state must have equal shapes")
-    if not 0.0 <= partial_exposure <= 1.0:
-        raise ValueError("partial_exposure must be between 0 and 1")
+    if not np.isfinite(baseline).all() or not np.isin(baseline, [0.0, 1.0]).all():
+        raise ValueError("B0 signal must contain only finite binary values")
+    if not np.isfinite(overlay).all() or not np.isin(overlay, [0.0, 1.0]).all():
+        raise ValueError("overlay state must contain only finite binary values")
+    if not np.isfinite(partial_exposure) or not 0.0 <= partial_exposure <= 1.0:
+        raise ValueError("partial_exposure must be finite and between 0 and 1")
     overlay_weight = np.where(overlay == 0.0, partial_exposure, 1.0)
     return np.minimum(baseline, overlay_weight)
 
