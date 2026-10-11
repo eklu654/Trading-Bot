@@ -25,6 +25,7 @@ END = "2026-10-08"
 SHOCK = -0.045
 RECOVERY_PARTIAL = 0.05
 RECOVERY_FULL = 0.10
+CONFIRM_SMA = 20
 
 
 def download(symbol):
@@ -47,11 +48,12 @@ def target_exposure(qqq, candidate):
     preregistered R2P retains 50% after its tranche has activated. The running
     low continues to update until full recovery.
     """
-    if candidate not in {"B0", "R1", "R2", "R2P"}:
+    if candidate not in {"B0", "R1", "R2", "R2P", "R3"}:
         raise ValueError(f"unknown candidate: {candidate}")
     px = qqq["Adj Close"].astype(float).to_numpy()
     daily = qqq["Adj Close"].astype(float).pct_change().fillna(0).to_numpy()
     weights = np.ones(len(qqq), dtype=float)
+    sma20 = qqq["Adj Close"].astype(float).rolling(CONFIRM_SMA, min_periods=CONFIRM_SMA).mean().to_numpy()
     defensive = False
     low = np.nan
     staged = False
@@ -74,7 +76,7 @@ def target_exposure(qqq, candidate):
         # R2 is the guarded exploratory variant that resets to cash.
         if daily[i] <= SHOCK:
             low = px[i]
-            if candidate == "R2P" and staged:
+            if candidate in {"R2P", "R3"} and staged:
                 weights[i] = 0.5
             else:
                 staged = False
@@ -92,6 +94,23 @@ def target_exposure(qqq, candidate):
             if rebound >= RECOVERY_FULL:
                 defensive = False
                 weights[i] = 1.0
+            else:
+                weights[i] = 0.0
+        elif candidate == "R3":
+            # Preregistered confirmation: take 50% only after both a +5%
+            # rebound from the running low and a close above QQQ's 20-session
+            # SMA. Restore full exposure at +10% from that low. On a renewed
+            # shock after staging, retain 50% and reset the recovery low.
+            if staged:
+                if rebound >= RECOVERY_FULL:
+                    defensive = False
+                    staged = False
+                    weights[i] = 1.0
+                else:
+                    weights[i] = 0.5
+            elif rebound >= RECOVERY_PARTIAL and np.isfinite(sma20[i]) and px[i] > sma20[i]:
+                staged = True
+                weights[i] = 0.5
             else:
                 weights[i] = 0.0
         else:  # R2/R2P staged recovery
@@ -176,7 +195,7 @@ def main():
     all_rows = []
     curve_rows = []
     candidates = {}
-    for name in ("B0", "R1", "R2", "R2P"):
+    for name in ("B0", "R1", "R2", "R2P", "R3"):
         w = target_exposure(q, name)
         candidates[name] = w
         for bps in (0, 10, 25, 50):
@@ -213,7 +232,7 @@ def main():
         )
         if not np.allclose(plain, helper, rtol=1e-11, atol=1e-7):
             raise AssertionError(f"0-bps equity mismatch for {name}")
-    print("\nPASS: 0-bps cost-helper equity reconciles to causal daily returns for B0/R1/R2.")
+    print("\nPASS: 0-bps cost-helper equity reconciles to causal daily returns for B0/R1/R2/R2P/R3.")
 
 
 if __name__ == "__main__":
