@@ -143,11 +143,24 @@ def summarize_returns(returns: pd.Series, label: str, cost_bps: int,
     peak = equity.cummax()
     dd = equity / peak - 1.0
     rolling = (1.0 + net).rolling(252, min_periods=252).apply(np.prod, raw=True) - 1.0
+    trough_date = dd.idxmin()
+    peak_value = peak.loc[trough_date]
+    peak_candidates = equity.loc[:trough_date]
+    peak_date = peak_candidates.index[peak_candidates.eq(peak_value)][-1]
+    def equity_at_or_before(day):
+        subset = equity.loc[:day]
+        return float(subset.iloc[-1]) if len(subset) else np.nan
     return {
         "strategy": label, "cost_bps": cost_bps,
         "start": equity.index[0].date().isoformat(), "end": equity.index[-1].date().isoformat(),
         "sessions": int(len(equity)), "ending_equity": float(equity.iloc[-1]),
-        "max_drawdown": float(dd.min()), "minimum_equity": float(equity.min()),
+        "max_drawdown": float(dd.min()), "max_drawdown_peak_date": peak_date.date().isoformat(),
+        "max_drawdown_trough_date": trough_date.date().isoformat(),
+        "max_drawdown_peak_equity": float(peak_value), "max_drawdown_trough_equity": float(equity.loc[trough_date]),
+        "equity_2000_year_end": equity_at_or_before("2000-12-31"),
+        "equity_2001_year_end": equity_at_or_before("2001-12-31"),
+        "equity_2002_year_end": equity_at_or_before("2002-12-31"),
+        "minimum_equity": float(equity.min()),
         "worst_252_session_return": float(rolling.min()) if rolling.notna().any() else np.nan,
         "first_below_1pct_initial": first_crossing(equity, INITIAL * 0.01),
         "first_below_0_1pct_initial": first_crossing(equity, INITIAL * 0.001),
@@ -291,6 +304,9 @@ def main():
         "family": list(FAMILIES),
         "proxy_final_wealth": [float(proxy_wealth[f].iloc[-1]) for f in FAMILIES],
         "proxy_min_wealth": [float(proxy_wealth[f].min()) for f in FAMILIES],
+        "proxy_max_drawdown": [float((proxy_wealth[f] / proxy_wealth[f].cummax() - 1.0).min()) for f in FAMILIES],
+        "proxy_first_below_1pct": [first_crossing(proxy_wealth[f], 0.01) for f in FAMILIES],
+        "proxy_first_below_0_1pct": [first_crossing(proxy_wealth[f], 0.001) for f in FAMILIES],
         "proxy_zero_date": [first_crossing(proxy_wealth[f], 1e-10) for f in FAMILIES],
     }).to_string(index=False))
     print("\nMANIFEST")
