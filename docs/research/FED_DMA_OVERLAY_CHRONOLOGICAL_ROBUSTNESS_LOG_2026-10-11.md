@@ -31,3 +31,6 @@ F50/F75 are still development candidates because their full-period performance w
 - Corrected local drawdown peak dating in the replay output so each window reports the peak that precedes its local maximum-drawdown trough.
 - Latest script correction commit: `b1899bad9e781f49f421e700b79982b8faab2310`. This path is configured to trigger the robustness workflow on push.
 - The available GitHub connector does not expose a list/dispatch action for newly triggered workflow runs, so do not claim a run has completed until its Actions page/artifact is inspected. Workflow page: https://github.com/eklu654/Trading-Bot/actions/workflows/fed-dma-chronological-robustness.yml
+
+
+- Added the preregistered concentration diagnostic that compounds returns outside 2022-2024 without changing the frozen signals, and included its CSV in the workflow artifact. Latest workflow-definition commit: `809f206a22d23f6e8442f589fe5f6a9e9308c230`.
