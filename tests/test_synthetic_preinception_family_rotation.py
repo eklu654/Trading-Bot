@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from research.synthetic_preinception_family_rotation import (
-    first_crossing, selector_weights, synthetic_3x_daily_returns
+    b0_shock_recovery_exposure, first_crossing, selector_weights, synthetic_3x_daily_returns
 )
 
 
@@ -40,3 +40,15 @@ def test_selector_weights_respect_budget_and_rebalance_cadence():
     assert got.iloc[0].sum() == 0.0
     assert got.iloc[1].sum() == 0.0
     assert got.iloc[2].sum() <= 1.0
+
+
+
+def test_b0_shock_and_recovery_only_change_next_session_exposure():
+    idx = pd.bdate_range("2000-01-03", periods=6)
+    close = pd.Series([100.0, 95.0, 90.0, 100.0, 101.0, 103.0], index=idx)
+    exposure = b0_shock_recovery_exposure(close, shock=-0.045, recovery=0.10)
+    assert exposure.iloc[0] == 1.0
+    assert exposure.iloc[1] == 1.0  # shock at close on day 1 affects day 2
+    assert exposure.iloc[2] == 0.0
+    assert exposure.iloc[3] == 0.0  # +10% recovery at close affects next day
+    assert exposure.iloc[4] == 1.0
