@@ -35,6 +35,40 @@ WINDOWS = [
 ]
 
 
+def terminal_unrecovered_shock_start(qqq_adj_close: pd.Series) -> int | None:
+    """Return the start index of a shock that is still armed at the sample end.
+
+    A terminal open episode must remain defensive through the final observation;
+    it must not disappear merely because a +10% recovery has not yet occurred.
+    """
+    prices = qqq_adj_close.astype(float).to_numpy()
+    returns = qqq_adj_close.pct_change().fillna(0.0).to_numpy()
+    armed = False
+    shock_i = None
+    low_i = None
+    for i in range(1, len(prices)):
+        if not armed and returns[i] <= SHOCK:
+            armed = True
+            shock_i = low_i = i
+        if armed:
+            if prices[i] < prices[low_i]:
+                low_i = i
+            if prices[i] / prices[low_i] - 1.0 >= RECOVERY:
+                armed = False
+                shock_i = low_i = None
+    return int(shock_i) if armed and shock_i is not None else None
+
+
+def build_censored_baseline_signal(n: int, events, terminal_shock_i: int | None) -> np.ndarray:
+    """Build B0 and explicitly censor any shock still unrecovered at sample end."""
+    signal = build_baseline_signal(n, events)
+    if terminal_shock_i is not None:
+        if not 0 <= terminal_shock_i < n:
+            raise ValueError("terminal shock index is outside the sample")
+        signal[terminal_shock_i:] = 0.0
+    return signal
+
+
 def summarize_window(name, window, dates, equity, full_returns, signal, bps):
     label, start, end = window
     mask = (dates >= start) & (dates <= end)
@@ -81,7 +115,8 @@ def main():
     fed = download_fed()
     lagged_fed = map_fed_state_to_market(fed, frame.index)
     events = build_shock_recovery_events(frame["qqq_adj_close"])
-    b0 = build_baseline_signal(len(frame), events)
+    terminal_shock_i = terminal_unrecovered_shock_start(frame["qqq_adj_close"])
+    b0 = build_censored_baseline_signal(len(frame), events, terminal_shock_i)
     overlay_state, transitions = build_active_tightening_overlay(frame["qqq_adj_close"], lagged_fed)
     signals = {"B0": b0}
     for name, fraction in (("F50", 0.50), ("F75", 0.75)):
