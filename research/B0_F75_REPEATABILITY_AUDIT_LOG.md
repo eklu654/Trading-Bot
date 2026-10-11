@@ -198,3 +198,12 @@
 - Job log confirms **23/23 tests passed**. Canonical artifact download succeeded using the workflow token. Monitor reported: `No new completed market sessions after frozen cutoff and ledger tail; no ledger change.` Commit step confirmed: `No new completed sessions; ledger unchanged.`
 - Re-read persisted ledger and state: ledger still ends at 2026-10-09; state records 2 sessions, frozen cutoff 2026-10-07, canonical SHA-256 `6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55`, and mode `SHADOW_ONLY_NO_ORDERS`. No data was fabricated or force-appended.
 - Remaining check is narrowly scoped: because the first run had no ledger delta, the `git push` branch was not entered. The next run that appends a real completed session will verify that the workflow token can push to the research branch. Scheduled cadence is weekdays at 22:35 UTC, plus manual dispatch and path-scoped workflow-file validation.
+
+
+## 2026-10-11 — monitor and scheduler source review
+
+- Re-read the live scheduler, monitor, tests, decision protocol, state manifest, and persisted ledger after the successful default-branch run. The scheduler's write scope is limited to the ledger and state manifest; it does not run strategy optimization or place orders.
+- Confirmed the monitor checks the pinned canonical input hash, reconstructs and reconciles B0 against the frozen signal before accepting new rows, rejects malformed/non-finite signals and equity, validates the prior ledger/state hashes and accounting, and filters sessions at or before the ledger tail to keep reruns idempotent.
+- Reconfirmed the current ledger has two rows (2026-10-08 initialization plus 2026-10-09 return-bearing observation), both with the overlay inactive. Thus it contains no F75 efficacy evidence; the preregistered 252-session and 20-session active-reduction gates remain unmet.
+- Operational caveat remains unchanged: run 38178529295 had no new session to append, so the conditional `git commit`/`git push` branch was not entered. Do not mark research-branch write permission as verified until a real new eligible session causes an append and the workflow's push step succeeds. No synthetic ledger row was added to force this test.
+- Decision unchanged: B0 remains the control; F75 remains frozen and `SHADOW_ONLY_NO_ORDERS`. No threshold changes, no live-trading actions.
