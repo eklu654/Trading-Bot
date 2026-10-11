@@ -34,3 +34,26 @@ The checked-in `data/research/crash_persistent_bear_filter.csv` contains a compl
 - The 100-DMA confirmation variants are notably weaker in this table (about $1.70M–$1.85M ending wealth and roughly -78.5% max DD for the -4.5% shock rows).
 - This filter is specifically a post-shock re-entry confirmation gate, not an independent early warning signal. It cannot protect against a long decline before a qualifying shock arms the defensive state.
 - The code uses close-based conditions and rolls exposure forward one session, which is directionally consistent with next-session execution. However, the checked-in script directly downloads QQQ/TQQQ through yfinance and does not visibly freeze/hash the inputs in the script itself; its matrix is not directly comparable to B0 unless the exact dates, adjusted/close fields, and data snapshots are aligned. Treat the table as a negative screening result, not a final controlled comparison.
+
+
+## 2026-10-11 follow-up: causal walk-forward code audit
+
+### Confirmed from source
+- `research/bear_discriminator_walkforward.py` implements a -4.5% QQQ daily close shock trigger, then tests 10% recovery versus slower 15/20/30/40% recovery targets when QQQ 60-session return is weak, with or without a below-100-DMA requirement.
+- Declared folds: train 2010–2017 / test 2018–2021; train 2010–2021 / test 2022–2026.
+- Exposure is rolled one session (`np.roll(invested, 1)`), so the intended convention is close signal -> next-session asset return.
+- The structural override only exists while the shock-armed state is active. It is not an independent warning of a gradual bear that does not produce the qualifying daily shock.
+- The related `bear_discriminator_modern.py` evaluates 25 rule variants and writes `data/research/bear_discriminator_modern.csv`. It downloads data live and reports full-window terminal equity/DD; no chronological held-out evaluation is evident in that script. It should not be described as walk-forward evidence.
+
+### Results availability / reproducibility
+- The exact walk-forward output CSV and its result report are absent from the checked-in branch tree at the paths expected by the script; therefore no defensible out-of-sample balance, DD, false-defense count, or fold-wise metric can be reported yet.
+- Script downloads data live via yfinance, so a reproducible result needs frozen input files and hashes, exact symbols/fields/date windows, and a saved output artifact.
+- Retrospective failed-bounce labels use up to 252 future sessions. They may be used as labels for model evaluation only, never as live features; split boundaries must purge observations whose label horizons cross into the test period.
+
+### Cross-check against adjacent experiments
+- The S&P 500 1970–2026 selected-event audit has 18 events (10 failed, 6 successful, 2 censored); it finds trend damage / weak intermediate momentum descriptively associated with failed recoveries, but only 16 resolved observations and no validated thresholds.
+- The actual-TQQQ event audit has nine events (seven successful, one failed, one censored). Successful 2018–19, COVID-2020, and April-2025 recoveries contradict simple long-DMA or negative-momentum vetoes.
+- Structural overlay ablation on aligned actual TQQQ reduced DD but ended at $727k–$1.355M versus B0 $4.040M and changed the COVID window from +24.58% to roughly -9% to -10%; those candidates remain rejected.
+
+### Decision and next test
+Do not claim the discriminator is validated and do not launch another parameter grid. The next useful experiment is a frozen-input, small predeclared evaluation of a *pre-shock* slow-bear warning separately from the post-shock failed-recovery classifier. The warning test must include every qualifying index decline, including those with no -4.5% daily shock, and score lead time, loss accumulated before signal, fraction of event loss avoided, false defenses, and missed fast crashes / V-shaped recoveries. Keep B0 unchanged as the control.
