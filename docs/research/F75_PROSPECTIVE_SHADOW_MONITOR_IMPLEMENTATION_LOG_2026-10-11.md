@@ -33,3 +33,10 @@
 - [Run #1](https://github.com/eklu654/Trading-Bot/actions/runs/38129869684) failed because its triggering commit preceded the test file and unittest discovery returned exit code 5 (“Ran 0 tests”). The test file was added, and the workflow was changed to execute it directly so missing tests cannot silently pass.
 - [Run #4](https://github.com/eklu654/Trading-Bot/actions/runs/38129922083) is validating the direct-test command and final workflow revision. Confirm its final status before closing this implementation checkpoint.
 - The successful no-new-session run verifies setup, frozen artifact retrieval, compilation, guardrails, and safe no-op behavior; it does **not** yet validate appending a real new session or committing a populated ledger. That requires a completed market session after the frozen cutoff.
+
+
+## Execution timing correction
+
+- Corrected first-run initialization so the $5,000 shadow account is initialized at the close of the first new market session with zero return credited for that initialization session. Subsequent sessions accrue overnight return on the previously held exposure, apply exposure-change cost at the open, and accrue intraday return on the newly executed exposure. This matches the preregistered close-to-next-open convention.
+- The correction is in commit `09a6517c3e6c70f2689558808faf1ec26e3dfe6a`; [run #5](https://github.com/eklu654/Trading-Bot/actions/runs/38129970930) validates it.
+- [Run #4](https://github.com/eklu654/Trading-Bot/actions/runs/38129922083) completed successfully after switching to explicit test execution. Its head predates the initialization correction; use run #5 for the latest code.
