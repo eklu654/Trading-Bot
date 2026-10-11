@@ -85,10 +85,10 @@ def test_r3_retains_partial_tranche_through_renewed_shock():
 
 
 
-def test_r4_preserves_fast_reentry_after_isolated_shock():
-    prices = [100.0] * 20 + [94.0, 103.5]
+def test_r4_preserves_b0_recovery_threshold_after_isolated_shock():
+    prices = [100.0] * 20 + [94.0, 98.0, 103.5]
     got = target_exposure(qqq_path(prices), "R4").tolist()
-    assert got[20:] == [0.0, 1.0]
+    assert got[20:] == [0.0, 0.0, 1.0]
 
 
 def test_r4_gates_clustered_shock_reentry_until_sma_confirmation():
