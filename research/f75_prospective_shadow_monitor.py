@@ -89,6 +89,16 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
     return True
 
 
+def only_unrecorded_sessions(fresh, prior):
+    """Return only sessions newer than the append-only ledger tail."""
+    if prior.empty:
+        return fresh
+    tail = pd.to_datetime(prior["date"], errors="coerce")
+    if tail.isna().any():
+        raise RuntimeError("Existing shadow ledger contains invalid dates")
+    return fresh.loc[fresh.index > tail.max()]
+
+
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
     if not CANON.exists(): raise RuntimeError("Canonical frozen input is missing")
@@ -124,9 +134,7 @@ def main():
         prior = pd.DataFrame()
     # Market feeds overlap the already-recorded tail on every rerun. Keep only
     # strictly newer sessions so scheduled/manual reruns are idempotent.
-    if not prior.empty:
-        prior_tail = pd.to_datetime(prior["date"]).max()
-        fresh = fresh.loc[fresh.index > prior_tail]
+    fresh = only_unrecorded_sessions(fresh, prior)
     if fresh.empty:
         print("No new completed market sessions after frozen cutoff and ledger tail; no ledger change.")
         return
