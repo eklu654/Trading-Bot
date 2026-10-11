@@ -120,3 +120,12 @@
 - Passing only authorizes a separate paper-trading evaluation; it does not promote F75 or permit live deployment. Failing leaves F75 frozen and shadow-only. No threshold optimization is authorized.
 - Current sample is explicitly insufficient: two recorded rows, one return-bearing session, and no overlay activation. No efficacy conclusion or performance decision is permitted.
 
+## 2026-10-11 — ledger integrity validation and idempotent reruns
+
+- Added fail-closed validation before appending to an existing shadow ledger: required columns, valid strictly increasing unique dates, canonical source hash per row and in state, ledger SHA-256, state tail-date agreement, shadow-only mode, finite numeric values, and exposure bounds are checked. A state manifest without a ledger, or a ledger without state, is rejected.
+- A rerun exposed another operational defect: the market download intentionally overlaps the frozen cutoff and prior ledger tail, but the monitor treated those already-recorded rows as an error. Extracted `only_unrecorded_sessions` and now filters to dates strictly after the validated ledger tail. A no-new-session rerun validates the existing manifest and exits successfully without rewriting the ledger.
+- Regression coverage now tests ledger-hash mismatch, tail mismatch, duplicate dates, canonical-source mismatch, non-finite equity, complete overlap/idempotency, and mixed old/new sessions.
+- Run [38133271821](https://github.com/eklu654/Trading-Bot/actions/runs/38133271821) passed the shadow monitor workflow with **14 tests**; it validated the persisted ledger/state and reported no new completed sessions, leaving the ledger unchanged as intended. This is the required idempotency check after the initial persisted ledger.
+- Earlier monitor failures [38133168157](https://github.com/eklu654/Trading-Bot/actions/runs/38133168157) and [38133206610](https://github.com/eklu654/Trading-Bot/actions/runs/38133206610) are diagnostic failures from before the explicit tracking-ref refresh and/or idempotent-tail fix; they are superseded by the green run above, not silently treated as passes.
+- Current shadow evidence remains two dates only (one return-bearing session), with no active overlay. The prospective minimum-evidence trigger has not been reached; F75 remains frozen and shadow-only.
+
