@@ -138,3 +138,11 @@
 - Final validation run [38133368499](https://github.com/eklu654/Trading-Bot/actions/runs/38133368499) passed **17/17 shadow-monitor tests**, validated the existing ledger and state manifest, and completed an idempotent no-new-sessions run successfully. The ledger was not rewritten.
 - Intermediate run [38133358288](https://github.com/eklu654/Trading-Bot/actions/runs/38133358288) failed because the validator was committed before the synthetic test fixture was updated to include the newly required signal columns. The fixture update and full 17-test run above supersede that expected sequencing failure.
 
+## 2026-10-11 — persisted daily equity path reconciliation
+
+- Extended existing-ledger validation to recompute every B0/F75 equity transition at 0/25/50 bp from prior realized exposure, the recorded overnight and intraday returns, and turnover costs. The validator now rejects non-positive equity as well as any balance that fails the accounting identity.
+- Reordered validation so signal/lagged-exposure violations are reported before downstream equity mismatches. This makes the guardrail diagnostic and ensures the test for non-lagged exposure checks the intended invariant.
+- Added tests for corrupted daily equity and non-positive equity. The first test run at `abf90c1` exposed a validation-order issue; the code was reordered and verified on the next run.
+- Final monitor workflow [38133551399](https://github.com/eklu654/Trading-Bot/actions/runs/38133551399) passed **19/19 tests**, verified the current persisted ledger/state, reconciled daily balances across all three cost cases, and completed an idempotent no-new-sessions run without changing the ledger.
+- This closes the current operational-integrity pass: historical and prospective F75 now share the same frozen 75% composition; ledger/state hashes, initialization, lagged exposures, and daily equity accounting are checked before future append operations. F75 still has only one return-bearing prospective session and no active-overlay observation, so there is still no prospective efficacy evidence.
+
