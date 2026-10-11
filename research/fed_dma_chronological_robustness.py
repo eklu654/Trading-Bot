@@ -181,6 +181,19 @@ def main():
                           "2018_recovery_return_difference_vs_B0": recovery_diff})
     gates = pd.DataFrame(gate_rows)
 
+    # Descriptive concentration check: remove only the fixed 2022-2024 returns.
+    ex_mask = ~((dates >= "2022-01-01") & (dates <= "2024-12-31"))
+    exclusion_rows = []
+    for bps in COSTS:
+        excluded_finals = {name: float(INITIAL * np.prod(1.0 + return_cache[(name, bps)][ex_mask])) for name in ("B0", "F50", "F75")}
+        for name in ("B0", "F50", "F75"):
+            row = {"strategy": name, "cost_bps": bps, "excluded_window": "2022-01-01_to_2024-12-31", "remaining_sessions": int(ex_mask.sum()), "ending_equity_excluding_window_returns": excluded_finals[name]}
+            if name != "B0":
+                row["difference_vs_B0_excluding_window"] = excluded_finals[name] - excluded_finals["B0"]
+                row["advantage_persists_excluding_window"] = excluded_finals[name] > excluded_finals["B0"]
+            exclusion_rows.append(row)
+    exclusion = pd.DataFrame(exclusion_rows)
+
     input_path = OUT / "fed_dma_chronological_robustness_frozen_inputs.csv"
     frame.to_csv(input_path, index_label="date", float_format="%.12g")
     input_hash = hashlib.sha256(input_path.read_bytes()).hexdigest()
