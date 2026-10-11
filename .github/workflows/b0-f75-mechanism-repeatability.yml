@@ -1,0 +1,58 @@
+name: B0 vs F75 Mechanism Repeatability Audit
+
+on:
+  push:
+    paths:
+      - "research/b0_f75_mechanism_repeatability.py"
+      - "tests/test_b0_f75_mechanism_repeatability.py"
+      - ".github/workflows/b0-f75-mechanism-repeatability.yml"
+      - "research/f75_prospective_shadow_monitor.py"
+      - "research/canonical_shock_recovery_fed_dma_overlay.py"
+      - "research/canonical_shock_recovery_active_tightening_overlay.py"
+      - "research/fed_dma_chronological_robustness.py"
+      - "research/requirements.txt"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: b0-f75-mechanism-repeatability
+  cancel-in-progress: false
+
+jobs:
+  episode-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Checkout frozen research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/qqq-slow-bear-audit
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+      - name: Download immutable canonical B0 artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 38117700318 --repo eklu654/Trading-Bot --name tqqq-actual-partial-dma-matrix --dir data/research/canonical_b0
+      - name: Compile and run attribution guardrails
+        run: |
+          python -m py_compile research/b0_f75_mechanism_repeatability.py
+          python -m pytest -q tests/test_b0_f75_mechanism_repeatability.py
+      - name: Run fixed episode attribution (no tuning)
+        run: python research/b0_f75_mechanism_repeatability.py
+      - name: Upload episode report
+        uses: actions/upload-artifact@v4
+        with:
+          name: b0-f75-mechanism-episode-attribution
+          path: |
+            data/research/b0_f75_mechanism_episode_attribution.csv
+            data/research/b0_f75_mechanism_episode_summary.json
+          if-no-files-found: error
