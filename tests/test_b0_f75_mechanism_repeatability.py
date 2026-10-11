@@ -27,18 +27,17 @@ def test_full_exposure_path_is_finite():
     assert np.allclose(exposure, [0, 1, 1])
 
 
-def test_episode_path_includes_initial_balance_and_first_session_return():
+def test_episode_path_normalizes_to_starting_balance_and_includes_first_session():
     from research.b0_f75_mechanism_repeatability import _episode_path
-    # Offset 1 means the first episode session follows path[0], the initial balance.
-    full_path = np.array([5000.0, 4500.0, 4800.0])
-    episode = _episode_path(full_path, episode_start_offset=1)
-    assert np.allclose(episode, [5000.0, 4500.0, 4800.0])
-    assert np.isclose(episode[-1] / 5000.0 - 1.0, -0.04)
+    full_path = np.array([4000.0, 3600.0, 3800.0])
+    episode = _episode_path(full_path, episode_start_index=0)
+    assert np.allclose(episode, [5000.0, 4500.0, 4750.0])
+    assert np.isclose(episode[-1] / 5000.0 - 1.0, -0.05)
     assert np.isclose(_max_dd(episode), -0.10)
 
 def test_episode_path_excludes_pre_episode_drawdown_but_keeps_starting_balance():
     from research.b0_f75_mechanism_repeatability import _episode_path
-    full_path = np.array([5000.0, 4000.0, 4100.0, 4200.0])
-    episode = _episode_path(full_path, episode_start_offset=2)
-    assert np.allclose(episode, [4000.0, 4100.0, 4200.0])
+    full_path = np.array([8000.0, 4000.0, 4100.0, 4200.0])
+    episode = _episode_path(full_path, episode_start_index=1)
+    assert np.allclose(episode, [5000.0, 5125.0, 5250.0])
     assert np.isclose(_max_dd(episode), 0.0)
