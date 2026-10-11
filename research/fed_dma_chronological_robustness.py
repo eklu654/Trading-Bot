@@ -100,15 +100,27 @@ def summarize_window(name, window, dates, equity, full_returns, signal, bps):
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    q = download_market("QQQ").rename(columns={
-        "Open": "qqq_open", "High": "qqq_high", "Low": "qqq_low",
-        "Close": "qqq_close", "Adj Close": "qqq_adj_close", "Volume": "qqq_volume",
-    })
-    t = download_market("TQQQ").rename(columns={
-        "Open": "tqqq_open", "High": "tqqq_high", "Low": "tqqq_low",
-        "Close": "tqqq_close", "Adj Close": "tqqq_adj_close", "Volume": "tqqq_volume",
-    })
-    frame = q.join(t, how="inner").dropna().sort_index()
+    canonical_path = OUT / "canonical_b0" / "tqqq_actual_partial_dma_frozen_input.csv"
+    if not canonical_path.exists():
+        raise FileNotFoundError(
+            "Canonical frozen B0 input artifact is required; workflow must download "
+            "artifact tqqq-actual-partial-dma-matrix from run 38117700318 first"
+        )
+    source_hash = hashlib.sha256(canonical_path.read_bytes()).hexdigest()
+    expected_source_hash = "6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55"
+    if source_hash != expected_source_hash:
+        raise RuntimeError(f"Canonical B0 frozen input SHA-256 mismatch: {source_hash}")
+    canonical = pd.read_csv(canonical_path, parse_dates=["date"]).set_index("date").sort_index()
+    required = {"adj_close", "tqqq_adj_open", "tqqq_adj_close", "on", "in", "b0_signal"}
+    missing = required.difference(canonical.columns)
+    if missing:
+        raise RuntimeError(f"Canonical frozen input missing columns: {sorted(missing)}")
+    frame = pd.DataFrame(index=canonical.index)
+    frame["qqq_adj_close"] = canonical["adj_close"].astype(float)
+    frame["tqqq_adj_open"] = canonical["tqqq_adj_open"].astype(float)
+    frame["tqqq_adj_close"] = canonical["tqqq_adj_close"].astype(float)
+    frame["overnight_return"] = canonical["on"].astype(float)
+    frame["intraday_return"] = canonical["in"].astype(float)
     if frame.empty or frame.index.has_duplicates or not frame.index.is_monotonic_increasing:
         raise RuntimeError("Frozen common input must be non-empty, unique, and sorted")
 
@@ -116,7 +128,14 @@ def main():
     lagged_fed = map_fed_state_to_market(fed, frame.index)
     events = build_shock_recovery_events(frame["qqq_adj_close"])
     terminal_shock_i = terminal_unrecovered_shock_start(frame["qqq_adj_close"])
-    b0 = build_censored_baseline_signal(len(frame), events, terminal_shock_i)
+    reconstructed_b0 = build_censored_baseline_signal(len(frame), events, terminal_shock_i)
+    canonical_b0 = canonical["b0_signal"].to_numpy(dtype=float)
+    if not np.array_equal(reconstructed_b0, canonical_b0):
+        mismatch = int(np.flatnonzero(reconstructed_b0 != canonical_b0)[0])
+        raise RuntimeError(
+            f"Canonical B0 signal mismatch at index {mismatch} / {frame.index[mismatch].date()}"
+        )
+    b0 = canonical_b0.copy()
     overlay_state, transitions = build_active_tightening_overlay(frame["qqq_adj_close"], lagged_fed)
     signals = {"B0": b0}
     for name, fraction in (("F50", 0.50), ("F75", 0.75)):
@@ -129,11 +148,8 @@ def main():
     if not set(np.unique(signals["F75"])).issubset({0.0, 0.75, 1.0}):
         raise AssertionError("Unexpected F75 exposure")
 
-    adj_open = frame["tqqq_open"].to_numpy(float) * frame["tqqq_adj_close"].to_numpy(float) / frame["tqqq_close"].to_numpy(float)
-    adj_close = frame["tqqq_adj_close"].to_numpy(float)
-    overnight = np.zeros(len(frame), dtype=float)
-    overnight[1:] = adj_open[1:] / adj_close[:-1] - 1.0
-    intraday = adj_close / adj_open - 1.0
+    overnight = frame["overnight_return"].to_numpy(float)
+    intraday = frame["intraday_return"].to_numpy(float)
     dates = frame.index
     daily_rows, window_rows, summary_rows = [], [], []
     equity_cache = {}
