@@ -62,3 +62,12 @@
 - Added a synthetic regression test for return/terminal consistency and cost sensitivity.
 - Commits: `7dae2bc711b783fe9a5b75f42053926735cde163` (full-period metrics), `a9837231f34b00a4cfe8d61628ba49ef464c7080` (artifact upload), `d72256b0b66d778ddad4aba5507eb371e231e222` (test).
 - These full-period figures must be checked against previously reported B0/F75 balances before interpretation; if they differ, reconcile execution timing, start/end dates, and cost conventions rather than silently choosing one result.
+
+## 2026-10-11 — candidate definition mismatch found; full-exit results invalidated
+
+- The full-period audit initially produced a misleading F75 result because the audit script composed `f75 = min(B0, overlay_state)`, treating the active overlay state of 0 as a full cash exit.
+- The existing frozen chronological robustness implementation defines F75 differently: `overlay_weight = where(overlay_state == 0, 0.75, 1.0)`, then `F75 = min(B0, overlay_weight)`. Therefore F75 holds 75% exposure during active overlay states unless B0 independently requires 0%. F50 analogously uses 50%.
+- This mismatch explains why B0's 25 bp terminal balance exactly matched $3,852,657 while the initial full-exit F75 replay incorrectly returned $3,383,559 instead of the earlier approximately $3,898,853.
+- The full-exit episode and full-period metrics are invalid for evaluating F75 and are superseded. Do not use them for promotion or strategy judgment.
+- Corrected composition committed as `d02948a478349e93801a4a4a8170344e0730e951`; regression test committed as `f898425f306ec7a00e7181d0df22f062cd7f5fd2`.
+- New workflow run will recompute all episode and full-period metrics with the true frozen F75 75% overlay. Reconcile the resulting 25 bp full-period terminal equity and max drawdown against the prior robustness report before accepting the comparison.
