@@ -1,0 +1,50 @@
+name: Structural risk-budget isolation
+
+on:
+  push:
+    branches: [main, research/qqq-slow-bear-audit]
+    paths:
+      - "research/risk_budget_isolation.py"
+      - "research/reentry_isolation.py"
+      - "research/causal_execution.py"
+      - "tests/test_risk_budget_isolation.py"
+      - ".github/workflows/structural-risk-budget.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: structural-risk-budget-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  risk-budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r research/requirements.txt
+      - name: Test risk-budget rules
+        run: PYTHONPATH=. pytest -q tests/test_risk_budget_isolation.py tests/test_reentry_isolation.py
+      - name: Run fixed risk-budget comparison
+        run: python research/risk_budget_isolation.py
+      - name: Upload frozen inputs and results
+        uses: actions/upload-artifact@v4
+        with:
+          name: structural-risk-budget-results
+          path: |
+            data/research/risk_budget_frozen_qqq.csv
+            data/research/risk_budget_frozen_tqqq.csv
+            data/research/risk_budget_summary.csv
+            data/research/risk_budget_equity.csv
+            data/research/risk_budget_manifest.json
+          if-no-files-found: error
+          retention-days: 30
