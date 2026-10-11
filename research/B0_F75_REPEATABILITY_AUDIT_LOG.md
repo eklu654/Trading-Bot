@@ -71,3 +71,16 @@
 - The full-exit episode and full-period metrics are invalid for evaluating F75 and are superseded. Do not use them for promotion or strategy judgment.
 - Corrected composition committed as `d02948a478349e93801a4a4a8170344e0730e951`; regression test committed as `f898425f306ec7a00e7181d0df22f062cd7f5fd2`.
 - New workflow run will recompute all episode and full-period metrics with the true frozen F75 75% overlay. Reconcile the resulting 25 bp full-period terminal equity and max drawdown against the prior robustness report before accepting the comparison.
+
+## 2026-10-11 — frozen F75 exposure restored; canonical full-period figures reconcile
+
+- The corrected partial-exposure run [38132232294](https://github.com/eklu654/Trading-Bot/actions/runs/38132232294) completed successfully with 5/5 episode accounting validations and uploaded artifact `11698769710` (SHA-256 `a7495abadfcd706f5e7e7263e4367d6f545f978b263d712ce430d4b55bae6c94`).
+- Full-period 25 bp result now matches the previously recorded F75 result exactly to displayed precision: B0 $3,852,657.34; F75 $3,898,852.68; F75 incremental terminal equity +$46,195.34; B0 max DD -73.7979%; F75 max DD -67.9938%.
+- Full-period cost sensitivity (B0 / F75 terminal equity):
+  - 0 bp: $4,040,315 / $4,124,681 (F75 +$84,366); max DD -73.53% / -67.65%.
+  - 25 bp: $3,852,657 / $3,898,853 (F75 +$46,195); max DD -73.80% / -67.99%.
+  - 50 bp: $3,673,277 / $3,684,972 (F75 +$11,695); max DD -74.06% / -68.33%.
+- Corrected episode summary at 25 bp: 3/5 measured episodes show positive F75 return difference; 3/5 show improved maximum drawdown; median incremental episode return is +0.00010498 (about +0.0105 percentage points), median incremental episode equity +$0.52 on normalized $5,000.
+- Episode detail: 2015–2016 F75 is +0.77 percentage points vs B0 and reduces max DD from -43.45% to -38.43%; 2018 difference is negligible; 2022–2024 F75 return +54.20% vs +40.92% and DD -66.87% vs -72.88%; 2011 and COVID are unchanged.
+- These results supersede all full-exit candidate results and the prior 2-win/zero-median summary. The frozen F75 definition is 75% exposure when the tightening overlay is active, capped by B0's independent defense.
+- A final guardrail test for the 75% partial-exposure composition was added in commit `f898425f306ec7a00e7181d0df22f062cd7f5fd2`; run [38132237766](https://github.com/eklu654/Trading-Bot/actions/runs/38132237766) must pass before calling the current branch head green.
