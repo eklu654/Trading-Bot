@@ -166,7 +166,7 @@ def main():
         "field": "auto_adjust=True Close", "start": str(dates[0].date()),
         "end_inclusive": str(dates[-1].date()), "rows": int(len(close)),
         "retrieved_utc": datetime.now(timezone.utc).isoformat(),
-        "input_csv_sha256": digest, "event_definition": "non-overlapping peak-to-prior-peak-recovery drawdown >=20%",
+        "input_csv_sha256": digest, "event_definition": "start when >=20% below trailing 252-session high; end after drawdown stays shallower than 10% for 20 consecutive sessions",
         "x_values_pct": [v * 100 for v in X_VALUES], "y_sessions": list(Y_VALUES),
         "warning_definition": "close <= trailing Y-session maximum adjusted close * (1-X)",
         "note": "Signal-only event diagnostics; no B0/TQQQ performance simulation and no claim that warning episodes are false alarms."
