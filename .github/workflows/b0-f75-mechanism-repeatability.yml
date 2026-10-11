@@ -44,7 +44,7 @@ jobs:
         run: gh run download 38117700318 --repo eklu654/Trading-Bot --name tqqq-actual-partial-dma-matrix --dir data/research/canonical_b0
       - name: Compile and run attribution guardrails
         run: |
-          python -m pip install pytest
+          python -m pip install -r requirements-dev.txt
           python -m py_compile research/b0_f75_mechanism_repeatability.py
           python -m pytest -q tests/test_b0_f75_mechanism_repeatability.py
       - name: Run fixed episode attribution (no tuning)
