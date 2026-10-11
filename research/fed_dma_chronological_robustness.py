@@ -102,6 +102,7 @@ def main():
     dates = frame.index
     daily_rows, window_rows, summary_rows = [], [], []
     equity_cache = {}
+    return_cache = {}
     for bps in COSTS:
         for name, signal in signals.items():
             equity = next_open_cost_equity(signal, overnight, intraday, bps, INITIAL)
@@ -110,6 +111,7 @@ def main():
             ret = np.zeros(len(equity), dtype=float)
             ret[1:] = equity[1:] / np.maximum(equity[:-1], 1e-300) - 1.0
             equity_cache[(name, bps)] = equity
+            return_cache[(name, bps)] = ret
             peak = np.maximum.accumulate(equity)
             dd = equity / np.maximum(peak, 1e-300) - 1.0
             summary_rows.append({
