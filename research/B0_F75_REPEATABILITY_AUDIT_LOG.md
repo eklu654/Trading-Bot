@@ -129,3 +129,5 @@
 - Earlier monitor failures [38133168157](https://github.com/eklu654/Trading-Bot/actions/runs/38133168157) and [38133206610](https://github.com/eklu654/Trading-Bot/actions/runs/38133206610) are diagnostic failures from before the explicit tracking-ref refresh and/or idempotent-tail fix; they are superseded by the green run above, not silently treated as passes.
 - Current shadow evidence remains two dates only (one return-bearing session), with no active overlay. The prospective minimum-evidence trigger has not been reached; F75 remains frozen and shadow-only.
 
+- The historical repeatability workflow also passed on commit `609385e0e440b8b05ffce88252eb8fd346da839e`: run [38133265384](https://github.com/eklu654/Trading-Bot/actions/runs/38133265384), 10/10 tests passed, fixed attribution completed, and artifact ID `11700315891` uploaded (ZIP SHA-256 `3173e6b3c533aab427821d64ff6b9c0c86f7a72fdc52925c0fa3738d29f5fe8f`). The latest monitor-specific run [38133271821](https://github.com/eklu654/Trading-Bot/actions/runs/38133271821) passed 14/14 tests, including the new integrity and idempotency cases.
+
