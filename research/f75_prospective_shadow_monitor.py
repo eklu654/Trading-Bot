@@ -16,6 +16,7 @@ from canonical_shock_recovery_fed_dma_overlay import (
     build_baseline_signal, DMA, SHOCK, RECOVERY,
 )
 from canonical_shock_recovery_active_tightening_overlay import build_active_tightening_overlay
+from fed_dma_chronological_robustness import terminal_unrecovered_shock_start, build_censored_baseline_signal
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "research"
@@ -32,6 +33,16 @@ def market(symbol, start):
     if isinstance(x.columns, pd.MultiIndex): x.columns = x.columns.get_level_values(0)
     x.index = pd.to_datetime(x.index).tz_localize(None).normalize()
     return x.sort_index()
+
+def reconcile_canonical_signal(reconstructed, canonical):
+    reconstructed = np.asarray(reconstructed, dtype=float)
+    canonical = np.asarray(canonical, dtype=float)
+    if reconstructed.shape != canonical.shape:
+        raise RuntimeError("B0 canonical signal length mismatch")
+    mismatch = np.flatnonzero(reconstructed != canonical)
+    if len(mismatch):
+        raise RuntimeError(f"B0 canonical historical signal mismatch at index {int(mismatch[0])}")
+    return True
 
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
@@ -63,10 +74,10 @@ def main():
     if prices.index.has_duplicates: raise RuntimeError("Frozen/fresh date overlap")
     # Rebuild baseline across the entire combined history and prove frozen values agree.
     events = build_shock_recovery_events(prices["qqq_adj_close"])
-    b0 = build_baseline_signal(len(prices), events)
+    terminal_i = terminal_unrecovered_shock_start(prices["qqq_adj_close"])
+    b0 = build_censored_baseline_signal(len(prices), events, terminal_i)
     canonical_signal = c["b0_signal"].to_numpy(float)
-    if len(b0[:len(canonical_signal)]) != len(canonical_signal) or not np.array_equal(b0[:len(canonical_signal)], canonical_signal):
-        raise RuntimeError("B0 canonical historical signal reconciliation failed")
+    reconcile_canonical_signal(b0[:len(canonical_signal)], canonical_signal)
     fed = download_fed()
     lagged_fed = map_fed_state_to_market(fed, prices.index)
     overlay, _ = build_active_tightening_overlay(prices["qqq_adj_close"], lagged_fed)
