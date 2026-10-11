@@ -16,7 +16,7 @@ ROOT=Path(__file__).resolve().parents[1]
 OUT=ROOT/"data"/"research"
 INITIAL=5000.0
 START="2010-01-01"
-END="2026-10-05"
+END="2026-10-08"
 DMAS=[100,125,150,175,200,250]
 BELOW=[1.0,0.75,0.50,0.25,0.0]
 COSTS=(0,10,25,50)
@@ -47,10 +47,9 @@ def main():
     x["on"]=(t_adj_open/x.tqqq_adj_close.shift(1)-1).fillna(0)
     x["in"]=(x.tqqq_adj_close/t_adj_open-1).fillna(0)
 
-    # One common evaluation window after the maximum 250-session lookback.
-    # All strategies begin with the same $5,000 on the same date. Moving
-    # averages are calculated on full history before slicing, so signals are
-    # warmed up without cash-only warmup days distorting ending balances.
+    # Moving averages use full QQQ history, so TQQQ evaluation starts at
+    # inception on the same dates as canonical B0, not after an extra 250
+    # joined TQQQ observations. END is exclusive, matching the canonical replay.
     max_dma=max(DMAS)
     x["eval_date"] = x.index
     for dma in DMAS:
@@ -63,7 +62,11 @@ def main():
     frozen_path=OUT/"tqqq_actual_partial_dma_frozen_input.csv"
     frozen.to_csv(frozen_path,index_label="date",float_format="%.15g")
 
-    x=x.iloc[max_dma-1:].copy()
+    x=x.loc[x.index >= pd.Timestamp("2010-02-11")].copy()
+    if x.empty or x.index[0].date().isoformat() != "2010-02-11":
+        raise AssertionError(f"Expected canonical TQQQ start 2010-02-11, got {x.index[0] if len(x) else 'no rows'}")
+    if x.index[-1].date().isoformat() != "2026-10-07":
+        raise AssertionError(f"Expected canonical end 2026-10-07, got {x.index[-1]}")
     years=(x.index[-1]-x.index[0]).days/365.2425
     rows=[]
     period_rows=[]
