@@ -248,8 +248,15 @@ def main():
     else: combined=pd.concat([prior,new],ignore_index=True)
     if combined["date"].duplicated().any(): raise RuntimeError("Shadow ledger dates duplicated")
     combined.to_csv(LEDGER,index=False,float_format="%.12g")
+    # Make the manifest unambiguous: separate this invocation's append count
+    # from the cumulative ledger length and usable return-bearing observations.
+    initialization_dates = combined.loc[combined["initialization_session"].astype(bool), "date"]
     state={"canonical_input_sha256":digest,"frozen_cutoff":cutoff.date().isoformat(),
-           "last_observation":new.date.iloc[-1],"sessions_appended":len(new),
+           "last_observation":str(combined.date.iloc[-1]),
+           "sessions_appended_this_run":len(new),
+           "ledger_rows_total":len(combined),
+           "return_bearing_sessions_total":int((~combined["initialization_session"].astype(bool)).sum()),
+           "initialization_date":str(initialization_dates.iloc[0]) if len(initialization_dates) else None,
            "ledger_sha256":hashlib.sha256(LEDGER.read_bytes()).hexdigest(),
            "mode":"SHADOW_ONLY_NO_ORDERS","cost_sensitivity_bps":list(COSTS)}
     STATE.write_text(json.dumps(state,indent=2)+"\n",encoding="utf-8")
