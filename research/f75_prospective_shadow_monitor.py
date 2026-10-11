@@ -146,6 +146,22 @@ def only_unrecorded_sessions(fresh, prior):
     return fresh.loc[fresh.index > tail.max()]
 
 
+def exclude_current_session(fresh, today=None):
+    """Exclude today's possibly incomplete daily bar, including manual intraday runs.
+
+    Use the New York calendar date at call time; a session becomes eligible on
+    the following calendar day. This intentionally trades one day of latency
+    for avoiding partial-session returns from data vendors.
+    """
+    if fresh.empty:
+        return fresh
+    if today is None:
+        today = pd.Timestamp.now(tz="America/New_York").date()
+    today = pd.Timestamp(today).normalize()
+    dates = pd.DatetimeIndex(fresh.index).tz_localize(None).normalize()
+    return fresh.loc[dates < today]
+
+
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
     if not CANON.exists(): raise RuntimeError("Canonical frozen input is missing")
@@ -167,6 +183,9 @@ def main():
     fresh["tqqq_adj_open"] = (t["Open"] * t["Adj Close"] / t["Close"]).reindex(fresh.index).astype(float)
     fresh["tqqq_adj_close"] = t["Adj Close"].reindex(fresh.index).astype(float)
     fresh = fresh.loc[fresh.index > cutoff].dropna()
+    # A manual dispatch can occur during market hours; never record today's
+    # incomplete daily bar. Today's bar becomes eligible on the next calendar day.
+    fresh = exclude_current_session(fresh)
     # Validate the persisted ledger before deciding whether this invocation is a no-op.
     if LEDGER.exists():
         if not STATE.exists():
