@@ -112,3 +112,11 @@
 - The two earlier ledger-persistence attempts failed at push because their checkouts were behind newer branch commits. The workflow now refreshes the latest research branch before reading the ledger, preventing a stale checkout from discarding or failing to append observations. The final run on the refreshed head passed and the files are now present on the branch.
 - Regression verification: repeatability workflow run [38132935361](https://github.com/eklu654/Trading-Bot/actions/runs/38132935361) passed after the cross-monitor test was added; shadow monitor workflow run [38132974333](https://github.com/eklu654/Trading-Bot/actions/runs/38132974333) also passed the expanded monitor tests. The monitor's separate persistence fix is verified by run [38133062634](https://github.com/eklu654/Trading-Bot/actions/runs/38133062634).
 
+## 2026-10-11 — prospective decision criteria preregistered
+
+- Added [`research/F75_PROSPECTIVE_SHADOW_DECISION_PROTOCOL.md`](https://github.com/eklu654/Trading-Bot/blob/research/qqq-slow-bear-audit/research/F75_PROSPECTIVE_SHADOW_DECISION_PROTOCOL.md), commit `18d68dc97d5f08e648f60864ac2ca0ad14a0afc0`.
+- The protocol requires at least 252 completed prospective sessions and one completed overlay-active episode with at least 20 sessions of actual exposure reduction before a performance review. Inactive-overlay days do not count as efficacy evidence.
+- Predeclared screening criteria prioritize terminal equity at 25 bp costs, require no terminal-equity underperformance at 50 bp, require at least a 3 percentage-point max-drawdown improvement at 25 bp, and cap the 60-session post-trough realized-exposure gap at 20 percentage points when the full window is available. Data-integrity failures invalidate the review.
+- Passing only authorizes a separate paper-trading evaluation; it does not promote F75 or permit live deployment. Failing leaves F75 frozen and shadow-only. No threshold optimization is authorized.
+- Current sample is explicitly insufficient: two recorded rows, one return-bearing session, and no overlay activation. No efficacy conclusion or performance decision is permitted.
+
