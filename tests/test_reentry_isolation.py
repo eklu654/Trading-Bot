@@ -62,3 +62,23 @@ def test_r2_guarded_variant_still_resets_partial_tranche_on_renewed_shock():
     q = qqq_path([100.0, 94.0, 99.0, 94.0, 90.0, 94.0, 95.0])
     got = target_exposure(q, "R2").tolist()
     assert got[3:] == [0.0, 0.0, 0.0, 0.5]
+
+
+
+def test_r3_requires_sma_confirmation_for_staged_reentry():
+    # After a shock, a +5% rebound below the 20-session SMA is rejected.
+    # The next close reclaims the SMA, enabling 50%; +10% recovery restores full.
+    prices = [100.0] * 20 + [94.0, 99.0, 100.0, 103.5]
+    got = target_exposure(qqq_path(prices), "R3").tolist()
+    assert got[21] == 0.0  # rebound without trend confirmation
+    assert got[22] == 0.5  # confirmed +5% rebound
+    assert got[23] == 1.0  # confirmed +10% rebound
+
+
+def test_r3_retains_partial_tranche_through_renewed_shock():
+    prices = [100.0] * 20 + [94.0, 100.0, 94.0, 98.0]
+    got = target_exposure(qqq_path(prices), "R3").tolist()
+    # 100 reclaims the 20-session SMA and activates 50%; renewed shock
+    # resets the recovery low but preserves the already-open half position.
+    assert got[21] == 0.5
+    assert got[22] == 0.5
