@@ -201,6 +201,7 @@ def main():
     windows.to_csv(OUT / "fed_dma_chronological_robustness_windows.csv", index=False)
     compare.to_csv(OUT / "fed_dma_chronological_robustness_comparison.csv", index=False)
     gates.to_csv(OUT / "fed_dma_chronological_robustness_gates.csv", index=False)
+    exclusion.to_csv(OUT / "fed_dma_chronological_robustness_ex_2022_2024.csv", index=False)
     daily.to_csv(OUT / "fed_dma_chronological_robustness_daily.csv", index=False)
     transitions.to_csv(OUT / "fed_dma_chronological_robustness_transitions.csv", index=False)
     manifest = {
@@ -214,6 +215,7 @@ def main():
                      "No pre-inception synthetic leveraged ETF data are included.",
                      "No candidate is authorized for paper or live trading."],
         "gate_results": gates.to_dict(orient="records"),
+        "excluding_2022_2024_return_diagnostic": exclusion.to_dict(orient="records"),
     }
     (OUT / "fed_dma_chronological_robustness_manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
     print("\nSUMMARY\n", summary.to_string(index=False))
