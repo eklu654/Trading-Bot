@@ -80,3 +80,11 @@ def test_full_period_comparison_is_compounded_and_cost_sensitive():
     assert np.allclose(report["b0_terminal_equity"], 5000.0 * (1.0 + report["b0_total_return"]))
     assert np.allclose(report["f75_terminal_equity"], 5000.0 * (1.0 + report["f75_total_return"]))
     assert report.loc[report.cost_bps.eq(25), "b0_terminal_equity"].iloc[0] < report.loc[report.cost_bps.eq(0), "b0_terminal_equity"].iloc[0]
+
+
+def test_f75_overlay_means_75_percent_exposure_not_full_exit():
+    from research.b0_f75_mechanism_repeatability import _compose_f75_signal
+    b0 = np.array([1.0, 1.0, 0.0, 1.0])
+    overlay_state = np.array([1.0, 0.0, 0.0, 1.0])
+    candidate = _compose_f75_signal(b0, overlay_state, partial_exposure=0.75)
+    assert np.allclose(candidate, [1.0, 0.75, 0.0, 1.0])
