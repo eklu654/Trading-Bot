@@ -44,6 +44,18 @@ def reconcile_canonical_signal(reconstructed, canonical):
         raise RuntimeError(f"B0 canonical historical signal mismatch at index {int(mismatch[0])}")
     return True
 
+def compose_f75_signal(b0, overlay_state, partial_exposure=0.75):
+    """Apply the frozen partial-exposure F75 overlay over the B0 baseline."""
+    baseline = np.asarray(b0, dtype=float)
+    overlay = np.asarray(overlay_state, dtype=float)
+    if baseline.shape != overlay.shape:
+        raise ValueError("B0 and overlay state must have equal shapes")
+    if not 0.0 <= partial_exposure <= 1.0:
+        raise ValueError("partial_exposure must be between 0 and 1")
+    overlay_weight = np.where(overlay == 0.0, partial_exposure, 1.0)
+    return np.minimum(baseline, overlay_weight)
+
+
 def main():
     DATA.mkdir(parents=True, exist_ok=True)
     if not CANON.exists(): raise RuntimeError("Canonical frozen input is missing")
@@ -81,7 +93,9 @@ def main():
     fed = download_fed()
     lagged_fed = map_fed_state_to_market(fed, prices.index)
     overlay, _ = build_active_tightening_overlay(prices["qqq_adj_close"], lagged_fed)
-    f75 = np.minimum(b0, overlay)
+    # F75 is a partial-exposure overlay, not a full exit: 75% while active,
+    # capped by B0's independent defense. Keep this identical to the frozen audit.
+    f75 = compose_f75_signal(b0, overlay, partial_exposure=0.75)
     # Each new session's close signal is recorded today; exposure is the prior close's signal.
     adj_open = prices["tqqq_adj_open"].to_numpy(float)
     adj_close = prices["tqqq_adj_close"].to_numpy(float)
