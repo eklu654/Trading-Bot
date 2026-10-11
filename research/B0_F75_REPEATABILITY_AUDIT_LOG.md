@@ -99,3 +99,11 @@
 - No `data/research/f75_shadow_daily_ledger.csv` or `data/research/f75_shadow_state.json` exists at the expected branch paths at the time of inspection. Therefore no existing ledger rows were found to mix old full-exit observations with corrected partial-exposure observations. The first future shadow observation should be explicitly labeled as a fresh initialization, not represented as a long-running live ledger.
 - Important next check: verify the prospective workflow's actual schedule/trigger and commit permissions, then verify that it appends only completed sessions and that the first initialized observation is clearly distinguished from a full-history backtest. F75 remains shadow-only and unpromoted.
 
+## 2026-10-11 — shadow ledger persistence guard corrected
+
+- The first post-fix monitor run [38132930488](https://github.com/eklu654/Trading-Bot/actions/runs/38132930488) completed successfully and printed a valid state summary (canonical hash matched, frozen cutoff 2026-10-07, latest source session 2026-10-09, two sessions calculated, shadow-only/no orders). However, its commit step reported no changes and did not persist the generated files.
+- Root cause: the workflow used `git diff --quiet -- <paths>`, which does not detect newly created untracked files. The ledger/state files were absent from the branch before this run, and remained absent afterward; the successful script execution must not be confused with a persisted observation.
+- Corrected the commit guard to inspect `git status --porcelain -- <paths>`, which detects both tracked modifications and new files. The workflow will then stage, commit, and push the append-only ledger and state files. The standard GitHub Actions bot identity is retained.
+- Workflow fix commits: `9211b239d5b074e6771c3f0fbdfe0160cc0ee500` (detect untracked files) and `f8ab04941328ae7f2f30b30e5b46cce5ae05bed5` (restore standard bot email after an intermediate typo). A new workflow run is required to verify persistence end-to-end.
+- The monitor's actual schedule is weekdays at 22:35 UTC; it also runs on relevant code/workflow pushes and supports manual dispatch. The first real persisted ledger must be checked for its initialization flag, dates, SHA-256, and F75 exposure semantics before treating the shadow observation series as established.
+
