@@ -55,7 +55,7 @@ def summarize_window(name, window, dates, equity, full_returns, signal, bps):
         "inherited_start_equity": inherited, "ending_equity": float(equity[last]),
         "compounded_return": float(equity[last] / inherited - 1.0),
         "local_max_drawdown": float(dd_curve.min()),
-        "local_dd_peak_date": dates[first + int(np.argmax(np.maximum.accumulate(local_eq)))].date().isoformat(),
+        "local_dd_peak_date": dates[first + peak_idx].date().isoformat(),
         "local_dd_trough_date": dates[first + trough_idx].date().isoformat(),
         "worst_rolling_252_session_return": rolling_12m_worst(local_ret),
         "sessions_0pct": int(np.sum(signal[idx] <= 0.0)),
