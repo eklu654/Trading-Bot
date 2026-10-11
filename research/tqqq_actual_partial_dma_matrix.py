@@ -121,6 +121,19 @@ def main():
                 record("DMA_ONLY_DIAGNOSTIC",dma,below,sig,cost_bps)
 
     out=pd.DataFrame(rows).sort_values("final",ascending=False)
+    # Baseline reconstruction invariant: a 100% DMA exposure overlay must
+    # leave B0 unchanged for every cost assumption and every DMA lookback.
+    # This catches accidental signal/combination drift before artifacts publish.
+    b0_rows=out[out["strategy"]=="B0_SHOCK_RECOVERY"].set_index("cost_bps_per_exposure_change")
+    invariant_rows=out[(out["strategy"]=="B0_PLUS_DMA_PARTIAL") & (out["below_exposure"]==1.0)]
+    for _, candidate in invariant_rows.iterrows():
+        base=b0_rows.loc[candidate["cost_bps_per_exposure_change"]]
+        if not np.isclose(candidate["final"],base["final"],rtol=1e-12,atol=1e-8):
+            raise AssertionError(f"B0 invariant failed: DMA={candidate['dma']} cost={candidate['cost_bps_per_exposure_change']}")
+        if not np.isclose(candidate["max_dd"],base["max_dd"],rtol=1e-12,atol=1e-12):
+            raise AssertionError(f"B0 drawdown invariant failed: DMA={candidate['dma']} cost={candidate['cost_bps_per_exposure_change']}")
+    if len(invariant_rows) != len(DMAS)*len(COSTS):
+        raise AssertionError(f"Expected {len(DMAS)*len(COSTS)} B0 identity rows, got {len(invariant_rows)}")
     periods=pd.DataFrame(period_rows)
     matrix_path=OUT/"tqqq_actual_partial_dma_matrix.csv"
     periods_path=OUT/"tqqq_actual_partial_dma_periods.csv"
