@@ -1,0 +1,54 @@
+name: Family-specific shock gate
+
+on:
+  push:
+    branches: [main, research/qqq-slow-bear-audit]
+    paths:
+      - "research/family_specific_shock_gate.py"
+      - "research/test_dma_family_rotation.py"
+      - "research/test_dma_family_rotation_risk_overlay.py"
+      - "research/replay_family_rotation_account.py"
+      - "tests/test_family_specific_shock_gate.py"
+      - ".github/workflows/family-specific-shock-gate.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: family-specific-shock-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  family-shock-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install research dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r research/requirements.txt
+      - name: Test family-specific state transitions
+        run: PYTHONPATH=. pytest -q tests/test_family_specific_shock_gate.py
+      - name: Run frozen family-rotation comparison
+        run: PYTHONPATH=. python research/family_specific_shock_gate.py
+      - name: Upload frozen inputs and results
+        uses: actions/upload-artifact@v4
+        with:
+          name: family-specific-shock-gate-results
+          path: |
+            data/research/family_shock_gate_benchmarks.csv
+            data/research/family_shock_gate_bull_returns.csv
+            data/research/family_shock_gate_base_weights.csv
+            data/research/family_shock_gate_overlay_weights.csv
+            data/research/family_shock_gate_states.csv
+            data/research/family_shock_gate_summary.csv
+            data/research/family_shock_gate_equity.csv
+            data/research/family_shock_gate_manifest.json
+          if-no-files-found: error
+          retention-days: 30
