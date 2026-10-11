@@ -104,23 +104,28 @@ def main():
     first_new = ix.get_loc(fresh.index[0])
     for i in range(first_new, len(ix)):
         d=ix[i]
+        initializing = (i == first_new and prior.empty)
         row={"date":d.date().isoformat(),"qqq_adj_close":float(prices.qqq_adj_close.iloc[i]),
              "tqqq_adj_open":float(adj_open[i]),"tqqq_adj_close":float(adj_close[i]),
              "qqq_dma_200":float(prices.qqq_adj_close.rolling(DMA,min_periods=DMA).mean().iloc[i]),
              "lagged_fed_state":str(lagged_fed.iloc[i]),"b0_signal_close":float(b0[i]),
              "f75_overlay_signal_close":float(overlay[i]),"f75_signal_close":float(f75[i]),
-             "b0_exposure":float(b0[i-1]) if i>0 else 0.0,
-             "f75_exposure":float(f75[i-1]) if i>0 else 0.0,
-             "overnight_return":float(overnight[i]),"intraday_return":float(intraday[i]),
-             "source_canonical_sha256":digest}
-        for s, sig in (("B0",b0),("F75",f75)):
-            exposure=float(sig[i-1]) if i>0 else 0.0
-            turnover=abs(exposure-previous_exposure[s])
+             "b0_exposure":0.0 if initializing else (float(b0[i-1]) if i>0 else 0.0),
+             "f75_exposure":0.0 if initializing else (float(f75[i-1]) if i>0 else 0.0),
+             "overnight_return":0.0 if initializing else float(overnight[i]),
+             "intraday_return":0.0 if initializing else float(intraday[i]),
+             "source_canonical_sha256":digest,
+             "initialization_session":bool(initializing)}
+        for strategy, sig in (("B0",b0),("F75",f75)):
+            exposure=0.0 if initializing else (float(sig[i-1]) if i>0 else 0.0)
+            turnover=0.0 if initializing else abs(exposure-previous_exposure[strategy])
             for b in COSTS:
-                # Overnight on prior exposure, charge cost at open, intraday on current exposure.
-                v=eq[(s,b)]*(1+previous_exposure[s]*overnight[i])*(1-turnover*b/10000)*(1+exposure*intraday[i])
-                eq[(s,b)]=v; row[f"{s.lower()}_equity_{b}bps"]=v
-            previous_exposure[s]=exposure
+                if not initializing:
+                    # Overnight on prior exposure, charge cost at open, intraday on current exposure.
+                    v=eq[(strategy,b)]*(1+previous_exposure[strategy]*overnight[i])*(1-turnover*b/10000)*(1+exposure*intraday[i])
+                    eq[(strategy,b)]=v
+                row[f"{strategy.lower()}_equity_{b}bps"]=eq[(strategy,b)]
+            previous_exposure[strategy]=exposure
         rows.append(row)
     new=pd.DataFrame(rows)
     # A new observation is accepted only if each daily return and balance is finite.
