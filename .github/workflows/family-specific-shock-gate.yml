@@ -57,6 +57,7 @@ jobs:
             data/research/family_shock_gate_bull_returns.csv
             data/research/family_shock_gate_base_weights.csv
             data/research/family_shock_gate_overlay_weights.csv
+            data/research/family_shock_gate_rotated_weights.csv
             data/research/family_shock_gate_states.csv
             data/research/family_shock_gate_summary.csv
             data/research/family_shock_gate_equity.csv
