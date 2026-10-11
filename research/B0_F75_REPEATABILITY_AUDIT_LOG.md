@@ -34,3 +34,18 @@
   - `b26d0295dcf5fbbcfaabcffc22522b37318c0c2f` and `4abd1492d915bb24e8a67226de11eedf62076ce1`: add/update regression tests for episode path normalization and drawdown boundaries.
 - Runs triggered by intermediate commits were cancelled by later commits before completing; the latest run [38131928120](https://github.com/eklu654/Trading-Bot/actions/runs/38131928120) is queued against the test-updated code.
 - Do not cite the original episode metrics as valid. Await a successful run against the corrected accounting, then inspect the new artifact and independently reconcile calculations.
+
+## 2026-10-11 — corrected accounting run completed
+
+- Corrected run [38131928120](https://github.com/eklu654/Trading-Bot/actions/runs/38131928120) succeeded against commit `4abd1492d915bb24e8a67226de11eedf62076ce1`; guardrails and attribution completed and artifact ID `11698384838` was uploaded.
+- Corrected CSV/JSON inspected locally. It now uses the full actual-TQQQ history to preserve prior exposure state, normalizes the prior-close episode equity to $5,000, includes the first episode session in return, and uses lagged realized exposure for the next 20/60 sessions after the low.
+- Corrected 25 bp episode results:
+  - 2011 stress: B0 and F75 identical; return -15.20%, max drawdown -40.07%.
+  - 2015–2016 stress: F75 return -20.38% vs B0 -20.11% (slightly worse after costs), but max drawdown improves from -43.45% to -34.17%; normalized terminal equity is about $13.36 lower.
+  - 2018 selloff: F75 return -29.47% vs B0 -29.51%, a very small improvement (~$1.93 on a $5,000 episode baseline); max drawdown improves by only ~0.04 percentage points.
+  - COVID 2020: B0 and F75 identical; return +111.78%, max drawdown -47.27%.
+  - 2022–2024: F75 return +78.06% vs B0 +40.92%; max drawdown improves from -72.88% to -53.42%; normalized terminal equity improves by about $1,857 after 25 bp modeled costs.
+- Across the five measured episodes, F75 has 2 positive return differences at 25 bp, 3 drawdown improvements, and median incremental return approximately zero. The net return advantage remains highly concentrated in 2022–2024. There is evidence of drawdown improvement in 2015–2016, but the candidate's extra turnover gives back the small 25 bp terminal-return benefit there.
+- Interpretation: **mixed evidence, not enough to promote**. The defense mechanism can reduce episode drawdown in multiple episodes, but repeatable net return improvement is not established and COVID/2011 show no difference. Continue F75 shadow-only and frozen.
+- Artifact digest: `sha256:f716942a868ff5f27039f3e8b17b2d312e55cf30ea04b2d041459ec185e97b54`.
+- Follow-up required: add an episode-level independent reconciliation that asserts terminal equity = $5,000 × (1 + episode return), checks all reported incremental fields, and validates that exposure horizons contain exactly 20/60 post-trough sessions when available. Then run a separate full-period compounded comparison; episode normalization is not a substitute for full-period portfolio accounting.
