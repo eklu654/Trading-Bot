@@ -32,6 +32,10 @@ jobs:
         with:
           ref: research/qqq-slow-bear-audit
           persist-credentials: true
+      - name: Refresh latest research branch before reading ledger
+        run: |
+          git fetch origin research/qqq-slow-bear-audit
+          git reset --hard origin/research/qqq-slow-bear-audit
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
