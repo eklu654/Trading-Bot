@@ -47,7 +47,7 @@ jobs:
       - name: Compile and test shadow monitor
         run: |
           python -m py_compile research/f75_prospective_shadow_monitor.py
-          python -m unittest discover -s research -p "test_f75_prospective_shadow_monitor.py" -v
+          python research/test_f75_prospective_shadow_monitor.py
       - name: Append new completed market sessions
         run: python research/f75_prospective_shadow_monitor.py
       - name: Commit append-only shadow ledger
