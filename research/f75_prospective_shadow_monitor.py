@@ -87,6 +87,23 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
         raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
     if not prior["b0_exposure"].between(0.0, 1.0).all() or not prior["f75_exposure"].between(0.0, 1.0).all():
         raise RuntimeError("Existing shadow ledger contains invalid realized exposure")
+    initialized = prior["initialization_session"].astype(bool).to_numpy()
+    if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
+        raise RuntimeError("Shadow ledger initialization marker is invalid")
+    b0_signal = prior["b0_signal_close"].to_numpy(dtype=float)
+    overlay_state = prior["f75_overlay_signal_close"].to_numpy(dtype=float)
+    f75_signal = prior["f75_signal_close"].to_numpy(dtype=float)
+    if not np.isin(b0_signal, [0.0, 1.0]).all() or not np.isin(overlay_state, [0.0, 1.0]).all():
+        raise RuntimeError("Existing shadow ledger contains invalid close signals")
+    expected_f75 = np.minimum(b0_signal, np.where(overlay_state == 0.0, 0.75, 1.0))
+    if not np.array_equal(f75_signal, expected_f75):
+        raise RuntimeError("Existing shadow ledger F75 signal violates frozen partial-exposure rule")
+    expected_b0_exposure = np.r_[0.0, b0_signal[:-1]]
+    expected_f75_exposure = np.r_[0.0, f75_signal[:-1]]
+    if not np.allclose(prior["b0_exposure"].to_numpy(dtype=float), expected_b0_exposure, rtol=0, atol=1e-12):
+        raise RuntimeError("Existing shadow ledger B0 exposure is not lagged from close signal")
+    if not np.allclose(prior["f75_exposure"].to_numpy(dtype=float), expected_f75_exposure, rtol=0, atol=1e-12):
+        raise RuntimeError("Existing shadow ledger F75 exposure is not lagged from close signal")
     initialized_equity = prior.iloc[0]
     if not np.isclose(float(initialized_equity["b0_equity_0bps"]), INITIAL) or not np.isclose(float(initialized_equity["f75_equity_0bps"]), INITIAL):
         raise RuntimeError("Shadow ledger initialization equity does not match starting balance")
@@ -112,23 +129,6 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
                 )
                 if not np.isclose(equity[i], expected_equity, rtol=1e-9, atol=1e-6):
                     raise RuntimeError(f"Existing shadow ledger {strategy} equity accounting mismatch at row {i}, {cost} bp")
-    initialized = prior["initialization_session"].astype(bool).to_numpy()
-    if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
-        raise RuntimeError("Shadow ledger initialization marker is invalid")
-    b0_signal = prior["b0_signal_close"].to_numpy(dtype=float)
-    overlay_state = prior["f75_overlay_signal_close"].to_numpy(dtype=float)
-    f75_signal = prior["f75_signal_close"].to_numpy(dtype=float)
-    if not np.isin(b0_signal, [0.0, 1.0]).all() or not np.isin(overlay_state, [0.0, 1.0]).all():
-        raise RuntimeError("Existing shadow ledger contains invalid close signals")
-    expected_f75 = np.minimum(b0_signal, np.where(overlay_state == 0.0, 0.75, 1.0))
-    if not np.array_equal(f75_signal, expected_f75):
-        raise RuntimeError("Existing shadow ledger F75 signal violates frozen partial-exposure rule")
-    expected_b0_exposure = np.r_[0.0, b0_signal[:-1]]
-    expected_f75_exposure = np.r_[0.0, f75_signal[:-1]]
-    if not np.allclose(prior["b0_exposure"].to_numpy(dtype=float), expected_b0_exposure, rtol=0, atol=1e-12):
-        raise RuntimeError("Existing shadow ledger B0 exposure is not lagged from close signal")
-    if not np.allclose(prior["f75_exposure"].to_numpy(dtype=float), expected_f75_exposure, rtol=0, atol=1e-12):
-        raise RuntimeError("Existing shadow ledger F75 exposure is not lagged from close signal")
     return True
 
 
