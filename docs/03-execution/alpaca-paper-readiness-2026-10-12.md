@@ -20,7 +20,7 @@
 
 ## Two-phase paper executor — 2026-10-12
 
-- Added `.github/workflows/alpaca-paper-order-executor.yml`, scheduled for 14:40 UTC weekdays. Only the scheduled event sets the order-submission enable flag; push and manual runs are dry-run/reconciliation only.
+- Added `.github/workflows/alpaca-paper-order-executor.yml`, scheduled for 13:40 UTC weekdays (9:40 a.m. US/Eastern). Only the scheduled event sets the order-submission enable flag; push and manual runs are dry-run/reconciliation only.
 - Before any POST, the workflow persists a staged client-order-ID intent to `paper-execution-ledger`, then persists a `SUBMITTING` state and creates an ephemeral same-run permit. A later workflow run without that permit only queries the broker by client order ID; it never retries an ambiguous submission.
 - All order writes are hard-pinned to `https://paper-api.alpaca.markets`. It requires the latest completed shadow signal, state mark date aligned to signal date, fresh IEX trade, ACTIVE/unblocked USD account, no unrelated positions/open orders, and broker quantity reconciled to fill-backed state.
 - Order reports are sanitized and uploaded as artifacts. The executor never uses Alpaca paper NLV for strategy sizing; it uses fill-backed virtual equity.
@@ -33,3 +33,10 @@
 - The current executor push-trigger is dry-run only. Scheduled runs alone can create the ephemeral submission permit and POST to the paper endpoint.
 
 - Added an account-identity gate before order planning: B0 and F75 credentials must resolve to distinct paper account IDs, and a SHA-256 fingerprint (never the raw ID) is persisted in each virtual ledger. Every executor run and subsequent ledger sync checks that the credential still resolves to the same account.
+
+
+## Latest closed-market executor validation — 2026-10-12
+- Run [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) passed the executor workflow and its tests: 17 virtual-ledger tests plus 14 executor tests.
+- The workflow verified B0/F75 credentials resolve to distinct ACTIVE, unblocked USD paper accounts and persisted only hashed account fingerprints. It then correctly returned `SKIPPED_MARKET_CLOSED` for both portfolios, with no staged intent, no POST, and no order.
+- Persistent states remain $5,000 cash, zero shares, $5,000 virtual equity, mark date 2026-10-09, no pending intent.
+- The next scheduled opportunity is 2026-10-12 at 13:40 UTC. It can submit only to Alpaca's paper endpoint, and only if the latest completed signal/session, account identity, broker position, open-order, and fresh-trade gates all pass. Scheduled market-open submission has not yet been observed.
