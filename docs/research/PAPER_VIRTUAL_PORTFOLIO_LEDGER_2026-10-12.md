@@ -18,3 +18,10 @@ This is a pure state machine for the next paper-trading stage. It does not call 
 ## Current boundary
 
 This module is not connected to broker endpoints or a durable state branch yet. Passing tests will validate local state transitions only. It is not order-execution authorization.
+
+
+## Validation result
+
+- Workflow [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005) completed successfully.
+- Python compilation passed and all 14 state-machine tests passed, covering initial capital, idempotent fills, incremental partial fills, long-only enforcement, mark monotonicity, compounded sizing, F75/B0 eligibility, staged-intent lockout, unknown outcomes, client-ID reconciliation, terminal position reconciliation, and replay prevention.
+- This is a local state-machine test only. It does not prove persistence, live broker fill retrieval, or order submission.
