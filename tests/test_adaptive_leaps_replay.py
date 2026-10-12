@@ -71,5 +71,3 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.ledger[1].market_value, 1200)
         self.assertEqual(result.ledger[1].equity, 4900)
 
-
-if __(false) {}
