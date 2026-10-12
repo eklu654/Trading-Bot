@@ -1,0 +1,74 @@
+name: Adaptive LEAPS Data Coverage Audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-leaps-data-coverage
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+
+      - name: Install dependencies
+        run: python -m pip install -r research/requirements.txt
+
+      - name: Download SPY EOD chains (2008-2025)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/options/spy
+          for year in $(seq 2008 2025); do
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -o "data/options/spy/options_${year}.parquet" \
+              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/options_${year}.parquet"
+          done
+          curl -fsSL --retry 3 --retry-delay 2 \
+            -o data/options/spy/underlying_prices.parquet \
+            "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/spy/underlying_prices.parquet"
+
+      - name: Download QQQ EOD chains (2011-2025)
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/options/qqq
+          for year in $(seq 2011 2025); do
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -o "data/options/qqq/options_${year}.parquet" \
+              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/qqq/options_${year}.parquet"
+          done
+          curl -fsSL --retry 3 --retry-delay 2 \
+            -o data/options/qqq/underlying_prices.parquet \
+            "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/qqq/underlying_prices.parquet"
+
+      - name: Compile audit
+        run: python -m py_compile research/audit_adaptive_leaps_coverage.py
+
+      - name: Profile symbol, DTE, delta and quote quality
+        run: |
+          python research/audit_adaptive_leaps_coverage.py \
+            --spy-source "data/options/spy/options_*.parquet" \
+            --qqq-source "data/options/qqq/options_*.parquet" \
+            --out-dir artifacts/adaptive_leaps_coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-leaps-data-coverage
+          path: artifacts/adaptive_leaps_coverage/
+          if-no-files-found: error
