@@ -128,3 +128,11 @@ The project remains research/paper-trading only. Historical results do not estab
 
 - **Final LEAPS data audit rerun (2026-10-12):** [run 38228020889](https://github.com/eklu654/Trading-Bot/actions/runs/38228020889) completed with success. Downloaded and inspected artifact [11737980120](https://github.com/eklu654/Trading-Bot/actions/runs/38228020889/artifacts/11737980120): 35 source-file SHA-256 entries; zero duplicate candidate-key groups across SPY/QQQ; 100% positive underlying-price joins for every audited year; corrected candidate availability SPY 270/365/540 DTE = 99.98%/93.60%/67.28%, QQQ = 99.84%/78.05%/43.95%.
 - **Workflow efficiency fix:** separated fast lifecycle tests from the historical data-download workflow. The unit test workflow is responsible for lifecycle code/tests; the heavy data workflow now runs only when its own workflow or data-audit scripts/requirements change. The validation run for that workflow edit, [38228175170](https://github.com/eklu654/Trading-Bot/actions/runs/38228175170), completed successfully. Future lifecycle code/test edits use the fast unit workflow rather than re-downloading 35 historical Parquet files.
+
+
+### 2026-10-12 — LEAPS chronological replay work (in progress)
+- Implemented `research/adaptive_leaps_replay.py` and six synthetic replay tests; added `research/run_adaptive_leaps_replay.py` for DuckDB/Parquet source integration.
+- Causal convention: decide from completed date t; earliest execution is next available observation; buy at ask, sell/mark at bid. Missing exit quote retains the position; invalid terminal bid means terminal equity is unavailable, not silently cash.
+- Optional cash gate is separate from theoretical one-contract replay. The first historical result must report both modes or clearly label which was run.
+- CI workflow now compiles the loader and runs lifecycle/replay tests. **Awaiting confirmation of the newly triggered run; no historical P/L result has been produced yet.**
+- Next: verify CI, correct any failures, then run SPY and QQQ separately over pinned source data and audit transaction/ledger invariants before discussing performance.
