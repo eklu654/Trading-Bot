@@ -63,18 +63,23 @@ No future close, future realized volatility, future option Greek, or future chai
 
 Do not choose a risk gate by maximizing full-sample return. Freeze the candidate gate on development data, then validate chronologically and preserve an untouched holdout. Record every activation, deactivation, opening, closing, roll, expiry, assignment proxy, and rejected trade with reason codes.
 
-## 6. Data feasibility: current project evidence
+## 6. Data feasibility: source identified; coverage audit pending
 
-The existing project specification documents a public SPY end-of-day option-chain dataset with yearly Parquet files for 2008–2025, approximately 24.7 million contract-day rows, and fields including bid/ask/mark, volume, open interest, IV, delta, gamma, theta, vega, strike, expiry, type, and underlying price. The documented source is a preservation mirror of a MIT-licensed dataset. The source was originally used for OPTIONS-001, not validated for this LEAPS design.
+The public preservation mirror `anahatsingh-ui/options-dataset-hist` README and directory listings were checked on 2026-10-12. It reports EOD option-chain snapshots (4:00 PM ET) and yearly Parquet files:
+- **SPY:** 2008–2025, 24,681,665 contract-day rows.
+- **QQQ:** 2011–2025, 15,345,882 contract-day rows.
+- Fields include contract_id, symbol, expiration, strike, type, bid/ask/mark, volume, open_interest, date, implied_volatility, delta, gamma, theta, vega, rho, and in-the-money status.
+- The mirror describes the source as a byte-verified preservation copy of Philipp D. Dubach's original MIT-licensed dataset.
 
-The current documentation does **not** establish that QQQ chains are available in the same source, nor that 270–540 DTE calls have sufficient quote/liquidity coverage. These are hard data gates, not assumptions. Next steps:
-1. inspect the dataset schema and available symbols;
-2. count QQQ and SPY rows by year, DTE bucket, call delta bucket, and quote quality;
-3. quantify missing dates, stale/zero bids, spread widths, open interest, and long-DTE coverage;
-4. verify source license, mirror immutability/version, and file hashes;
-5. if QQQ or long-DTE coverage is inadequate, locate an equivalent documented source or explicitly narrow the test. Never synthesize option prices from ETF prices and label them historical observations.
+This confirms that both underlyings exist in the source, but it does **not** yet prove sufficient usable 270–540 DTE call coverage, quote quality, or executable liquidity. The next gate is an empirical profile by year, DTE bucket, call delta bucket, and quote/activity quality.
 
-The existing dataset is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
+A new data audit script and manual GitHub Actions workflow were added:
+- `research/audit_adaptive_leaps_coverage.py`
+- `.github/workflows/adaptive-leaps-data-coverage.yml`
+
+The workflow downloads SPY chains for 2008–2025 and QQQ chains for 2011–2025, profiles contract-day coverage and quote quality, and uploads CSV/JSON reports as an artifact. **The workflow has been committed but has not yet been confirmed executed**; no coverage result is claimed.
+
+The source is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
 
 ## 7. Fill, valuation, and accounting requirements
 
@@ -120,14 +125,14 @@ Do not call the strategy validated unless:
 9. adaptive results beat relevant controls after costs, without the result depending on a small number of hand-selected episodes;
 10. no candidate is promoted solely on in-sample terminal wealth.
 
-## 10. Immediate next implementation steps
+## 10. Next implementation steps
 
-1. Inspect current option dataset schema, source URLs, and GitHub workflow download pattern.
-2. Implement a small data-coverage audit before implementing strategy P/L.
-3. Freeze source hashes and write coverage results for SPY and QQQ by DTE/quote quality.
-4. If coverage passes, implement deterministic one-long-call lifecycle and then short-call overlay state machine.
+1. Run the new data coverage workflow and inspect its artifact.
+2. Fix any schema, runtime, or data-quality issues before strategy coding.
+3. Freeze source file URLs/version and hashes in the coverage report.
+4. If long-DTE coverage passes, implement deterministic one-long-call lifecycle, then the short-call overlay state machine.
 5. Add unit tests for expiry boundaries, short-call buyback/roll accounting, rebound close, missing quotes, no replacement contract, and account-feasibility rejection.
-6. Add an on-demand GitHub Actions workflow only after the runner is reproducible locally/CI and runtime is bounded.
+6. Only after the runner is reproducible and runtime-bounded, expand the matrix and add walk-forward validation.
 
 ## Audit log
 
@@ -136,5 +141,11 @@ Do not call the strategy validated unless:
 - Both QQQ and SPY are in scope.
 - Core concept: long-dated call is normally uncapped; in deteriorating markets the bot sells shorter-dated calls, can repeatedly roll profitable shorts toward a target delta, and can roll out in time when instability persists.
 - Research emphasis: test if dynamic short-call management adds net value after bid/ask costs while preserving rebounds. Rolling is not treated as free profit or automatic risk reduction.
-- Data gate: existing project docs establish SPY EOD options data 2008–2025, but QQQ availability and LEAPS-length coverage remain unverified.
-- No backtest result exists yet. No strategy is selected, approved, or connected to paper/live trading.
+- Initial spec commit: `e491fe4fd994cad85f94ccf2ac08c207f0443a81`.
+
+### 2026-10-12 — Historical source discovery and coverage audit implementation
+- Verified source README lists SPY 2008–2025 (24.68M rows) and QQQ 2011–2025 (15.35M rows), with EOD Greeks/quotes and underlying-price Parquet files.
+- Added `research/audit_adaptive_leaps_coverage.py` (commit `22fa94ebfdaaa22cb6677e6e9aa11b9bcc1f3017`).
+- Added manual-only workflow `.github/workflows/adaptive-leaps-data-coverage.yml` (commit `3a1a87f4e485e304912ca1b2fc1945a4bdb6c3ce`).
+- Workflow execution is not yet confirmed. Do not infer long-DTE coverage or any strategy performance until its artifact is inspected.
+- Next gate: obtain the coverage artifact, then decide whether to implement the replay engine or address data gaps.
