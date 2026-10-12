@@ -40,8 +40,8 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         prior = pd.DataFrame({
             "date": ["2026-10-08", "2026-10-09"],
             "source_canonical_sha256": [EXPECTED_HASH, EXPECTED_HASH],
-            "tqqq_adj_open": [80.23, 81.72],
-            "tqqq_adj_close": [80.23, 81.28],
+            "tqqq_adj_open": [82.3300018311, 81.7200018311],
+            "tqqq_adj_close": [80.2300033569, 81.2799987793],
             "initialization_session": [True, False],
             "b0_signal_close": [1.0, 1.0],
             "f75_overlay_signal_close": [1.0, 1.0],
