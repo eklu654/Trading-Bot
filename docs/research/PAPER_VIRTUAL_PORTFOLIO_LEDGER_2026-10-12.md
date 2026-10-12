@@ -39,3 +39,8 @@ The original “Current boundary” section above describes the state-machine-on
 - Main's paper-readiness record and current session audit: [readiness](https://github.com/eklu654/Trading-Bot/blob/main/docs/03-execution/alpaca-paper-readiness-2026-10-12.md) · [session audit](https://github.com/eklu654/Trading-Bot/blob/main/docs/03-execution/session-audit-2026-10-12-0611z.md).
 
 Next evidence needed is the first scheduled open-market executor result, followed by fill-backed reconciliation and verification that both persisted ledger states reflect broker order/fill status and the completed-session mark. No live trading is authorized.
+
+
+## Schedule correction — 2026-10-12 06:20 UTC
+
+Correction to the integration summary immediately above: the executor cron was changed after the first inspection. Current main schedule is `40 14 * * 1-5` (14:40 UTC), which corresponds to 10:40 a.m. Eastern during daylight time and 09:40 a.m. Eastern during standard time. The post-change push run [38211932599](https://github.com/eklu654/Trading-Bot/actions/runs/38211932599) passed all executor steps on commit `26302e02af2051814b974c17078b8eb546dccde0`; because it was a push event, it was dry-run/reconciliation only and submitted no order. The 12 Actions runs associated with that commit, including the executor and full research-tests job, all completed successfully.
