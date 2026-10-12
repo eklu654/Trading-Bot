@@ -152,3 +152,10 @@ The project remains research/paper-trading only. Historical results do not estab
 - Commit `a7504d7c05f9ea5f6b064a09d12bf12192f40ed5` changes `.github/workflows/adaptive-leaps-replay.yml` to `cancel-in-progress: false`. This prevents a newer run in the same concurrency group from automatically cancelling the active replay.
 - This is a workflow configuration correction only; it does not prove a run was dispatched or completed.
 - Next verification: obtain the actual Actions run ID, inspect job steps/logs, then confirm uploaded artifacts and reconcile transaction ledgers. No performance result is accepted before that evidence exists.
+
+
+### 2026-10-12 — Workflow verification checkpoint
+- Re-fetched current `main` files. Unit workflow SHA: `3f622d0ce4578e12e7f3f6fc2ae22773a6bd22a7`; replay workflow SHA: `5b13be12b0abd482fd57efc93bb05d192aa7c2ba`; runner SHA: `dee7d14634b35eb677e1620ad0552b5e9f5a0d1d`; replay engine SHA: `b22f4b6f7666e707c7a38810f7df1c89fcd312dd`.
+- Confirmed the replay workflow currently has `cancel-in-progress: false`, while the quick unit-test workflow uses `true` (appropriate for superseding fast checks).
+- Available GitHub integration tools in this session can fetch commit status and details for known run/job IDs, but do not expose a repository-wide Actions run listing or workflow-dispatch action. Prior status lookups returned no usable check entries; this is not a passing result.
+- **Do not say “validated” or “tests pass” yet.** Next step needs an actual Actions run ID from the repository's Actions page or a supported run-list/dispatch capability; then fetch job steps/logs, confirm replay artifacts, and audit CSVs.
