@@ -1,0 +1,108 @@
+name: Adaptive LEAPS Chronological Replay
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/adaptive-leaps-replay.yml"
+      - "research/run_adaptive_leaps_replay.py"
+      - "research/adaptive_leaps_replay.py"
+      - "research/adaptive_leaps_lifecycle.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-leaps-replay
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+
+      - name: Install research dependencies
+        run: python -m pip install -r research/requirements.txt
+
+      - name: Download pinned SPY option chains
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/options/spy
+          for year in $(seq 2008 2025); do
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -o "data/options/spy/options_${year}.parquet" \
+              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/spy/options_${year}.parquet"
+          done
+
+      - name: Download pinned QQQ option chains
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/options/qqq
+          for year in $(seq 2011 2025); do
+            curl -fsSL --retry 3 --retry-delay 2 \
+              -o "data/options/qqq/options_${year}.parquet" \
+              "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/qqq/options_${year}.parquet"
+          done
+
+      - name: Record source hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/adaptive_leaps_replay
+          {
+            echo "source_repository=https://github.com/anahatsingh-ui/options-dataset-hist"
+            echo "source_commit=37f6c456fe1a4775c875673fb8ef907d5cd2fd66"
+            sha256sum data/options/spy/*.parquet data/options/qqq/*.parquet
+          } > artifacts/adaptive_leaps_replay/source_sha256.txt
+
+      - name: Compile replay modules and runner
+        run: |
+          python -m py_compile research/adaptive_leaps_lifecycle.py
+          python -m py_compile research/adaptive_leaps_replay.py
+          python -m py_compile research/run_adaptive_leaps_replay.py
+
+      - name: Replay SPY — theoretical one-contract
+        run: |
+          python -m research.run_adaptive_leaps_replay \
+            --symbol SPY --source "data/options/spy/options_*.parquet" \
+            --out-dir artifacts/adaptive_leaps_replay/spy_theoretical
+
+      - name: Replay SPY — $5,000 cash-constrained
+        run: |
+          python -m research.run_adaptive_leaps_replay \
+            --symbol SPY --source "data/options/spy/options_*.parquet" \
+            --out-dir artifacts/adaptive_leaps_replay/spy_cash_5000 --starting-cash 5000 \
+            --enforce-account-cash
+
+      - name: Replay QQQ — theoretical one-contract
+        run: |
+          python -m research.run_adaptive_leaps_replay \
+            --symbol QQQ --source "data/options/qqq/options_*.parquet" \
+            --out-dir artifacts/adaptive_leaps_replay/qqq_theoretical
+
+      - name: Replay QQQ — $5,000 cash-constrained
+        run: |
+          python -m research.run_adaptive_leaps_replay \
+            --symbol QQQ --source "data/options/qqq/options_*.parquet" \
+            --out-dir artifacts/adaptive_leaps_replay/qqq_cash_5000 --starting-cash 5000 \
+            --enforce-account-cash
+
+      - name: Upload replay ledgers and source hashes
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-leaps-chronological-replay
+          path: artifacts/adaptive_leaps_replay/
+          if-no-files-found: error
