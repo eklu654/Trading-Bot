@@ -1,0 +1,49 @@
+name: QQQ Intraday -4.5% Monitor (read-only)
+
+on:
+  schedule:
+    # Poll every five minutes during broad US market hours; broker clock gates execution.
+    - cron: "*/5 13-20 * * 1-5"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/qqq-intraday-monitor.yml"
+      - "research/qqq_intraday_monitor.py"
+      - "research/test_qqq_intraday_monitor.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: qqq-intraday-read-only-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Test and compile read-only monitor
+        run: |
+          python -m py_compile research/qqq_intraday_monitor.py
+          PYTHONPATH=research python research/test_qqq_intraday_monitor.py
+      - name: Poll QQQ price versus last completed close
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+        run: PYTHONPATH=research python research/qqq_intraday_monitor.py --report qqq-intraday-monitor.json
+      - name: Upload poll result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qqq-intraday-monitor
+          path: qqq-intraday-monitor.json
+          if-no-files-found: warn
+          retention-days: 30

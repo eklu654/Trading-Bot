@@ -40,3 +40,9 @@
 - The workflow verified B0/F75 credentials resolve to distinct ACTIVE, unblocked USD paper accounts and persisted only hashed account fingerprints. It then correctly returned `SKIPPED_MARKET_CLOSED` for both portfolios, with no staged intent, no POST, and no order.
 - Persistent states remain $5,000 cash, zero shares, $5,000 virtual equity, mark date 2026-10-09, no pending intent.
 - The next scheduled opportunity is 2026-10-12 at 13:40 UTC. It can submit only to Alpaca's paper endpoint, and only if the latest completed signal/session, account identity, broker position, open-order, and fresh-trade gates all pass. Scheduled market-open submission has not yet been observed.
+
+## QQQ intraday monitoring — read-only interim control (2026-10-12)
+- Added `.github/workflows/qqq-intraday-monitor.yml`, scheduled to poll every five minutes during 13:00–20:59 UTC weekdays. Alpaca's market clock gates actual quote checks; GitHub Actions scheduling is best-effort and can be delayed.
+- The monitor compares the latest QQQ IEX trade with the most recent completed daily close and reports when the move is at or below -4.5%. It rejects stale trades and fails closed when a completed prior close cannot be identified.
+- This is **monitoring only**: it never creates orders, changes B0/F75 targets, or triggers the paper executor. Results are retained as 30-day Actions artifacts.
+- This is not a continuous stream and cannot guarantee capture of every brief intraday breach. A persistent Alpaca market-data stream/service with reconnect handling is the next step for lower-latency detection. Any trading reaction must separately specify whether the -4.5% rule is an intraday trigger or a completed-daily-close signal.
