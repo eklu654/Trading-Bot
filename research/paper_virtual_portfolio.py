@@ -169,7 +169,7 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
     return {
         "portfolio": portfolio, "symbol": SYMBOL, "signal_session": session,
         "target_weight": str(weight), "virtual_equity": str(equity.quantize(Decimal("0.01"))),
-        "target_notional": str(target_notional), "current_qty": str(current_qty),
+        "target_notional": str(target_notional), "reference_price": str(price), "current_qty": str(current_qty),
         "target_qty": str(target_qty), "side": "buy" if delta > 0 else "sell",
         "qty": str(quantity), "client_order_id": client_id,
         "endpoint": "https://paper-api.alpaca.markets", "mode": "PLAN_ONLY_NO_SUBMISSION",
@@ -249,7 +249,8 @@ def reconcile_order(state, broker_order):
     if pending is None:
         raise LedgerSafetyError("no pending intent to reconcile")
     if broker_order is None:
-        pending["submission_state"] = "UNKNOWN"
+        if pending.get("submission_state") not in ("STAGED", "REJECTED"):
+            pending["submission_state"] = "UNKNOWN"
         return out
     if broker_order.get("client_order_id") != pending["client_order_id"]:
         raise LedgerSafetyError("broker order client ID does not match staged intent")
