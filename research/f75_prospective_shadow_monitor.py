@@ -86,6 +86,14 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
         raise RuntimeError("Shadow state tail date does not match ledger")
     if state.get("mode") != "SHADOW_ONLY_NO_ORDERS":
         raise RuntimeError("Shadow state mode is not shadow-only")
+    numeric = prior.select_dtypes(include=[np.number])
+    if not np.isfinite(numeric.to_numpy(dtype=float)).all():
+        raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
+    if not prior["b0_exposure"].between(0.0, 1.0).all() or not prior["f75_exposure"].between(0.0, 1.0).all():
+        raise RuntimeError("Existing shadow ledger contains invalid realized exposure")
+    initialized = prior["initialization_session"].astype(bool).to_numpy()
+    if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
+        raise RuntimeError("Shadow ledger initialization marker is invalid")
     # Treat manifest counters as integrity fields, not merely descriptive metadata.
     # This catches stale or partially migrated state even when the ledger hash matches.
     if type(state.get("sessions_appended_this_run")) is not int or state["sessions_appended_this_run"] < 0:
@@ -97,14 +105,6 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
         raise RuntimeError("Shadow state return-bearing session count mismatch")
     if state.get("initialization_date") != dates.iloc[0].date().isoformat():
         raise RuntimeError("Shadow state initialization date mismatch")
-    numeric = prior.select_dtypes(include=[np.number])
-    if not np.isfinite(numeric.to_numpy(dtype=float)).all():
-        raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
-    if not prior["b0_exposure"].between(0.0, 1.0).all() or not prior["f75_exposure"].between(0.0, 1.0).all():
-        raise RuntimeError("Existing shadow ledger contains invalid realized exposure")
-    initialized = prior["initialization_session"].astype(bool).to_numpy()
-    if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
-        raise RuntimeError("Shadow ledger initialization marker is invalid")
     b0_signal = prior["b0_signal_close"].to_numpy(dtype=float)
     overlay_state = prior["f75_overlay_signal_close"].to_numpy(dtype=float)
     f75_signal = prior["f75_signal_close"].to_numpy(dtype=float)
