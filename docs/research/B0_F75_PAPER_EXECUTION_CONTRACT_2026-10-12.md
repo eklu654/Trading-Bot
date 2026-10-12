@@ -6,12 +6,12 @@
 |---|---|---|
 | Instrument | TQQQ | TQQQ |
 | Direction | Long or flat | Long or flat |
-| Virtual allocation | $5,000 | $5,000 |
+| Initial virtual allocation | $5,000 | $5,000 |
 | Target when baseline signal is flat | 0% | 0% |
 | Target when baseline is active | 100% | 75% or 100%, per frozen overlay state |
 | Purpose | Control portfolio | Experimental comparison |
 
-F75 remains an overlay on B0 eligibility. It does not independently enter when B0 is flat. The virtual allocation is separate from whatever default cash/equity Alpaca displays for a paper account.
+F75 remains an overlay on B0 eligibility. It does not independently enter when B0 is flat. The $5,000 is initial virtual capital, not a fixed daily notional cap: target notional must use the evolving virtual portfolio equity. The virtual equity is separate from whatever default cash/equity Alpaca displays for a paper account. Until a fill-backed virtual-equity ledger exists, the shadow equity is only a reference for diagnostics, not sufficient authority for order submission.
 
 ## Current state, verified 2026-10-12
 
