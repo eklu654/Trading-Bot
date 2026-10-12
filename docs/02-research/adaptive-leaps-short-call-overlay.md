@@ -63,7 +63,7 @@ No future close, future realized volatility, future option Greek, or future chai
 
 Do not choose a risk gate by maximizing full-sample return. Freeze the candidate gate on development data, then validate chronologically and preserve an untouched holdout. Record every activation, deactivation, opening, closing, roll, expiry, assignment proxy, and rejected trade with reason codes.
 
-## 6. Data feasibility: source identified; coverage audit pending
+## 6. Data feasibility: coverage verified; contract integrity audit running
 
 The public preservation mirror `anahatsingh-ui/options-dataset-hist` README and directory listings were checked on 2026-10-12. It reports EOD option-chain snapshots (4:00 PM ET) and yearly Parquet files:
 - **SPY:** 2008–2025, 24,681,665 contract-day rows.
@@ -78,6 +78,8 @@ A new data audit script and manual GitHub Actions workflow were added:
 - `.github/workflows/adaptive-leaps-data-coverage.yml`
 
 The workflow downloads SPY chains for 2008–2025 and QQQ chains for 2011–2025, profiles contract-day coverage and quote quality, and uploads CSV/JSON reports as an artifact. **Execution verified 2026-10-12:** [run 38225648878](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878) completed successfully and uploaded [artifact 11736311901](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878/artifacts/11736311901). The report found 5,792,357 SPY and 3,089,957 QQQ contract-day observations at DTE >=270; 4,455,633 SPY (76.9%) and 2,275,977 QQQ (73.7%) also passed the report's valid-quote-plus-activity rule. These are contract-day counts, not proof of executable fills. Full results are in `docs/02-research/adaptive-leaps-data-coverage-results-2026-10-12.md`.
+
+A follow-up analysis found uneven annual coverage and material spread variation in the 270–539 DTE / 0.60–0.84 absolute-delta call region. See `docs/02-research/adaptive-leaps-yearly-coverage-review-2026-10-12.md`. A contract-integrity audit has now been added to the same workflow to check duplicate candidate keys and same-date underlying-price joins; its result is pending the run triggered by commit `edfdb97868d9adfad2768088b1359f6495daa8c2`.
 
 The source is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
 
@@ -127,11 +129,11 @@ Do not call the strategy validated unless:
 
 ## 10. Next implementation steps
 
-1. Review the successful coverage artifact by year, DTE, delta, and quote-quality bucket; investigate thin/weak segments rather than relying on aggregate coverage alone.
+1. Coverage execution and year-by-year review are complete; inspect the contract-integrity run and fix any schema/join/duplicate failures it exposes.
 2. Freeze source file URLs/version and hashes in the coverage report (the current report does not yet record source hashes).
 3. Implement deterministic one-long-call lifecycle first, with causal selection and conservative bid/ask valuation; then add the short-call overlay state machine.
-4. Add unit tests for expiry boundaries, missing/crossed/zero quotes, stale/low-activity rows, contract selection ties, early close/expiry, and short-call rebound exits.
-5. Preserve the current short-call rebound behavior as frozen: on rebound/unwind, close the short call rather than automatically selling another; only re-open on a fresh risk activation after reset.ies, short-call buyback/roll accounting, rebound close, missing quotes, no replacement contract, and account-feasibility rejection.
+4. Add unit tests for expiry boundaries, missing/crossed/zero quotes, stale/low-activity rows, contract selection ties, early close/expiry, short-call rebound exits, missing replacements, and account-feasibility rejection.
+5. Preserve the current short-call rebound behavior as frozen: on rebound/unwind, close the short call rather than automatically selling another; only re-open on a fresh risk activation after reset.
 6. Only after the runner is reproducible and runtime-bounded, expand the matrix and add walk-forward validation.
 
 ## Audit log
