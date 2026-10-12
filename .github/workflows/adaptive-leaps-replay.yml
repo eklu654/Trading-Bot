@@ -15,7 +15,7 @@ permissions:
 
 concurrency:
   group: adaptive-leaps-replay
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   replay:
