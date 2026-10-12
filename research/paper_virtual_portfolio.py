@@ -194,6 +194,37 @@ def stage_intent(state, intent):
     validate_state(out)
     return out
 
+
+def mark_submission_attempting(state):
+    """Persist this transition before POST; a restarted run must never auto-retry it."""
+    out = deepcopy(state)
+    validate_state(out)
+    pending = out.get("pending_intent")
+    if pending is None or pending.get("submission_state") != "STAGED":
+        raise LedgerSafetyError("only a staged intent can enter submission")
+    pending["submission_state"] = "SUBMITTING"
+    validate_state(out)
+    return out
+
+def abort_unsubmitted_intent(state, reason):
+    """Clear an intent only when caller can prove POST was never attempted."""
+    out = deepcopy(state)
+    validate_state(out)
+    pending = out.get("pending_intent")
+    if pending is None or pending.get("submission_state") != "SUBMITTING":
+        raise LedgerSafetyError("only a submitting intent can be safely aborted")
+    out["last_terminal_order"] = {
+        "client_order_id": pending["client_order_id"],
+        "broker_order_id": None,
+        "status": "aborted_before_submit",
+        "signal_session": pending.get("signal_session"),
+        "target_weight": pending.get("target_weight"),
+        "reason": str(reason)[:120],
+    }
+    out["pending_intent"] = None
+    validate_state(out)
+    return out
+
 def mark_submission_outcome(state, outcome, broker_order_id=None):
     out = deepcopy(state)
     validate_state(out)
