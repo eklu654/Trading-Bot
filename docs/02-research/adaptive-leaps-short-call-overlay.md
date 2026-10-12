@@ -149,3 +149,9 @@ Do not call the strategy validated unless:
 - Added manual-only workflow `.github/workflows/adaptive-leaps-data-coverage.yml` (commit `3a1a87f4e485e304912ca1b2fc1945a4bdb6c3ce`).
 - Workflow execution is not yet confirmed. Do not infer long-DTE coverage or any strategy performance until its artifact is inspected.
 - Next gate: obtain the coverage artifact, then decide whether to implement the replay engine or address data gaps.
+
+### 2026-10-12 — Explicit short-call rebound behavior frozen
+- If deterioration persists and the overlay remains enabled, the short call may be managed/rolled only under the predeclared profit, delta, and replacement-quality rules; a roll is a separate close plus open and must record net debit/credit.
+- If the market improves and the rebound/unwind rule fires, close the existing short call using the conservative ask-side assumption. Do **not** automatically sell a replacement call just because the long LEAPS remains open or the prior risk regime was recently active.
+- Re-entry requires a fresh, causal risk activation after the unwind/reset condition; no same-cycle immediate re-selling. If quotes, liquidity, or account feasibility fail, log the rejection and leave the overlay inactive rather than forcing a roll.
+- This is a management-rule clarification only, not a claim that the strategy has been backtested or validated. The data-coverage workflow still needs to run and its artifact must be inspected before the replay engine is built.
