@@ -101,9 +101,9 @@ def main() -> int:
                 count(*) FILTER (WHERE valid_quote) AS valid_quote_rows,
                 count(*) FILTER (WHERE valid_quote AND has_activity) AS valid_quote_active_rows,
                 count(*) FILTER (WHERE valid_quote AND has_activity AND iv > 0) AS usable_iv_rows,
-                count(*) FILTER (WHERE bid = 0 OR ask = 0 OR mark = 0) AS any_zero_quote_rows,
+                count(*) FILTER (WHERE bid = 0 OR ask = 0 OR mark = 0) AS any_zero_quote_rows,\n                count(*) FILTER (WHERE bid IS NULL OR ask IS NULL OR mark IS NULL) AS missing_quote_rows,
                 count(*) FILTER (WHERE ask < bid) AS crossed_quote_rows,
-                count(*) FILTER (WHERE NOT valid_quote) AS invalid_quote_rows,
+                count(*) FILTER (WHERE valid_quote IS NOT TRUE) AS invalid_quote_rows,
                 median((ask - bid) / NULLIF((ask + bid) / 2.0, 0))
                     FILTER (WHERE valid_quote AND (ask + bid) > 0) AS median_relative_spread,
                 median(dte) AS median_dte,
