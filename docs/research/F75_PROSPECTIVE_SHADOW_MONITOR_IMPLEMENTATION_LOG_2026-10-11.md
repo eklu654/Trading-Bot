@@ -48,3 +48,12 @@
 - Artifact download, compile, all three explicit guardrail tests, and shadow-monitor execution passed. The monitor safely found no completed session after the frozen 2026-10-07 cutoff and left the ledger unchanged. This is an expected Sunday no-op, not evidence of a forward-return result.
 - The monitor is implemented and its no-new-session path is validated. Real forward-session append, cost/equity progression, and persistent ledger commit remain to be verified after the next completed market session.
 - Schedule caveat remains: scheduled execution is not active while this workflow exists only on the research branch. The default-branch integration step is intentionally not performed here; no changes have been made to `main`.
+
+
+## 2026-10-12 03:27 UTC — Alpaca paper account preflight
+
+- Added default-branch workflow `.github/workflows/alpaca-paper-portfolio-preflight.yml` and execution readiness note `docs/03-execution/alpaca-paper-readiness-2026-10-12.md`.
+- Credential check [38199438537](https://github.com/eklu654/Trading-Bot/actions/runs/38199438537) passed for B0 and F75. Follow-up read-only preflight [38199816562](https://github.com/eklu654/Trading-Bot/actions/runs/38199816562) also passed for both.
+- Verified per account: ACTIVE, USD, not trading-blocked, not account-blocked, zero positions, zero open orders, valid broker clock timestamp; market was closed at the check time.
+- Preflight only used GET requests and printed sanitized metadata. No order was submitted. Do not interpret the preflight as proof of an active strategy executor.
+- Next implementation gate: frozen signal-to-target mapping, $5,000 virtual sleeve sizing independent of Alpaca's default account NLV, client-order-ID idempotency, broker reconciliation, and fail-closed data/session checks. B0 remains control; F75 remains frozen experimental overlay. Continue the prospective ledger in parallel; 252 return-bearing sessions is an efficacy-review gate, not a start gate for diagnostic paper tracking.
