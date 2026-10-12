@@ -80,7 +80,10 @@ def replay_long_call(
     for q in source:
         by_date.setdefault(q.observation_date, []).append(q)
         if q.contract_id:
-            by_key[(q.observation_date, q.contract_id)] = q
+            key = (q.observation_date, q.contract_id)
+            if key in by_key:
+                raise ValueError(f"duplicate quote key for {q.observation_date} / {q.contract_id}")
+            by_key[key] = q
     dates = sorted(by_date)
     if not dates:
         return ReplayResult((), (), starting_cash, starting_cash, True, 0)
