@@ -38,6 +38,14 @@ jobs:
       - name: Install dependencies
         run: python -m pip install -r research/requirements.txt
 
+      - name: Compile audits
+        run: |
+          python -m py_compile research/audit_adaptive_leaps_coverage.py
+          python -m py_compile research/audit_adaptive_leaps_contract_integrity.py
+          python -m py_compile research/audit_adaptive_leaps_candidate_selection.py
+          python -m py_compile research/adaptive_leaps_lifecycle.py
+          python -m unittest discover -s tests -p "test_adaptive_leaps_lifecycle.py" -v
+
       - name: Download SPY EOD chains (2008-2025)
         shell: bash
         run: |
@@ -76,14 +84,6 @@ jobs:
             echo "source_commit=37f6c456fe1a4775c875673fb8ef907d5cd2fd66"
             sha256sum data/options/spy/*.parquet data/options/qqq/*.parquet
           } > artifacts/adaptive_leaps_integrity/source_sha256.txt
-
-      - name: Compile audits
-        run: |
-          python -m py_compile research/audit_adaptive_leaps_coverage.py
-          python -m py_compile research/audit_adaptive_leaps_contract_integrity.py
-          python -m py_compile research/audit_adaptive_leaps_candidate_selection.py
-          python -m py_compile research/adaptive_leaps_lifecycle.py
-          python -m unittest discover -s tests -p "test_adaptive_leaps_lifecycle.py" -v
 
       - name: Profile symbol, DTE, delta and quote quality
         run: |
