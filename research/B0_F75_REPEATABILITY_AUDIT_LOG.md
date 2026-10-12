@@ -248,3 +248,11 @@
 - Attribution script output reports 274 B0 defensive sessions vs 473 F75 defensive sessions and F75 average exposure 92.27% vs B0 93.46%. Preserve interpretation with the cost sensitivity and drawdown results; do not characterize this as a robust strategy advantage from one historical reconstruction.
 - Monitor source review confirmed `exclude_current_session` uses the New York calendar date, excludes today's possibly incomplete bar, and has tests for both current-date exclusion and empty input. Frozen input, historical ledger rows, strategy thresholds, and broker/order scope remain unchanged.
 - Current state is still two ledger rows / one return-bearing session, last observation 2026-10-09, mode `SHADOW_ONLY_NO_ORDERS`. The next weekday scheduler run should be checked for new genuine sessions and for a real append/push; do not add synthetic rows to force write-permission verification.
+
+
+## 2026-10-12 00:04 UTC — state-counter schema clarified
+
+- Follow-up inspection found the persisted state manifest still used the legacy ambiguous `sessions_appended: 2` field, while the current monitor emits separate per-run and cumulative counters. This could incorrectly imply two rows were appended by the latest invocation.
+- Migrated only `data/research/f75_shadow_state.json` to `sessions_appended_this_run: 0`, `ledger_rows_total: 2`, `return_bearing_sessions_total: 1`, and `initialization_date: 2026-10-08`. Preserved the exact existing ledger SHA-256 `5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e`, canonical hash, last observation, frozen cutoff, costs, and `SHADOW_ONLY_NO_ORDERS` mode. No ledger row or strategy rule changed.
+- State schema correction commit: `e52f74d906e3831ea6bab5427c15d1c69da5c1b9`. Because this is a research-branch push, CI should validate the monitor against the corrected manifest; inspect the triggered run before treating it as passed.
+- Full validation results recorded above: latest monitor run [38186341127](https://github.com/eklu654/Trading-Bot/actions/runs/38186341127) succeeded with 25/25 tests; attribution run [38186337497](https://github.com/eklu654/Trading-Bot/actions/runs/38186337497) succeeded and uploaded artifact 11720190543. These do not yet prove the scheduler's conditional automated push because no new eligible market session was appended.
