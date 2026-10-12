@@ -42,10 +42,9 @@ def main() -> int:
         targets_sql = ", ".join(f"({dte}, {delta})" for dte, delta in TARGETS)
         sql = f"""
         WITH targets(target_dte, target_delta) AS (VALUES {targets_sql}),
-        underlying_dates AS (
+        option_dates AS (
           SELECT DISTINCT CAST(date AS DATE) AS obs_date
-          FROM {pq(underlying_path)}
-          WHERE close > 0
+          FROM {pq(options_path)}
         ),
         options AS (
           SELECT CAST(date AS DATE) AS obs_date,
@@ -88,7 +87,7 @@ def main() -> int:
         )
         SELECT '{symbol}' AS symbol, year(u.obs_date) AS year,
                t.target_dte, t.target_delta,
-               count(*) AS underlying_observation_dates,
+               count(*) AS option_observation_dates,
                count(s.obs_date) AS dates_with_candidate,
                count(*) - count(s.obs_date) AS dates_without_candidate,
                round(100.0 * count(s.obs_date) / NULLIF(count(*), 0), 3) AS candidate_date_coverage_pct,
@@ -97,7 +96,7 @@ def main() -> int:
                median(s.relative_spread) AS median_selected_relative_spread,
                median(s.dte_error) AS median_dte_error,
                median(s.delta_error) AS median_delta_error
-        FROM underlying_dates u CROSS JOIN targets t
+        FROM option_dates u CROSS JOIN targets t
         LEFT JOIN selected s ON s.obs_date = u.obs_date
           AND s.target_dte = t.target_dte AND s.target_delta = t.target_delta
         GROUP BY ALL ORDER BY year, target_dte, target_delta
@@ -116,6 +115,7 @@ def main() -> int:
             "ranking": "smallest DTE error, then delta error, then relative spread, higher open interest, higher volume, earlier expiration, lower strike",
         },
         "limitations": [
+            "Denominator is unique option-chain observation dates, not all calendar dates in the underlying-price file.",
             "This measures whether a deterministic candidate exists on a date, not whether an order fills.",
             "Target grid and +/-45 DTE window are the predeclared research grid, not optimized thresholds.",
             "A fixed entry calendar and long-leg replacement/exit rule must be frozen before any P/L replay.",
