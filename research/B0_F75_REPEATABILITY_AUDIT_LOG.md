@@ -327,3 +327,12 @@
 
 - The current-session guard intentionally excludes the New York calendar date on every invocation, even after market close. Therefore the Monday 2026-10-12 scheduled run may still be a no-op for that day's bar; if Yahoo data is complete and aligned, the Tuesday 2026-10-13 run is the first scheduled opportunity to append the 2026-10-12 observation.
 - Do not interpret a Monday no-op as a failure. On the next run, verify that only completed sessions newer than 2026-10-09 are appended, that prior rows remain byte-for-byte unchanged, and that the state counters/checksum match. A real append should naturally exercise the conditional commit/push branch; never synthesize a row to trigger it.
+
+## 2026-10-12 02:34 UTC — diagnostic paper portfolios authorized to start immediately
+
+- Decision correction: the prior proposed wait until the week of Oct 19 conflated permission to simulate portfolios with evidence needed to promote a strategy. These are separate milestones; no prospective-evidence waiting period is needed to begin simulated tracking.
+- Start the **diagnostic paper-trading comparison immediately**, using the existing append-only prospective daily ledger as the auditable daily source for B0 and frozen F75 simulated equity at 0/25/50 bp costs. Both portfolios use identical dates, $5,000 initial equity, the same actual adjusted TQQQ prices, and next-session exposure from close signals. No broker connectivity or real orders.
+- This is an exploratory paper simulation, not a strategy promotion and not a waiver of the preregistered review gates. Keep B0 as control; keep F75 rules frozen. Historical attribution, execution/accounting checks, and daily data-integrity checks continue in parallel.
+- Current ledger is initialized 2026-10-08 and contains one return-bearing observation through 2026-10-09. No claim is made that a new 2026-10-12 market observation exists yet. The first eligible post-weekend observation can only be appended after a completed market session and a subsequent run that excludes the current date.
+- First immediate actions: retain the current daily workflow, verify the next completed-session append, and review the resulting B0/F75 daily equity/cost series. Do not wait for 252 sessions to start simulation; the 252-session plus active-overlay-event threshold remains a gate for a formal efficacy review, not for maintaining diagnostic paper portfolios.
+
