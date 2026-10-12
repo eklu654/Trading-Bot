@@ -198,3 +198,11 @@ Do not call the strategy validated unless:
 ### 2026-10-12 — Audit workflow efficiency validation
 - After separating unit tests from the data workflow triggers, validation run [38228175170](https://github.com/eklu654/Trading-Bot/actions/runs/38228175170) completed successfully. All audit steps passed and the report artifact uploaded.
 - Future lifecycle-module or test-only changes now trigger the fast unit-test workflow, not the expensive full-history data download/audit. The data workflow still runs on changes to itself, the coverage/integrity/candidate audit scripts, or requirements.
+
+
+### 2026-10-12 — Chronological long-call replay implementation started
+- Added `research/adaptive_leaps_replay.py`: one-position chronological ledger, next-observation-only execution, ask-side entries, bid-side exits/marks, retry on missing exit quote, explicit rejected orders, optional $5,000 cash gate, and unavailable terminal equity when an open position has no valid bid mark.
+- Added `tests/test_adaptive_leaps_replay.py` with synthetic chronology, quote-side, affordability, retry, and terminal-mark cases. The expiry-buffer test uses a 31-DTE target solely to exercise the transition quickly; this is not a strategy parameter recommendation.
+- Added `research/run_adaptive_leaps_replay.py`, a DuckDB/Parquet runner that identifies contracts passing the frozen entry gate and retains their available quote histories; it writes daily ledger, transactions, and summary JSON.
+- Updated `.github/workflows/adaptive-leaps-unit-tests.yml` to compile the runner and execute lifecycle plus replay tests.
+- **Evidence status:** implementation committed; the new CI result and real historical replay are not yet verified. Do not quote a P/L or claim the backtest is complete until both are checked.
