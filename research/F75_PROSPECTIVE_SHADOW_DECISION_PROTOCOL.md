@@ -68,3 +68,15 @@ These are screening criteria, not a guarantee of future performance and not an a
 - Two rows exist, but only one is a return-bearing session. The overlay was inactive on both dates, so they provide no efficacy evidence.
 - Minimum evidence requirements are not met. **No performance decision is permitted yet.**
 - Historical analysis remains mixed: full-period 25 bp terminal equity is modestly higher for F75, and maximum drawdown improves by about 5.8 percentage points, but historical return advantage is concentrated in 2022–2024 and weakens substantially at 50 bp costs.
+
+## Immediate diagnostic paper portfolios (authorized 2026-10-12)
+
+The strict prospective evidence gates above govern a **formal efficacy review and any promotion decision**. They do not prohibit running diagnostic paper portfolios in parallel. Start the B0-versus-F75 simulated comparison immediately; do not wait for 252 observations to begin recording it.
+
+- Use the existing append-only daily ledger as the auditable paper portfolio record; its B0 and F75 equity series at 0/25/50 bp are simulated balances, not broker balances.
+- Both portfolios begin from the same $5,000 baseline and use the same completed-session prices and causal next-session exposure convention.
+- F75 stays frozen. B0 remains the control. Do not tune either rule based on the paper results.
+- No real orders, broker connection, or live capital is authorized.
+- Continue historical mechanism attribution and data-integrity checks in parallel. The first market observation is appended only after the session is complete and the monitor's current-session exclusion allows it.
+- The 252-session and overlay-active-event requirements remain in force for a formal performance review. Paper-trading activity itself does not satisfy those requirements or establish efficacy.
+
