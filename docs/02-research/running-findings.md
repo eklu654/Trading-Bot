@@ -146,3 +146,9 @@ The project remains research/paper-trading only. Historical results do not estab
 - **Replay edge-case hardening:** missing quote dates now advance the held contract's calendar DTE while leaving its mark unavailable; candidate selection fails closed if contract identity is missing. Synthetic tests cover a missing exit quote and retry. The replay workflow uses a concurrency group that keeps the newest run active. Verification is still pending.
 
 - **Duplicate-key guard:** replay now raises on duplicate `(observation_date, contract_id)` rows instead of silently overwriting one quote. A dedicated synthetic test was added. The suite now contains eight lifecycle tests and eight replay tests; successful CI confirmation is still pending.
+
+
+### 2026-10-12 — Replay concurrency correction
+- Commit `a7504d7c05f9ea5f6b064a09d12bf12192f40ed5` changes `.github/workflows/adaptive-leaps-replay.yml` to `cancel-in-progress: false`. This prevents a newer run in the same concurrency group from automatically cancelling the active replay.
+- This is a workflow configuration correction only; it does not prove a run was dispatched or completed.
+- Next verification: obtain the actual Actions run ID, inspect job steps/logs, then confirm uploaded artifacts and reconcile transaction ledgers. No performance result is accepted before that evidence exists.
