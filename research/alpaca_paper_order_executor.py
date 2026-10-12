@@ -55,6 +55,40 @@ def post_order(payload,key,secret):
     except HTTPError as exc: raise PaperPostError(exc.code) from None
     except (URLError,TimeoutError,json.JSONDecodeError,UnicodeDecodeError): raise PaperPostError() from None
 
+
+def account_fingerprint(account_id):
+    value=str(account_id or "").strip()
+    if not value: raise ExecutorBlocked("paper account identity is missing")
+    return sha256(value.encode("utf-8")).hexdigest()
+
+def verify_accounts(a):
+    accounts={}
+    fingerprints={}
+    for portfolio in ("b0","f75"):
+        key,secret=credentials(portfolio)
+        account=get_json(PAPER_URL+"/v2/account",key,secret)
+        if account.get("status")!="ACTIVE" or account.get("account_blocked") is not False or account.get("trading_blocked") is not False:
+            raise ExecutorBlocked(f"{portfolio.upper()} paper account is not ACTIVE and unblocked")
+        if account.get("currency")!="USD": raise ExecutorBlocked(f"{portfolio.upper()} paper account currency is not USD")
+        fp=account_fingerprint(account.get("id"))
+        accounts[portfolio]=account
+        fingerprints[portfolio]=fp
+    if fingerprints["b0"]==fingerprints["f75"]:
+        raise ExecutorBlocked("B0 and F75 credentials resolve to the same paper account")
+    for portfolio,path in (("b0",a.state_b0),("f75",a.state_f75)):
+        state=json.loads(Path(path).read_text(encoding="utf-8"))
+        validate_state(state)
+        if state.get("portfolio")!=portfolio: raise ExecutorBlocked("state portfolio identity mismatch")
+        prior=state.get("broker_account_fingerprint")
+        if prior and prior!=fingerprints[portfolio]:
+            raise ExecutorBlocked(f"{portfolio.upper()} paper account identity changed")
+        state["broker_account_fingerprint"]=fingerprints[portfolio]
+        write_state(path,state)
+    emit(a.report,{"status":"DISTINCT_PAPER_ACCOUNTS_VERIFIED","accounts_distinct":True,
+        "b0_account_active":True,"f75_account_active":True,"currency":"USD",
+        "account_fingerprints_persisted":True,
+        "note":"Raw account IDs and credentials are not logged."})
+
 def order_payload(intent):
     if intent.get("endpoint")!=PAPER_URL or intent.get("mode")!="PLAN_ONLY_NO_SUBMISSION":
         raise ExecutorBlocked("intent is not explicitly paper-only")
@@ -102,6 +136,8 @@ def broker_context(portfolio,state,key,secret,now,allow_pending_client_id=None):
     if account.get("status")!="ACTIVE" or account.get("account_blocked") is not False or account.get("trading_blocked") is not False:
         raise ExecutorBlocked("paper account is not ACTIVE and unblocked")
     if account.get("currency")!="USD": raise ExecutorBlocked("paper account currency is not USD")
+    fp=account_fingerprint(account.get("id"))
+    if state.get("broker_account_fingerprint")!=fp: raise ExecutorBlocked("paper account identity does not match durable portfolio state")
     if clock.get("is_open") is not True: return None
     positions=get_json(PAPER_URL+"/v2/positions",key,secret)
     opens=get_json(PAPER_URL+"/v2/orders?"+urlencode({"status":"open","limit":"500","direction":"desc"}),key,secret)
@@ -253,14 +289,17 @@ def submit(a):
 
 def main():
     p=argparse.ArgumentParser()
-    p.add_argument("--mode",choices=("prepare","arm","submit"),required=True)
-    p.add_argument("--portfolio",choices=("b0","f75"),required=True)
+    p.add_argument("--mode",choices=("verify-accounts","prepare","arm","submit"),required=True)
+    p.add_argument("--portfolio",choices=("b0","f75"),required=False)
+    p.add_argument("--state-b0",default=""); p.add_argument("--state-f75",default="")
     p.add_argument("--state",required=True); p.add_argument("--report",required=True)
     p.add_argument("--ledger",default=""); p.add_argument("--manifest",default="")
     p.add_argument("--request",default=""); p.add_argument("--permit",default="")
     a=p.parse_args()
+    if a.mode!="verify-accounts" and not a.portfolio: p.error("--portfolio is required for this mode")
     try:
-        if a.mode=="prepare": prepare(a)
+        if a.mode=="verify-accounts": verify_accounts(a)
+        elif a.mode=="prepare": prepare(a)
         elif a.mode=="arm": arm(a)
         else: submit(a)
     except Exception as exc:

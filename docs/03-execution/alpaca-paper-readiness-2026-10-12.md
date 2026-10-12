@@ -31,3 +31,5 @@
 - Added a 0.5% buy-side virtual-cash reserve, explicit reference-price storage, and a terminal-order rejection reconciliation path.
 - Added a second open-order lookup immediately before POST so an order that appears after the first client-ID lookup is reconciled rather than duplicated.
 - The current executor push-trigger is dry-run only. Scheduled runs alone can create the ephemeral submission permit and POST to the paper endpoint.
+
+- Added an account-identity gate before order planning: B0 and F75 credentials must resolve to distinct paper account IDs, and a SHA-256 fingerprint (never the raw ID) is persisted in each virtual ledger. Every executor run and subsequent ledger sync checks that the credential still resolves to the same account.

@@ -1,5 +1,5 @@
 import unittest
-from alpaca_paper_order_executor import order_payload, ExecutorBlocked, PAPER_URL
+from alpaca_paper_order_executor import order_payload, account_fingerprint, ExecutorBlocked, PAPER_URL
 
 class PaperOrderPayloadTests(unittest.TestCase):
     def intent(self, **changes):
@@ -7,6 +7,13 @@ class PaperOrderPayloadTests(unittest.TestCase):
            "side":"buy","qty":"61.450","client_order_id":"tb-0123456789abcdef0123456789abcdef"}
         x.update(changes)
         return x
+    def test_account_fingerprint_is_stable_and_not_raw_id(self):
+        a=account_fingerprint("account-uuid-b0")
+        self.assertEqual(a,account_fingerprint("account-uuid-b0"))
+        self.assertNotEqual(a,account_fingerprint("account-uuid-f75"))
+        self.assertNotIn("account-uuid-b0",a)
+        with self.assertRaisesRegex(ExecutorBlocked,"identity is missing"):
+            account_fingerprint("")
     def test_payload_is_paper_market_day_order(self):
         self.assertEqual(order_payload(self.intent()),{
             "symbol":"TQQQ","qty":"61.450","side":"buy","type":"market",

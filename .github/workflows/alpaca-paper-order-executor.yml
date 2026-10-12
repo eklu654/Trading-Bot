@@ -48,6 +48,14 @@ jobs:
           python -m py_compile research/paper_virtual_portfolio.py research/alpaca_paper_order_executor.py
           PYTHONPATH=research python research/test_paper_virtual_portfolio.py
           PYTHONPATH=research python research/test_alpaca_paper_order_executor.py
+      - name: Verify distinct paper account identities and persist fingerprints
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        run: |
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode verify-accounts --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --report paper-account-identity.json
       - name: Prepare B0/F75 intents (schedule-only order enable)
         env:
           ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }}

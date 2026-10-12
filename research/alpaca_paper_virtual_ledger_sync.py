@@ -7,6 +7,7 @@ paper-execution-ledger branch only after both portfolio reconciliations pass.
 from __future__ import annotations
 import argparse
 from datetime import datetime, timezone, date, timedelta
+from hashlib import sha256
 from decimal import Decimal
 import json
 import os
@@ -90,6 +91,12 @@ def run_sync(portfolio, state_path, report_path):
         raise SyncBlocked("account is not ACTIVE and unblocked")
     if account.get("currency") != "USD":
         raise SyncBlocked("account currency is not USD")
+    account_id=str(account.get("id") or "")
+    if not account_id:
+        raise SyncBlocked("paper account identity is missing")
+    fingerprint=sha256(account_id.encode("utf-8")).hexdigest()
+    if state.get("broker_account_fingerprint") and state["broker_account_fingerprint"] != fingerprint:
+        raise SyncBlocked("paper account identity does not match durable virtual ledger")
     if clock.get("is_open") is True:
         result = {"status":"SKIPPED_MARKET_OPEN","portfolio":portfolio,
                   "mode":"READ_ONLY_RECONCILIATION_NO_ORDERS",
