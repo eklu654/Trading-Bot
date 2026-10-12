@@ -215,3 +215,12 @@
 - No later real market session can be expected from Sunday, 2026-10-11; next scheduled weekday execution is Monday, 2026-10-12 at 22:35 UTC. That run should only append if the source feed contains a completed session later than the validated ledger tail (currently 2026-10-09) and all canonical reconciliation, signal, ledger, and equity checks pass.
 - Do not manufacture a ledger delta, rewrite historical rows, or use the connector's independent repository-write permission as a substitute for testing the workflow's `GITHUB_TOKEN`. A no-op `git push --dry-run` is not being treated as conclusive evidence of actual ref-update authorization. The decisive test remains a real, valid append followed by a successful workflow push.
 - Latest audit-log commit is `cbb6b6271e174dbb75f0d286ce4f26a510f7512f`. No strategy files or state/ledger files were changed in this checkpoint. B0 control and frozen F75 shadow-only decision remain unchanged.
+
+
+## 2026-10-12 00:01 UTC — current-session completeness guard added
+
+- Source review found that a manual scheduler dispatch during market hours could see a same-day Yahoo Finance daily bar that was not yet complete. Added `exclude_current_session(fresh, today=None)` to exclude the current New York calendar date; current-date bars become eligible on the next calendar day. This intentionally adds up to one calendar day of observation latency to favor completeness over speed.
+- Integrated the guard after price-feed intersection/dropna and before the ledger-tail filter. Added regression tests for exclusion of the current session and empty input handling.
+- Monitor change commit: `85dcd480ac4897599d7215670214ed2e58a11d08`. Test commit: `593fe9a72a4ad5e8d5fd8462bcba99e88e01bb74`.
+- Validation runs triggered by pushes: monitor run [38186337390](https://github.com/eklu654/Trading-Bot/actions/runs/38186337390), repeatability run [38186337497](https://github.com/eklu654/Trading-Bot/actions/runs/38186337497), and subsequent monitor run [38186341127](https://github.com/eklu654/Trading-Bot/actions/runs/38186341127). At this note's timestamp the runs were queued/in progress; do not claim the new tests passed until their conclusions are checked.
+- No historical rows, state manifest, or strategy thresholds changed. No synthetic session added. B0 remains control; F75 remains frozen and shadow-only.
