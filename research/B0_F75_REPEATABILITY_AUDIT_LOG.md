@@ -345,3 +345,12 @@
 - This is a meaningful pre-execution safeguard checkpoint, **not** an order engine. Live completed-session signal construction, broker position/order/fill reconciliation, durable execution ledger, unknown-outcome recovery, and actual paper submission remain unimplemented. No order was submitted.
 
 - Follow-up [run 38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243) passed after adding the sub-0.001-share fail-closed case; the planner guardrail suite now has 13 passing tests.
+
+## 2026-10-12 — read-only Alpaca daily diagnostic wiring
+
+- Main branch now contains `research/alpaca_paper_daily_diagnostic.py` and `.github/workflows/alpaca-paper-daily-decision.yml`. The weekday schedule is 14:40 UTC and checks the Alpaca clock; all broker requests in this workflow use GET only.
+- It reads the append-only F75 shadow ledger and state manifest from the research branch, verifies the ledger SHA-256, row count, ordered unique dates, source hash, and B0/F75 eligibility, then reads the account, clock, positions, open orders, recent orders, and latest TQQQ trade. It emits a sanitized plan-only artifact; it has no order-submission code.
+- Initial run [38201500803](https://github.com/eklu654/Trading-Bot/actions/runs/38201500803) failed before diagnostic execution because the planner module was only on the research branch. The planner and tests were added to main; no order was submitted.
+- Run [38201566166](https://github.com/eklu654/Trading-Bot/actions/runs/38201566166) passed compilation and local guardrail tests, but both matrix jobs exited nonzero because the market was closed during the push-triggered test. The code was corrected in commit `4bf9dc4bc47ebb981181ddab60c3c0af7154b279` to report `SKIPPED_MARKET_CLOSED` as a successful no-op after account/clock checks.
+- Latest diagnostic workflow run [38201602706](https://github.com/eklu654/Trading-Bot/actions/runs/38201602706) is pending at the time of this note. Confirm its tests, no-op result, and artifact upload before considering the read-only daily diagnostic validated.
+- Current safety boundary: this workflow never places orders. It does not yet reconcile recent order fills to a durable local order ledger or recover unknown submission outcomes; those remain hard blockers for order-writing automation.
