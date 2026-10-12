@@ -13,10 +13,10 @@ class ReadOnlySignalLedgerTests(unittest.TestCase):
     def write_fixture(self, directory, session="2026-10-09", b0="1.0", f75="0.75"):
         ledger = Path(directory) / "ledger.csv"
         state_path = Path(directory) / "state.json"
-        columns = ["date", "source_canonical_sha256", "b0_signal_close", "f75_signal_close"]
+        columns = ["date", "source_canonical_sha256", "b0_signal_close", "f75_signal_close", "b0_equity_0bps", "f75_equity_0bps"]
         rows = [
-            {"date": "2026-10-08", "source_canonical_sha256": "source-hash", "b0_signal_close": "1.0", "f75_signal_close": "1.0"},
-            {"date": session, "source_canonical_sha256": "source-hash", "b0_signal_close": b0, "f75_signal_close": f75},
+            {"date": "2026-10-08", "source_canonical_sha256": "source-hash", "b0_signal_close": "1.0", "f75_signal_close": "1.0", "b0_equity_0bps": "5000", "f75_equity_0bps": "5000"},
+            {"date": session, "source_canonical_sha256": "source-hash", "b0_signal_close": b0, "f75_signal_close": f75, "b0_equity_0bps": "4973.0786567", "f75_equity_0bps": "4973.0786567"},
         ]
         with ledger.open("w", newline="", encoding="utf-8") as f:
             writer = csv.DictWriter(f, fieldnames=columns)
