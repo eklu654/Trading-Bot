@@ -11,9 +11,13 @@ on:
       - "research/test_paper_virtual_portfolio.py"
       - "research/test_alpaca_paper_order_executor.py"
   schedule:
-    # 14:40 UTC is 10:40 a.m. ET during daylight time / 09:40 a.m. ET during standard time.
-    # Both are inside regular market hours year-round; market-clock check remains authoritative.
+    # 13:40 UTC is 08:40 a.m. US Central during daylight time (10 minutes after open),
+    # but 07:40 a.m. Central during standard time (market closed; safely skipped by broker clock).
+    # 14:40 UTC is 09:40 a.m. Central during daylight time and 08:40 a.m. Central during standard time.
+    # The two slots guarantee a near-open in-session attempt year-round. During daylight time,
+    # the second slot is a redundant retry; durable intent/client-order-ID guards prevent duplicate orders.
     # Scheduled runs alone can submit paper orders.
+    - cron: "40 13 * * 1-5"
     - cron: "40 14 * * 1-5"
 
 permissions:
