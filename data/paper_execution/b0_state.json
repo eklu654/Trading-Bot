@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "mode": "VIRTUAL_LEDGER_NO_SUBMISSION",
+  "portfolio": "b0",
+  "symbol": "TQQQ",
+  "initial_equity": "5000.00",
+  "cash": "5000.00",
+  "qty": "0.000",
+  "equity": "5000.00",
+  "mark_price": null,
+  "mark_date": null,
+  "processed_fill_ids": [],
+  "used_client_order_ids": [],
+  "pending_intent": null,
+  "last_terminal_order": null,
+  "fill_history_start": "2026-10-12T04:00:00Z",
+  "last_fill_sync_at": null
+}
