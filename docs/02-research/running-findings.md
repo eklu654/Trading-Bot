@@ -136,3 +136,9 @@ The project remains research/paper-trading only. Historical results do not estab
 - Optional cash gate is separate from theoretical one-contract replay. The first historical result must report both modes or clearly label which was run.
 - CI workflow now compiles the loader and runs lifecycle/replay tests. **Awaiting confirmation of the newly triggered run; no historical P/L result has been produced yet.**
 - Next: verify CI, correct any failures, then run SPY and QQQ separately over pinned source data and audit transaction/ledger invariants before discussing performance.
+
+
+### 2026-10-12 — Replay workflow added
+- Added `.github/workflows/adaptive-leaps-replay.yml` to download pinned SPY/QQQ option chains, write a SHA-256 manifest, and run theoretical plus $5,000 cash-constrained replay for both symbols.
+- Loader keeps full histories for contracts passing the frozen entry gate but restricts rows to 0–315 DTE to bound memory and retain post-entry exit quotes.
+- The workflow should upload daily ledgers, transactions, summaries, and source hashes. Execution/artifact inspection is still pending; no historical P/L conclusions have been accepted.
