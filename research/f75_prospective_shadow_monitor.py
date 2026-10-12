@@ -86,6 +86,17 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
         raise RuntimeError("Shadow state tail date does not match ledger")
     if state.get("mode") != "SHADOW_ONLY_NO_ORDERS":
         raise RuntimeError("Shadow state mode is not shadow-only")
+    # Treat manifest counters as integrity fields, not merely descriptive metadata.
+    # This catches stale or partially migrated state even when the ledger hash matches.
+    if type(state.get("sessions_appended_this_run")) is not int or state["sessions_appended_this_run"] < 0:
+        raise RuntimeError("Shadow state per-run append counter is invalid")
+    if state.get("ledger_rows_total") != len(prior):
+        raise RuntimeError("Shadow state total ledger row count mismatch")
+    return_bearing_total = int((~prior["initialization_session"].astype(bool)).sum())
+    if state.get("return_bearing_sessions_total") != return_bearing_total:
+        raise RuntimeError("Shadow state return-bearing session count mismatch")
+    if state.get("initialization_date") != dates.iloc[0].date().isoformat():
+        raise RuntimeError("Shadow state initialization date mismatch")
     numeric = prior.select_dtypes(include=[np.number])
     if not np.isfinite(numeric.to_numpy(dtype=float)).all():
         raise RuntimeError("Existing shadow ledger contains non-finite numeric values")
