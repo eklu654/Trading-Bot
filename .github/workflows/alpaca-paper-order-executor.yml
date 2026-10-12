@@ -11,8 +11,10 @@ on:
       - "research/test_paper_virtual_portfolio.py"
       - "research/test_alpaca_paper_order_executor.py"
   schedule:
-    # Market-open check is authoritative. Scheduled runs alone can submit paper orders.
-    - cron: "40 13 * * 1-5"
+    # 14:40 UTC is 10:40 a.m. ET during daylight time / 09:40 a.m. ET during standard time.
+    # Both are inside regular market hours year-round; market-clock check remains authoritative.
+    # Scheduled runs alone can submit paper orders.
+    - cron: "40 14 * * 1-5"
 
 permissions:
   contents: write
