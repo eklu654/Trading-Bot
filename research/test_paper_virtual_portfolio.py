@@ -130,16 +130,16 @@ class VirtualPortfolioTests(unittest.TestCase):
             plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
 
     def test_aborted_before_submit_is_safe_and_never_reused_same_session(self):
-        s = new_state("b0")
-        intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
+        s = new_state("f75")
+        intent = plan_target(s, signal_session="2026-10-09", target_weight="0.75", reference_price="100", baseline_weight="1")
         s = stage_intent(s, intent)
         s = mark_submission_attempting(s)
         s = abort_unsubmitted_intent(s, "market closed before POST")
         self.assertIsNone(s["pending_intent"])
         self.assertEqual(s["last_terminal_order"]["status"], "aborted_before_submit")
         with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
-            plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="100")
-        self.assertIsNotNone(plan_target(s, signal_session="2026-10-12", target_weight="1", reference_price="100"))
+            plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100", baseline_weight="1")
+        self.assertIsNotNone(plan_target(s, signal_session="2026-10-12", target_weight="1", reference_price="100", baseline_weight="1"))
 
     def test_state_serialization_is_stable_and_secret_free(self):
         s = new_state("f75")
