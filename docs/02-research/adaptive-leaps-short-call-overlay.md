@@ -155,3 +155,7 @@ Do not call the strategy validated unless:
 - If the market improves and the rebound/unwind rule fires, close the existing short call using the conservative ask-side assumption. Do **not** automatically sell a replacement call just because the long LEAPS remains open or the prior risk regime was recently active.
 - Re-entry requires a fresh, causal risk activation after the unwind/reset condition; no same-cycle immediate re-selling. If quotes, liquidity, or account feasibility fail, log the rejection and leave the overlay inactive rather than forcing a roll.
 - This is a management-rule clarification only, not a claim that the strategy has been backtested or validated. The data-coverage workflow still needs to run and its artifact must be inspected before the replay engine is built.
+
+### 2026-10-12 — Coverage auditor SQL repair
+- Code review found a literal escaped newline embedded in the aggregate SQL around missing-quote counts; corrected it to a real SQL line break in `research/audit_adaptive_leaps_coverage.py` (commit `07728ca62c28a57dde09fcafb2cdd1fc3fcb72e9`).
+- This is a syntax repair, not a verified coverage result. The manual workflow still must run successfully and its CSV/JSON artifact must be inspected before strategy replay work proceeds.
