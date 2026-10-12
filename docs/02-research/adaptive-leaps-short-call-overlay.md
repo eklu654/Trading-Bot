@@ -145,7 +145,7 @@ Do not call the strategy validated unless:
 
 ### 2026-10-12 — Historical source discovery and coverage audit implementation
 - Verified source README lists SPY 2008–2025 (24.68M rows) and QQQ 2011–2025 (15.35M rows), with EOD Greeks/quotes and underlying-price Parquet files.
-- Added `research/audit_adaptive_leaps_coverage.py` (commit `22fa94ebfdaaa22cb6677e6e9aa11b9bcc1f3017`).
+- Added `research/audit_adaptive_leaps_coverage.py` (initial commit `22fa94ebfdaaa22cb6677e6e9aa11b9bcc1f3017`; quote-null counting fix `7a5a4333a5c42fcc18b81a7d953e69efb802d233`).
 - Added manual-only workflow `.github/workflows/adaptive-leaps-data-coverage.yml` (commit `3a1a87f4e485e304912ca1b2fc1945a4bdb6c3ce`).
 - Workflow execution is not yet confirmed. Do not infer long-DTE coverage or any strategy performance until its artifact is inspected.
 - Next gate: obtain the coverage artifact, then decide whether to implement the replay engine or address data gaps.
