@@ -38,6 +38,7 @@ def quote_is_eligible(q: OptionQuote, min_dte: int = 225, max_dte: int = 315) ->
     """Conservative 270-DTE call eligibility; requires valid quote and activity."""
     return (
         q.option_type.lower() == "call"
+        and bool(q.contract_id)
         and min_dte <= q.dte <= max_dte
         and 0.60 <= abs(q.delta) <= 0.95
         and q.bid > 0
