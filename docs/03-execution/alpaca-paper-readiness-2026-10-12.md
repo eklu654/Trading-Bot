@@ -53,3 +53,6 @@
 - First CI run [38204835453](https://github.com/eklu654/Trading-Bot/actions/runs/38204835453) caught a daily-bar timezone/session-date bug in tests; fixed by using the daily bar's own session date rather than converting midnight UTC to the prior New York date.
 - Corrected validation is running as [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873). Do not call this monitor validated until this run completes successfully.
 - Important limitation: GitHub Actions cron is best-effort, not a live stream. A short-lived breach can occur and reverse between polls, and scheduled runs can be delayed. This is an interim warning/measurement layer, not an automated defensive order trigger. A persistent stream consumer is needed for low-latency continuous monitoring.
+
+## Monitor validation result
+- Corrected run [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873) succeeded: all 8 monitor unit tests passed. Its live workflow invocation returned `MARKET_CLOSED`, so it did not yet exercise a live intraday trade/bar response. The next open-market polling run is the first opportunity to validate the real Alpaca data response path.
