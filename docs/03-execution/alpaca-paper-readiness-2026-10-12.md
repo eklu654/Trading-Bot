@@ -30,3 +30,8 @@
 - B0 and F75 each reported ACTIVE / USD, no account or trading block, **zero open positions**, **zero open orders**, and a valid broker clock timestamp.
 - Alpaca reported the market closed at the check time. The preflight used GET requests only; no order was submitted or changed.
 - This confirms both accounts are clean starting states for the next execution-engine stage. It does not yet prove strategy signal generation or order/fill reconciliation.
+
+
+## Frozen strategy-to-portfolio contract
+
+The B0/F75 portfolio target mapping and required execution gates are documented in the research branch: [B0/F75 Paper Execution Contract](https://github.com/eklu654/Trading-Bot/blob/research/qqq-slow-bear-audit/docs/research/B0_F75_PAPER_EXECUTION_CONTRACT_2026-10-12.md). This is a specification, not an order executor. It explicitly preserves the $5,000 virtual sleeve per portfolio, B0 as control, F75 as the frozen 75%/100% overlay, and the need for current-session signals and broker reconciliation before any paper order.
