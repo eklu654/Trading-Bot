@@ -9,6 +9,8 @@ on:
       - "research/audit_adaptive_leaps_coverage.py"
       - "research/audit_adaptive_leaps_contract_integrity.py"
       - "research/audit_adaptive_leaps_candidate_selection.py"
+      - "research/adaptive_leaps_lifecycle.py"
+      - "tests/test_adaptive_leaps_lifecycle.py"
       - "research/requirements.txt"
 
 permissions:
@@ -80,6 +82,8 @@ jobs:
           python -m py_compile research/audit_adaptive_leaps_coverage.py
           python -m py_compile research/audit_adaptive_leaps_contract_integrity.py
           python -m py_compile research/audit_adaptive_leaps_candidate_selection.py
+          python -m py_compile research/adaptive_leaps_lifecycle.py
+          python -m unittest discover -s tests -p "test_adaptive_leaps_lifecycle.py" -v
 
       - name: Profile symbol, DTE, delta and quote quality
         run: |
