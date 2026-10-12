@@ -43,6 +43,9 @@ class PaperPlannerTests(unittest.TestCase):
     def test_invalid_prices_and_short_positions_block(self):
         for changes in ({"price":"0"},{"price":"NaN"},{"current_qty":"-1"}):
             with self.subTest(changes=changes),self.assertRaises(SafetyGateError): plan(**changes)
+    def test_tiny_rebalance_delta_fails_closed(self):
+        with self.assertRaisesRegex(SafetyGateError, "below minimum share precision"):
+            plan(current_qty="49.9995")
     def test_client_id_is_deterministic_and_changes_with_session(self):
         x=plan()
         self.assertEqual(x.client_order_id,plan().client_order_id)
