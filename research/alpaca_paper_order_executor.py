@@ -292,11 +292,12 @@ def main():
     p.add_argument("--mode",choices=("verify-accounts","prepare","arm","submit"),required=True)
     p.add_argument("--portfolio",choices=("b0","f75"),required=False)
     p.add_argument("--state-b0",default=""); p.add_argument("--state-f75",default="")
-    p.add_argument("--state",required=True); p.add_argument("--report",required=True)
+    p.add_argument("--state",default=""); p.add_argument("--report",required=True)
     p.add_argument("--ledger",default=""); p.add_argument("--manifest",default="")
     p.add_argument("--request",default=""); p.add_argument("--permit",default="")
     a=p.parse_args()
     if a.mode!="verify-accounts" and not a.portfolio: p.error("--portfolio is required for this mode")
+    if a.mode!="verify-accounts" and not a.state: p.error("--state is required for this mode")
     try:
         if a.mode=="verify-accounts": verify_accounts(a)
         elif a.mode=="prepare": prepare(a)
