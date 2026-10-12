@@ -31,10 +31,12 @@ class ReadOnlySignalLedgerTests(unittest.TestCase):
     def test_reads_latest_completed_session_signal(self):
         with tempfile.TemporaryDirectory() as d:
             ledger, state = self.write_fixture(d)
-            session, b0, f75, digest = read_latest_signal(
+            session, b0, f75, digest, b0_equity, f75_equity = read_latest_signal(
                 ledger, state, datetime(2026, 10, 12, 15, 0, tzinfo=timezone.utc))
             self.assertEqual((session, str(b0), str(f75), digest),
                              ("2026-10-09", "1.0", "0.75", "source-hash"))
+            self.assertEqual(str(b0_equity), "4973.0786567")
+            self.assertEqual(str(f75_equity), "4973.0786567")
 
     def test_rejects_tampered_ledger_hash(self):
         with tempfile.TemporaryDirectory() as d:
