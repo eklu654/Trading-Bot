@@ -132,10 +132,6 @@ def run(portfolio, ledger, state_path):
             "recent_order_count": len(recent_orders),
             "note": "Market closed. Account and positions/orders were read; no order was submitted.",
         }
-    position = next((p for p in positions if p.get("symbol") == SYMBOL), None)
-    current_qty = Decimal(position["qty"]) if position else Decimal("0")
-    if current_qty < 0 or (position and str(position.get("side", "long")).lower() != "long"):
-        raise DiagnosticBlocked("short TQQQ position is not allowed")
     trade_response = get_json(DATA_URL + "/v2/stocks/TQQQ/trades/latest?feed=iex", key, secret)
     trade = trade_response.get("trade") if isinstance(trade_response, dict) else None
     if not isinstance(trade, dict) or "p" not in trade or "t" not in trade:
