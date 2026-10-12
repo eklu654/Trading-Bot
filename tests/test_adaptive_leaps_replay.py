@@ -32,7 +32,7 @@ class ReplayTests(unittest.TestCase):
         near_exit = q(d2, exp=exp, cid="A", bid=7, ask=8)
         exit_quote = q(d3, exp=exp, cid="A", bid=6, ask=7)
         replacement = q(d3, exp=d3 + timedelta(days=270), cid="B", bid=9, ask=9.5)
-        result = replay_long_call([entry, near_exit, exit_quote, replacement], symbol="SPY")
+        result = replay_long_call([entry, near_exit, exit_quote, replacement], symbol="SPY", target_dte=31)
         sells = [t for t in result.transactions if t["action"] == "SELL"]
         self.assertEqual(len(sells), 1)
         self.assertEqual(sells[0]["date"], d3.isoformat())
