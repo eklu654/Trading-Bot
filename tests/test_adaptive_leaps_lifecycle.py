@@ -29,7 +29,12 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(quote_is_eligible(q(volume=0, oi=0)))
         self.assertFalse(quote_is_eligible(q(kind="put")))
 
-    def test_target_dte_then_delta_then_spread_tiebreak(self):
+    def test_target_dte_precedes_delta_and_spread(self):
+        target_dte = q(cid="target-dte", exp=date(2020, 9, 28), delta=0.70, bid=9, ask=9.1)
+        exact_delta_but_worse_dte = q(cid="target-delta", exp=date(2020, 10, 28), delta=0.80, bid=10, ask=11)
+        self.assertEqual(select_long_call([exact_delta_but_worse_dte, target_dte]).contract_id, "target-dte")
+
+    def test_delta_distance_then_spread_tiebreak(self):
         target = q(cid="target", exp=date(2020, 10, 28), delta=0.80, bid=10, ask=11)
         wrong_delta = q(cid="delta", exp=date(2020, 10, 28), delta=0.70, bid=9, ask=9.1)
         wider = q(cid="wide", exp=date(2020, 10, 28), delta=0.80, bid=10, ask=11.5)
