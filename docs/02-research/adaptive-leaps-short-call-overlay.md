@@ -83,6 +83,20 @@ A follow-up analysis found uneven annual coverage and material spread variation 
 
 The source is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
 
+### Frozen first-pass lifecycle protocol (mechanics baseline; not performance-optimized)
+
+To remove the entry-calendar ambiguity before implementing P/L, use the following fixed long-call-only baseline for the first replay:
+
+1. Run SPY and QQQ independently, starting at the first observation date where a valid 270-DTE-target candidate can be selected and then quoted on the next observation date. Do not backfill dates before source coverage exists.
+2. At each completed EOD snapshot, choose a candidate using only that date's chain and the frozen selector. The earliest execution is the **next available option-chain observation date**, using the selected contract's next-date ask to buy or bid to sell. If that contract has no valid next-date quote, record a rejected/missed order and do not invent a fill.
+3. Hold one long call per underlying. At close t, if its DTE is 30 days or less, schedule liquidation for the next observation date at bid. Do not liquidate on the same snapshot that triggered the exit.
+4. Once flat, evaluate re-entry at each completed observation date. Select the 270-DTE / 0.80-absolute-delta candidate using the same selector, then attempt entry on the next observation date at ask. If the selected contract is missing/invalid next day, log the rejection and remain flat; retry from the next completed snapshot.
+5. A new long call may be opened on the same execution date that the old call is closed only if the replacement was selected from the preceding snapshot and has a valid next-date ask. Record both legs as separate transactions and deduct both conservative sides. No same-snapshot close-and-reopen.
+6. Report this as the **continuous 270-DTE long-call hold/replacement control**, not a claim that 270 DTE is optimal. Run 365 DTE only as a predeclared secondary comparison after the 270-DTE engine is validated; keep 540 DTE as a coverage-limited sensitivity.
+7. The initial engine must write every candidate decision, selected contract, next-date quote, fill/rejection reason, position state, cash, market value, and total equity to a daily ledger. If the source ends while a position is open, liquidate only if a valid final-observation bid exists; otherwise report the terminal mark as unavailable and do not silently treat it as cash.
+
+This protocol is a deterministic research convention, not a broker fill guarantee. EOD snapshots cannot model intraday execution, order queue, or assignment. The $5,000 account feasibility test remains separate from one-contract theoretical economics.
+
 ## 7. Fill, valuation, and accounting requirements
 
 - Preserve raw source bid, ask, mark, IV, Greeks, volume, open interest, underlying close, strike, expiry, and contract identifier.
@@ -177,3 +191,5 @@ Do not call the strategy validated unless:
 - Added `.github/workflows/adaptive-leaps-unit-tests.yml` so lifecycle unit tests run independently of the lengthy historical Parquet downloads.
 - Fast test run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) completed successfully. The module compiled and all **7 lifecycle unit tests passed** (0.001 seconds): quote/activity validity, invalid/crossed quotes, deterministic ranking, no-candidate behavior, ask/bid execution sides, expiry-buffer boundary, and next-observation causality.
 - The data-coverage workflow also now runs the unit tests before its data downloads, so syntax/logic failures surface early on future runs.
+
+- Frozen lifecycle protocol: one long call per symbol; causal selection at close t, execution no earlier than the next option observation date, ask-side entries, bid-side exits, exit signal at <=30 DTE, retry entries each observation while flat, log missed/invalid next-date quotes, and never invent a fill. This is a reproducible mechanics baseline, not an optimized schedule.
