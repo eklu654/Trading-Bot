@@ -59,6 +59,10 @@ class ShadowMonitorGuardrails(unittest.TestCase):
             "canonical_input_sha256": EXPECTED_HASH,
             "ledger_sha256": hashlib.sha256(ledger_bytes).hexdigest(),
             "last_observation": "2026-10-09",
+            "sessions_appended_this_run": 0,
+            "ledger_rows_total": 2,
+            "return_bearing_sessions_total": 1,
+            "initialization_date": "2026-10-08",
             "mode": "SHADOW_ONLY_NO_ORDERS",
         }
         return prior, state, ledger_bytes
@@ -97,6 +101,30 @@ class ShadowMonitorGuardrails(unittest.TestCase):
     def test_existing_ledger_and_state_manifest_validate(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
+
+    def test_state_rejects_ledger_row_count_mismatch(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        state["ledger_rows_total"] = 3
+        with self.assertRaisesRegex(RuntimeError, "total ledger row count"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_state_rejects_return_bearing_count_mismatch(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        state["return_bearing_sessions_total"] = 2
+        with self.assertRaisesRegex(RuntimeError, "return-bearing session count"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_state_rejects_initialization_date_mismatch(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        state["initialization_date"] = "2026-10-09"
+        with self.assertRaisesRegex(RuntimeError, "initialization date"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_state_rejects_invalid_per_run_append_counter(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        state["sessions_appended_this_run"] = -1
+        with self.assertRaisesRegex(RuntimeError, "per-run append counter"):
+            validate_existing_ledger(prior, state, ledger_bytes)
 
     def test_existing_ledger_rejects_full_exit_masquerading_as_f75(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
