@@ -226,3 +226,15 @@
 - No historical rows, state manifest, or strategy thresholds changed. No synthetic session added. B0 remains control; F75 remains frozen and shadow-only.
 
 - Follow-up results: monitor run [38186337390](https://github.com/eklu654/Trading-Bot/actions/runs/38186337390) completed successfully through all steps, including canonical artifact download, compile/tests, monitor execution, and commit/no-op handling. Repeatability/episode audit run [38186337497](https://github.com/eklu654/Trading-Bot/actions/runs/38186337497) also completed successfully, including attribution guardrails and report upload. A second monitor run [38186341127](https://github.com/eklu654/Trading-Bot/actions/runs/38186341127) was queued against the later test commit to validate the added regression cases; its final result was still pending at the last status check.
+
+
+## 2026-10-12 00:03 UTC — post-guard validation results reconciled
+
+- Queried completed GitHub Actions runs and job logs rather than relying on the prior pending-status note.
+- Monitor run [38186337390](https://github.com/eklu654/Trading-Bot/actions/runs/38186337390): SUCCESS; canonical artifact download, compile/tests, monitor and no-op commit step all passed.
+- Fixed-episode repeatability audit [38186337497](https://github.com/eklu654/Trading-Bot/actions/runs/38186337497): SUCCESS; attribution guardrails, fixed episode attribution and report upload passed. This is a mechanics/reporting validation, not evidence that the prospective F75 efficacy gates have been met.
+- Regression monitor run [38186341127](https://github.com/eklu654/Trading-Bot/actions/runs/38186341127): SUCCESS; **25/25 unit tests passed**, including current-session-bar exclusion and empty-input handling. Canonical artifact download and monitor execution also passed.
+- All three monitor executions report no new eligible completed session and no ledger change. Ledger still contains initialization 2026-10-08 and one return-bearing observation 2026-10-09; state remains `SHADOW_ONLY_NO_ORDERS`. No real append has yet exercised the workflow's conditional `git push` path.
+- New guard excludes the current New York calendar date, so a same-day partial daily bar is not admitted by manual dispatch; it can be considered on a later calendar day. This is a completeness-over-latency choice and should remain frozen during prospective evaluation.
+- Noted runner warnings: `actions/checkout@v4` and `actions/setup-python@v5` are being forced to Node.js 24 because Node.js 20 is deprecated. They did not fail these runs; treat action-version upgrades as separate maintenance, not as a strategy change, and validate before changing versions.
+- Decision remains unchanged: B0 control; F75 frozen and shadow-only. Prospective efficacy gates (252 return-bearing sessions and one active episode with 20 sessions of actual exposure reduction) remain unmet.
