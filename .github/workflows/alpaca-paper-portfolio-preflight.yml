@@ -1,0 +1,79 @@
+name: Alpaca Paper Portfolio Preflight
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/alpaca-paper-portfolio-preflight.yml"
+  workflow_dispatch:
+  schedule:
+    # Read-only state reconciliation after the US cash session.
+    - cron: "15 22 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpaca-paper-portfolio-preflight
+  cancel-in-progress: false
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+      matrix:
+        portfolio: [b0, f75]
+    steps:
+      - name: Read-only broker and session preflight
+        shell: bash
+        env:
+          PORTFOLIO: ${{ matrix.portfolio }}
+          APCA_API_KEY_ID_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          APCA_API_SECRET_KEY_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          APCA_API_KEY_ID_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          APCA_API_SECRET_KEY_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        run: |
+          set -euo pipefail
+          if [[ "$PORTFOLIO" == "b0" ]]; then
+            export APCA_API_KEY_ID="${APCA_API_KEY_ID_B0:-}"
+            export APCA_API_SECRET_KEY="${APCA_API_SECRET_KEY_B0:-}"
+          else
+            export APCA_API_KEY_ID="${APCA_API_KEY_ID_F75:-}"
+            export APCA_API_SECRET_KEY="${APCA_API_SECRET_KEY_F75:-}"
+          fi
+          if [[ -z "$APCA_API_KEY_ID" || -z "$APCA_API_SECRET_KEY" ]]; then
+            echo "::error::Missing paper credential for $PORTFOLIO"
+            exit 1
+          fi
+          export PORTFOLIO
+          python - <<'PY'
+          import json, os, urllib.request
+          base = "https://paper-api.alpaca.markets"
+          headers = {
+              "APCA-API-KEY-ID": os.environ["APCA_API_KEY_ID"],
+              "APCA-API-SECRET-KEY": os.environ["APCA_API_SECRET_KEY"],
+          }
+          def get(path):
+              req = urllib.request.Request(base + path, headers=headers, method="GET")
+              with urllib.request.urlopen(req, timeout=20) as response:
+                  return json.loads(response.read().decode("utf-8"))
+          account = get("/v2/account")
+          positions = get("/v2/positions")
+          orders = get("/v2/orders?status=open&limit=500")
+          clock = get("/v2/clock")
+          print("portfolio=" + os.environ["PORTFOLIO"])
+          print("account_status=" + str(account.get("status", "unknown")))
+          print("currency=" + str(account.get("currency", "unknown")))
+          print("trading_blocked=" + str(account.get("trading_blocked", "unknown")).lower())
+          print("account_blocked=" + str(account.get("account_blocked", "unknown")).lower())
+          print("positions_count=" + str(len(positions)))
+          print("open_orders_count=" + str(len(orders)))
+          print("market_clock_open=" + str(clock.get("is_open", "unknown")).lower())
+          print("clock_timestamp_present=" + str(bool(clock.get("timestamp"))).lower())
+          if account.get("status") != "ACTIVE":
+              raise SystemExit("Paper account is not ACTIVE")
+          if account.get("trading_blocked") or account.get("account_blocked"):
+              raise SystemExit("Paper account is blocked")
+          PY
