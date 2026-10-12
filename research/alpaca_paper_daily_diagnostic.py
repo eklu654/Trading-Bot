@@ -48,6 +48,14 @@ def read_latest_signal(ledger_path, state_path, now):
         rows = list(csv.DictReader(f))
     if not rows:
         raise DiagnosticBlocked("shadow ledger is empty")
+    if state.get("ledger_rows_total") != len(rows):
+        raise DiagnosticBlocked("ledger row count disagrees with state manifest")
+    dates = [r.get("date", "") for r in rows]
+    if len(set(dates)) != len(dates) or dates != sorted(dates):
+        raise DiagnosticBlocked("ledger dates are duplicated or not strictly ordered")
+    expected_hash = state.get("canonical_input_sha256")
+    if any(r.get("source_canonical_sha256") != expected_hash for r in rows):
+        raise DiagnosticBlocked("ledger rows do not share the manifest source hash")
     row = rows[-1]
     session = row.get("date", "")
     try:
@@ -164,9 +172,10 @@ def main():
     args = parser.parse_args()
     try:
         result = run(args.portfolio, args.ledger, args.state)
-    except (DiagnosticBlocked, SafetyGateError, OSError, ValueError) as exc:
+    except Exception as exc:
+        reason = str(exc) if isinstance(exc, (DiagnosticBlocked, SafetyGateError)) else f"unexpected diagnostic failure ({type(exc).__name__})"
         result = {"status": "BLOCKED", "mode": "READ_ONLY_PLAN_NO_SUBMISSION",
-                  "portfolio": args.portfolio, "reason": str(exc),
+                  "portfolio": args.portfolio, "reason": reason,
                   "note": "No order was submitted."}
         Path(args.output).write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         print(json.dumps(result, indent=2))
