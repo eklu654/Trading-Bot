@@ -64,6 +64,7 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
     """Fail closed if an existing append-only ledger or its state manifest is stale."""
     required = {
         "date", "source_canonical_sha256", "initialization_session",
+        "tqqq_adj_open", "tqqq_adj_close", "overnight_return", "intraday_return",
         "b0_signal_close", "f75_overlay_signal_close", "f75_signal_close",
         "b0_exposure", "f75_exposure", "overnight_return", "intraday_return",
         "b0_equity_0bps", "b0_equity_25bps", "b0_equity_50bps",
@@ -94,6 +95,25 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
     initialized = prior["initialization_session"].astype(bool).to_numpy()
     if len(initialized) == 0 or not initialized[0] or initialized[1:].any():
         raise RuntimeError("Shadow ledger initialization marker is invalid")
+    # Reconcile persisted daily return components to adjusted prices, rather
+    # than only checking that equity compounds consistently from stored returns.
+    # The first row is an explicit zero-return initialization baseline.
+    if not np.isclose(float(prior.iloc[0]["overnight_return"]), 0.0, rtol=0, atol=1e-12):
+        raise RuntimeError("Shadow ledger initialization overnight return must be zero")
+    if not np.isclose(float(prior.iloc[0]["intraday_return"]), 0.0, rtol=0, atol=1e-12):
+        raise RuntimeError("Shadow ledger initialization intraday return must be zero")
+    adj_open = prior["tqqq_adj_open"].to_numpy(dtype=float)
+    adj_close = prior["tqqq_adj_close"].to_numpy(dtype=float)
+    if np.any(adj_open <= 0.0) or np.any(adj_close <= 0.0):
+        raise RuntimeError("Shadow ledger adjusted TQQQ prices must be positive")
+    expected_overnight = np.zeros(len(prior), dtype=float)
+    expected_overnight[1:] = adj_open[1:] / adj_close[:-1] - 1.0
+    expected_intraday = adj_close / adj_open - 1.0
+    expected_intraday[0] = 0.0
+    if not np.allclose(prior["overnight_return"].to_numpy(dtype=float), expected_overnight, rtol=1e-9, atol=1e-10):
+        raise RuntimeError("Shadow ledger overnight returns do not reconcile to adjusted prices")
+    if not np.allclose(prior["intraday_return"].to_numpy(dtype=float), expected_intraday, rtol=1e-9, atol=1e-10):
+        raise RuntimeError("Shadow ledger intraday returns do not reconcile to adjusted prices")
     # Treat manifest counters as integrity fields, not merely descriptive metadata.
     # This catches stale or partially migrated state even when the ledger hash matches.
     if type(state.get("sessions_appended_this_run")) is not int or state["sessions_appended_this_run"] < 0:
