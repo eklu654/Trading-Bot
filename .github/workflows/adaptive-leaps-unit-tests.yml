@@ -6,7 +6,9 @@ on:
     branches: [main]
     paths:
       - "research/adaptive_leaps_lifecycle.py"
+      - "research/adaptive_leaps_replay.py"
       - "tests/test_adaptive_leaps_lifecycle.py"
+      - "tests/test_adaptive_leaps_replay.py"
       - ".github/workflows/adaptive-leaps-unit-tests.yml"
 
 permissions:
@@ -27,7 +29,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile lifecycle module
-        run: python -m py_compile research/adaptive_leaps_lifecycle.py
-      - name: Run lifecycle unit tests
-        run: python -m unittest discover -s tests -p "test_adaptive_leaps_lifecycle.py" -v
+      - name: Compile LEAPS modules
+        run: python -m py_compile research/adaptive_leaps_lifecycle.py research/adaptive_leaps_replay.py
+      - name: Run lifecycle and replay unit tests
+        run: python -m unittest discover -s tests -p "test_adaptive_leaps_*.py" -v
