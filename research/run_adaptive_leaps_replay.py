@@ -69,6 +69,7 @@ def main() -> int:
     )
     SELECT s.* FROM source s
     INNER JOIN eligible_ids e USING (contract_id)
+    WHERE date_diff('day', s.obs_date, s.expiration) BETWEEN 0 AND {target + 45}
     ORDER BY obs_date, expiration, strike, contract_id
     """
     cursor = con.execute(sql)
