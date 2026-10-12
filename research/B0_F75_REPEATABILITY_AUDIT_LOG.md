@@ -391,3 +391,11 @@
 - Push-triggered validation [38203111900](https://github.com/eklu654/Trading-Bot/actions/runs/38203111900) succeeded. Both prepare jobs returned `SKIPPED_MARKET_CLOSED`; arm and submit stages reported no requests/intents; no order was submitted.
 - Read-only ledger sync [38203111870](https://github.com/eklu654/Trading-Bot/actions/runs/38203111870) succeeded with `NO_CHANGE`: B0 and F75 remained $5,000 virtual equity, zero TQQQ shares, mark date 2026-10-09, no fills/open orders.
 - **Important:** scheduled market-open execution has not yet occurred. The next scheduled run is eligible to submit B0/F75 paper orders if the signal is still current and every gate passes. No live endpoint is used.
+
+## 2026-10-12 — distinct account identities verified; executor dry-run passed
+
+- Run [38203315464](https://github.com/eklu654/Trading-Bot/actions/runs/38203315464) passed the full order-executor workflow on a push event. It passed 17 virtual-ledger tests and 6 executor guard tests.
+- B0 and F75 credentials resolve to distinct ACTIVE, unblocked USD paper accounts. The workflow stores only SHA-256 fingerprints of the account IDs in the durable state; raw account IDs are not logged or committed.
+- The market was closed, so both prepare jobs returned `SKIPPED_MARKET_CLOSED`; arm returned `NO_ARM_REQUEST`; submit returned `NO_PENDING_INTENT`. No order was submitted.
+- The workflow committed the account fingerprints to the isolated `paper-execution-ledger` branch at `c6a75a08d2237fc600dbc3b5810b04c22379da7d`. Both virtual portfolios remain at $5,000 cash, zero shares, mark date 2026-10-09, and no pending intent.
+- The order-writing path is now wired but has not yet run on an open market. Only the weekday schedule can enable POST; push/manual runs are dry-run. The next scheduled run may submit paper orders if all gates pass.
