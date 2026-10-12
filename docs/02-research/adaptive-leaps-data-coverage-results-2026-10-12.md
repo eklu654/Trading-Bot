@@ -41,6 +41,23 @@ This clears those specific integrity checks, not the complete replay gate: corpo
 
 The artifact was subsequently analyzed by year for calls in the 270–539 DTE / absolute-delta 0.60–0.84 region. The separate [year-by-year review](adaptive-leaps-yearly-coverage-review-2026-10-12.md) records thin early-year coverage, partial 2025 coverage, and material year-to-year spread variation. This narrows the next gate but does not establish executable prices.
 
+## Deterministic candidate availability
+
+Corrected candidate availability audit: [run 38226954965](https://github.com/eklu654/Trading-Bot/actions/runs/38226954965), artifact [11735988461](https://github.com/eklu654/Trading-Bot/actions/runs/38226954965/artifacts/11735988461). Coverage is calculated against **unique option-chain observation dates**, not all underlying-price dates. The earlier candidate report from run 38226785204 used the wrong denominator and is superseded.
+
+| Underlying | Target DTE | Candidate dates / option dates | Coverage |
+|---|---:|---:|---:|
+| SPY | 270 | 4,513 / 4,514 | 99.98% |
+| SPY | 365 | 4,225 / 4,514 | 93.60% |
+| SPY | 540 | 3,037 / 4,514 | 67.26% |
+| QQQ | 270 | 3,694 / 3,700 | 99.84% |
+| QQQ | 365 | 2,888 / 3,700 | 78.05% |
+| QQQ | 540 | 1,626 / 3,700 | 43.95% |
+
+Candidate definition is frozen for this audit: DTE within target +/-45 calendar days, absolute delta 0.60–0.95, positive/non-crossed quote and activity (volume > 0 or open interest > 0). Selection ranks smallest DTE error, then delta error, then relative spread, then higher open interest/volume, then expiration and strike. The target-delta rows had the same date coverage because the limiting factor was availability in the DTE window; selected delta medians were near the targets.
+
+**Decision for the next implementation stage:** use 270 DTE as the first lifecycle plumbing case because it has nearly complete date coverage on both symbols; retain 365 DTE as a secondary case. Keep 540 DTE as a separately reported sensitivity, not the initial baseline, because the daily candidate window is materially incomplete—especially QQQ. This is a data-coverage decision, not a performance-based parameter selection. Also, a replay entry schedule must be frozen; daily candidate availability does not imply daily trades.
+
 ## Immutable source and reproducibility
 
 The source repository is pinned to [commit 37f6c456fe1a4775c875673fb8ef907d5cd2fd66](https://github.com/anahatsingh-ui/options-dataset-hist/commit/37f6c456fe1a4775c875673fb8ef907d5cd2fd66). The pinned-source workflow [run 38226516897](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897) completed successfully and uploaded [artifact 11736697765](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897/artifacts/11736697765). Its `adaptive_leaps_integrity/source_sha256.txt` manifest contains SHA-256 hashes for all 35 downloaded Parquet files (SPY yearly files 2008–2025 plus SPY underlying prices; QQQ yearly files 2011–2025 plus QQQ underlying prices). The same run passed both coverage and contract-integrity audits.
