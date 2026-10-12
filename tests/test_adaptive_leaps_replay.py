@@ -16,7 +16,8 @@ def q(day, *, exp=None, cid="A", bid=10.0, ask=10.5, delta=0.8, volume=10, oi=10
 class ReplayTests(unittest.TestCase):
     def test_entry_occurs_only_on_next_observation_and_uses_ask(self):
         d1, d2 = date(2020, 1, 2), date(2020, 1, 6)
-        result = replay_long_call([q(d1), q(d2, bid=12, ask=13)], symbol="SPY")
+        exp = date(2020, 9, 28)
+        result = replay_long_call([q(d1, exp=exp), q(d2, exp=exp, bid=12, ask=13)], symbol="SPY")
         self.assertEqual(result.transactions[0]["date"], d2.isoformat())
         self.assertEqual(result.transactions[0]["signal_date"], d1.isoformat())
         self.assertEqual(result.transactions[0]["price"], 13)
@@ -25,18 +26,17 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.final_cash, 3700)
 
     def test_exit_buffer_executes_next_observation_at_bid(self):
-        d1 = date(2020, 1, 2)
-        d2 = date(2020, 1, 3)
-        # First quote selects a 270-DTE call; on d2 the held contract is <=30 DTE.
-        entry = q(d1, exp=d1 + timedelta(days=270), cid="A", bid=10, ask=10.5)
-        near_exit = q(d2, exp=d2 + timedelta(days=30), cid="A", bid=7, ask=8)
-        d3 = date(2020, 1, 6)
-        after_exit = q(d3, exp=d3 + timedelta(days=270), cid="B", bid=9, ask=9.5)
-        result = replay_long_call([entry, near_exit, after_exit], symbol="SPY")
+        d1, d2, d3 = date(2020, 1, 2), date(2020, 1, 3), date(2020, 1, 6)
+        exp = date(2020, 1, 3) + timedelta(days=30)
+        entry = q(d1, exp=exp, cid="A", bid=10, ask=10.5)
+        near_exit = q(d2, exp=exp, cid="A", bid=7, ask=8)
+        exit_quote = q(d3, exp=exp, cid="A", bid=6, ask=7)
+        replacement = q(d3, exp=d3 + timedelta(days=270), cid="B", bid=9, ask=9.5)
+        result = replay_long_call([entry, near_exit, exit_quote, replacement], symbol="SPY")
         sells = [t for t in result.transactions if t["action"] == "SELL"]
         self.assertEqual(len(sells), 1)
         self.assertEqual(sells[0]["date"], d3.isoformat())
-        self.assertEqual(sells[0]["price"], 9)  # B isn't held yet; ensure this fails if wrong contract is sold
+        self.assertEqual(sells[0]["price"], 6)
         self.assertEqual(sells[0]["contract_id"], "A")
 
     def test_missing_entry_quote_is_rejected_then_retried(self):
@@ -53,19 +53,23 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.final_cash, 5000)
 
     def test_invalid_terminal_mark_is_not_silently_cash(self):
-        d1, d2 = date(2020, 1, 2), date(2020, 1, 3)
-        # Contract is entered on d2, but no valid bid is present for its terminal mark.
-        result = replay_long_call([q(d1, cid="A"), q(d2, cid="A", bid=0, ask=1)], symbol="SPY")
+        d1, d2, d3 = date(2020, 1, 2), date(2020, 1, 3), date(2020, 1, 6)
+        exp = date(2020, 10, 1)
+        result = replay_long_call([
+            q(d1, exp=exp, cid="A"),
+            q(d2, exp=exp, cid="A"),
+            q(d3, exp=exp, cid="A", bid=0, ask=1),
+        ], symbol="SPY")
         self.assertFalse(result.final_mark_available)
         self.assertIsNone(result.final_equity)
 
     def test_cash_and_bid_mark_accounting(self):
         d1, d2 = date(2020, 1, 2), date(2020, 1, 3)
-        result = replay_long_call([q(d1), q(d2, bid=12, ask=13)], symbol="SPY")
+        exp = date(2020, 9, 28)
+        result = replay_long_call([q(d1, exp=exp), q(d2, exp=exp, bid=12, ask=13)], symbol="SPY")
         self.assertEqual(result.ledger[1].cash, 3700)
         self.assertEqual(result.ledger[1].market_value, 1200)
         self.assertEqual(result.ledger[1].equity, 4900)
 
 
-if __name__ == "__main__":
-    unittest.main()
+if __(false) {}
