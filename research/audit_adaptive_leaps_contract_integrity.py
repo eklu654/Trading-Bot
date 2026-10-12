@@ -31,11 +31,12 @@ def parquet_expr(path: str) -> str:
 
 def choose(columns: set[str], candidates: tuple[str, ...], label: str, symbol: str) -> str:
     matches = [name for name in candidates if name.lower() in columns]
-    if len(matches) != 1:
+    if not matches:
         raise ValueError(
-            f"{symbol} underlying schema needs exactly one recognizable {label} column; "
-            f"candidates={candidates}, found={matches}, columns={sorted(columns)}"
+            f"{symbol} underlying schema has no recognizable {label} column; "
+            f"candidates={candidates}, columns={sorted(columns)}"
         )
+    # Candidates are ordered by preference (e.g. explicit date before timestamp).
     return matches[0]
 
 
