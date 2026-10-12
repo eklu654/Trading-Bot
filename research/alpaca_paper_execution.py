@@ -46,7 +46,7 @@ def _decimal(value, name):
 def plan_order(*, portfolio, endpoint, account_status, account_blocked,
                trading_blocked, currency, market_is_open, session_date,
                latest_bar_date, price, target_weight, current_qty,
-               open_order_count, max_bar_age_sessions=0):
+               open_order_count, virtual_equity=VIRTUAL_ALLOCATION, max_bar_age_sessions=0):
     """Return a deterministic paper-only intent or None when already aligned."""
     portfolio = str(portfolio).lower()
     if portfolio not in PORTFOLIO_WEIGHTS:
@@ -73,13 +73,16 @@ def plan_order(*, portfolio, endpoint, account_status, account_blocked,
     px = _decimal(price, "price")
     weight = _decimal(target_weight, "target_weight")
     current = _decimal(current_qty, "current_qty")
+    equity = _decimal(virtual_equity, "virtual_equity")
     if px <= 0:
         raise SafetyGateError("price must be positive")
+    if equity <= 0:
+        raise SafetyGateError("virtual equity must be positive")
     if current < 0:
         raise SafetyGateError("short positions are not allowed")
     if weight not in PORTFOLIO_WEIGHTS[portfolio]:
         raise SafetyGateError("target weight violates frozen portfolio contract")
-    target_notional = (VIRTUAL_ALLOCATION * weight).quantize(Decimal("0.01"))
+    target_notional = (equity * weight).quantize(Decimal("0.01"))
     target_qty = (target_notional / px).quantize(Decimal("0.001"), rounding=ROUND_DOWN)
     delta = target_qty - current
     if delta == 0:
