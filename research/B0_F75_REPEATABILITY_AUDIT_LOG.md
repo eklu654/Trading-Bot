@@ -321,3 +321,9 @@
 - The new return-to-price checks passed against the persisted ledger. Runtime again reported no new completed sessions after cutoff/tail, so ledger and manifest were not rewritten. This is a successful no-op run, not proof that the conditional branch push has succeeded.
 - Re-read state/ledger after the run: 2 ledger rows, 1 return-bearing session, tail 2026-10-09, frozen cutoff 2026-10-07, mode `SHADOW_ONLY_NO_ORDERS`; stored checksum and prior independently verified checksum remain `5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e`. No fabricated observations or historical row changes.
 - The price-integrity hardening is now validated. F75 remains frozen and shadow-only; prospective repeatability gates are not met.
+
+
+## Next observation timing — 2026-10-12
+
+- The current-session guard intentionally excludes the New York calendar date on every invocation, even after market close. Therefore the Monday 2026-10-12 scheduled run may still be a no-op for that day's bar; if Yahoo data is complete and aligned, the Tuesday 2026-10-13 run is the first scheduled opportunity to append the 2026-10-12 observation.
+- Do not interpret a Monday no-op as a failure. On the next run, verify that only completed sessions newer than 2026-10-09 are appended, that prior rows remain byte-for-byte unchanged, and that the state counters/checksum match. A real append should naturally exercise the conditional commit/push branch; never synthesize a row to trigger it.
