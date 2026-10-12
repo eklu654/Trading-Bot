@@ -359,3 +359,12 @@
 - Follow-up run [38201694169](https://github.com/eklu654/Trading-Bot/actions/runs/38201694169) passed for both portfolios after moving read-only broker reconciliation ahead of the closed-market skip. Both accounts reported ACTIVE/USD, zero TQQQ positions, zero open positions, and zero open orders; the market was closed, so both runs returned `SKIPPED_MARKET_CLOSED` and uploaded sanitized artifacts. Signal session was 2026-10-09, with B0 and F75 both at 100%. No orders were submitted.
 - Sizing review caught a separate correctness issue: $5,000 is the initial virtual allocation, not a permanently fixed target notional. The planner now accepts evolving virtual equity, and the daily diagnostic reads the relevant 0-bp shadow equity instead of sizing from Alpaca's default NLV. This is still only a reference plan; actual paper trading needs a separate fill-backed virtual-equity ledger because actual fills may diverge from the shadow simulation.
 - New planner and diagnostic tests were added for virtual-equity sizing. Run [38201802963](https://github.com/eklu654/Trading-Bot/actions/runs/38201802963) passed both B0 and F75 jobs: 14 planner tests and 5 ledger/diagnostic tests passed in each job. Both reports used 2026-10-09 signals, 100% B0/F75 targets, $4,973.08 shadow virtual equity, ACTIVE/USD accounts, zero TQQQ positions, zero open positions, zero open orders, and zero recent orders. Alpaca clock was closed; both jobs returned `SKIPPED_MARKET_CLOSED` and uploaded sanitized artifacts. No order was submitted.
+
+## 2026-10-12 — fill-backed virtual ledger state machine
+
+- Added `research/paper_virtual_portfolio.py` and 14 tests in `research/test_paper_virtual_portfolio.py`.
+- State starts at $5,000 cash and zero shares; unique fill activity IDs make fill application idempotent and allow partial fills to be applied incrementally.
+- Target sizing compounds from fill-backed virtual equity, not Alpaca's default paper NLV or a permanently fixed $5,000 notional.
+- Staged deterministic client IDs, unknown-outcome lockout, terminal reconciliation, and used-ID replay prevention are represented in a pure state machine.
+- Run [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005) passed compilation and all 14 tests.
+- Still not connected to a persistent state branch or Alpaca fill/order APIs. No order was submitted.
