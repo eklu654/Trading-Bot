@@ -25,3 +25,17 @@ This module is not connected to broker endpoints or a durable state branch yet. 
 - Workflow [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005) completed successfully.
 - Python compilation passed and all 14 state-machine tests passed, covering initial capital, idempotent fills, incremental partial fills, long-only enforcement, mark monotonicity, compounded sizing, F75/B0 eligibility, staged-intent lockout, unknown outcomes, client-ID reconciliation, terminal position reconciliation, and replay prevention.
 - This is a local state-machine test only. It does not prove persistence, live broker fill retrieval, or order submission.
+
+
+## Integration update — 2026-10-12 06:20 UTC
+
+The original “Current boundary” section above describes the state-machine-only checkpoint and is superseded for repository integration status by the following verified facts:
+
+- Main now contains `.github/workflows/alpaca-paper-order-executor.yml` and `.github/workflows/alpaca-paper-virtual-ledger.yml`. The executor is scheduled for 13:40 UTC weekdays and enables POST only for a scheduled event; the reconciliation workflow uses GET only.
+- Executor run [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) completed successfully but returned `SKIPPED_MARKET_CLOSED` for both portfolios and `NO_PENDING_INTENT`; it did not submit an order.
+- Read-only reconciliation run [38203111870](https://github.com/eklu654/Trading-Bot/actions/runs/38203111870) completed successfully.
+- Current durable states on this branch remain B0/F75 at $5,000.00 cash/equity, zero TQQQ shares, no pending intent, no processed fills, and mark date 2026-10-09. No broker fill has yet been reconciled.
+- Code review checked a suspected false-positive in the reconciliation guard. `stage_intent()` adds the staged client order ID to `used_client_order_ids` before the state is persisted, so the known pending order is not rejected by the later bot-order ID guard. No code change was made for that suspicion.
+- Main's paper-readiness record and current session audit: [readiness](https://github.com/eklu654/Trading-Bot/blob/main/docs/03-execution/alpaca-paper-readiness-2026-10-12.md) · [session audit](https://github.com/eklu654/Trading-Bot/blob/main/docs/03-execution/session-audit-2026-10-12-0611z.md).
+
+Next evidence needed is the first scheduled open-market executor result, followed by fill-backed reconciliation and verification that both persisted ledger states reflect broker order/fill status and the completed-session mark. No live trading is authorized.
