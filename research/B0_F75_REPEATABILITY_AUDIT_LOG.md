@@ -313,3 +313,11 @@
 - At 25 bp modeled costs, F75 had 3/5 measured episode return wins and 3/5 drawdown improvements; median incremental episode return was only 0.0105% (about $0.52 on the normalized $5,000 episode baseline). Full-period 2010-02-11 through 2026-10-07 comparison over 4,189 sessions: B0 terminal equity $3,852,657 vs F75 $3,898,853 at 25 bp (+$46,195); max drawdown -73.80% vs -67.99% (about 5.8 percentage points less severe). At 50 bp the terminal advantage shrinks to about $11,695.
 - Interpretation remains **mixed historical evidence, not promotion**: median episode advantage is negligible, aggregate advantage is sensitive to transaction costs and potentially concentrated in specific regimes, and the prospective ledger still has only one return-bearing session. Continue B0 as control; keep F75 frozen and shadow-only until preregistered prospective gates are met.
 - Monitor price-integrity validation remains open pending successful CI after the exact-precision fixture correction; see commits `7e6f45f5ed6ec2beabdae6a9317e15a6506234c9` and run [38195586167](https://github.com/eklu654/Trading-Bot/actions/runs/38195586167).
+
+
+## 2026-10-12 02:24 UTC — price-integrity guard passed
+
+- Monitor run [38195586167](https://github.com/eklu654/Trading-Bot/actions/runs/38195586167) succeeded on commit `7e6f45f5ed6ec2beabdae6a9317e15a6506234c9`. All workflow steps passed, including immutable canonical artifact download, compile, **32/32 tests**, monitor execution, and conditional commit/no-op handling.
+- The new return-to-price checks passed against the persisted ledger. Runtime again reported no new completed sessions after cutoff/tail, so ledger and manifest were not rewritten. This is a successful no-op run, not proof that the conditional branch push has succeeded.
+- Re-read state/ledger after the run: 2 ledger rows, 1 return-bearing session, tail 2026-10-09, frozen cutoff 2026-10-07, mode `SHADOW_ONLY_NO_ORDERS`; stored checksum and prior independently verified checksum remain `5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e`. No fabricated observations or historical row changes.
+- The price-integrity hardening is now validated. F75 remains frozen and shadow-only; prospective repeatability gates are not met.
