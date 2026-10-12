@@ -118,6 +118,17 @@ class VirtualPortfolioTests(unittest.TestCase):
         with self.assertRaisesRegex(LedgerSafetyError, "already used"):
             plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
 
+    def test_completed_order_blocks_rebalance_replay_for_same_signal_session(self):
+        s = new_state("b0")
+        intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
+        s = stage_intent(s, intent)
+        s = mark_submission_outcome(s, "accepted", "broker-1")
+        s = reconcile_order(s, {"client_order_id":intent["client_order_id"],"id":"broker-1","status":"filled"})
+        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":"50","price":"100"}])
+        s = complete_terminal_intent(s, broker_qty="50", broker_status="filled")
+        with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
+            plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="99")
+
     def test_state_serialization_is_stable_and_secret_free(self):
         s = new_state("f75")
         self.assertEqual(state_json(s), state_json(s))
