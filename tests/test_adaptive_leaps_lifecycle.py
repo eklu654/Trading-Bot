@@ -28,6 +28,7 @@ class LifecycleTests(unittest.TestCase):
         self.assertFalse(quote_is_eligible(q(mark=0)))
         self.assertFalse(quote_is_eligible(q(volume=0, oi=0)))
         self.assertFalse(quote_is_eligible(q(kind="put")))
+        self.assertFalse(quote_is_eligible(q(cid="")))
 
     def test_target_dte_precedes_delta_and_spread(self):
         target_dte = q(cid="target-dte", exp=date(2020, 9, 28), delta=0.70, bid=9, ask=9.1)
