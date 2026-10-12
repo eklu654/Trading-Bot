@@ -93,6 +93,24 @@ def run(portfolio, ledger, state_path):
         raise DiagnosticBlocked("account is not ACTIVE and unblocked")
     if account.get("currency") != "USD":
         raise DiagnosticBlocked("account currency is not USD")
+    positions = get_json(PAPER_BASE_URL + "/v2/positions", key, secret)
+    open_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
+        "status": "open", "limit": "500", "direction": "desc"
+    }), key, secret)
+    recent_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
+        "status": "all", "limit": "50", "direction": "desc"
+    }), key, secret)
+    if not isinstance(positions, list) or not isinstance(open_orders, list) or not isinstance(recent_orders, list):
+        raise DiagnosticBlocked("broker positions/orders response has unexpected shape")
+    if open_orders:
+        raise DiagnosticBlocked("unresolved open orders exist; reconcile before planning")
+    unexpected = [p.get("symbol", "unknown") for p in positions if p.get("symbol") != SYMBOL]
+    if unexpected:
+        raise DiagnosticBlocked("unexpected open positions exist; manual reconciliation required")
+    position = next((p for p in positions if p.get("symbol") == SYMBOL), None)
+    current_qty = Decimal(position["qty"]) if position else Decimal("0")
+    if current_qty < 0 or (position and str(position.get("side", "long")).lower() != "long"):
+        raise DiagnosticBlocked("short TQQQ position is not allowed")
     if clock.get("is_open") is not True:
         return {
             "status": "SKIPPED_MARKET_CLOSED",
@@ -108,22 +126,12 @@ def run(portfolio, ledger, state_path):
             "account_status": account.get("status"),
             "currency": account.get("currency"),
             "market_is_open": False,
-            "note": "Market closed. No broker positions were changed and no order was submitted.",
+            "current_tqqq_qty": str(current_qty),
+            "open_position_count": len(positions),
+            "open_order_count": len(open_orders),
+            "recent_order_count": len(recent_orders),
+            "note": "Market closed. Account and positions/orders were read; no order was submitted.",
         }
-    positions = get_json(PAPER_BASE_URL + "/v2/positions", key, secret)
-    open_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
-        "status": "open", "limit": "500", "direction": "desc"
-    }), key, secret)
-    recent_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
-        "status": "all", "limit": "50", "direction": "desc"
-    }), key, secret)
-    if not isinstance(positions, list) or not isinstance(open_orders, list) or not isinstance(recent_orders, list):
-        raise DiagnosticBlocked("broker positions/orders response has unexpected shape")
-    if open_orders:
-        raise DiagnosticBlocked("unresolved open orders exist; reconcile before planning")
-    unexpected = [p.get("symbol", "unknown") for p in positions if p.get("symbol") != SYMBOL]
-    if unexpected:
-        raise DiagnosticBlocked("unexpected open positions exist; manual reconciliation required")
     position = next((p for p in positions if p.get("symbol") == SYMBOL), None)
     current_qty = Decimal(position["qty"]) if position else Decimal("0")
     if current_qty < 0 or (position and str(position.get("side", "long")).lower() != "long"):
