@@ -57,3 +57,12 @@
 - Verified per account: ACTIVE, USD, not trading-blocked, not account-blocked, zero positions, zero open orders, valid broker clock timestamp; market was closed at the check time.
 - Preflight only used GET requests and printed sanitized metadata. No order was submitted. Do not interpret the preflight as proof of an active strategy executor.
 - Next implementation gate: frozen signal-to-target mapping, $5,000 virtual sleeve sizing independent of Alpaca's default account NLV, client-order-ID idempotency, broker reconciliation, and fail-closed data/session checks. B0 remains control; F75 remains frozen experimental overlay. Continue the prospective ledger in parallel; 252 return-bearing sessions is an efficacy-review gate, not a start gate for diagnostic paper tracking.
+
+
+## 2026-10-12 03:30 UTC — B0/F75 execution contract recorded
+
+- Added [B0/F75 Paper Execution Contract](https://github.com/eklu654/Trading-Bot/blob/research/qqq-slow-bear-audit/docs/research/B0_F75_PAPER_EXECUTION_CONTRACT_2026-10-12.md), commit `10497e8e4970a785c6dc0bc04d6f75e19b1e3503`.
+- Frozen contract: TQQQ long/flat; $5,000 virtual sleeve per account; B0 uses its binary signal; F75 remains capped by B0 eligibility and targets 75% while the tightening overlay is active or 100% otherwise.
+- The active-tightening implementation confirms its state is 0 when the sticky defensive condition is armed (QQQ below its 200-session SMA with lagged Fed state TIGHTENING_ACTIVE), and 1 when not armed; F75 applies 75% to the baseline while state 0. The overlay exits on QQQ reclaiming the 200-session SMA.
+- Contract lists fresh-signal, close-to-next-session timing, paper-only endpoint, broker reconciliation, fixed-sleeve sizing, idempotency, durable ledger and fault-test requirements. It does not claim any orders have been submitted.
+- Paper-order execution remains gated on implementing the actual broker adapter and fresh signal feed; diagnostic tracking and the 252-session prospective research continue in parallel.
