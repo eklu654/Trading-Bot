@@ -61,6 +61,7 @@ class VirtualPortfolioTests(unittest.TestCase):
         intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="110")
         self.assertEqual(intent["virtual_equity"], "5100.00")
         self.assertEqual(intent["target_notional"], "5100.00")
+        self.assertEqual(intent["reference_price"], "110")
         self.assertEqual(intent["target_qty"], "46.363")
 
     def test_f75_requires_and_respects_b0_eligibility(self):
