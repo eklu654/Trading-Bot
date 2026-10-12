@@ -116,6 +116,18 @@ def run(portfolio, ledger, state_path):
     current_qty = Decimal(position["qty"]) if position else Decimal("0")
     if current_qty < 0 or (position and str(position.get("side", "long")).lower() != "long"):
         raise DiagnosticBlocked("short TQQQ position is not allowed")
+    trade_response = get_json(DATA_URL + "/v2/stocks/TQQQ/trades/latest?feed=iex", key, secret)
+    trade = trade_response.get("trade") if isinstance(trade_response, dict) else None
+    if not isinstance(trade, dict) or "p" not in trade or "t" not in trade:
+        raise DiagnosticBlocked("latest TQQQ trade response is incomplete")
+    try:
+        price = Decimal(str(trade["p"]))
+        trade_time = datetime.fromisoformat(str(trade["t"]).replace("Z", "+00:00"))
+    except Exception:
+        raise DiagnosticBlocked("latest TQQQ trade price/timestamp is invalid") from None
+    age = (now - trade_time.astimezone(timezone.utc)).total_seconds()
+    if not price.is_finite() or price <= 0 or age < -5:
+        raise DiagnosticBlocked("latest TQQQ trade price/timestamp is invalid or in the future")
     if clock.get("is_open") is not True:
         return {
             "status": "SKIPPED_MARKET_CLOSED",
@@ -137,20 +149,14 @@ def run(portfolio, ledger, state_path):
             "open_position_count": len(positions),
             "open_order_count": len(open_orders),
             "recent_order_count": len(recent_orders),
-            "note": "Market closed. Account and positions/orders were read; no order was submitted.",
+            "latest_trade_timestamp": trade_time.isoformat(),
+            "latest_trade_age_seconds": round(age, 3),
+            "reference_price": str(price),
+            "trade_fresh_for_execution": age <= 180,
+            "note": "Market closed. Read-only broker/data checks only; no order was submitted.",
         }
-    trade_response = get_json(DATA_URL + "/v2/stocks/TQQQ/trades/latest?feed=iex", key, secret)
-    trade = trade_response.get("trade") if isinstance(trade_response, dict) else None
-    if not isinstance(trade, dict) or "p" not in trade or "t" not in trade:
-        raise DiagnosticBlocked("latest TQQQ trade response is incomplete")
-    try:
-        price = Decimal(str(trade["p"]))
-        trade_time = datetime.fromisoformat(str(trade["t"]).replace("Z", "+00:00"))
-    except Exception:
-        raise DiagnosticBlocked("latest TQQQ trade price/timestamp is invalid") from None
-    age = (now - trade_time.astimezone(timezone.utc)).total_seconds()
-    if not price.is_finite() or price <= 0 or age < -5 or age > 180:
-        raise DiagnosticBlocked("latest TQQQ trade is invalid or older than 180 seconds")
+    if age > 180:
+        raise DiagnosticBlocked("latest TQQQ trade is older than 180 seconds during market hours")
     target = b0 if portfolio == "b0" else f75
     intent = plan_order(
         portfolio=portfolio, endpoint=PAPER_BASE_URL,
