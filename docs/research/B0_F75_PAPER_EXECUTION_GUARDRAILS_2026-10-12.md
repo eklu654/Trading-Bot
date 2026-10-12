@@ -23,6 +23,6 @@ This planner does not fetch market data, calculate the live baseline/F75 signal,
 
 - Initial workflow run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724) passed the first 12 planner regression tests.
 - Added a 13th test and a fail-closed guard for a rebalance delta below 0.001 shares, preventing a zero-quantity order intent.
-- Latest run [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243), job “paper-execution-planner-guardrails”: **success** after the precision guard and 13-test suite were in place.
-- Both Python compilation and all 13 planner regression tests passed.
-- This validates the pure planner only. It is not evidence of live signal generation, broker reconciliation, or any submitted order.
+- Latest planner-only run [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243) passed all 13 tests after the precision guard.
+- Daily diagnostic run [38201802963](https://github.com/eklu654/Trading-Bot/actions/runs/38201802963) passed Python compilation, all 14 planner tests, and all 5 ledger/diagnostic tests for both portfolios. The sanitized outputs confirmed the signal/session, evolving shadow-equity reference, ACTIVE/USD status, zero positions/orders, and safe closed-market no-op.
+- This validates read-only diagnostics and planning, not broker order submission, fill-backed equity accounting, or order-outcome recovery.
