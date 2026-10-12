@@ -3,7 +3,7 @@ from decimal import Decimal
 from paper_virtual_portfolio import (
     new_state, validate_state, apply_fills, mark_to_market, plan_target,
     stage_intent, mark_submission_outcome, reconcile_order,
-    complete_terminal_intent, LedgerSafetyError, state_json,
+    complete_terminal_intent, mark_submission_attempting, abort_unsubmitted_intent, LedgerSafetyError, state_json,
 )
 
 class VirtualPortfolioTests(unittest.TestCase):
@@ -61,6 +61,7 @@ class VirtualPortfolioTests(unittest.TestCase):
         intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="110")
         self.assertEqual(intent["virtual_equity"], "5100.00")
         self.assertEqual(intent["target_notional"], "5100.00")
+        self.assertEqual(intent["reference_price"], "110")
         self.assertEqual(intent["target_qty"], "46.363")
 
     def test_f75_requires_and_respects_b0_eligibility(self):
@@ -117,6 +118,29 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = complete_terminal_intent(s, broker_qty="0", broker_status="rejected")
         with self.assertRaisesRegex(LedgerSafetyError, "already used"):
             plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
+
+    def test_completed_order_blocks_rebalance_replay_for_same_signal_session(self):
+        s = new_state("b0")
+        intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
+        s = stage_intent(s, intent)
+        s = mark_submission_outcome(s, "accepted", "broker-1")
+        s = reconcile_order(s, {"client_order_id":intent["client_order_id"],"id":"broker-1","status":"filled"})
+        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":"50","price":"100"}])
+        s = complete_terminal_intent(s, broker_qty="50", broker_status="filled")
+        with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
+            plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
+
+    def test_aborted_before_submit_is_safe_and_never_reused_same_session(self):
+        s = new_state("f75")
+        intent = plan_target(s, signal_session="2026-10-09", target_weight="0.75", reference_price="100", baseline_weight="1")
+        s = stage_intent(s, intent)
+        s = mark_submission_attempting(s)
+        s = abort_unsubmitted_intent(s, "market closed before POST")
+        self.assertIsNone(s["pending_intent"])
+        self.assertEqual(s["last_terminal_order"]["status"], "aborted_before_submit")
+        with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
+            plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100", baseline_weight="1")
+        self.assertIsNotNone(plan_target(s, signal_session="2026-10-12", target_weight="1", reference_price="100", baseline_weight="1"))
 
     def test_state_serialization_is_stable_and_secret_free(self):
         s = new_state("f75")
