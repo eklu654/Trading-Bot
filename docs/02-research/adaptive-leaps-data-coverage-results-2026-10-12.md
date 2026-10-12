@@ -26,6 +26,10 @@
 3. Next: inspect the year-by-year and DTE/delta buckets for gaps and quote-quality concentration, then build a deterministic long-call lifecycle replay with explicit quote selection, spread/slippage assumptions, contract continuity, and lifecycle/assignment handling. Keep the short-call rebound behavior frozen as already specified; do not optimize thresholds during this validation stage.
 4. Before interpreting any replay results, document survivorship, dataset-boundary bias, missing/crossed/zero quotes, and how an order is priced when the EOD snapshot is not demonstrably executable.
 
+## Year-by-year follow-up
+
+The artifact was subsequently analyzed by year for calls in the 270–539 DTE / absolute-delta 0.60–0.84 region. The separate [year-by-year review](adaptive-leaps-yearly-coverage-review-2026-10-12.md) records thin early-year coverage, partial 2025 coverage, and material year-to-year spread variation. This narrows the next gate but does not establish executable prices.
+
 ## Known limitations
 
 - EOD data cannot reconstruct intraday quote paths or order priority.
