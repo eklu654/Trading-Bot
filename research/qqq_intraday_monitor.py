@@ -71,7 +71,7 @@ def evaluate(clock, trade, bars, now, threshold=THRESHOLD):
         if not ts: continue
         try: dt=datetime.fromisoformat(ts.replace("Z","+00:00"))
         except (ValueError,AttributeError): continue
-        if dt.tzinfo is not None and dt.astimezone(NY).date() < today:
+        if dt.tzinfo is not None and dt.date() < today:
             prior.append((dt,dec(bar.get("c") or bar.get("close"),"daily close")))
     if not prior:
         raise MonitorError("no completed prior-session QQQ daily close available")
@@ -79,7 +79,7 @@ def evaluate(clock, trade, bars, now, threshold=THRESHOLD):
     close_time, prior_close=prior[-1]
     move=price/prior_close-Decimal("1")
     report.update({"status":"THRESHOLD_BREACHED" if move <= -threshold else "MONITORING",
-                   "latest_price":str(price),"prior_completed_session":close_time.astimezone(NY).date().isoformat(),
+                   "latest_price":str(price),"prior_completed_session":close_time.date().isoformat(),
                    "prior_close":str(prior_close),"change_from_prior_close_pct":str((move*100).quantize(Decimal("0.001"))),
                    "trigger_threshold_pct":"-4.5","threshold_breached":move <= -threshold})
     return report
