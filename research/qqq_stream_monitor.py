@@ -108,6 +108,9 @@ class EventStore:
             print(json.dumps({"event":"QQQ_"+kind,**payload},sort_keys=True),flush=True)
             return True
         return False
+    def has_event(self, session, kind):
+        row=self.db.execute("SELECT 1 FROM events WHERE event_key=?",(f"{session}:{kind}",)).fetchone()
+        return row is not None
     def close(self):
         self.db.close()
 
@@ -118,7 +121,6 @@ def run():
         raise MonitorError("B0 paper data credentials missing")
     store=EventStore(os.environ.get("QQQ_STREAM_DB","/data/qqq-stream-events.sqlite3"))
     backoff=1
-    breach_sessions=set()
     try:
         while True:
             try:
@@ -129,7 +131,7 @@ def run():
                 def on_open(ws):
                     ws.send(json.dumps({"action":"auth","key":key,"secret":secret}))
                 def on_message(ws,message):
-                    nonlocal backoff
+                    nonlocal backoff, session, close
                     try:
                         rows=json.loads(message)
                         if not isinstance(rows,list): rows=[rows]
@@ -147,6 +149,11 @@ def run():
                                 print(json.dumps({"event":"STREAM_ERROR","code":row.get("code"),"message":row.get("msg")}),flush=True)
                                 ws.close()
                             elif row.get("T")=="t" and row.get("S")=="QQQ":
+                                trade_time=parse_ts(row.get("t"))
+                                trade_session=trade_time.astimezone(NY).date()
+                                if trade_session > session:
+                                    session, close=latest_completed_close(key,secret)
+                                    print(json.dumps({"event":"BASELINE_REFRESHED","baseline_session":session.isoformat(),"baseline_close":str(close)}),flush=True)
                                 result=evaluate_trade(row.get("p"),close,row.get("t"))
                                 status=result["status"]
                                 if status=="STALE_TRADE_FAIL_CLOSED":
@@ -156,9 +163,8 @@ def run():
                                     continue
                                 backoff=1
                                 if status=="THRESHOLD_BREACHED":
-                                    breach_sessions.add(result["session"])
                                     store.record_once(result["session"],"THRESHOLD_BREACHED",result)
-                                elif result["session"] in breach_sessions:
+                                elif store.has_event(result["session"],"THRESHOLD_BREACHED"):
                                     store.record_once(result["session"],"RECOVERED_ABOVE_THRESHOLD",result)
                     except Exception as exc:
                         print(json.dumps({"event":"MESSAGE_PROCESSING_ERROR","error":type(exc).__name__}),flush=True)
