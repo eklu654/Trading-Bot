@@ -56,3 +56,12 @@
 
 ## Monitor validation result
 - Corrected run [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873) succeeded: all 8 monitor unit tests passed. Its live workflow invocation returned `MARKET_CLOSED`, so it did not yet exercise a live intraday trade/bar response. The next open-market polling run is the first opportunity to validate the real Alpaca data response path.
+
+
+## Schedule correction and post-change verification — 2026-10-12 06:20 UTC
+
+- Fixed the executor cron from `40 13 * * 1-5` to `40 14 * * 1-5`. A fixed 13:40 UTC schedule moves to 08:40 a.m. Eastern during standard time, before the market opens; the new 14:40 UTC schedule runs at 10:40 a.m. Eastern during daylight time and 09:40 a.m. Eastern during standard time.
+- The market-clock gate remains authoritative, and only `schedule` events set `ENABLE_PAPER_ORDER_SUBMISSION=true`.
+- Post-change executor push run [38211932599](https://github.com/eklu654/Trading-Bot/actions/runs/38211932599) completed successfully on commit `26302e02af2051814b974c17078b8eb546dccde0`. Its live execution path safely reported `SKIPPED_MARKET_CLOSED` and `NO_PENDING_INTENT` for both portfolios; test output also exercised the dry-run and staged-order guardrails. No paper order was submitted by this push-triggered run.
+- The earlier full research test job initially hit a transient Yahoo Finance rate limit after pytest had passed. Targeted rerun [38211724839](https://github.com/eklu654/Trading-Bot/actions/runs/38211724839), attempt 2, completed successfully.
+- Next scheduled market-open opportunity after this change is 2026-10-12 at 14:40 UTC. A paper trade must be confirmed from the sanitized broker report and fill-backed ledger; a green workflow alone is not evidence of a trade.
