@@ -86,6 +86,8 @@ def plan_order(*, portfolio, endpoint, account_status, account_blocked,
         return None
     side = "buy" if delta > 0 else "sell"
     qty = abs(delta).quantize(Decimal("0.001"), rounding=ROUND_DOWN)
+    if qty <= 0:
+        raise SafetyGateError("rebalance delta is below minimum share precision")
     identity = "|".join((portfolio, SYMBOL, session.isoformat(), str(weight), str(target_qty)))
     client_id = "tb-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     return OrderIntent(portfolio, SYMBOL, session.isoformat(), str(weight),
