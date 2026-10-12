@@ -8,11 +8,11 @@ Added a pure Python order-intent planner and regression tests to establish fixed
 
 - B0: TQQQ long/flat, target weight 0% or 100%.
 - F75: TQQQ long/flat, target weight 0%, 75%, or 100%, with B0 eligibility enforced by the caller using the frozen overlay.
-- Each portfolio uses its own $5,000 virtual allocation, not Alpaca paper NLV.
+- Each portfolio starts with its own $5,000 virtual allocation. Target notional must scale with the portfolio's evolving virtual equity, never a permanently fixed $5,000 notional and never Alpaca paper NLV. The current daily diagnostic uses shadow-ledger equity as a reference only; an order-writing executor must use its own fill-backed virtual-equity ledger.
 - Only the exact https://paper-api.alpaca.markets endpoint is accepted.
 - Account must be ACTIVE, unblocked, USD; market must be open; latest bar date must match the supplied completed-session date; no unresolved open orders.
 - Short positions, non-positive/non-finite prices, invalid target weights, and stale/mismatched session data fail closed.
-- Quantity is rounded down to 0.001 shares; intent IDs are deterministic for portfolio, symbol, session, target weight, and target quantity.
+- Quantity is rounded down to 0.001 shares; sub-precision deltas fail closed. Intent IDs are deterministic for portfolio, symbol, session, target weight, and target quantity.
 - Output mode is always PLAN_ONLY_NO_SUBMISSION.
 
 ## Not yet implemented / not claimed
