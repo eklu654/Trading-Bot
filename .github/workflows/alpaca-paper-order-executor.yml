@@ -1,0 +1,151 @@
+name: Alpaca Paper Order Executor
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/alpaca-paper-order-executor.yml"
+      - "research/alpaca_paper_order_executor.py"
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+      - "research/test_alpaca_paper_order_executor.py"
+  schedule:
+    # Market-open check is authoritative. Scheduled runs alone can submit paper orders.
+    - cron: "40 14 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alpaca-paper-order-executor
+  cancel-in-progress: false
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+      - name: Preserve executor and fetch both ledgers
+        run: |
+          set -euo pipefail
+          cp research/alpaca_paper_order_executor.py /tmp/paper-order-executor.py
+          git fetch --no-tags origin +refs/heads/research/qqq-slow-bear-audit:refs/remotes/origin/research/qqq-slow-bear-audit
+          git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
+          mkdir -p /tmp/paper-state
+          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_daily_ledger.csv > /tmp/paper-state/shadow.csv
+          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_state.json > /tmp/paper-state/shadow-state.json
+          git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > /tmp/paper-state/b0_state.json
+          git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > /tmp/paper-state/f75_state.json
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile and test executor guardrails
+        run: |
+          python -m py_compile research/paper_virtual_portfolio.py research/alpaca_paper_order_executor.py
+          PYTHONPATH=research python research/test_paper_virtual_portfolio.py
+          PYTHONPATH=research python research/test_alpaca_paper_order_executor.py
+      - name: Prepare B0/F75 intents (schedule-only order enable)
+        env:
+          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }}
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio b0 --state /tmp/paper-state/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --report paper-prepare-b0.json
+          b0=$?
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio f75 --state /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --report paper-prepare-f75.json
+          f75=$?
+          if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
+      - name: Commit staged intents before any POST
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout -B paper-execution-ledger origin/paper-execution-ledger
+          cp /tmp/paper-state/b0_state.json data/paper_execution/b0_state.json
+          cp /tmp/paper-state/f75_state.json data/paper_execution/f75_state.json
+          if [ -n "$(git status --porcelain -- data/paper_execution/b0_state.json data/paper_execution/f75_state.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/paper_execution/b0_state.json data/paper_execution/f75_state.json
+            git commit -m "paper: persist staged order intents"
+            git push origin HEAD:paper-execution-ledger
+          else
+            echo "No staged-intent state changes."
+          fi
+      - name: Arm each staged intent and create one-run permit
+        if: success()
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode arm --portfolio b0 --state /tmp/paper-state/b0_state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-arm-b0.json
+          b0=$?
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode arm --portfolio f75 --state /tmp/paper-state/f75_state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-arm-f75.json
+          f75=$?
+          if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
+      - name: Commit SUBMITTING state before broker mutation
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/paper-state/b0_state.json data/paper_execution/b0_state.json
+          cp /tmp/paper-state/f75_state.json data/paper_execution/f75_state.json
+          if [ -n "$(git status --porcelain -- data/paper_execution/b0_state.json data/paper_execution/f75_state.json)" ]; then
+            git add data/paper_execution/b0_state.json data/paper_execution/f75_state.json
+            git commit -m "paper: arm staged intents before submission"
+            git push origin HEAD:paper-execution-ledger
+          else
+            echo "No SUBMITTING state changes."
+          fi
+      - name: Submit or reconcile existing intents (paper API only)
+        if: success()
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
+          b0=$?
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
+          f75=$?
+          if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
+      - name: Persist broker submission outcomes
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "$(git status --porcelain -- data/paper_execution/b0_state.json data/paper_execution/f75_state.json)" ]; then
+            git add data/paper_execution/b0_state.json data/paper_execution/f75_state.json
+            git commit -m "paper: persist broker submission outcomes"
+            git push origin HEAD:paper-execution-ledger
+          else
+            echo "No submission outcome changes."
+          fi
+      - name: Upload sanitized paper order audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpaca-paper-order-executor-audit
+          path: |
+            paper-prepare-b0.json
+            paper-prepare-f75.json
+            paper-arm-b0.json
+            paper-arm-f75.json
+            paper-order-b0.json
+            paper-order-f75.json
+          if-no-files-found: warn
