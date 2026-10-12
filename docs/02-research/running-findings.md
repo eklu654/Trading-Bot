@@ -102,3 +102,11 @@ Key evidence from the uploaded run artifact:
 The evidence supports keeping **ETF-001 as the capital-scalable baseline** and treating options as conditional candidates until capital-equivalent chronological validation establishes a sufficiently stable feasible trade sample. The regime selector must not be trained on holdout outcomes: it should be evaluated as a separate selection layer using training and validation, then frozen before one untouched holdout test.
 
 The project remains research/paper-trading only. Historical results do not establish future profitability, and the 0DTE path-dependent strategy remains blocked by the absence of intraday historical option quotes.
+
+
+### Adaptive LEAPS coverage audit — 2026-10-12
+
+- Fixed the coverage workflow trigger and verified run [38225648878](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878) completed successfully; artifact [11736311901](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878/artifacts/11736311901) contains the CSV and JSON report.
+- Full-source totals: SPY 24,681,665 contract-day observations (2008–2025), QQQ 15,345,882 (2011–2025). DTE >=270: 5,792,357 SPY rows / 4,455,633 valid+active; 3,089,957 QQQ rows / 2,275,977 valid+active.
+- Added [year-by-year coverage review](adaptive-leaps-yearly-coverage-review-2026-10-12.md) based on the downloaded artifact. Key cautions: SPY 2009 coverage is thin; QQQ 2011 coverage is lower; 2025 is a partial source window; spread quality varies materially by year.
+- Next gate remains deterministic long-call lifecycle replay with strict contract selection, same-date underlying joins, conservative bid/ask/slippage, duplicate/identity checks, and explicit expiration/exercise/assignment handling. Coverage is not fillability or profitability evidence. Keep short-call rebound rules frozen; don't optimize thresholds during repeatability validation.
