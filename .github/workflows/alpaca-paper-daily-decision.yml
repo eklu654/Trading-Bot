@@ -1,0 +1,64 @@
+name: Alpaca Paper Daily Signal-to-Account Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/alpaca-paper-daily-decision.yml"
+      - "research/alpaca_paper_daily_diagnostic.py"
+      - "research/alpaca_paper_execution.py"
+  schedule:
+    # 10:40 ET in daylight time / 09:40 ET in standard time; market-open check is authoritative.
+    - cron: "40 14 * * 1-5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: alpaca-paper-daily-diagnostic
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    strategy:
+      fail-fast: false
+      matrix:
+        portfolio: [b0, f75]
+    steps:
+      - name: Checkout main workflow code
+        uses: actions/checkout@v4
+      - name: Fetch latest shadow ledger from research branch
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin refs/heads/research/qqq-slow-bear-audit
+          mkdir -p /tmp/f75-ledger
+          git show FETCH_HEAD:data/research/f75_shadow_daily_ledger.csv > /tmp/f75-ledger/ledger.csv
+          git show FETCH_HEAD:data/research/f75_shadow_state.json > /tmp/f75-ledger/state.json
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run read-only broker and signal diagnostic
+        env:
+          PORTFOLIO: ${{ matrix.portfolio }}
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=research python research/alpaca_paper_daily_diagnostic.py \
+            --portfolio "$PORTFOLIO" \
+            --ledger /tmp/f75-ledger/ledger.csv \
+            --state /tmp/f75-ledger/state.json \
+            --output "paper-diagnostic-$PORTFOLIO.json"
+      - name: Upload sanitized diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpaca-paper-diagnostic-${{ matrix.portfolio }}
+          path: paper-diagnostic-${{ matrix.portfolio }}.json
+          if-no-files-found: warn
