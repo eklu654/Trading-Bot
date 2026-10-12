@@ -11,7 +11,8 @@ on:
       - "research/test_alpaca_paper_execution.py"
       - "research/test_alpaca_paper_daily_diagnostic.py"
   schedule:
-    # 10:40 ET in daylight time / 09:40 ET in standard time; market-open check is authoritative.
+    # Run near the open in Central time year-round; the market clock safely skips the pre-open winter slot.
+    - cron: "40 13 * * 1-5"
     - cron: "40 14 * * 1-5"
 
 permissions:
