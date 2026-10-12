@@ -151,8 +151,14 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
     if equity <= 0:
         raise LedgerSafetyError("current virtual equity must be positive")
     target_notional = (equity * weight).quantize(Decimal("0.01"))
-    target_qty = (target_notional / price).quantize(Decimal("0.001"), rounding=ROUND_DOWN)
     current_qty = dec(state["qty"], "qty")
+    raw_target_qty = (target_notional / price).quantize(Decimal("0.001"), rounding=ROUND_DOWN)
+    if raw_target_qty > current_qty:
+        # Leave a 0.5% cash reserve so ordinary market-order slippage does not
+        # turn the virtual cash balance negative after a buy fill.
+        target_qty = (target_notional / (price * Decimal("1.005"))).quantize(Decimal("0.001"), rounding=ROUND_DOWN)
+    else:
+        target_qty = raw_target_qty
     delta = target_qty - current_qty
     if delta == 0:
         return None
