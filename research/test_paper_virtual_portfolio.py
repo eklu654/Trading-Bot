@@ -64,6 +64,13 @@ class VirtualPortfolioTests(unittest.TestCase):
         self.assertEqual(intent["reference_price"], "110")
         self.assertEqual(intent["target_qty"], "46.132")
 
+    def test_buy_intent_leaves_cash_buffer_for_market_slippage(self):
+        s = new_state("b0")
+        intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
+        self.assertEqual(intent["target_notional"], "5000.00")
+        self.assertEqual(intent["target_qty"], "49.751")
+        self.assertLess(Decimal(intent["qty"]) * Decimal(intent["reference_price"]), Decimal(intent["target_notional"]))
+
     def test_f75_requires_and_respects_b0_eligibility(self):
         s = new_state("f75")
         with self.assertRaisesRegex(LedgerSafetyError, "requires the B0"):
