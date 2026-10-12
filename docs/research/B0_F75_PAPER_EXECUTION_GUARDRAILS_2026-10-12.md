@@ -21,4 +21,6 @@ This planner does not fetch market data, calculate the live baseline/F75 signal,
 
 ## Validation
 
-The workflow run linked from the commit history is the authority for test results. Record its actual conclusion and test count here after Actions finishes.
+- Workflow run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724), job “paper-execution-planner-guardrails”: **success**.
+- Python compilation passed and all 12 planner regression tests completed successfully.
+- This validates the pure planner only. It is not evidence of live signal generation, broker reconciliation, or any submitted order.
