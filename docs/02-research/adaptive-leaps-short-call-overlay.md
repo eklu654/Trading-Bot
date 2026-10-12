@@ -162,3 +162,12 @@ Do not call the strategy validated unless:
 ### 2026-10-12 — Coverage auditor SQL repair
 - Code review found a literal escaped newline embedded in the aggregate SQL around missing-quote counts; corrected it to a real SQL line break in `research/audit_adaptive_leaps_coverage.py` (commit `07728ca62c28a57dde09fcafb2cdd1fc3fcb72e9`).
 - This is a syntax repair, not a verified coverage result. The manual workflow still must run successfully and its CSV/JSON artifact must be inspected before strategy replay work proceeds.
+
+
+### 2026-10-12 — Lifecycle primitives and test gate added
+- Added `research/adaptive_leaps_lifecycle.py` with immutable quote representation, 270-DTE candidate eligibility/selection, ask-side buys, bid-side sells, 30-DTE exit predicate, and a guard that disallows same-snapshot execution.
+- Added `tests/test_adaptive_leaps_lifecycle.py` for invalid/crossed/zero quotes, activity gate, selection tie-breaks, buy/sell sides, expiry buffer, and causal execution-date boundary.
+- Updated `.github/workflows/adaptive-leaps-data-coverage.yml` to compile the lifecycle module and run its focused unit tests. CI run [38227733194](https://github.com/eklu654/Trading-Bot/actions/runs/38227733194) was queued at the time of this note; do not call the test gate passed until the run is completed and its steps are inspected.
+- This is a mechanics layer, **not yet a historical lifecycle replay**. No return, drawdown, CAGR, account feasibility, assignment behavior, or short-call overlay performance has been computed from it.
+- The current primitive uses a frozen 270-DTE target, +/-45 calendar-day eligibility band, absolute delta 0.60–0.95, valid non-crossed quote, and volume/open-interest activity. Ranking: DTE distance, delta distance, relative spread, higher OI, higher volume, earlier expiration, lower strike, contract ID.
+- Before any P/L replay, define an explicit entry calendar and missing-candidate policy; ensure all fills happen no earlier than the next available EOD observation after the signal. Add portfolio/account ledger and long-leg lifecycle integration only after this focused test gate passes.
