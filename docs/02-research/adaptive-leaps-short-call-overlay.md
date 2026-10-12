@@ -189,7 +189,7 @@ Do not call the strategy validated unless:
 
 ### 2026-10-12 — Fast unit-test workflow isolated
 - Added `.github/workflows/adaptive-leaps-unit-tests.yml` so lifecycle unit tests run independently of the lengthy historical Parquet downloads.
-- Fast test run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) completed successfully. The module compiled and all **7 lifecycle unit tests passed** (0.001 seconds): quote/activity validity, invalid/crossed quotes, deterministic ranking, no-candidate behavior, ask/bid execution sides, expiry-buffer boundary, and next-observation causality.
+- Fast test run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) completed successfully. The module compiled and all **8 lifecycle unit tests passed** (0.001 seconds) in the latest run [38228021060](https://github.com/eklu654/Trading-Bot/actions/runs/38228021060): quote/activity validity, invalid/crossed quotes, DTE-priority ranking, delta/spread tie-breaks, no-candidate behavior, ask/bid execution sides, expiry-buffer boundary, and next-observation causality.
 - The data-coverage workflow also now runs the unit tests before its data downloads, so syntax/logic failures surface early on future runs.
 
 - Frozen lifecycle protocol: one long call per symbol; causal selection at close t, execution no earlier than the next option observation date, ask-side entries, bid-side exits, exit signal at <=30 DTE, retry entries each observation while flat, log missed/invalid next-date quotes, and never invent a fill. This is a reproducible mechanics baseline, not an optimized schedule.
