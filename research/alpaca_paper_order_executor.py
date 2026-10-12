@@ -217,6 +217,12 @@ def submit(a):
         if session!=pending.get("signal_session") or target!=Decimal(pending.get("target_weight")):
             raise ExecutorBlocked("latest signal changed after intent was staged")
         if state.get("mark_date")!=session: raise ExecutorBlocked("virtual ledger mark date no longer matches signal session")
+        opens=get_json(PAPER_URL+"/v2/orders?"+urlencode({"status":"open","limit":"500","direction":"desc"}),key,secret)
+        if not isinstance(opens,list): raise ExecutorBlocked("open-order response has unexpected shape")
+        same_open=next((o for o in opens if o.get("client_order_id")==cid),None)
+        if same_open is not None:
+            state=reconcile_order(state,same_open); write_state(sp,state)
+            emit(a.report,{"status":"EXISTING_OPEN_ORDER_RECONCILED","portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":same_open.get("id"),"note":"No POST sent."}); return
         ctx=broker_context(a.portfolio,state,key,secret,now,allow_pending_client_id=cid)
         if ctx is None: raise ExecutorBlocked("market closed before POST")
         ref=Decimal(pending["reference_price"])

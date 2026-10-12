@@ -164,7 +164,11 @@ def run_sync(portfolio, state_path, report_path):
                 {"client_order_id":state["pending_intent"]["client_order_id"]}),
             key, secret, allow_404=True)
         if broker_order is None:
-            state = reconcile_order(state, None)
+            if state["pending_intent"].get("submission_state") == "REJECTED":
+                state = complete_terminal_intent(
+                    state, broker_qty=str(broker_qty), broker_status="rejected")
+            else:
+                state = reconcile_order(state, None)
         else:
             status = str(broker_order.get("status","unknown")).lower()
             if status in ("filled","rejected","canceled","expired"):

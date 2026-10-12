@@ -6,7 +6,7 @@
 - Daily signal-to-account diagnostic [38201802963](https://github.com/eklu654/Trading-Bot/actions/runs/38201802963) passed for both portfolios. Its tests passed (14 planner tests plus 5 signal-ledger tests per job); the latest signal session was 2026-10-09, B0/F75 close targets were both 100%, the shadow-equity reference was $4,973.08 per portfolio, and both paper accounts reported ACTIVE/USD, zero TQQQ positions, zero open positions, zero open orders, and zero recent orders. Alpaca's clock was closed, so both jobs safely skipped. No order was submitted.
 
 ## Added controls
-- The pure paper order planner uses deterministic client IDs, the exact paper endpoint, fixed strategy target-weight constraints, and fail-closed checks. Planner validation: [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243).
+- The pure paper order planner uses deterministic client IDs, the exact paper endpoint, fixed strategy target-weight constraints, and fail-closed checks. Fill-backed buy sizing leaves a 0.5% cash reserve to absorb ordinary market-order slippage without driving virtual cash negative. Planner validation: [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243).
 - The read-only daily diagnostic is in `.github/workflows/alpaca-paper-daily-decision.yml`, scheduled for 14:40 UTC weekdays. It verifies the shadow ledger hash/date/signal, account eligibility, broker positions/open orders/recent orders, broker clock, and fresh TQQQ trade data when the market is open.
 - A fill-backed virtual ledger state machine starts each portfolio at $5,000 cash and zero shares, applies unique fill activities idempotently, supports incremental partial fills, marks equity from cash plus shares, and blocks new intents while an order outcome is unknown. Its 14 tests passed in [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005).
 - Separate state branch `paper-execution-ledger` is initialized with B0/F75 virtual states. The new `.github/workflows/alpaca-paper-virtual-ledger.yml` will reconcile fill activities and positions and mark the virtual portfolio using Alpaca's raw daily bar, then commit state to that branch only if both portfolio checks pass. It is GET-only and never submits, replaces, or cancels orders.
@@ -25,3 +25,9 @@
 - All order writes are hard-pinned to `https://paper-api.alpaca.markets`. It requires the latest completed shadow signal, state mark date aligned to signal date, fresh IEX trade, ACTIVE/unblocked USD account, no unrelated positions/open orders, and broker quantity reconciled to fill-backed state.
 - Order reports are sanitized and uploaded as artifacts. The executor never uses Alpaca paper NLV for strategy sizing; it uses fill-backed virtual equity.
 - This workflow has not yet been validated by a scheduled market-open run. The next scheduled run may submit paper orders only if every gate passes; push/manual runs cannot submit. No live endpoint is used.
+
+
+## 2026-10-12 executor hardening follow-up
+- Added a 0.5% buy-side virtual-cash reserve, explicit reference-price storage, and a terminal-order rejection reconciliation path.
+- Added a second open-order lookup immediately before POST so an order that appears after the first client-ID lookup is reconciled rather than duplicated.
+- The current executor push-trigger is dry-run only. Scheduled runs alone can create the ephemeral submission permit and POST to the paper endpoint.
