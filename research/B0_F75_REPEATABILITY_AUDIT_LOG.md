@@ -343,3 +343,5 @@
 - Added workflow job `paper-execution-planner-guardrails` to `.github/workflows/b0-f75-mechanism-repeatability.yml`.
 - Run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724), job [114655405007](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724): compilation and all 12 tests passed.
 - This is a meaningful pre-execution safeguard checkpoint, **not** an order engine. Live completed-session signal construction, broker position/order/fill reconciliation, durable execution ledger, unknown-outcome recovery, and actual paper submission remain unimplemented. No order was submitted.
+
+- Follow-up [run 38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243) passed after adding the sub-0.001-share fail-closed case; the planner guardrail suite now has 13 passing tests.
