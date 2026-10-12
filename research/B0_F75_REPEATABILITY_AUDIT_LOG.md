@@ -336,3 +336,10 @@
 - Current ledger is initialized 2026-10-08 and contains one return-bearing observation through 2026-10-09. No claim is made that a new 2026-10-12 market observation exists yet. The first eligible post-weekend observation can only be appended after a completed market session and a subsequent run that excludes the current date.
 - First immediate actions: retain the current daily workflow, verify the next completed-session append, and review the resulting B0/F75 daily equity/cost series. Do not wait for 252 sessions to start simulation; the 252-session plus active-overlay-event threshold remains a gate for a formal efficacy review, not for maintaining diagnostic paper portfolios.
 
+## 2026-10-12 — paper execution planner guardrails
+
+- Added `research/alpaca_paper_execution.py`, a pure planner with no network access and no order-submission path.
+- Added 12 regression tests covering fixed $5,000 sizing, B0/F75 target constraints, flat sells, already-aligned no-op, paper-only endpoint, blocked accounts, unresolved orders, closed market, stale/mismatched session, invalid prices/short positions, deterministic client IDs, and secret-free stable serialization.
+- Added workflow job `paper-execution-planner-guardrails` to `.github/workflows/b0-f75-mechanism-repeatability.yml`.
+- Run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724), job [114655405007](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724): compilation and all 12 tests passed.
+- This is a meaningful pre-execution safeguard checkpoint, **not** an order engine. Live completed-session signal construction, broker position/order/fill reconciliation, durable execution ledger, unknown-outcome recovery, and actual paper submission remain unimplemented. No order was submitted.
