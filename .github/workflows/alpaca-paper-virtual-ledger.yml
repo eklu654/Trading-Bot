@@ -1,0 +1,87 @@
+name: Alpaca Paper Virtual Ledger Reconciliation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/alpaca-paper-virtual-ledger.yml"
+      - "research/alpaca_paper_virtual_ledger_sync.py"
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+  schedule:
+    - cron: "45 22 * * 1-5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: alpaca-paper-virtual-ledger-sync
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+      - name: Load isolated paper ledger branch
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
+          mkdir -p /tmp/paper-state
+          git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > /tmp/paper-state/b0_state.json
+          git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > /tmp/paper-state/f75_state.json
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile and test ledger state machine
+        run: |
+          python -m py_compile research/paper_virtual_portfolio.py research/alpaca_paper_virtual_ledger_sync.py
+          PYTHONPATH=research python research/test_paper_virtual_portfolio.py
+      - name: Reconcile B0 and F75 against paper API (GET only)
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        shell: bash
+        run: |
+          set +e
+          PYTHONPATH=research python research/alpaca_paper_virtual_ledger_sync.py --portfolio b0 --state /tmp/paper-state/b0_state.json --report paper-ledger-b0.json
+          b0_status=$?
+          PYTHONPATH=research python research/alpaca_paper_virtual_ledger_sync.py --portfolio f75 --state /tmp/paper-state/f75_state.json --report paper-ledger-f75.json
+          f75_status=$?
+          if [[ $b0_status -ne 0 || $f75_status -ne 0 ]]; then
+            echo "::error::At least one portfolio reconciliation was blocked; neither ledger state will be committed."
+            exit 1
+          fi
+      - name: Commit reconciled virtual ledger state
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
+          git checkout -B paper-execution-ledger origin/paper-execution-ledger
+          cp /tmp/paper-state/b0_state.json data/paper_execution/b0_state.json
+          cp /tmp/paper-state/f75_state.json data/paper_execution/f75_state.json
+          if [ -z "$(git status --porcelain -- data/paper_execution/b0_state.json data/paper_execution/f75_state.json)" ]; then
+            echo "No state changes; ledger branch unchanged."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/paper_execution/b0_state.json data/paper_execution/f75_state.json
+            git commit -m "paper: reconcile virtual portfolio ledger"
+            git push origin HEAD:paper-execution-ledger
+          fi
+      - name: Upload sanitized reconciliation reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alpaca-paper-virtual-ledger-reconciliation
+          path: |
+            paper-ledger-b0.json
+            paper-ledger-f75.json
+          if-no-files-found: warn

@@ -1,37 +1,19 @@
 # Alpaca Paper Portfolio Readiness — 2026-10-12
 
-## Verified
-- Credential check run [38199438537](https://github.com/eklu654/Trading-Bot/actions/runs/38199438537) passed for both B0 and F75.
-- Both paper accounts returned `ACTIVE`, USD currency, credentials present, and neither account nor trading was blocked.
-- Credential verification made only a GET request to `/v2/account`; it submitted no orders.
+## Verified broker preflight
+- Credential check [38199438537](https://github.com/eklu654/Trading-Bot/actions/runs/38199438537) passed for B0 and F75; both accounts were ACTIVE/USD and unblocked.
+- Read-only preflight [38199816562](https://github.com/eklu654/Trading-Bot/actions/runs/38199816562) reported zero positions and zero open orders for both accounts.
+- Daily signal-to-account diagnostic [38201802963](https://github.com/eklu654/Trading-Bot/actions/runs/38201802963) passed for both portfolios. Its tests passed (14 planner tests plus 5 signal-ledger tests per job); the latest signal session was 2026-10-09, B0/F75 close targets were both 100%, the shadow-equity reference was $4,973.08 per portfolio, and both paper accounts reported ACTIVE/USD, zero TQQQ positions, zero open positions, zero open orders, and zero recent orders. Alpaca's clock was closed, so both jobs safely skipped. No order was submitted.
 
-## New read-only preflight
-- Added `.github/workflows/alpaca-paper-portfolio-preflight.yml`.
-- For each account, it checks account eligibility, current positions, open orders, and Alpaca's broker clock/session state.
-- It reports only sanitized status/count metadata, not account numbers, credentials, balances, or raw API responses.
-- It uses GET requests only and has no order-submission endpoint or write operation.
-- Scheduled for weekdays at 22:15 UTC; also runs when this workflow file changes on `main`, and supports manual dispatch.
+## Added controls
+- The pure paper order planner uses deterministic client IDs, the exact paper endpoint, fixed strategy target-weight constraints, and fail-closed checks. Planner validation: [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243).
+- The read-only daily diagnostic is in `.github/workflows/alpaca-paper-daily-decision.yml`, scheduled for 14:40 UTC weekdays. It verifies the shadow ledger hash/date/signal, account eligibility, broker positions/open orders/recent orders, broker clock, and fresh TQQQ trade data when the market is open.
+- A fill-backed virtual ledger state machine starts each portfolio at $5,000 cash and zero shares, applies unique fill activities idempotently, supports incremental partial fills, marks equity from cash plus shares, and blocks new intents while an order outcome is unknown. Its 14 tests passed in [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005).
+- Separate state branch `paper-execution-ledger` is initialized with B0/F75 virtual states. The new `.github/workflows/alpaca-paper-virtual-ledger.yml` will reconcile fill activities and positions and mark the virtual portfolio using Alpaca's raw daily bar, then commit state to that branch only if both portfolio checks pass. It is GET-only and never submits, replaces, or cancels orders.
 
-## Remaining before strategy orders
-1. Run the preflight and verify current positions/open orders and session metadata.
-2. Implement strategy-to-target-position mapping with a fixed $5,000 virtual allocation per portfolio; never size from the paper account's default total balance.
-3. Add deterministic idempotent client order IDs, startup reconciliation, order/fill state tracking, stale-data fail-closed behavior, and explicit kill switch.
-4. Validate order sizing and signal timing before enabling any paper order submission. The existing F75 prospective ledger remains `SHADOW_ONLY_NO_ORDERS`; it is not itself an order engine.
-
-## Strategy status
-- B0 remains the control; F75 remains frozen experimental overlay.
-- Diagnostic B0/F75 equity tracking continues immediately and independently of the 252-return-bearing-session efficacy threshold.
-- Do not fabricate observations or use historical signal values as a current-session signal.
-
-
-## Read-only preflight result — 2026-10-12 03:27 UTC
-
-- Run [38199816562](https://github.com/eklu654/Trading-Bot/actions/runs/38199816562) passed for both portfolios.
-- B0 and F75 each reported ACTIVE / USD, no account or trading block, **zero open positions**, **zero open orders**, and a valid broker clock timestamp.
-- Alpaca reported the market closed at the check time. The preflight used GET requests only; no order was submitted or changed.
-- This confirms both accounts are clean starting states for the next execution-engine stage. It does not yet prove strategy signal generation or order/fill reconciliation.
-
-
-## Frozen strategy-to-portfolio contract
-
-The B0/F75 portfolio target mapping and required execution gates are documented in the research branch: [B0/F75 Paper Execution Contract](https://github.com/eklu654/Trading-Bot/blob/research/qqq-slow-bear-audit/docs/research/B0_F75_PAPER_EXECUTION_CONTRACT_2026-10-12.md). This is a specification, not an order executor. It explicitly preserves the $5,000 virtual sleeve per portfolio, B0 as control, F75 as the frozen 75%/100% overlay, and the need for current-session signals and broker reconciliation before any paper order.
+## Current boundary / remaining before paper orders
+- The virtual-ledger state machine and read-only diagnostic are validated locally; the new persistent broker reconciliation workflow still needs its first successful run. If the market-data or fill-activity endpoints are unavailable, it fails closed and does not update state.
+- The daily diagnostic's shadow-equity reference is for comparison only. Future order sizing must use the persistent fill-backed virtual-equity ledger, not Alpaca's default paper NLV or the shadow simulation alone.
+- Before any order-writing workflow is enabled: verify persisted ledger reconciliation, integrate the signal target with fill-backed equity, persist an order intent before POST, use client-order-ID reconciliation after timeouts, reconcile fill activities and broker position, and test rejection/partial-fill/restart/unknown-outcome paths.
+- B0 is the control; F75 is the frozen 75%/100% experimental overlay. The 252-return-bearing-session threshold is an efficacy-review gate, not a prerequisite for diagnostic tracking.
+- No live trading is authorized. No order has been submitted by these workflows.
