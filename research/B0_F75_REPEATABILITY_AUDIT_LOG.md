@@ -402,3 +402,5 @@
 
 - Follow-up executor run [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) passed 17 virtual-ledger tests and 14 executor tests. It verified distinct B0/F75 paper accounts, persisted hashed identity fingerprints, and skipped safely while the market was closed. State remains $5,000 cash / zero shares / no pending intent for both portfolios.
 - Executor schedule is now 13:40 UTC weekdays (9:40 a.m. US/Eastern). Push/manual runs remain dry-run only; scheduled market-open submission has not yet occurred.
+
+- Executor integration hiccup captured for audit: run [38203281432](https://github.com/eklu654/Trading-Bot/actions/runs/38203281432) failed before broker identity verification because the CLI still required `--state` in `verify-accounts` mode. The parser was corrected in commit `5171a90ba6284cee161239386aa47f011a3ff9cc`; follow-up [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) passed the full test suite and account verification. Neither run submitted an order.
