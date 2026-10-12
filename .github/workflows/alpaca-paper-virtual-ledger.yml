@@ -10,6 +10,7 @@ on:
       - "research/paper_virtual_portfolio.py"
       - "research/test_paper_virtual_portfolio.py"
   schedule:
+    # Read-only close reconciliation after regular US equity hours; market-clock gate is authoritative.
     - cron: "45 22 * * 1-5"
 
 permissions:
