@@ -399,3 +399,6 @@
 - The market was closed, so both prepare jobs returned `SKIPPED_MARKET_CLOSED`; arm returned `NO_ARM_REQUEST`; submit returned `NO_PENDING_INTENT`. No order was submitted.
 - The workflow committed the account fingerprints to the isolated `paper-execution-ledger` branch at `c6a75a08d2237fc600dbc3b5810b04c22379da7d`. Both virtual portfolios remain at $5,000 cash, zero shares, mark date 2026-10-09, and no pending intent.
 - The order-writing path is now wired but has not yet run on an open market. Only the weekday schedule can enable POST; push/manual runs are dry-run. The next scheduled run may submit paper orders if all gates pass.
+
+- Follow-up executor run [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) passed 17 virtual-ledger tests and 14 executor tests. It verified distinct B0/F75 paper accounts, persisted hashed identity fingerprints, and skipped safely while the market was closed. State remains $5,000 cash / zero shares / no pending intent for both portfolios.
+- Executor schedule is now 13:40 UTC weekdays (9:40 a.m. US/Eastern). Push/manual runs remain dry-run only; scheduled market-open submission has not yet occurred.
