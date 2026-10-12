@@ -273,3 +273,11 @@
 - First CI execution exposed a test-order interaction: a deliberately corrupted initialization marker was rejected by the new count check before reaching the existing initialization-marker guard. Moved manifest-counter checks after the ledger initialization-marker structural check. Fix commit: `182389fed611d8767dcdf3e5ac6cee880c238f75`.
 - The fixed episode-attribution workflow [38189181216](https://github.com/eklu654/Trading-Bot/actions/runs/38189181216) completed successfully on the code commit. The dedicated monitor run [38189181218](https://github.com/eklu654/Trading-Bot/actions/runs/38189181218) was still in progress at audit time; do not call the new guardrail suite passed until its test step and complete job are successful.
 - Older rerun attempts failed against an earlier checkout/validation order and were not treated as final proof. No ledger or state data was modified by the failed test steps; the append and commit steps were skipped. Strategy rules and prospective promotion criteria remain unchanged.
+
+
+## 2026-10-12 00:46 UTC — post-hardening CI verified
+
+- Final monitor run [38189181218](https://github.com/eklu654/Trading-Bot/actions/runs/38189181218) completed successfully on commit `182389fed611d8767dcdf3e5ac6cee880c238f75`: compile passed, all **29/29 tests passed**, monitor completed, and conditional ledger commit step completed successfully.
+- Runtime output explicitly confirmed no new completed market sessions after the frozen cutoff and ledger tail; therefore no ledger write or push was needed. This validates the new state-counter guards and safe no-op path, **not** the conditional branch-write path.
+- Re-read persisted files after the run: state manifest remains internally consistent; ledger still has exactly 2 rows and its stored SHA-256 remains `5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e`. No historical data or strategy settings changed.
+- The monitor guardrail change is now validated. Remaining research limitation is unchanged: only one return-bearing prospective session exists, so no conclusion about F75 repeatability or promotion is justified yet.
