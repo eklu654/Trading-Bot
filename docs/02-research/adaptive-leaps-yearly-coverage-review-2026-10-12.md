@@ -62,11 +62,17 @@
 4. **The source's 2025 observation window is incomplete** (238–239 dates in this filtered region), so annual comparisons should label it partial-year/source-window coverage.
 5. **No strategy conclusion follows from coverage.** This is a data availability gate only, not a return, drawdown, or paper-trading result.
 
-## Required next validation before lifecycle replay
+## Validation completed and remaining work
 
-- Join candidate rows to same-date underlying prices and assert match coverage and positive prices.
-- Confirm stable option identity fields and detect duplicate rows for (date, expiration, strike, type); do not infer continuity from a delta bucket alone.
-- Define candidate selection deterministically (target DTE, delta, liquidity tie-breaks) with no future-data leakage.
-- Define conservative entry/exit prices from bid/ask and explicit slippage; mark-to-market using mid is a separate sensitivity, not the primary executable model.
-- Handle expirations, exercise/assignment, cash requirements, contract multipliers, corporate actions, and missing quotes explicitly.
-- Freeze the long-call lifecycle rules before evaluating the short-call overlay. Preserve the already-frozen rebound rule: when the market improves, close/remove the short call rather than automatically writing another; if deterioration persists, manage it only under explicit predeclared rules.
+Completed on 2026-10-12:
+- Same-date underlying joins and positive-price checks: 100% for every audited year in the selected candidate region.
+- Duplicate contract-key groups: zero for SPY (18 source years) and QQQ (15 source years).
+- Immutable source pin plus SHA-256 manifest: all 35 downloaded Parquet files hashed.
+- Corrected candidate availability: 270 DTE 99.98% SPY / 99.84% QQQ; 365 DTE 93.60% / 78.05%; 540 DTE 67.28% / 43.95%.
+- Deterministic candidate selector and lifecycle primitives added; fast unit test run [38228021060](https://github.com/eklu654/Trading-Bot/actions/runs/38228021060) passed all 8 tests.
+
+Remaining before strategy conclusions:
+- Implement the full chronological long-call ledger and verify it against hand-calculated toy cases.
+- Add explicit fees/slippage sensitivities, missing/stale mark handling, expiry/assignment limitations, and the $5,000 account-feasibility ledger.
+- Only after the long-call hold/replacement control is correct, add the risk-triggered short-call overlay. Preserve the frozen rebound rule: close the short call when unwind triggers, do not automatically sell another; require a fresh risk activation.
+- No return, drawdown, CAGR, strategy superiority, or paper-trading result has yet been established by these data/selector checks.
