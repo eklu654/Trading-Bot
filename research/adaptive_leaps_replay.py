@@ -6,7 +6,7 @@ claim of executable fills or investment performance.
 """
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date
 from typing import Iterable
 
@@ -145,6 +145,9 @@ def replay_long_call(
             current_contract = by_key.get((day, held.contract_id))
             if current_contract is not None:
                 held = current_contract
+            else:
+                # Expiry advances with calendar time even when today's chain omits the contract.
+                held = replace(held, observation_date=day)
         mark_quote = by_key.get((day, held.contract_id)) if held and held.contract_id else None
         bid_mark = mark_quote.bid if _valid_sell(mark_quote) else None
         market_value = bid_mark * multiplier if bid_mark is not None else None
