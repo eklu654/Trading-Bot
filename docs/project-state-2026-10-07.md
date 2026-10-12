@@ -18,7 +18,7 @@ Current canonical starting balance: **$5,000**. The earlier $2,000 feasibility w
 
 Profitability is the primary objective. Drawdown is a measured tradeoff unless a specific survival, broker, operational, or predeclared risk constraint makes it a veto.
 
-No strategy is currently approved for paper/live trading.
+No strategy is approved for live trading or production promotion. As of 2026-10-12, diagnostic paper tracking is authorized for the separate B0 control and frozen F75 experimental portfolios through Alpaca paper accounts. This is an operational observation phase, not a claim of strategy efficacy or permission for live trading.
 
 ## Major research branches
 
@@ -232,3 +232,11 @@ The following scripts were corrected on main:
 An automated `TQQQ causal audit` workflow was also added so these scripts run together on relevant pushes.
 
 **Important:** the previously reported **$84.6K / $106.9K / $91.8K actual-TQQQ figures are now provisional and must be rerun after this second correction.** The old spectacular $128B/$204.9B figures remain invalid because they contained the earlier, more obvious same-day look-ahead. No TQQQ wealth figure should be treated as final until the new causal audit completes.
+
+
+## 2026-10-12 diagnostic paper-tracking update
+
+- B0 and F75 Alpaca paper accounts authenticated successfully and passed a read-only preflight: both ACTIVE/USD, not blocked, zero positions, zero open orders, and broker clock reachable. Runs: [credential check](https://github.com/eklu654/Trading-Bot/actions/runs/38199438537), [portfolio preflight](https://github.com/eklu654/Trading-Bot/actions/runs/38199816562).
+- The preflight did not submit orders. The portfolio execution contract is documented at [B0/F75 Paper Execution Contract](https://github.com/eklu654/Trading-Bot/blob/research/qqq-slow-bear-audit/docs/research/B0_F75_PAPER_EXECUTION_CONTRACT_2026-10-12.md).
+- The $5,000 virtual allocation per portfolio is distinct from Alpaca's default displayed paper-account equity. B0 remains the control; F75 remains frozen at 75% exposure during its active-tightening overlay and 100% otherwise when B0 is eligible.
+- The 252-return-bearing-session plus active-overlay-event threshold remains the efficacy-review gate, not a prerequisite for starting diagnostic tracking. Actual paper-order submission still requires a fresh signal feed, reconciliation, idempotency, durable order/fill records, and fault tests. No live trading is authorized.
