@@ -175,5 +175,5 @@ Do not call the strategy validated unless:
 
 ### 2026-10-12 — Fast unit-test workflow isolated
 - Added `.github/workflows/adaptive-leaps-unit-tests.yml` so lifecycle unit tests run independently of the lengthy historical Parquet downloads.
-- Run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) was queued at note time; the result is pending and must be checked before declaring tests green.
+- Fast test run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) completed successfully. The module compiled and all **7 lifecycle unit tests passed** (0.001 seconds): quote/activity validity, invalid/crossed quotes, deterministic ranking, no-candidate behavior, ask/bid execution sides, expiry-buffer boundary, and next-observation causality.
 - The data-coverage workflow also now runs the unit tests before its data downloads, so syntax/logic failures surface early on future runs.
