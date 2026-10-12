@@ -45,6 +45,23 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.ledger[1].event, "ENTRY_REJECTED")
         self.assertEqual(result.transactions[0]["date"], d3.isoformat())
 
+
+    def test_missing_exit_quote_retains_position_and_retries(self):
+        d1, d2, d3, d4 = date(2020, 1, 2), date(2020, 1, 3), date(2020, 1, 6), date(2020, 1, 7)
+        exp = d2 + timedelta(days=30)
+        result = replay_long_call([
+            q(d1, exp=exp, cid="A"),
+            q(d2, exp=exp, cid="A", bid=8, ask=9),
+            q(d3, cid="B"),
+            q(d4, exp=exp, cid="A", bid=6, ask=7),
+        ], symbol="SPY", target_dte=31)
+        self.assertEqual(result.ledger[2].event, "EXIT_REJECTED")
+        self.assertEqual(result.ledger[2].contract_id, "A")
+        sells = [txn for txn in result.transactions if txn["action"] == "SELL"]
+        self.assertEqual(len(sells), 1)
+        self.assertEqual(sells[0]["date"], d4.isoformat())
+        self.assertEqual(sells[0]["price"], 6)
+
     def test_account_cash_gate_rejects_unaffordable_contract(self):
         d1, d2 = date(2020, 1, 2), date(2020, 1, 3)
         result = replay_long_call([q(d1, bid=60, ask=61), q(d2, bid=60, ask=61)],
