@@ -142,3 +142,5 @@ The project remains research/paper-trading only. Historical results do not estab
 - Added `.github/workflows/adaptive-leaps-replay.yml` to download pinned SPY/QQQ option chains, write a SHA-256 manifest, and run theoretical plus $5,000 cash-constrained replay for both symbols.
 - Loader keeps full histories for contracts passing the frozen entry gate but restricts rows to 0–315 DTE to bound memory and retain post-entry exit quotes.
 - The workflow should upload daily ledgers, transactions, summaries, and source hashes. Execution/artifact inspection is still pending; no historical P/L conclusions have been accepted.
+
+- **Replay edge-case hardening:** missing quote dates now advance the held contract's calendar DTE while leaving its mark unavailable; candidate selection fails closed if contract identity is missing. Synthetic tests cover a missing exit quote and retry. The replay workflow uses a concurrency group that keeps the newest run active. Verification is still pending.
