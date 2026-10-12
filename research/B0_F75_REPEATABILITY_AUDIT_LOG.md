@@ -368,3 +368,11 @@
 - Staged deterministic client IDs, unknown-outcome lockout, terminal reconciliation, and used-ID replay prevention are represented in a pure state machine.
 - Run [38201992005](https://github.com/eklu654/Trading-Bot/actions/runs/38201992005) passed compilation and all 14 tests.
 - Still not connected to a persistent state branch or Alpaca fill/order APIs. No order was submitted.
+
+## 2026-10-12 — persistent paper virtual ledger initialized and synced
+
+- Created isolated branch `paper-execution-ledger` with independent B0 and F75 state files at $5,000 initial cash, zero shares, no pending intents, and a fill-history baseline of 2026-10-12 04:00 UTC.
+- Added `research/alpaca_paper_virtual_ledger_sync.py` and `.github/workflows/alpaca-paper-virtual-ledger.yml`. The workflow uses Alpaca GET requests only, reads fill activities since the baseline, deduplicates fill IDs, reconciles broker positions/open orders, marks virtual equity using the latest completed raw daily TQQQ bar, and commits state only when both portfolio syncs pass.
+- Run [38202255754](https://github.com/eklu654/Trading-Bot/actions/runs/38202255754) succeeded. Both B0 and F75 reported ACTIVE/USD, market closed, zero positions, zero open orders, zero recent orders, zero fill activities, $5,000 cash, zero TQQQ shares, and $5,000 virtual equity marked through 2026-10-09 at $81.30. No order was submitted.
+- The workflow committed both state files to `paper-execution-ledger` at commit `528db7bd9091670b0ddd9413422fa64f2e78782a`.
+- Remaining before order submission: build a two-phase executor that commits a deterministic order intent before POST, reconciles by client order ID after unknown outcomes, and uses this fill-backed state (not shadow equity or Alpaca NLV) for sizing. No order-writing workflow has been enabled.
