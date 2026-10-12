@@ -66,3 +66,10 @@
 - The active-tightening implementation confirms its state is 0 when the sticky defensive condition is armed (QQQ below its 200-session SMA with lagged Fed state TIGHTENING_ACTIVE), and 1 when not armed; F75 applies 75% to the baseline while state 0. The overlay exits on QQQ reclaiming the 200-session SMA.
 - Contract lists fresh-signal, close-to-next-session timing, paper-only endpoint, broker reconciliation, fixed-sleeve sizing, idempotency, durable ledger and fault-test requirements. It does not claim any orders have been submitted.
 - Paper-order execution remains gated on implementing the actual broker adapter and fresh signal feed; diagnostic tracking and the 252-session prospective research continue in parallel.
+
+
+## 2026-10-12 03:31 UTC — scheduler branch-placement correction
+
+- Correction to the older schedule caveat above: the default branch currently contains `.github/workflows/f75-shadow-scheduler.yml`, which schedules a monitor run at 22:35 UTC on weekdays and checks out `research/qqq-slow-bear-audit` before executing the monitor. Therefore the default-branch scheduling wrapper is present; the old statement that the schedule is not active until the workflow is copied/merged is stale.
+- The most recent validated monitor run remains [38195586167](https://github.com/eklu654/Trading-Bot/actions/runs/38195586167), which passed all 32 tests and verified ledger integrity, but was a no-op because no new completed session was eligible. The next scheduled opportunity is 2026-10-12 at 22:35 UTC; the monitor intentionally excludes the current New York calendar date, so do not expect a same-day row from that run.
+- Continue to verify the actual scheduled run's conclusion and logs rather than assuming that the presence of a schedule proves successful execution.
