@@ -40,3 +40,10 @@ This module is not connected to broker endpoints or a durable state branch yet. 
 - Latest closed-market validation: [38203111900](https://github.com/eklu654/Trading-Bot/actions/runs/38203111900) passed 17 virtual-ledger tests and 5 order-payload tests. It correctly staged no intent while the market was closed.
 - The persistent broker ledger workflow [38203111870](https://github.com/eklu654/Trading-Bot/actions/runs/38203111870) passed and made no state changes because no fills or new completed session mark were available.
 - Scheduled market-open order submission is still unverified; no paper order has been submitted.
+
+## Account identity and executor dry-run
+
+- Run [38203315464](https://github.com/eklu654/Trading-Bot/actions/runs/38203315464) passed 17 ledger tests and 6 executor tests.
+- B0 and F75 resolved to distinct paper accounts. Only hashed account fingerprints were persisted.
+- Push-triggered run correctly skipped while the market was closed; no intent was staged and no order was submitted.
+- Durable state branch commit after identity binding: `c6a75a08d2237fc600dbc3b5810b04c22379da7d`.
