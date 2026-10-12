@@ -46,3 +46,10 @@
 - The monitor compares the latest QQQ IEX trade with the most recent completed daily close and reports when the move is at or below -4.5%. It rejects stale trades and fails closed when a completed prior close cannot be identified.
 - This is **monitoring only**: it never creates orders, changes B0/F75 targets, or triggers the paper executor. Results are retained as 30-day Actions artifacts.
 - This is not a continuous stream and cannot guarantee capture of every brief intraday breach. A persistent Alpaca market-data stream/service with reconnect handling is the next step for lower-latency detection. Any trading reaction must separately specify whether the -4.5% rule is an intraday trigger or a completed-daily-close signal.
+
+## QQQ intraday threshold monitor — implementation checkpoint
+- Added `research/qqq_intraday_monitor.py`, 8 unit tests, and `.github/workflows/qqq-intraday-monitor.yml`.
+- It polls every five minutes during 13:00–20:59 UTC weekdays, checks Alpaca's market clock, reads the latest QQQ IEX trade, and compares it to the most recent completed daily close. A breach is reported at or below -4.5%. It is read-only and cannot submit orders.
+- First CI run [38204835453](https://github.com/eklu654/Trading-Bot/actions/runs/38204835453) caught a daily-bar timezone/session-date bug in tests; fixed by using the daily bar's own session date rather than converting midnight UTC to the prior New York date.
+- Corrected validation is running as [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873). Do not call this monitor validated until this run completes successfully.
+- Important limitation: GitHub Actions cron is best-effort, not a live stream. A short-lived breach can occur and reverse between polls, and scheduled runs can be delayed. This is an interim warning/measurement layer, not an automated defensive order trigger. A persistent stream consumer is needed for low-latency continuous monitoring.
