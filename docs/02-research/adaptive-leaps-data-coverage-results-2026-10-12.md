@@ -49,7 +49,7 @@ Corrected candidate availability audit: [run 38226954965](https://github.com/ekl
 |---|---:|---:|---:|
 | SPY | 270 | 4,513 / 4,514 | 99.98% |
 | SPY | 365 | 4,225 / 4,514 | 93.60% |
-| SPY | 540 | 3,037 / 4,514 | 67.26% |
+| SPY | 540 | 3,037 / 4,514 | 67.28% |
 | QQQ | 270 | 3,694 / 3,700 | 99.84% |
 | QQQ | 365 | 2,888 / 3,700 | 78.05% |
 | QQQ | 540 | 1,626 / 3,700 | 43.95% |
@@ -82,3 +82,8 @@ This narrower table focuses on the initial 270/365-day long-call candidates. Cou
 | QQQ | 0.85–1.00 | 316,702 | 203,885 | 64.4% |
 
 **Interpretation:** there is substantial aggregate coverage in all three call-delta bands, but valid-quote-plus-activity share is lower in the highest-delta band. This is only a feasibility signal. Before replay, inspect year-level availability, spread distributions, underlying-price joins, contract identity/continuity, and the actual quote on each chosen entry/exit date. The audit currently does not enforce unique contract keys or model fills.
+
+
+## Final reproducibility rerun — 2026-10-12
+
+The corrected full audit completed successfully in [run 38228020889](https://github.com/eklu654/Trading-Bot/actions/runs/38228020889), with artifact [11737980120](https://github.com/eklu654/Trading-Bot/actions/runs/38228020889/artifacts/11737980120). All coverage, integrity, and candidate-availability steps passed. The artifact was downloaded and inspected: it contains all three reports plus a 35-file SHA-256 manifest. Duplicate candidate-key groups remain zero for SPY (18 years) and QQQ (15 years), and every audited year has 100% positive same-date underlying joins. The report confirms candidate availability at 270/365/540 DTE of SPY 99.98%/93.60%/67.28% and QQQ 99.84%/78.05%/43.95%. These remain data-availability diagnostics, not fills or P/L.
