@@ -404,3 +404,9 @@
 - Executor schedule is now 13:40 UTC weekdays (9:40 a.m. US/Eastern). Push/manual runs remain dry-run only; scheduled market-open submission has not yet occurred.
 
 - Executor integration hiccup captured for audit: run [38203281432](https://github.com/eklu654/Trading-Bot/actions/runs/38203281432) failed before broker identity verification because the CLI still required `--state` in `verify-accounts` mode. The parser was corrected in commit `5171a90ba6284cee161239386aa47f011a3ff9cc`; follow-up [38203442398](https://github.com/eklu654/Trading-Bot/actions/runs/38203442398) passed the full test suite and account verification. Neither run submitted an order.
+
+## 2026-10-12 — QQQ intraday monitor
+- Added a read-only monitor to poll QQQ every five minutes during broad US market hours and flag a price at or below -4.5% versus the last completed daily close. It uses Alpaca IEX latest trade + daily bars and checks trade freshness. It cannot place orders.
+- First test run [38204835453](https://github.com/eklu654/Trading-Bot/actions/runs/38204835453) exposed a daily bar timestamp/session-date bug. Fixed by comparing the daily bar's encoded session date directly, avoiding midnight UTC rollover into the prior New York date.
+- Revalidation run [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873) was in progress at audit update time. Record outcome after verifying CI.
+- Five-minute polling is not constant access and cannot guarantee capturing a brief intraday breach. A persistent stream process is the next step before any time-sensitive automatic defense.
