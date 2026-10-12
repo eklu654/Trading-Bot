@@ -14,9 +14,9 @@ Prepare B0 (control) and F75 (frozen 75%/100% overlay) for a first **paper-only*
 ## Verified before market open
 - The prior workflow definition had only 14:40 UTC, which meant 09:40 CT in daylight time—not near the 08:30 CT open. This has been corrected.
 - Prior commit `26302e02af2051814b974c17078b8eb546dccde0` passed push-triggered executor run [38211932599](https://github.com/eklu654/Trading-Bot/actions/runs/38211932599); that was a dry-run path and **not** proof of order submission.
-- Latest schedule edits are in commit `1335c25e691fe05a4c7cbdf94cf61919c09240e1`. Push-triggered Actions are running; these runs must be checked for completion before treating the schedule edit as CI-verified.
+- Latest schedule edits are in commits `b39909730ee05f42f5ed15a79901bdc36e4f2a3c` (executor) and `1335c25e691fe05a4c7cbdf94cf61919c09240e1` (diagnostic). Executor push run [38215198510](https://github.com/eklu654/Trading-Bot/actions/runs/38215198510) passed; both B0/F75 actual prepare paths reported `SKIPPED_MARKET_CLOSED` because this was a premarket push event, and no order was submitted. Read-only diagnostic push run [38215205070](https://github.com/eklu654/Trading-Bot/actions/runs/38215205070) passed for both portfolios and likewise safely skipped because market was closed.
 - Last persisted ledger snapshot had B0 and F75 each at $5,000 virtual cash/equity, zero shares, no pending intents, zero processed fills, and mark date 2026-10-09. Distinct broker-account fingerprints were present.
-- Readiness notes still state the persistent broker reconciliation workflow has not yet had its first successful run. This remains a launch-readiness gap.
+- The GET-only persistent ledger reconciliation workflow has now completed its first successful run: [38215313892](https://github.com/eklu654/Trading-Bot/actions/runs/38215313892). Both B0 and F75 returned `NO_CHANGE`, zero new fills, $5,000.00 virtual equity, and mark date 2026-10-09. This validates account/position/fill/bar reads and the workflow commit path for the empty baseline; it does **not** yet validate reconciliation of a real submitted order/fill.
 
 ## Market-open verification checklist
 1. Confirm push-triggered dry-run and read-only diagnostic workflows pass after the schedule edit.
