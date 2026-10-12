@@ -193,3 +193,8 @@ Do not call the strategy validated unless:
 - The data-coverage workflow also now runs the unit tests before its data downloads, so syntax/logic failures surface early on future runs.
 
 - Frozen lifecycle protocol: one long call per symbol; causal selection at close t, execution no earlier than the next option observation date, ask-side entries, bid-side exits, exit signal at <=30 DTE, retry entries each observation while flat, log missed/invalid next-date quotes, and never invent a fill. This is a reproducible mechanics baseline, not an optimized schedule.
+
+
+### 2026-10-12 — Audit workflow efficiency validation
+- After separating unit tests from the data workflow triggers, validation run [38228175170](https://github.com/eklu654/Trading-Bot/actions/runs/38228175170) completed successfully. All audit steps passed and the report artifact uploaded.
+- Future lifecycle-module or test-only changes now trigger the fast unit-test workflow, not the expensive full-history data download/audit. The data workflow still runs on changes to itself, the coverage/integrity/candidate audit scripts, or requirements.
