@@ -63,7 +63,7 @@ No future close, future realized volatility, future option Greek, or future chai
 
 Do not choose a risk gate by maximizing full-sample return. Freeze the candidate gate on development data, then validate chronologically and preserve an untouched holdout. Record every activation, deactivation, opening, closing, roll, expiry, assignment proxy, and rejected trade with reason codes.
 
-## 6. Data feasibility: coverage verified; contract integrity audit running
+## 6. Data feasibility: coverage, integrity, and candidate availability verified
 
 The public preservation mirror `anahatsingh-ui/options-dataset-hist` README and directory listings were checked on 2026-10-12. It reports EOD option-chain snapshots (4:00 PM ET) and yearly Parquet files:
 - **SPY:** 2008–2025, 24,681,665 contract-day rows.
@@ -71,7 +71,7 @@ The public preservation mirror `anahatsingh-ui/options-dataset-hist` README and 
 - Fields include contract_id, symbol, expiration, strike, type, bid/ask/mark, volume, open_interest, date, implied_volatility, delta, gamma, theta, vega, rho, and in-the-money status.
 - The mirror describes the source as a byte-verified preservation copy of Philipp D. Dubach's original MIT-licensed dataset.
 
-This confirms that both underlyings exist in the source, but it does **not** yet prove sufficient usable 270–540 DTE call coverage, quote quality, or executable liquidity. The next gate is an empirical profile by year, DTE bucket, call delta bucket, and quote/activity quality.
+This confirms both underlyings exist in the source. The empirical coverage, quote-quality, contract-integrity, underlying-join, and candidate-availability audits are now complete for the pinned source revision. These checks establish research-data availability and basic row integrity only; they do **not** prove executable fills, assignment correctness, or strategy profitability.
 
 A new data audit script and manual GitHub Actions workflow were added:
 - `research/audit_adaptive_leaps_coverage.py`
@@ -171,3 +171,9 @@ Do not call the strategy validated unless:
 - This is a mechanics layer, **not yet a historical lifecycle replay**. No return, drawdown, CAGR, account feasibility, assignment behavior, or short-call overlay performance has been computed from it.
 - The current primitive uses a frozen 270-DTE target, +/-45 calendar-day eligibility band, absolute delta 0.60–0.95, valid non-crossed quote, and volume/open-interest activity. Ranking: DTE distance, delta distance, relative spread, higher OI, higher volume, earlier expiration, lower strike, contract ID.
 - Before any P/L replay, define an explicit entry calendar and missing-candidate policy; ensure all fills happen no earlier than the next available EOD observation after the signal. Add portfolio/account ledger and long-leg lifecycle integration only after this focused test gate passes.
+
+
+### 2026-10-12 — Fast unit-test workflow isolated
+- Added `.github/workflows/adaptive-leaps-unit-tests.yml` so lifecycle unit tests run independently of the lengthy historical Parquet downloads.
+- Run [38227835157](https://github.com/eklu654/Trading-Bot/actions/runs/38227835157) was queued at note time; the result is pending and must be checked before declaring tests green.
+- The data-coverage workflow also now runs the unit tests before its data downloads, so syntax/logic failures surface early on future runs.
