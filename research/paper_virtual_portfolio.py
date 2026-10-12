@@ -166,9 +166,6 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
     last = state.get("last_terminal_order") or {}
     if last.get("signal_session") == session:
         raise LedgerSafetyError("an order was already completed for this signal session")
-    last = state.get("last_terminal_order") or {}
-    if last.get("signal_session") == session:
-        raise LedgerSafetyError("an order was already completed for this signal session")
     return {
         "portfolio": portfolio, "symbol": SYMBOL, "signal_session": session,
         "target_weight": str(weight), "virtual_equity": str(equity.quantize(Decimal("0.01"))),
@@ -188,10 +185,6 @@ def stage_intent(state, intent):
     cid = intent.get("client_order_id")
     if not cid or cid in out["used_client_order_ids"]:
         raise LedgerSafetyError("client order ID is missing or already used")
-    if intent.get("endpoint") != "https://paper-api.alpaca.markets" or intent.get("mode") != "PLAN_ONLY_NO_SUBMISSION":
-        raise LedgerSafetyError("intent must be paper-only and plan-only")
-    if intent.get("side") not in ("buy", "sell") or dec(intent.get("qty"), "intent quantity") <= 0:
-        raise LedgerSafetyError("intent side or quantity is invalid")
     if intent.get("endpoint") != "https://paper-api.alpaca.markets" or intent.get("mode") != "PLAN_ONLY_NO_SUBMISSION":
         raise LedgerSafetyError("intent must be paper-only and plan-only")
     if intent.get("side") not in ("buy", "sell") or dec(intent.get("qty"), "intent quantity") <= 0:
