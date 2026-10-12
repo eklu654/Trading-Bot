@@ -16,6 +16,12 @@ class PaperPlannerTests(unittest.TestCase):
         self.assertEqual(x.target_qty,"50.000")
         self.assertEqual(x.side,"buy")
         self.assertEqual(x.mode,"PLAN_ONLY_NO_SUBMISSION")
+    def test_target_notional_compounds_from_virtual_equity(self):
+        x=plan(virtual_equity="4000")
+        self.assertEqual(x.target_notional,"4000.00")
+        self.assertEqual(x.target_qty,"40.000")
+        with self.assertRaisesRegex(SafetyGateError,"virtual equity must be positive"):
+            plan(virtual_equity="0")
     def test_f75_weight_is_capped_at_75_percent_or_full(self):
         self.assertEqual(plan(portfolio="f75",target_weight="0.75").target_notional,"3750.00")
         with self.assertRaisesRegex(SafetyGateError,"frozen portfolio"):
