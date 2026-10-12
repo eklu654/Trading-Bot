@@ -163,10 +163,13 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
     client_id = "tb-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     if client_id in state["used_client_order_ids"]:
         raise LedgerSafetyError("client order ID already used; reconcile rather than resubmit")
+    last = state.get("last_terminal_order") or {}
+    if last.get("signal_session") == session:
+        raise LedgerSafetyError("an order was already completed for this signal session")
     return {
         "portfolio": portfolio, "symbol": SYMBOL, "signal_session": session,
         "target_weight": str(weight), "virtual_equity": str(equity.quantize(Decimal("0.01"))),
-        "target_notional": str(target_notional), "current_qty": str(current_qty),
+        "target_notional": str(target_notional), "reference_price": str(price), "current_qty": str(current_qty),
         "target_qty": str(target_qty), "side": "buy" if delta > 0 else "sell",
         "qty": str(quantity), "client_order_id": client_id,
         "endpoint": "https://paper-api.alpaca.markets", "mode": "PLAN_ONLY_NO_SUBMISSION",
@@ -182,8 +185,43 @@ def stage_intent(state, intent):
     cid = intent.get("client_order_id")
     if not cid or cid in out["used_client_order_ids"]:
         raise LedgerSafetyError("client order ID is missing or already used")
+    if intent.get("endpoint") != "https://paper-api.alpaca.markets" or intent.get("mode") != "PLAN_ONLY_NO_SUBMISSION":
+        raise LedgerSafetyError("intent must be paper-only and plan-only")
+    if intent.get("side") not in ("buy", "sell") or dec(intent.get("qty"), "intent quantity") <= 0:
+        raise LedgerSafetyError("intent side or quantity is invalid")
     out["used_client_order_ids"].append(cid)
     out["pending_intent"] = {**intent, "submission_state": "STAGED", "broker_order_id": None}
+    validate_state(out)
+    return out
+
+
+def mark_submission_attempting(state):
+    """Persist this transition before POST; a restarted run must never auto-retry it."""
+    out = deepcopy(state)
+    validate_state(out)
+    pending = out.get("pending_intent")
+    if pending is None or pending.get("submission_state") != "STAGED":
+        raise LedgerSafetyError("only a staged intent can enter submission")
+    pending["submission_state"] = "SUBMITTING"
+    validate_state(out)
+    return out
+
+def abort_unsubmitted_intent(state, reason):
+    """Clear an intent only when caller can prove POST was never attempted."""
+    out = deepcopy(state)
+    validate_state(out)
+    pending = out.get("pending_intent")
+    if pending is None or pending.get("submission_state") != "SUBMITTING":
+        raise LedgerSafetyError("only a submitting intent can be safely aborted")
+    out["last_terminal_order"] = {
+        "client_order_id": pending["client_order_id"],
+        "broker_order_id": None,
+        "status": "aborted_before_submit",
+        "signal_session": pending.get("signal_session"),
+        "target_weight": pending.get("target_weight"),
+        "reason": str(reason)[:120],
+    }
+    out["pending_intent"] = None
     validate_state(out)
     return out
 
@@ -211,7 +249,8 @@ def reconcile_order(state, broker_order):
     if pending is None:
         raise LedgerSafetyError("no pending intent to reconcile")
     if broker_order is None:
-        pending["submission_state"] = "UNKNOWN"
+        if pending.get("submission_state") not in ("STAGED", "REJECTED"):
+            pending["submission_state"] = "UNKNOWN"
         return out
     if broker_order.get("client_order_id") != pending["client_order_id"]:
         raise LedgerSafetyError("broker order client ID does not match staged intent")
@@ -236,6 +275,8 @@ def complete_terminal_intent(state, *, broker_qty, broker_status):
         "client_order_id": pending["client_order_id"],
         "broker_order_id": pending.get("broker_order_id"),
         "status": status,
+        "signal_session": pending.get("signal_session"),
+        "target_weight": pending.get("target_weight"),
     }
     out["pending_intent"] = None
     validate_state(out)
