@@ -8,6 +8,7 @@ on:
       - ".github/workflows/adaptive-leaps-data-coverage.yml"
       - "research/audit_adaptive_leaps_coverage.py"
       - "research/audit_adaptive_leaps_contract_integrity.py"
+      - "research/audit_adaptive_leaps_candidate_selection.py"
       - "research/requirements.txt"
 
 permissions:
@@ -78,6 +79,7 @@ jobs:
         run: |
           python -m py_compile research/audit_adaptive_leaps_coverage.py
           python -m py_compile research/audit_adaptive_leaps_contract_integrity.py
+          python -m py_compile research/audit_adaptive_leaps_candidate_selection.py
 
       - name: Profile symbol, DTE, delta and quote quality
         run: |
@@ -95,11 +97,21 @@ jobs:
             --qqq-underlying "data/options/qqq/underlying_prices.parquet" \
             --out-dir artifacts/adaptive_leaps_integrity
 
-      - name: Upload coverage and integrity reports
+      - name: Audit frozen DTE/delta candidate availability
+        run: |
+          python research/audit_adaptive_leaps_candidate_selection.py \
+            --spy-source "data/options/spy/options_*.parquet" \
+            --qqq-source "data/options/qqq/options_*.parquet" \
+            --spy-underlying "data/options/spy/underlying_prices.parquet" \
+            --qqq-underlying "data/options/qqq/underlying_prices.parquet" \
+            --out-dir artifacts/adaptive_leaps_candidates
+
+      - name: Upload coverage, integrity, and candidate reports
         uses: actions/upload-artifact@v4
         with:
           name: adaptive-leaps-data-coverage
           path: |
             artifacts/adaptive_leaps_coverage/
             artifacts/adaptive_leaps_integrity/
+            artifacts/adaptive_leaps_candidates/
           if-no-files-found: error
