@@ -380,3 +380,14 @@
 - Latest trade-feed probe [38202345842](https://github.com/eklu654/Trading-Bot/actions/runs/38202345842) confirmed Alpaca's IEX latest-trade endpoint is reachable for both accounts. While the market was closed, it returned the last trade at 2026-10-09 20:43:46 UTC, price $81.32, age about 199,290 seconds. The diagnostic correctly marked it stale and did not plan an executable order.
 - The fill-backed ledger state machine now has 16 passing tests in [38202697317](https://github.com/eklu654/Trading-Bot/actions/runs/38202697317), including SUBMITTING arming, safe pre-POST abort, and same-session replay prevention. Two intermediate test runs failed because the replay test used an unchanged target that correctly produced no order; the test was corrected to use a different target and the final run passed.
 - No order-writing executor is yet enabled. The next step is a two-phase executor: prepare/stage -> commit -> arm/commit -> paper POST -> persist broker outcome, with a same-run-only submission permit. Only scheduled market-open runs should be allowed to submit; push/manual runs must remain dry-run.
+
+## 2026-10-12 — two-phase paper executor committed
+
+- Added `research/alpaca_paper_order_executor.py`, its payload guard tests, and `.github/workflows/alpaca-paper-order-executor.yml`.
+- Only scheduled weekday runs enable order submission. Push/manual runs remain dry-run/reconciliation only.
+- The scheduled flow requires a valid latest completed signal, state mark date aligned to that signal, fresh TQQQ IEX trade, ACTIVE/unblocked USD account, no unrelated positions/open orders, broker quantity equal to fill-backed ledger, and a staged intent.
+- Intent is committed before arm; `SUBMITTING` is committed before POST; a one-run permit is ephemeral. After a crash, later runs query the exact client order ID and do not POST without the permit. Orders are hard-pinned to the paper API.
+- Buy sizing now leaves a 0.5% cash reserve for market-order slippage. The fill-backed ledger state machine has 17 passing tests; the order-payload suite has 5 passing tests.
+- Push-triggered validation [38203111900](https://github.com/eklu654/Trading-Bot/actions/runs/38203111900) succeeded. Both prepare jobs returned `SKIPPED_MARKET_CLOSED`; arm and submit stages reported no requests/intents; no order was submitted.
+- Read-only ledger sync [38203111870](https://github.com/eklu654/Trading-Bot/actions/runs/38203111870) succeeded with `NO_CHANGE`: B0 and F75 remained $5,000 virtual equity, zero TQQQ shares, mark date 2026-10-09, no fills/open orders.
+- **Important:** scheduled market-open execution has not yet occurred. The next scheduled run is eligible to submit B0/F75 paper orders if the signal is still current and every gate passes. No live endpoint is used.
