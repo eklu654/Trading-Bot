@@ -77,7 +77,7 @@ A new data audit script and manual GitHub Actions workflow were added:
 - `research/audit_adaptive_leaps_coverage.py`
 - `.github/workflows/adaptive-leaps-data-coverage.yml`
 
-The workflow downloads SPY chains for 2008–2025 and QQQ chains for 2011–2025, profiles contract-day coverage and quote quality, and uploads CSV/JSON reports as an artifact. **The workflow has been committed but has not yet been confirmed executed**; no coverage result is claimed.
+The workflow downloads SPY chains for 2008–2025 and QQQ chains for 2011–2025, profiles contract-day coverage and quote quality, and uploads CSV/JSON reports as an artifact. **Execution verified 2026-10-12:** [run 38225648878](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878) completed successfully and uploaded [artifact 11736311901](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878/artifacts/11736311901). The report found 5,792,357 SPY and 3,089,957 QQQ contract-day observations at DTE >=270; 4,455,633 SPY (76.9%) and 2,275,977 QQQ (73.7%) also passed the report's valid-quote-plus-activity rule. These are contract-day counts, not proof of executable fills. Full results are in `docs/02-research/adaptive-leaps-data-coverage-results-2026-10-12.md`.
 
 The source is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
 
@@ -127,11 +127,11 @@ Do not call the strategy validated unless:
 
 ## 10. Next implementation steps
 
-1. Run the new data coverage workflow and inspect its artifact.
-2. Fix any schema, runtime, or data-quality issues before strategy coding.
-3. Freeze source file URLs/version and hashes in the coverage report.
-4. If long-DTE coverage passes, implement deterministic one-long-call lifecycle, then the short-call overlay state machine.
-5. Add unit tests for expiry boundaries, short-call buyback/roll accounting, rebound close, missing quotes, no replacement contract, and account-feasibility rejection.
+1. Review the successful coverage artifact by year, DTE, delta, and quote-quality bucket; investigate thin/weak segments rather than relying on aggregate coverage alone.
+2. Freeze source file URLs/version and hashes in the coverage report (the current report does not yet record source hashes).
+3. Implement deterministic one-long-call lifecycle first, with causal selection and conservative bid/ask valuation; then add the short-call overlay state machine.
+4. Add unit tests for expiry boundaries, missing/crossed/zero quotes, stale/low-activity rows, contract selection ties, early close/expiry, and short-call rebound exits.
+5. Preserve the current short-call rebound behavior as frozen: on rebound/unwind, close the short call rather than automatically selling another; only re-open on a fresh risk activation after reset.ies, short-call buyback/roll accounting, rebound close, missing quotes, no replacement contract, and account-feasibility rejection.
 6. Only after the runner is reproducible and runtime-bounded, expand the matrix and add walk-forward validation.
 
 ## Audit log
