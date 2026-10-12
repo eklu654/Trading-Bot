@@ -14,6 +14,12 @@ def q(day, *, exp=None, cid="A", bid=10.0, ask=10.5, delta=0.8, volume=10, oi=10
 
 
 class ReplayTests(unittest.TestCase):
+
+    def test_duplicate_contract_date_rows_fail_closed(self):
+        day = date(2020, 1, 2)
+        with self.assertRaisesRegex(ValueError, "duplicate quote key"):
+            replay_long_call([q(day, cid="A"), q(day, cid="A", bid=9)], symbol="SPY")
+
     def test_entry_occurs_only_on_next_observation_and_uses_ask(self):
         d1, d2 = date(2020, 1, 2), date(2020, 1, 6)
         exp = date(2020, 9, 28)
