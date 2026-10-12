@@ -163,6 +163,9 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
     client_id = "tb-" + hashlib.sha256(identity.encode()).hexdigest()[:32]
     if client_id in state["used_client_order_ids"]:
         raise LedgerSafetyError("client order ID already used; reconcile rather than resubmit")
+    last = state.get("last_terminal_order") or {}
+    if last.get("signal_session") == session:
+        raise LedgerSafetyError("an order was already completed for this signal session")
     return {
         "portfolio": portfolio, "symbol": SYMBOL, "signal_session": session,
         "target_weight": str(weight), "virtual_equity": str(equity.quantize(Decimal("0.01"))),
@@ -182,6 +185,10 @@ def stage_intent(state, intent):
     cid = intent.get("client_order_id")
     if not cid or cid in out["used_client_order_ids"]:
         raise LedgerSafetyError("client order ID is missing or already used")
+    if intent.get("endpoint") != "https://paper-api.alpaca.markets" or intent.get("mode") != "PLAN_ONLY_NO_SUBMISSION":
+        raise LedgerSafetyError("intent must be paper-only and plan-only")
+    if intent.get("side") not in ("buy", "sell") or dec(intent.get("qty"), "intent quantity") <= 0:
+        raise LedgerSafetyError("intent side or quantity is invalid")
     out["used_client_order_ids"].append(cid)
     out["pending_intent"] = {**intent, "submission_state": "STAGED", "broker_order_id": None}
     validate_state(out)
@@ -236,6 +243,8 @@ def complete_terminal_intent(state, *, broker_qty, broker_status):
         "client_order_id": pending["client_order_id"],
         "broker_order_id": pending.get("broker_order_id"),
         "status": status,
+        "signal_session": pending.get("signal_session"),
+        "target_weight": pending.get("target_weight"),
     }
     out["pending_intent"] = None
     validate_state(out)
