@@ -41,6 +41,11 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Compile and test read-only planner/ledger gates
+        run: |
+          python -m py_compile research/alpaca_paper_execution.py research/alpaca_paper_daily_diagnostic.py
+          PYTHONPATH=research python research/test_alpaca_paper_execution.py
+          PYTHONPATH=research python research/test_alpaca_paper_daily_diagnostic.py
       - name: Run read-only broker and signal diagnostic
         env:
           PORTFOLIO: ${{ matrix.portfolio }}
