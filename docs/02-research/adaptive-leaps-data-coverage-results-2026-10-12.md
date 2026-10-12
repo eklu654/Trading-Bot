@@ -43,7 +43,7 @@ The artifact was subsequently analyzed by year for calls in the 270–539 DTE / 
 
 ## Immutable source and reproducibility
 
-The source repository revision was identified as [37f6c456fe1a4775c875673fb8ef907d5cd2fd66](https://github.com/anahatsingh-ui/options-dataset-hist/commit/37f6c456fe1a4775c875673fb8ef907d5cd2fd66). The workflow has been updated to fetch from that immutable commit and record SHA-256 hashes for all downloaded Parquet files; the pin/hash run is pending as of this note.
+The source repository is pinned to [commit 37f6c456fe1a4775c875673fb8ef907d5cd2fd66](https://github.com/anahatsingh-ui/options-dataset-hist/commit/37f6c456fe1a4775c875673fb8ef907d5cd2fd66). The pinned-source workflow [run 38226516897](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897) completed successfully and uploaded [artifact 11736697765](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897/artifacts/11736697765). Its `adaptive_leaps_integrity/source_sha256.txt` manifest contains SHA-256 hashes for all 35 downloaded Parquet files (SPY yearly files 2008–2025 plus SPY underlying prices; QQQ yearly files 2011–2025 plus QQQ underlying prices). The same run passed both coverage and contract-integrity audits.
 
 ## Known limitations
 
