@@ -31,3 +31,18 @@
 - EOD data cannot reconstruct intraday quote paths or order priority.
 - DTE coverage can be biased near the dataset start/end.
 - Coverage counts alone do not validate fills, exercise, assignment, or rolling.
+
+## Target long-call region: 270–539 DTE calls by absolute-delta bucket
+
+This narrower table focuses on the initial 270/365-day long-call candidates. Counts are contract-day observations aggregated across the full source period, not unique contracts.
+
+| Underlying | Absolute-delta bucket | Contract-day rows | Valid quote + activity rows | Share passing |
+|---|---|---:|---:|---:|
+| SPY | 0.60–0.74 | 217,437 | 184,117 | 84.7% |
+| SPY | 0.75–0.84 | 168,497 | 131,546 | 78.1% |
+| SPY | 0.85–1.00 | 680,312 | 435,679 | 64.0% |
+| QQQ | 0.60–0.74 | 148,895 | 117,280 | 78.8% |
+| QQQ | 0.75–0.84 | 110,117 | 78,796 | 71.6% |
+| QQQ | 0.85–1.00 | 316,702 | 203,885 | 64.4% |
+
+**Interpretation:** there is substantial aggregate coverage in all three call-delta bands, but valid-quote-plus-activity share is lower in the highest-delta band. This is only a feasibility signal. Before replay, inspect year-level availability, spread distributions, underlying-price joins, contract identity/continuity, and the actual quote on each chosen entry/exit date. The audit currently does not enforce unique contract keys or model fills.
