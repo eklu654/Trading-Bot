@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/adaptive-leaps-data-coverage.yml"
       - "research/audit_adaptive_leaps_coverage.py"
+      - "research/audit_adaptive_leaps_contract_integrity.py"
       - "research/requirements.txt"
 
 permissions:
@@ -62,8 +63,10 @@ jobs:
             -o data/options/qqq/underlying_prices.parquet \
             "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/main/qqq/underlying_prices.parquet"
 
-      - name: Compile audit
-        run: python -m py_compile research/audit_adaptive_leaps_coverage.py
+      - name: Compile audits
+        run: |
+          python -m py_compile research/audit_adaptive_leaps_coverage.py
+          python -m py_compile research/audit_adaptive_leaps_contract_integrity.py
 
       - name: Profile symbol, DTE, delta and quote quality
         run: |
@@ -72,9 +75,20 @@ jobs:
             --qqq-source "data/options/qqq/options_*.parquet" \
             --out-dir artifacts/adaptive_leaps_coverage
 
-      - name: Upload coverage report
+      - name: Audit candidate contract identity and underlying joins
+        run: |
+          python research/audit_adaptive_leaps_contract_integrity.py \
+            --spy-source "data/options/spy/options_*.parquet" \
+            --qqq-source "data/options/qqq/options_*.parquet" \
+            --spy-underlying "data/options/spy/underlying_prices.parquet" \
+            --qqq-underlying "data/options/qqq/underlying_prices.parquet" \
+            --out-dir artifacts/adaptive_leaps_integrity
+
+      - name: Upload coverage and integrity reports
         uses: actions/upload-artifact@v4
         with:
           name: adaptive-leaps-data-coverage
-          path: artifacts/adaptive_leaps_coverage/
+          path: |
+            artifacts/adaptive_leaps_coverage/
+            artifacts/adaptive_leaps_integrity/
           if-no-files-found: error
