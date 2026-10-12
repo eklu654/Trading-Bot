@@ -206,3 +206,10 @@ Do not call the strategy validated unless:
 - Added `research/run_adaptive_leaps_replay.py`, a DuckDB/Parquet runner that identifies contracts passing the frozen entry gate and retains their available quote histories; it writes daily ledger, transactions, and summary JSON.
 - Updated `.github/workflows/adaptive-leaps-unit-tests.yml` to compile the runner and execute lifecycle plus replay tests.
 - **Evidence status:** implementation committed; the new CI result and real historical replay are not yet verified. Do not quote a P/L or claim the backtest is complete until both are checked.
+
+
+### 2026-10-12 — Replay engine and runner wired
+- Chronological engine and synthetic tests are in `research/adaptive_leaps_replay.py` and `tests/test_adaptive_leaps_replay.py`; the Parquet loader/CLI is `research/run_adaptive_leaps_replay.py`.
+- The separate `.github/workflows/adaptive-leaps-replay.yml` downloads the pinned 2008–2025 SPY and 2011–2025 QQQ chains, records hashes, runs theoretical and $5,000 cash-constrained variants, and uploads ledgers/transactions/summaries.
+- Additional fail-closed handling advances calendar DTE through missing contract rows without inventing a mark, retries unfilled exits, and rejects candidates without a contract ID.
+- **Current evidence boundary:** code and workflow are committed; CI/replay completion and artifacts still need verification. No performance result or strategy promotion is claimed.
