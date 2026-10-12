@@ -11,6 +11,8 @@ on:
       - "research/canonical_shock_recovery_active_tightening_overlay.py"
       - "research/fed_dma_chronological_robustness.py"
       - "research/requirements.txt"
+      - "research/alpaca_paper_execution.py"
+      - "research/test_alpaca_paper_execution.py"
   workflow_dispatch:
 
 permissions:
@@ -58,3 +60,20 @@ jobs:
             data/research/b0_f75_mechanism_episode_summary.json
             data/research/b0_f75_full_period_compounded.csv
           if-no-files-found: error
+
+  paper-execution-planner-guardrails:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout frozen research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/qqq-slow-bear-audit
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile planner and run fail-closed tests
+        run: |
+          python -m py_compile research/alpaca_paper_execution.py
+          PYTHONPATH=research python research/test_alpaca_paper_execution.py
