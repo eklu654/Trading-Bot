@@ -62,6 +62,8 @@ def read_latest_signal(ledger_path, state_path, now):
         signal_date = datetime.strptime(session, "%Y-%m-%d").date()
         b0 = Decimal(row["b0_signal_close"])
         f75 = Decimal(row["f75_signal_close"])
+        b0_equity = Decimal(row["b0_equity_0bps"])
+        f75_equity = Decimal(row["f75_equity_0bps"])
     except Exception:
         raise DiagnosticBlocked("latest ledger row has invalid date or signal") from None
     if session != state.get("last_observation"):
@@ -76,7 +78,9 @@ def read_latest_signal(ledger_path, state_path, now):
         raise DiagnosticBlocked("F75 signal violates frozen target weights")
     if f75 > b0 or (b0 == 0 and f75 != 0):
         raise DiagnosticBlocked("F75 signal violates B0 eligibility")
-    return session, b0, f75, state.get("canonical_input_sha256")
+    if not b0_equity.is_finite() or not f75_equity.is_finite() or b0_equity <= 0 or f75_equity <= 0:
+        raise DiagnosticBlocked("latest virtual equity is invalid")
+    return session, b0, f75, state.get("canonical_input_sha256"), b0_equity, f75_equity
 
 def run(portfolio, ledger, state_path):
     portfolio = portfolio.lower()
@@ -86,7 +90,8 @@ def run(portfolio, ledger, state_path):
     if not key or not secret:
         raise DiagnosticBlocked(f"required paper credentials missing for {portfolio}")
     now = datetime.now(timezone.utc)
-    session, b0, f75, source_hash = read_latest_signal(ledger, state_path, now)
+    session, b0, f75, source_hash, b0_equity, f75_equity = read_latest_signal(ledger, state_path, now)
+    virtual_equity = b0_equity if portfolio == "b0" else f75_equity
     account = get_json(PAPER_BASE_URL + "/v2/account", key, secret)
     clock = get_json(PAPER_BASE_URL + "/v2/clock", key, secret)
     if account.get("status") != "ACTIVE" or account.get("account_blocked") is not False or account.get("trading_blocked") is not False:
@@ -122,6 +127,8 @@ def run(portfolio, ledger, state_path):
             "b0_target_weight": str(b0),
             "f75_target_weight": str(f75),
             "selected_target_weight": str(b0 if portfolio == "b0" else f75),
+            "virtual_equity_usd": str(virtual_equity.quantize(Decimal("0.01"))),
+            "virtual_equity_source": "shadow_ledger_0bps_not_actual_broker_NLV",
             "paper_endpoint": PAPER_BASE_URL,
             "account_status": account.get("status"),
             "currency": account.get("currency"),
@@ -153,7 +160,7 @@ def run(portfolio, ledger, state_path):
         currency=account.get("currency"), market_is_open=clock.get("is_open"),
         session_date=session, latest_bar_date=session, price=price,
         target_weight=target, current_qty=current_qty,
-        open_order_count=len(open_orders), max_bar_age_sessions=0,
+        open_order_count=len(open_orders), virtual_equity=virtual_equity, max_bar_age_sessions=0,
     )
     return {
         "status": "READY_FOR_REVIEW",
@@ -165,7 +172,9 @@ def run(portfolio, ledger, state_path):
         "b0_target_weight": str(b0),
         "f75_target_weight": str(f75),
         "selected_target_weight": str(target),
-        "virtual_allocation_usd": "5000.00",
+        "initial_virtual_allocation_usd": "5000.00",
+        "virtual_equity_usd": str(virtual_equity.quantize(Decimal("0.01"))),
+        "virtual_equity_source": "shadow_ledger_0bps_not_actual_broker_NLV",
         "paper_endpoint": PAPER_BASE_URL,
         "account_status": account.get("status"),
         "account_blocked": account.get("account_blocked"),
