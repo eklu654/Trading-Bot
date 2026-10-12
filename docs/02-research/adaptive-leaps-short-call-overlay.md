@@ -79,7 +79,7 @@ A new data audit script and manual GitHub Actions workflow were added:
 
 The workflow downloads SPY chains for 2008–2025 and QQQ chains for 2011–2025, profiles contract-day coverage and quote quality, and uploads CSV/JSON reports as an artifact. **Execution verified 2026-10-12:** [run 38225648878](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878) completed successfully and uploaded [artifact 11736311901](https://github.com/eklu654/Trading-Bot/actions/runs/38225648878/artifacts/11736311901). The report found 5,792,357 SPY and 3,089,957 QQQ contract-day observations at DTE >=270; 4,455,633 SPY (76.9%) and 2,275,977 QQQ (73.7%) also passed the report's valid-quote-plus-activity rule. These are contract-day counts, not proof of executable fills. Full results are in `docs/02-research/adaptive-leaps-data-coverage-results-2026-10-12.md`.
 
-A follow-up analysis found uneven annual coverage and material spread variation in the 270–539 DTE / 0.60–0.84 absolute-delta call region. See `docs/02-research/adaptive-leaps-yearly-coverage-review-2026-10-12.md`. The contract-integrity audit completed successfully in [run 38226350847](https://github.com/eklu654/Trading-Bot/actions/runs/38226350847): zero duplicate candidate keys and 100% positive same-date underlying-close joins in every year of the tested candidate region. This is not proof of executable fills or correct corporate-action adjustments. The workflow is pinned to source commit `37f6c456fe1a4775c875673fb8ef907d5cd2fd66`; [run 38226516897](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897) completed successfully and recorded SHA-256 hashes for all 35 source Parquet files in artifact [11736697765](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897/artifacts/11736697765).
+A follow-up analysis found uneven annual coverage and material spread variation in the 270–539 DTE / 0.60–0.84 absolute-delta call region. See `docs/02-research/adaptive-leaps-yearly-coverage-review-2026-10-12.md`. The contract-integrity audit completed successfully in [run 38226350847](https://github.com/eklu654/Trading-Bot/actions/runs/38226350847): zero duplicate candidate keys and 100% positive same-date underlying-close joins in every year of the tested candidate region. This is not proof of executable fills or correct corporate-action adjustments. The workflow is pinned to source commit `37f6c456fe1a4775c875673fb8ef907d5cd2fd66`; [run 38226516897](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897) completed successfully and recorded SHA-256 hashes for all 35 source Parquet files in artifact [11736697765](https://github.com/eklu654/Trading-Bot/actions/runs/38226516897/artifacts/11736697765). The corrected candidate-availability audit [run 38226954965](https://github.com/eklu654/Trading-Bot/actions/runs/38226954965) uses option-chain observation dates as the denominator and found 270-DTE candidate availability of 99.98% for SPY and 99.84% for QQQ, versus materially lower coverage at 365/540 DTE. Its earlier denominator bug is documented and the initial report is superseded.
 
 The source is EOD-only. The first replay therefore represents a once-daily decision/quote model, not intraday execution. Any trigger that depends on an intraday touch is out of scope unless supported by suitable intraday data.
 
@@ -129,12 +129,13 @@ Do not call the strategy validated unless:
 
 ## 10. Next implementation steps
 
-1. Coverage execution and year-by-year review are complete; inspect the contract-integrity run and fix any schema/join/duplicate failures it exposes.
-2. Freeze source file URLs/version and hashes in the coverage report (the current report does not yet record source hashes).
-3. Implement deterministic one-long-call lifecycle first, with causal selection and conservative bid/ask valuation; then add the short-call overlay state machine.
-4. Add unit tests for expiry boundaries, missing/crossed/zero quotes, stale/low-activity rows, contract selection ties, early close/expiry, short-call rebound exits, missing replacements, and account-feasibility rejection.
-5. Preserve the current short-call rebound behavior as frozen: on rebound/unwind, close the short call rather than automatically selling another; only re-open on a fresh risk activation after reset.
-6. Only after the runner is reproducible and runtime-bounded, expand the matrix and add walk-forward validation.
+1. Coverage, contract-integrity, year-by-year, and corrected candidate-availability audits are complete. Use 270 DTE as the first plumbing case (near-complete candidate availability); keep 365 as secondary and 540 as incomplete-coverage sensitivity.
+2. Source URLs are pinned and all 35 downloaded Parquet files are SHA-256 hashed in the workflow artifact.
+3. Freeze an entry calendar and long-leg replacement/exit rule before P/L replay; the current spec defines target DTE/delta but not a unique entry schedule.
+4. Implement deterministic one-long-call lifecycle first, with causal selection and conservative bid/ask valuation; then add the short-call overlay state machine.
+5. Add unit tests for expiry boundaries, missing/crossed/zero quotes, stale/low-activity rows, contract selection ties, early close/expiry, short-call rebound exits, missing replacements, and account-feasibility rejection.
+6. Preserve the current short-call rebound behavior as frozen: on rebound/unwind, close the short call rather than automatically selling another; only re-open on a fresh risk activation after reset.
+7. Only after the runner is reproducible and runtime-bounded, expand the matrix and add walk-forward validation.
 
 ## Audit log
 
