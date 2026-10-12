@@ -1,0 +1,33 @@
+name: Adaptive LEAPS Unit Tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/adaptive_leaps_lifecycle.py"
+      - "tests/test_adaptive_leaps_lifecycle.py"
+      - ".github/workflows/adaptive-leaps-unit-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-leaps-unit-tests
+  cancel-in-progress: true
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile lifecycle module
+        run: python -m py_compile research/adaptive_leaps_lifecycle.py
+      - name: Run lifecycle unit tests
+        run: python -m unittest discover -s tests -p "test_adaptive_leaps_lifecycle.py" -v
