@@ -35,3 +35,10 @@ Prepare B0 (control) and F75 (frozen 75%/100% overlay) for a first **paper-only*
 - [Read-only diagnostic workflow](https://github.com/eklu654/Trading-Bot/blob/main/.github/workflows/alpaca-paper-daily-decision.yml)
 - [Virtual ledger reconciliation workflow](https://github.com/eklu654/Trading-Bot/blob/main/.github/workflows/alpaca-paper-virtual-ledger.yml)
 - [Readiness log](https://github.com/eklu654/Trading-Bot/blob/main/docs/03-execution/alpaca-paper-readiness-2026-10-12.md)
+
+## Final pre-open code-path review — 2026-10-12 07:01 UTC
+- Reviewed the executor's prepare/arm/submit state machine and unit tests before the first scheduled attempt.
+- Duplicate/retry protections are implemented: concurrency group serializes executor runs; durable intent is committed before broker mutation; `SUBMITTING` is persisted before POST; subsequent runs first query Alpaca by exact client order ID and reconcile an existing order without POST; missing order lookup results in no retry without the same-run ephemeral permit; unknown POST outcomes remain blocked for reconciliation.
+- Existing test suite includes checks that submission without a permit does not POST, a permitted submission posts once and persists the broker order ID, and unknown POST outcomes are recorded without retry. The last verified executor run passed 17 guardrail tests.
+- Fail-closed checks include active/unblocked distinct USD paper accounts, fresh prior-session signal with manifest/hash consistency, market-open clock, only expected TQQQ long position, position-to-ledger agreement, no unrelated open orders, no untracked bot-tagged recent orders, latest trade no older than 180 seconds, and maximum 0.25% reference-price drift before submission.
+- No additional pre-open code change is justified based on this review. Remaining unknown is operational, not a missing preflight step: first real scheduled paper submission/fill and subsequent fill-backed ledger reconciliation have not yet been observed. The 09:40 CT redundant slot must be checked for correct reconciliation/no duplicate POST after the 08:40 CT slot.
