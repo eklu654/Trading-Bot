@@ -127,7 +127,7 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":"50","price":"100"}])
         s = complete_terminal_intent(s, broker_qty="50", broker_status="filled")
         with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
-            plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="99")
+            plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
 
     def test_state_serialization_is_stable_and_secret_free(self):
         s = new_state("f75")
