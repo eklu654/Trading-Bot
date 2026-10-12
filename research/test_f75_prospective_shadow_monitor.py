@@ -40,6 +40,8 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         prior = pd.DataFrame({
             "date": ["2026-10-08", "2026-10-09"],
             "source_canonical_sha256": [EXPECTED_HASH, EXPECTED_HASH],
+            "tqqq_adj_open": [80.23, 81.72],
+            "tqqq_adj_close": [80.23, 81.28],
             "initialization_session": [True, False],
             "b0_signal_close": [1.0, 1.0],
             "f75_overlay_signal_close": [1.0, 1.0],
@@ -101,6 +103,24 @@ class ShadowMonitorGuardrails(unittest.TestCase):
     def test_existing_ledger_and_state_manifest_validate(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
+
+    def test_ledger_rejects_overnight_return_price_mismatch(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "overnight_return"] = 0.01
+        with self.assertRaisesRegex(RuntimeError, "overnight returns do not reconcile"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_ledger_rejects_intraday_return_price_mismatch(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[1, "intraday_return"] = -0.01
+        with self.assertRaisesRegex(RuntimeError, "intraday returns do not reconcile"):
+            validate_existing_ledger(prior, state, ledger_bytes)
+
+    def test_ledger_rejects_nonzero_initialization_returns(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[0, "intraday_return"] = 0.001
+        with self.assertRaisesRegex(RuntimeError, "initialization intraday return"):
+            validate_existing_ledger(prior, state, ledger_bytes)
 
     def test_state_rejects_ledger_row_count_mismatch(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
