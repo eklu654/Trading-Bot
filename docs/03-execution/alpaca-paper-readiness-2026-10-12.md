@@ -20,7 +20,7 @@
 
 ## Two-phase paper executor — 2026-10-12
 
-- Added `.github/workflows/alpaca-paper-order-executor.yml`, scheduled for 13:40 UTC weekdays (9:40 a.m. US/Eastern). Only the scheduled event sets the order-submission enable flag; push and manual runs are dry-run/reconciliation only.
+- Added `.github/workflows/alpaca-paper-order-executor.yml`. It now has weekday UTC slots at 13:40 and 14:40. In US Central daylight time, the first is 08:40 (10 minutes after open); in standard time, the first is pre-open and safely skipped by Alpaca's market-clock check, while 14:40 UTC is 08:40 Central. In daylight time the later slot is a redundant retry, protected by durable intent/client-order-ID and position reconciliation. Only schedule events enable order submission; push/manual runs cannot create new orders.
 - Before any POST, the workflow persists a staged client-order-ID intent to `paper-execution-ledger`, then persists a `SUBMITTING` state and creates an ephemeral same-run permit. A later workflow run without that permit only queries the broker by client order ID; it never retries an ambiguous submission.
 - All order writes are hard-pinned to `https://paper-api.alpaca.markets`. It requires the latest completed shadow signal, state mark date aligned to signal date, fresh IEX trade, ACTIVE/unblocked USD account, no unrelated positions/open orders, and broker quantity reconciled to fill-backed state.
 - Order reports are sanitized and uploaded as artifacts. The executor never uses Alpaca paper NLV for strategy sizing; it uses fill-backed virtual equity.
