@@ -21,6 +21,8 @@ This planner does not fetch market data, calculate the live baseline/F75 signal,
 
 ## Validation
 
-- Workflow run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724), job “paper-execution-planner-guardrails”: **success**.
-- Python compilation passed and all 12 planner regression tests completed successfully.
+- Initial workflow run [38201405724](https://github.com/eklu654/Trading-Bot/actions/runs/38201405724) passed the first 12 planner regression tests.
+- Added a 13th test and a fail-closed guard for a rebalance delta below 0.001 shares, preventing a zero-quantity order intent.
+- Latest run [38201530243](https://github.com/eklu654/Trading-Bot/actions/runs/38201530243), job “paper-execution-planner-guardrails”: **success** after the precision guard and 13-test suite were in place.
+- Both Python compilation and all 13 planner regression tests passed.
 - This validates the pure planner only. It is not evidence of live signal generation, broker reconciliation, or any submitted order.
