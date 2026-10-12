@@ -1,0 +1,34 @@
+name: Paper Virtual Portfolio Ledger Guardrails
+
+on:
+  push:
+    paths:
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+      - ".github/workflows/paper-virtual-ledger-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: paper-virtual-ledger-guardrails
+  cancel-in-progress: false
+
+jobs:
+  state-machine-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v4
+        with:
+          ref: research/qqq-slow-bear-audit
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile and test fill-backed virtual ledger
+        run: |
+          python -m py_compile research/paper_virtual_portfolio.py
+          PYTHONPATH=research python research/test_paper_virtual_portfolio.py
