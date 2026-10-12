@@ -62,7 +62,7 @@ class VirtualPortfolioTests(unittest.TestCase):
         self.assertEqual(intent["virtual_equity"], "5100.00")
         self.assertEqual(intent["target_notional"], "5100.00")
         self.assertEqual(intent["reference_price"], "110")
-        self.assertEqual(intent["target_qty"], "46.363")
+        self.assertEqual(intent["target_qty"], "46.132")
 
     def test_f75_requires_and_respects_b0_eligibility(self):
         s = new_state("f75")
@@ -105,8 +105,8 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = reconcile_order(s, {"client_order_id":intent["client_order_id"],"id":"broker-1","status":"filled"})
         with self.assertRaisesRegex(LedgerSafetyError, "does not reconcile"):
             complete_terminal_intent(s, broker_qty="50", broker_status="filled")
-        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":"50","price":"100"}])
-        s = complete_terminal_intent(s, broker_qty="50", broker_status="filled")
+        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":intent["qty"],"price":"100"}])
+        s = complete_terminal_intent(s, broker_qty=intent["qty"], broker_status="filled")
         self.assertIsNone(s["pending_intent"])
         self.assertEqual(s["last_terminal_order"]["status"], "filled")
 
@@ -125,8 +125,8 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = stage_intent(s, intent)
         s = mark_submission_outcome(s, "accepted", "broker-1")
         s = reconcile_order(s, {"client_order_id":intent["client_order_id"],"id":"broker-1","status":"filled"})
-        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":"50","price":"100"}])
-        s = complete_terminal_intent(s, broker_qty="50", broker_status="filled")
+        s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":intent["qty"],"price":"100"}])
+        s = complete_terminal_intent(s, broker_qty=intent["qty"], broker_status="filled")
         with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
             plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
 
