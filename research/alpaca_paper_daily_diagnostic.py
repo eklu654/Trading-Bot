@@ -89,6 +89,27 @@ def run(portfolio, ledger, state_path):
     session, b0, f75, source_hash = read_latest_signal(ledger, state_path, now)
     account = get_json(PAPER_BASE_URL + "/v2/account", key, secret)
     clock = get_json(PAPER_BASE_URL + "/v2/clock", key, secret)
+    if account.get("status") != "ACTIVE" or account.get("account_blocked") is not False or account.get("trading_blocked") is not False:
+        raise DiagnosticBlocked("account is not ACTIVE and unblocked")
+    if account.get("currency") != "USD":
+        raise DiagnosticBlocked("account currency is not USD")
+    if clock.get("is_open") is not True:
+        return {
+            "status": "SKIPPED_MARKET_CLOSED",
+            "mode": "READ_ONLY_PLAN_NO_SUBMISSION",
+            "portfolio": portfolio,
+            "symbol": SYMBOL,
+            "signal_session": session,
+            "signal_source_canonical_sha256": source_hash,
+            "b0_target_weight": str(b0),
+            "f75_target_weight": str(f75),
+            "selected_target_weight": str(b0 if portfolio == "b0" else f75),
+            "paper_endpoint": PAPER_BASE_URL,
+            "account_status": account.get("status"),
+            "currency": account.get("currency"),
+            "market_is_open": False,
+            "note": "Market closed. No broker positions were changed and no order was submitted.",
+        }
     positions = get_json(PAPER_BASE_URL + "/v2/positions", key, secret)
     open_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
         "status": "open", "limit": "500", "direction": "desc"
@@ -96,12 +117,6 @@ def run(portfolio, ledger, state_path):
     recent_orders = get_json(PAPER_BASE_URL + "/v2/orders?" + urlencode({
         "status": "all", "limit": "50", "direction": "desc"
     }), key, secret)
-    if account.get("status") != "ACTIVE" or account.get("account_blocked") is not False or account.get("trading_blocked") is not False:
-        raise DiagnosticBlocked("account is not ACTIVE and unblocked")
-    if account.get("currency") != "USD":
-        raise DiagnosticBlocked("account currency is not USD")
-    if clock.get("is_open") is not True:
-        raise DiagnosticBlocked("Alpaca market clock reports market closed; no decision emitted")
     if not isinstance(positions, list) or not isinstance(open_orders, list) or not isinstance(recent_orders, list):
         raise DiagnosticBlocked("broker positions/orders response has unexpected shape")
     if open_orders:
