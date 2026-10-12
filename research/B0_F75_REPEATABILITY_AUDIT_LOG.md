@@ -410,3 +410,11 @@
 - First test run [38204835453](https://github.com/eklu654/Trading-Bot/actions/runs/38204835453) exposed a daily bar timestamp/session-date bug. Fixed by comparing the daily bar's encoded session date directly, avoiding midnight UTC rollover into the prior New York date.
 - Revalidation run [38204861873](https://github.com/eklu654/Trading-Bot/actions/runs/38204861873) was in progress at audit update time. Record outcome after verifying CI.
 - Five-minute polling is not constant access and cannot guarantee capturing a brief intraday breach. A persistent stream process is the next step before any time-sensitive automatic defense.
+
+
+## 2026-10-12 — Persistent QQQ stream monitor implementation
+- Added read-only Alpaca IEX WebSocket monitor, container recipe, pinned websocket-client dependency, deterministic tests, and design/deployment checklist. Main implementation commit: `3423fede6c7a312b55a024d77a3691de0e1b0e55`.
+- Hardened the stream consumer to refresh its prior-session close when the trade stream advances to a new New York session and to detect recovery from the durable SQLite event journal after process restart. Fix commit: `798bc2ba1d1863d3fc22d11610126b86c2d00153`.
+- Added dedicated CI test workflow. Validation run [38205734463](https://github.com/eklu654/Trading-Bot/actions/runs/38205734463) succeeded; compile passed and all 9 deterministic tests passed.
+- Monitor records the -4.5% breach and recovery once per session/event type, filters to regular-session timestamps, rejects stale/future trades, reconnects with bounded exponential backoff, and never submits orders. Existing five-minute polling monitor remains the fallback.
+- Important limitation: stream runtime has not been deployed to a host and has not yet been validated against a live WebSocket session. No always-on monitoring claim is warranted until deployment, durable volume, secret configuration, stream entitlement, and live-session checks are verified. No trading response is connected to the threshold.
