@@ -377,6 +377,8 @@ def prepare(a):
     now=datetime.now(timezone.utc)
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
     if state.get("portfolio")!=a.portfolio: raise ExecutorBlocked("state portfolio mismatch")
+    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+    if sync_changed: write_state(sp,state)
     session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
     # A persisted latch overrides the daily target. Submission-enabled runs independently
     # check QQQ before planning so monitor ordering is not required to block new buys.
@@ -388,7 +390,8 @@ def prepare(a):
             emit(a.report,{"status":"SKIPPED_MARKET_CLOSED","portfolio":a.portfolio,
                 "signal_session":session,"note":"No intent staged; QQQ preflight confirmed market closed."}); return
         state=preflight["state"]
-        if preflight.get("changed"):
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if preflight.get("changed") or sync_changed:
             write_state(sp,state)
         if preflight.get("status") not in ("THRESHOLD_BREACHED","MONITORING") and not state.get("emergency_exit_latch"):
             raise ExecutorBlocked("QQQ defense preflight did not authorize order planning")
@@ -446,6 +449,8 @@ def arm(a):
 
 def submit(a):
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
+    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+    if sync_changed: write_state(sp,state)
     pending=state.get("pending_intent")
     if not pending:
         emit(a.report,{"status":"NO_PENDING_INTENT","portfolio":a.portfolio,"note":"No POST attempted."}); return
@@ -467,7 +472,8 @@ def submit(a):
                 try:
                     qqq=qqq_defense_preflight(key,secret,datetime.now(timezone.utc),state)
                     state=qqq.get("state",state)
-                    if qqq.get("changed"):
+                    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+                    if qqq.get("changed") or sync_changed:
                         write_state(sp,state)
                     defense_active=bool(qqq.get("active") or qqq.get("breached"))
                 except ExecutorBlocked:
@@ -508,7 +514,8 @@ def submit(a):
         if qqq.get("status")=="MARKET_CLOSED":
             raise ExecutorBlocked("market closed during QQQ preflight before POST")
         state=qqq.get("state",state)
-        if qqq.get("changed"):
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if qqq.get("changed") or sync_changed:
             write_state(sp,state)
         if pending.get("side")=="buy" and qqq.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
             raise ExecutorBlocked("QQQ preflight failed closed; refusing buy POST")
@@ -536,7 +543,8 @@ def submit(a):
         if qqq_final.get("status")=="MARKET_CLOSED":
             raise ExecutorBlocked("market closed at final QQQ pre-POST check")
         state=qqq_final.get("state",state)
-        if qqq_final.get("changed"):
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if qqq_final.get("changed") or sync_changed:
             write_state(sp,state)
         if pending.get("side")=="buy" and qqq_final.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
             raise ExecutorBlocked("final QQQ preflight failed closed; refusing buy POST")
