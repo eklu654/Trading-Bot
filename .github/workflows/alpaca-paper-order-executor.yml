@@ -16,6 +16,7 @@ on:
     # Signals are still based on the latest completed daily shadow row; this cadence checks for
     # required position changes/reconciliation, it does not invent intraday strategy signals.
     # Scheduled runs alone can submit paper orders; push/manual runs remain dry-run only.
+    # A push-triggered run is also the safe dispatch workaround for an immediate diagnostic.
     - cron: "*/5 13-20 * * 1-5"
 
 permissions:
