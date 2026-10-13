@@ -1,22 +1,23 @@
 # Paper-trading readiness gate — 2026-10-13
 
 ## Decision
-**NOT READY to claim autonomous order execution or emergency exits are operational.** Do not report a successful trade unless the broker order ID and subsequent broker reconciliation/fill are evidenced in the executor audit artifact and durable portfolio state.
+**NOT READY to claim autonomous execution or emergency exits are operational.** Do not report a successful trade unless a broker order ID and reconciled broker status/fill are evidenced in the executor audit and durable state.
 
-## Verified repository state at review time
-- Main executor workflow is scheduled every five minutes at `*/5 13-20 * * 1-5` UTC: `.github/workflows/alpaca-paper-order-executor.yml`.
-- The executor has a paper-only POST implementation, but code presence is not evidence that a POST succeeded.
-- `.github/workflows/qqq-intraday-monitor.yml` calls `research/qqq_intraday_monitor.py`, whose module/docstring and report explicitly state it is read-only and never submits orders.
-- Both paper states on `paper-execution-ledger` report initial equity/cash $5,000, quantity 0, no pending intent, and `last_fill_sync_at: null`. Their mark date is 2026-10-12.
-- The shadow manifest on `research/qqq-slow-bear-audit` reports last observation 2026-10-09, frozen cutoff 2026-10-07, and only two ledger rows. The ledger's latest signal row is 2026-10-09, with B0 and F75 target weights both 1.
-- The executor's `prepare` path refuses to plan a new order if the portfolio state's `mark_date` does not equal the latest signal session. Here, state mark date (2026-10-12) and ledger signal session (2026-10-09) differ. This is a concrete blocker to the next scheduled order attempt, unless the upstream ledger/state is reconciled first.
+## Verified as of 2026-10-13 10:29 UTC
+- Main executor workflow is scheduled every five minutes at `*/5 13-20 * * 1-5` UTC. Alpaca's broker clock gates order preparation/submission outside the actual session.
+- The executor code is paper-endpoint-only and contains two-phase intent persistence, client-order-ID reconciliation, and no automatic retry for ambiguous POST outcomes.
+- The scheduled workflow has **not yet produced verified live-session order evidence**. Run [38383606683](https://github.com/eklu654/Trading-Bot/actions/runs/38383606683) was a push-triggered dry run: tests passed, both distinct paper account identities were verified, but the broker clock reported `SKIPPED_MARKET_CLOSED` for both portfolios. No order was submitted.
+- The earlier push-triggered run [38383403303](https://github.com/eklu654/Trading-Bot/actions/runs/38383403303) failed preflight because the signal ledger was stale relative to portfolio marks.
+- The F75 shadow scheduler run [38383529041](https://github.com/eklu654/Trading-Bot/actions/runs/38383529041) completed successfully and appended the 2026-10-12 completed session. The manifest now reports `last_observation=2026-10-12`, 3 rows total, and 2 return-bearing sessions; the ledger hash and manifest agree.
+- Both B0 and F75 durable states currently show $5,000 equity/cash, TQQQ quantity 0, no pending intent, and `mark_date=2026-10-12`, matching the latest completed signal session. Their persisted account fingerprints differ, and the account-verification step succeeded.
+- The QQQ monitor remains explicitly read-only: `.github/workflows/qqq-intraday-monitor.yml` runs `research/qqq_intraday_monitor.py`, which reports `orders_submitted=false` even on threshold breach. It cannot currently exit positions.
 
-## Required before declaring ready
-1. Refresh/rebuild the shadow ledger and manifest from validated market data through the last completed session; verify the manifest hash, row count, and source hash.
-2. Reconcile B0/F75 state marks to that exact signal session and fetch current broker positions, open/recent orders, and fills. Do not overwrite fill-backed quantities with shadow exposures.
-3. Convert the QQQ -4.5% monitor from read-only reporting to a tested, durable, paper-only exit-intent path. Define the recovery anchor explicitly before implementing the +10% recovery/re-entry rule.
-4. Add tests for threshold breach, stale data, duplicate exit prevention, partial fills, order rejection, unknown POST outcome, recovery/re-entry, and both account identities.
-5. Verify a scheduled run against both paper accounts and inspect `alpaca-paper-order-executor-audit`. Require an accepted broker order ID and reconciled fill (or a clearly reported no-order reason); a green workflow alone is insufficient.
+## Remaining blockers before declaring ready
+1. **Live-session executor proof:** inspect the first scheduled run after the actual market opens. Verify B0/F75 broker account, positions, open/recent orders, fresh TQQQ trade, target sizing, and exact report outcome. If an order is submitted, verify its broker order ID and subsequent status/fill and confirm the durable state matches the broker. If no order is needed or preflight blocks, preserve that explicit reason. A green workflow alone is insufficient.
+2. **Emergency-exit implementation:** convert the QQQ -4.5% monitor from read-only reporting to a guarded, durable paper-only exit-intent path for both distinct accounts. Keep it independent of the daily target-signal cadence and avoid duplicate exits.
+3. **Recovery semantics:** implement the +10% recovery only after anchoring it to the documented strategy's running low after the shock; persist that low across workflow restarts and specify how re-entry is delayed to a safe, confirmed execution window. Do not infer the anchor from a single poll.
+4. **Safety tests:** cover trigger boundaries, stale/missing QQQ data, stale TQQQ quotes, duplicate/concurrent runs, partial fills, rejected orders, unknown POST outcomes, restart recovery, and account separation. Test monitor-to-executor integration, not just isolated threshold math.
+5. **Operational cadence:** verify the five-minute schedules are running during the real session, review run duration/queue delays, and ensure emergency-exit processing is not blocked behind slow research workflows or the daily target workflow.
 
 ## Safety / scope
-Paper API endpoint only. Never log raw credentials or account IDs. Do not automatically retry an ambiguous POST. Keep an emergency-exit path independent of the daily target-signal cadence. This note records a readiness gap, not a claim that a fix or trade has occurred.
+Paper API endpoint only. Never log raw credentials or account IDs. Never blindly retry an ambiguous POST. Do not declare ready until live-session broker reconciliation is evidenced and the emergency-exit path is implemented and tested. This note records readiness evidence and remaining gaps; it does not claim a successful trade.
