@@ -206,8 +206,8 @@ class PaperOrderPayloadTests(unittest.TestCase):
                 qqq_price="95.5",prior_close="100",trigger_sha256="e"*64)
             state_path.write_text(state_json(state)+"\n",encoding="utf-8")
             a=self.args(root,state_path=state_path)
-            opened={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"status":"new"}
-            cancelled={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"status":"canceled"}
+            opened={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"symbol":"TQQQ","side":"buy","status":"new"}
+            cancelled={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"symbol":"TQQQ","side":"buy","status":"canceled"}
             with patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[opened,cancelled,[],[]]), \
                  patch.object(executor,"cancel_paper_order",return_value={"status_code":204}) as cancel, \
