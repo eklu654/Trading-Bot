@@ -12,6 +12,7 @@ on:
       - "research/test_record_emergency_exit_latch.py"
       - "research/alpaca_paper_order_executor.py"
       - "research/test_alpaca_paper_order_executor.py"
+      - "research/test_executor_fill_reconciliation.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
   pull_request:
     paths:
@@ -50,5 +51,6 @@ jobs:
         run: |
           python research/test_paper_virtual_portfolio.py
           python research/test_alpaca_paper_order_executor.py
+          python research/test_executor_fill_reconciliation.py
           python research/test_qqq_intraday_monitor.py
           python research/test_record_emergency_exit_latch.py
