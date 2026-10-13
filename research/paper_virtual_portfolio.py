@@ -297,7 +297,17 @@ def plan_target(state, *, signal_session, target_weight, reference_price, baseli
         raise LedgerSafetyError("client order ID already used; reconcile rather than resubmit")
     last = state.get("last_terminal_order") or {}
     if last.get("signal_session") == session:
-        raise LedgerSafetyError("an order was already completed for this signal session")
+        # Never repeat same-session risk additions, but never let duplicate-session
+        # protection block a risk-reducing sell (especially a QQQ emergency exit).
+        if delta > 0:
+            return None
+        last_weight_raw = last.get("target_weight")
+        try:
+            last_weight = dec(last_weight_raw, "last terminal target weight")
+        except LedgerSafetyError:
+            last_weight = weight
+        if weight != 0 and weight >= last_weight:
+            return None
     return {
         "portfolio": portfolio, "symbol": SYMBOL, "signal_session": session,
         "target_weight": str(weight), "virtual_equity": str(equity.quantize(Decimal("0.01"))),
