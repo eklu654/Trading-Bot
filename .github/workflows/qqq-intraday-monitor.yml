@@ -3,7 +3,7 @@ name: QQQ Intraday -4.5% Monitor + Paper Defense Latch
 on:
   schedule:
     # Poll every five minutes during broad US market hours; broker clock gates execution.
-    - cron: "*/5 13-21 * * 1-5"
+    - cron: "1-56/5 13-21 * * 1-5"
   workflow_dispatch:
   push:
     branches: [main]
