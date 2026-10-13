@@ -66,7 +66,7 @@ jobs:
           PYTHONPATH=research python /tmp/paper-order-executor.py --mode verify-accounts --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --report paper-account-identity.json
       - name: Prepare B0/F75 intents (schedule-only order enable)
         env:
-          ENABLE_PAPER_ORDER_SUBMISSION: 'false' # Release gate: keep all events dry-run until broker fill reconciliation and emergency exits pass acceptance.
+          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }} # Scheduled runs only; push and manual runs remain dry-run.
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
           ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
