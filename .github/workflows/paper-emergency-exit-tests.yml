@@ -49,5 +49,5 @@ jobs:
           PYTHONPATH: research
         run: |
           python research/test_paper_virtual_portfolio.py
-          python research/test_record_emergency_exit_latch.py
           python research/test_alpaca_paper_order_executor.py
+          python research/test_record_emergency_exit_latch.py
