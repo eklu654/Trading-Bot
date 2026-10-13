@@ -11,7 +11,7 @@ from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
 from qqq_intraday_monitor import evaluate as evaluate_qqq_monitor, MonitorError
@@ -45,6 +45,29 @@ def get_json(url, key, secret, allow_404=False):
         raise ExecutorBlocked(f"Alpaca GET returned HTTP {exc.code}") from None
     except (URLError,TimeoutError,json.JSONDecodeError,UnicodeDecodeError):
         raise ExecutorBlocked("Alpaca GET failed, timed out, or returned invalid JSON") from None
+
+def cancel_paper_order(order_id,key,secret):
+    """Cancel an existing order only on the hard-pinned Alpaca paper endpoint."""
+    value=str(order_id or "").strip()
+    if not value:
+        raise ExecutorBlocked("cannot cancel broker order without an ID")
+    req=Request(PAPER_URL+"/v2/orders/"+quote(value,safe=""),
+        headers={"APCA-API-KEY-ID":key,"APCA-API-SECRET-KEY":secret,
+                 "Accept":"application/json","User-Agent":"Trading-Bot-paper-executor/1.0"},
+        method="DELETE")
+    try:
+        with urlopen(req,timeout=15) as response:
+            body=response.read().decode("utf-8")
+            return json.loads(body) if body.strip() else {"status_code":response.status}
+    except HTTPError as exc:
+        # A concurrent fill/cancel can make DELETE return a conflict; caller
+        # must re-fetch by client ID and reconcile, never assume cancellation.
+        if exc.code in (404,409,422):
+            return {"status_code":exc.code,"cancel_unconfirmed":True}
+        raise ExecutorBlocked(f"Alpaca paper cancel returned HTTP {exc.code}") from None
+    except (URLError,TimeoutError,UnicodeDecodeError,json.JSONDecodeError):
+        raise ExecutorBlocked("Alpaca paper cancel outcome unknown; reconcile by client order ID") from None
+
 
 def post_order(payload,key,secret):
     """The only broker mutation; endpoint is hard-pinned to Alpaca paper."""
@@ -373,6 +396,36 @@ def submit(a):
     cid=pending["client_order_id"]
     existing=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
     if existing is not None:
+        broker_status=str(existing.get("status") or "").lower()
+        terminal=broker_status in ("filled","rejected","canceled","expired")
+        if pending.get("side")=="buy" and not terminal:
+            defense_active=bool(state.get("emergency_exit_latch"))
+            if not defense_active:
+                # Existing orders are reconciled even if the QQQ feed is stale;
+                # only a fresh breach authorizes a new cancellation request.
+                try:
+                    qqq=qqq_defense_preflight(key,secret,datetime.now(timezone.utc),state)
+                    state=qqq.get("state",state)
+                    if qqq.get("changed"):
+                        write_state(sp,state)
+                    defense_active=bool(qqq.get("active") or qqq.get("breached"))
+                except ExecutorBlocked:
+                    defense_active=False
+            if defense_active:
+                try:
+                    cancel_paper_order(existing.get("id"),key,secret)
+                except ExecutorBlocked:
+                    # Do not infer cancellation. Reconcile the currently observed
+                    # order and let a later run verify its terminal state.
+                    pass
+                refreshed=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
+                if refreshed is not None:
+                    state=reconcile_order_fills(state,refreshed,key,secret)
+                    write_state(sp,state)
+                emit(a.report,{"status":"BUY_ORDER_CANCEL_RECONCILED_DURING_QQQ_DEFENSE" if refreshed and str(refreshed.get("status","")).lower() in ("canceled","filled","rejected","expired") else "BUY_ORDER_CANCEL_PENDING_RECONCILIATION",
+                    "portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":(refreshed or existing).get("id"),
+                    "broker_status":(refreshed or existing).get("status"),
+                    "note":"Cancellation was requested only on the Alpaca paper endpoint; verify terminal order and fill-backed position before staging an exit."}); return
         state=reconcile_order_fills(state,existing,key,secret); write_state(sp,state)
         emit(a.report,{"status":"EXISTING_ORDER_RECONCILED","portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":existing.get("id"),"broker_status":existing.get("status"),"note":"No POST sent."}); return
     permit_path=Path(a.permit)
