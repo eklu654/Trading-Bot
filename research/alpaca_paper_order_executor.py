@@ -149,8 +149,12 @@ def qqq_defense_preflight(key, secret, now, state):
         raise ExecutorBlocked("QQQ defense preflight did not produce a valid live observation")
     changed=False
     if report.get("status")=="THRESHOLD_BREACHED":
-        digest=sha256("|".join((str(report["session"]),str(report["qqq_price"]),
-                                 str(report["prior_close"]),str(report["trade_timestamp"]))).encode()).hexdigest()
+        identity={"symbol":"QQQ","session":report["session"],
+                  "trade_timestamp":report["trade_timestamp"],
+                  "observed_at_utc":report["observed_at_utc"],
+                  "qqq_price":str(report["qqq_price"]),"prior_close":str(report["prior_close"]),
+                  "threshold_pct":"4.5"}
+        digest=sha256(json.dumps(identity,sort_keys=True,separators=(",",":")).encode()).hexdigest()
         if state.get("emergency_exit_latch") is None:
             state=activate_emergency_exit_latch(state,trigger_session=report["session"],
                 qqq_price=report["qqq_price"],prior_close=report["prior_close"],trigger_sha256=digest)
@@ -403,6 +407,20 @@ def submit(a):
         if ctx is None: raise ExecutorBlocked("market closed before POST")
         ref=Decimal(pending["reference_price"])
         if abs(ctx["price"]-ref)/ref>Decimal("0.0025"): raise ExecutorBlocked("reference price moved over 0.25% before POST")
+        # Final independent QQQ check directly before payload creation / POST.
+        qqq_final=qqq_defense_preflight(key,secret,datetime.now(timezone.utc),state)
+        if qqq_final.get("status")=="MARKET_CLOSED":
+            raise ExecutorBlocked("market closed at final QQQ pre-POST check")
+        state=qqq_final.get("state",state)
+        if qqq_final.get("changed"):
+            write_state(sp,state)
+        if pending.get("side")=="buy" and qqq_final.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+            raise ExecutorBlocked("final QQQ preflight failed closed; refusing buy POST")
+        if pending.get("side")=="buy" and (qqq_final.get("breached") or qqq_final.get("active")):
+            state=abort_unsubmitted_intent(state,"QQQ emergency defense active at final pre-POST check")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
+                "client_order_id":cid,"note":"No POST attempted; final defense latch persisted."}); return
     except Exception as exc:
         reason=str(exc) if isinstance(exc,(ExecutorBlocked,LedgerSafetyError)) else f"preflight failure ({type(exc).__name__})"
         state=abort_unsubmitted_intent(state,reason); write_state(sp,state)
