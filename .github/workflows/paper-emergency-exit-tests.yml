@@ -11,6 +11,8 @@ on:
       - "research/record_emergency_exit_latch.py"
       - "research/test_record_emergency_exit_latch.py"
       - "research/alpaca_paper_order_executor.py"
+      - "research/qqq_intraday_monitor.py"
+      - "research/test_qqq_intraday_monitor.py"
       - "research/test_alpaca_paper_order_executor.py"
       - "research/test_executor_fill_reconciliation.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
@@ -23,6 +25,8 @@ on:
       - "research/record_emergency_exit_latch.py"
       - "research/test_record_emergency_exit_latch.py"
       - "research/alpaca_paper_order_executor.py"
+      - "research/qqq_intraday_monitor.py"
+      - "research/test_qqq_intraday_monitor.py"
       - "research/test_alpaca_paper_order_executor.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
   workflow_dispatch:
