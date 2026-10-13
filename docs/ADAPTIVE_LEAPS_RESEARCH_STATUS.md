@@ -82,3 +82,12 @@ This document records repository/code inspection only. It does not assert that a
 
 
 - Repeatability check: newer runner commit `ff4a3a0dc06ae6ade86d1b37cb7e69ed76dbb0ae` completed replay [run 38476628056](https://github.com/eklu654/Trading-Bot/actions/runs/38476628056) with the same four summary outcomes: SPY cash $3,930 and QQQ cash $6,025, but terminal equity unavailable in all cases. Its artifact (`11853992456`) was independently downloaded; cash reconciliation and chronology pass, but unresolved expired positions and missing bid marks remain unchanged. This reproduces the defect rather than resolving it.
+
+
+### 2026-10-13 22:22Z — Fail-closed terminal-equity gate added
+
+- The repeated replay proved the failure mode is specifically a missing exit bid near the expiry buffer, followed by an expired position being retained indefinitely. For SPY the terminal contract is `SPY080930C00148000`; for QQQ it is `QQQ140920C00077000`. Neither terminal position has a valid mark.
+- Updated `research/run_adaptive_leaps_replay.py` to label such runs `incomplete_terminal_mark` and report terminal contract/DTE, whether it is expired, days past expiration, last valid bid-mark date, days since that mark, and entry/exit rejection counts.
+- Added synthetic coverage for an unresolved expired contract in commit [`575fce4538ad9b1221800f377bc5b57996cd13cb`](https://github.com/eklu654/Trading-Bot/commit/575fce4538ad9b1221800f377bc5b57996cd13cb); [unit run 38477235719](https://github.com/eklu654/Trading-Bot/actions/runs/38477235719) passed.
+- Updated replay workflow in commit [`80c19d3bfd0df737ae676713bedbf7acb2a2379f`](https://github.com/eklu654/Trading-Bot/commit/80c19d3bfd0df737ae676713bedbf7acb2a2379f): it uploads the diagnostics artifact even when the terminal-equity gate fails, then fails the workflow unless all four cases have a reconciled final mark. The new run [38477257536](https://github.com/eklu654/Trading-Bot/actions/runs/38477257536) was queued at the time of this note; no result from the new gate is claimed yet.
+- This makes the CI status honest, but does not solve the source quote/expiration lifecycle issue. Next research step is to examine why selected contracts lack valid exit bids and define an ex-ante, no-look-ahead exit/settlement policy before any strategy P/L comparison.
