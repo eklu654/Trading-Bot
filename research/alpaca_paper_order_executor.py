@@ -6,7 +6,7 @@ by client_order_id and never automatically retry an ambiguous submission.
 """
 from __future__ import annotations
 import argparse, csv, json, os
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
@@ -14,10 +14,12 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
+from qqq_intraday_monitor import evaluate as evaluate_qqq_monitor, MonitorError
 
 from paper_virtual_portfolio import (
     validate_state, state_json, plan_target, stage_intent, mark_submission_attempting,
     abort_unsubmitted_intent, mark_submission_outcome, reconcile_order, apply_fills, complete_terminal_intent, LedgerSafetyError,
+    activate_emergency_exit_latch, update_emergency_exit_latch,
 )
 
 PAPER_URL = "https://paper-api.alpaca.markets"
@@ -122,6 +124,45 @@ def read_signal(ledger_path,manifest_path,now):
         raise ExecutorBlocked("latest B0/F75 target weights are invalid")
     if f75>b0 or (b0==0 and f75!=0): raise ExecutorBlocked("F75 target violates B0 eligibility")
     return session,b0,f75,source
+
+def qqq_defense_preflight(key, secret, now, state):
+    """Fresh QQQ defense check for executor ordering safety; no order mutation."""
+    clock=get_json(PAPER_URL+"/v2/clock",key,secret)
+    if not isinstance(clock,dict):
+        raise ExecutorBlocked("QQQ defense preflight returned invalid broker clock")
+    if clock.get("is_open") is not True:
+        return {"status":"MARKET_CLOSED","active":bool(state.get("emergency_exit_latch")),"breached":False}
+    start=(now.astimezone(NY).date()-timedelta(days=10)).isoformat()
+    params=urlencode({"timeframe":"1Day","start":start,"limit":"20","feed":"iex","sort":"asc"})
+    data=get_json(DATA_URL+"/v2/stocks/QQQ/bars?"+params,key,secret)
+    bars=data.get("bars",[]) if isinstance(data,dict) else None
+    if not isinstance(bars,list):
+        raise ExecutorBlocked("QQQ defense preflight daily bars response is invalid")
+    trade=get_json(DATA_URL+"/v2/stocks/QQQ/trades/latest?"+urlencode({"feed":"iex"}),key,secret)
+    try:
+        report=evaluate_qqq_monitor(clock,trade,bars,now)
+    except MonitorError as exc:
+        raise ExecutorBlocked(f"QQQ defense preflight failed closed: {exc}") from None
+    if report.get("status") in ("STALE_TRADE_FAIL_CLOSED","ERROR_FAIL_CLOSED"):
+        raise ExecutorBlocked("QQQ defense preflight trade is stale or invalid")
+    if report.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+        raise ExecutorBlocked("QQQ defense preflight did not produce a valid live observation")
+    changed=False
+    if report.get("status")=="THRESHOLD_BREACHED":
+        digest=sha256("|".join((str(report["session"]),str(report["qqq_price"]),
+                                 str(report["prior_close"]),str(report["trade_timestamp"]))).encode()).hexdigest()
+        if state.get("emergency_exit_latch") is None:
+            state=activate_emergency_exit_latch(state,trigger_session=report["session"],
+                qqq_price=report["qqq_price"],prior_close=report["prior_close"],trigger_sha256=digest)
+            changed=True
+    elif state.get("emergency_exit_latch") is not None:
+        before=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+        state=update_emergency_exit_latch(state,current_qqq_price=report["qqq_price"])
+        changed=before!=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+    return {"status":report["status"],"active":bool(state.get("emergency_exit_latch")),
+            "breached":report.get("status")=="THRESHOLD_BREACHED","changed":changed,
+            "report":report,"state":state}
+
 
 def effective_target(portfolio, b0, f75, state):
     """Apply the durable defense latch after validating the ordinary signal."""
@@ -243,10 +284,21 @@ def prepare(a):
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
     if state.get("portfolio")!=a.portfolio: raise ExecutorBlocked("state portfolio mismatch")
     session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-    # A persisted QQQ defense latch overrides the daily target to flat. It
-    # remains active until a separately validated recovery rule clears it.
-    strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
+    # A persisted latch overrides the daily target. Submission-enabled runs independently
+    # check QQQ before planning so monitor ordering is not required to block new buys.
     enabled=os.environ.get("ENABLE_PAPER_ORDER_SUBMISSION","false").lower()=="true"
+    if enabled:
+        key,secret=credentials(a.portfolio)
+        preflight=qqq_defense_preflight(key,secret,now,state)
+        if preflight.get("status")=="MARKET_CLOSED":
+            emit(a.report,{"status":"SKIPPED_MARKET_CLOSED","portfolio":a.portfolio,
+                "signal_session":session,"note":"No intent staged; QQQ preflight confirmed market closed."}); return
+        state=preflight["state"]
+        if preflight.get("changed"):
+            write_state(sp,state)
+        if preflight.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+            raise ExecutorBlocked("QQQ defense preflight did not authorize order planning")
+    strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
     pending=state.get("pending_intent")
     if pending:
         if pending.get("submission_state")=="STAGED" and enabled:
@@ -320,6 +372,20 @@ def submit(a):
         now=datetime.now(timezone.utc)
         session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
         target=b0 if a.portfolio=="b0" else f75
+        # Last-moment QQQ guard: the monitor's schedule order is not a safety dependency.
+        qqq=qqq_defense_preflight(key,secret,now,state)
+        if qqq.get("status")=="MARKET_CLOSED":
+            raise ExecutorBlocked("market closed during QQQ preflight before POST")
+        state=qqq.get("state",state)
+        if qqq.get("changed"):
+            write_state(sp,state)
+        if pending.get("side")=="buy" and qqq.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+            raise ExecutorBlocked("QQQ preflight failed closed; refusing buy POST")
+        if pending.get("side")=="buy" and (qqq.get("breached") or qqq.get("active")):
+            state=abort_unsubmitted_intent(state,"QQQ emergency defense active at pre-POST preflight")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
+                "client_order_id":cid,"note":"No POST attempted; defense latch persisted."}); return
         if session!=pending.get("signal_session") or target!=Decimal(pending.get("target_weight")):
             raise ExecutorBlocked("latest signal changed after intent was staged")
         if state.get("mark_date")!=session: raise ExecutorBlocked("virtual ledger mark date no longer matches signal session")
