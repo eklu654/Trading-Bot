@@ -2,12 +2,23 @@ name: Adaptive LEAPS Unit Tests
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/adaptive-leaps-unit-tests.yml"
+      - "research/adaptive_leaps_lifecycle.py"
+      - "research/adaptive_leaps_replay.py"
+      - "research/run_adaptive_leaps_replay.py"
+      - "research/audit_adaptive_leaps_quote_continuity.py"
+      - "tests/test_adaptive_leaps_*.py"
   push:
     branches: [main]
     paths:
       - "research/adaptive_leaps_lifecycle.py"
       - "research/adaptive_leaps_replay.py"
       - "research/run_adaptive_leaps_replay.py"
+      - "research/audit_adaptive_leaps_quote_continuity.py"
+      - "tests/test_adaptive_leaps_quote_continuity.py"
       - "tests/test_adaptive_leaps_lifecycle.py"
       - "tests/test_adaptive_leaps_replay.py"
       - ".github/workflows/adaptive-leaps-unit-tests.yml"
@@ -30,7 +41,9 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Install quote-audit test dependencies
+        run: python -m pip install "duckdb>=1.4,<2" "pandas>=2.2,<3"
       - name: Compile LEAPS modules
-        run: python -m py_compile research/adaptive_leaps_lifecycle.py research/adaptive_leaps_replay.py research/run_adaptive_leaps_replay.py
+        run: python -m py_compile research/adaptive_leaps_lifecycle.py research/adaptive_leaps_replay.py research/run_adaptive_leaps_replay.py research/audit_adaptive_leaps_quote_continuity.py
       - name: Run lifecycle and replay unit tests
         run: python -m unittest discover -s tests -p "test_adaptive_leaps_*.py" -v

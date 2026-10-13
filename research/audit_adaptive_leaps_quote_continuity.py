@@ -77,44 +77,48 @@ def main() -> int:
       SELECT *, lag(obs_date) OVER (PARTITION BY contract_id ORDER BY obs_date) AS prior_obs_date
       FROM history
     ),
-    aggregates AS (
-      SELECT contract_id, min(expiration) AS expiration,
-             min(first_eligible_date) AS first_eligible_date,
-             min(obs_date) AS first_history_row,
-             max(obs_date) AS last_history_row,
-             max(eligible_observations) AS eligible_observations,
-             count(*) AS history_rows_present,
-             count(*) FILTER (WHERE bid > 0 AND ask >= bid AND mark > 0) AS valid_quote_rows,
-             count(*) FILTER (WHERE bid > 0 AND ask >= bid) AS valid_bid_rows,
-             count(*) FILTER (WHERE bid IS NULL OR bid <= 0 OR ask IS NULL OR ask < bid) AS invalid_or_missing_bid_rows,
-             max(obs_date) FILTER (WHERE bid > 0 AND ask >= bid) AS last_valid_bid_date,
-             max(obs_date) FILTER (WHERE bid > 0 AND ask >= bid AND mark > 0) AS last_fully_valid_quote_date,
-             max(date_diff('day', prior_obs_date, obs_date)) AS max_calendar_gap_between_rows,
-             count(*) FILTER (WHERE prior_obs_date IS NOT NULL AND date_diff('day', prior_obs_date, obs_date) > 4) AS gaps_over_4_calendar_days,
-             count(*) FILTER (WHERE obs_date > (
-               SELECT max(h2.obs_date) FROM history h2
-               WHERE h2.contract_id = history.contract_id AND h2.bid > 0 AND h2.ask >= h2.bid
-             )) AS rows_after_last_valid_bid,
-             bool_or(contract_id IN ({flagged_sql})) AS specifically_flagged
-      FROM with_gaps AS history
+    coverage AS (
+      SELECT max(obs_date) AS source_coverage_end_date FROM source
+    ),
+    last_bid AS (
+      SELECT contract_id, max(obs_date) AS last_valid_bid_date
+      FROM history WHERE bid > 0 AND ask >= bid
       GROUP BY contract_id
     ),
+    aggregates AS (
+      SELECT h.contract_id, min(h.expiration) AS expiration,
+             min(h.first_eligible_date) AS first_eligible_date,
+             min(h.obs_date) AS first_history_row,
+             max(h.obs_date) AS last_history_row,
+             max(h.eligible_observations) AS eligible_observations,
+             count(*) AS history_rows_present,
+             count(*) FILTER (WHERE h.bid > 0 AND h.ask >= h.bid AND h.mark > 0) AS valid_quote_rows,
+             count(*) FILTER (WHERE h.bid > 0 AND h.ask >= h.bid) AS valid_bid_rows,
+             count(*) FILTER (WHERE h.bid IS NULL OR h.bid <= 0 OR h.ask IS NULL OR h.ask < h.bid) AS invalid_or_missing_bid_rows,
+             max(h.obs_date) FILTER (WHERE h.bid > 0 AND h.ask >= h.bid) AS last_valid_bid_date,
+             max(h.obs_date) FILTER (WHERE h.bid > 0 AND h.ask >= h.bid AND h.mark > 0) AS last_fully_valid_quote_date,
+             max(date_diff('day', h.prior_obs_date, h.obs_date)) AS max_calendar_gap_between_rows,
+             count(*) FILTER (WHERE h.prior_obs_date IS NOT NULL AND date_diff('day', h.prior_obs_date, h.obs_date) > 4) AS gaps_over_4_calendar_days,
+             count(*) FILTER (WHERE l.last_valid_bid_date IS NOT NULL AND h.obs_date > l.last_valid_bid_date) AS rows_after_last_valid_bid,
+             coalesce(bool_or(h.contract_id IN ({flagged_sql})), false) AS specifically_flagged
+      FROM with_gaps h
+      LEFT JOIN last_bid l USING (contract_id)
+      GROUP BY h.contract_id
+    ),
     enriched AS (
-      SELECT *,
+      SELECT a.*, coverage.source_coverage_end_date,
+             (a.expiration <= coverage.source_coverage_end_date) AS expiration_fully_observed,
              date_diff('day', last_valid_bid_date, expiration) AS dte_at_last_valid_bid,
              date_diff('day', last_valid_bid_date, last_history_row) AS days_from_last_valid_bid_to_last_row,
              round(100.0 * valid_bid_rows / nullif(history_rows_present, 0), 4) AS valid_bid_pct_of_rows,
              round(100.0 * valid_quote_rows / nullif(history_rows_present, 0), 4) AS valid_quote_pct_of_rows
-      FROM aggregates
+      FROM aggregates a CROSS JOIN coverage
     )
     SELECT * FROM enriched ORDER BY specifically_flagged DESC, first_eligible_date, contract_id
     """
     df = con.execute(sql).fetchdf()
     csv_path = out / f"{args.symbol.lower()}_quote_continuity_by_contract.csv"
     df.to_csv(csv_path, index=False)
-
-    def num(series, value):
-        return int((series == value).sum())
 
     flagged_rows = df[df["specifically_flagged"] == True] if not df.empty else df
     report = {
@@ -133,8 +137,11 @@ def main() -> int:
             "eligible_contracts": int(len(df)),
             "contracts_with_any_valid_bid": int(df["last_valid_bid_date"].notna().sum()) if not df.empty else 0,
             "contracts_with_no_valid_bid_after_eligibility": int(df["last_valid_bid_date"].isna().sum()) if not df.empty else 0,
-            "contracts_last_valid_bid_more_than_30_days_before_expiration": int((df["dte_at_last_valid_bid"] > 30).sum()) if not df.empty else 0,
-            "contracts_last_valid_bid_at_or_before_30_dte": int(((df["dte_at_last_valid_bid"] <= 30) & df["dte_at_last_valid_bid"].notna()).sum()) if not df.empty else 0,
+            "source_coverage_end_date": str(df["source_coverage_end_date"].max()) if not df.empty else None,
+            "fully_observed_to_expiration_contracts": int(df["expiration_fully_observed"].sum()) if not df.empty else 0,
+            "right_censored_contracts_expiration_after_source_coverage": int((~df["expiration_fully_observed"]).sum()) if not df.empty else 0,
+            "fully_observed_contracts_last_valid_bid_more_than_30_days_before_expiration": int(((df["expiration_fully_observed"]) & (df["dte_at_last_valid_bid"] > 30)).sum()) if not df.empty else 0,
+            "fully_observed_contracts_last_valid_bid_at_or_before_30_dte": int(((df["expiration_fully_observed"]) & (df["dte_at_last_valid_bid"] <= 30) & df["dte_at_last_valid_bid"].notna()).sum()) if not df.empty else 0,
             "median_valid_bid_pct_of_present_rows": float(df["valid_bid_pct_of_rows"].median()) if not df.empty else None,
             "median_max_calendar_gap_between_rows": float(df["max_calendar_gap_between_rows"].median()) if not df.empty else None,
         },
