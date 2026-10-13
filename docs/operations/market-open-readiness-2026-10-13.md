@@ -81,3 +81,12 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - The same run explicitly had `ENABLE_PAPER_ORDER_SUBMISSION=false`; both portfolios reported `SKIPPED_MARKET_CLOSED`, then `NO_ARM_REQUEST` and `NO_PENDING_INTENT`. The log explicitly says **no POST attempted**. This is successful test/preflight evidence, not broker order-lifecycle evidence.
 - The separate broad `research-tests` run `38392517515` was still running when recorded; no result is inferred.
 - Release blockers unchanged: emergency exit is read-only/no submission path; no real market-hours broker fill lifecycle has been demonstrated; shared monitor/executor durable defensive state and restart/concurrency behavior remain unproven. Keep all paper submission disabled until these gates pass.
+
+
+## Continued work after user escalation — 2026-10-13 11:50Z
+
+- Re-checked the live `main` branch, monitor, stream monitor, executor workflow, ledger implementation, and current Actions runs rather than relying on the prior handoff.
+- Broad `research-tests` run [38392592853](https://github.com/eklu654/Trading-Bot/actions/runs/38392592853) completed successfully on commit `55b90c6ec47bb43251fb3a91010fddba3b940509`.
+- Reconfirmed a critical architectural blocker: both QQQ monitors are intentionally read-only; the streaming monitor's SQLite event store is local to its runner and does not constitute durable shared state for the executor. The five-minute monitor workflow does not dispatch a tested exit executor.
+- Reconfirmed the executor workflow's submission environment is hard-set to `ENABLE_PAPER_ORDER_SUBMISSION=false`. This must not be changed until emergency-exit orchestration, durable cross-workflow state, fill/position reconciliation, idempotency under restart/concurrency, and market-hours paper acceptance are proven.
+- No actual paper order has been sent in this continuation. No emergency exit has been falsely reported as implemented. Readiness remains blocked.
