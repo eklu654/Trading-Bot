@@ -85,6 +85,8 @@ def transition_exit(state, status, broker_order=None, broker_position_qty=None):
     if status not in allowed:
         raise EmergencyExitBlocked("unsupported emergency-exit status")
     if status == "FILLED":
+        if broker_order is None or str(broker_order.get("status", "")).lower() != "filled":
+            raise EmergencyExitBlocked("cannot mark exit filled without a broker-filled order")
         if broker_position_qty is None or _positive_or_zero(broker_position_qty) != 0:
             raise EmergencyExitBlocked("cannot mark exit filled until broker position is zero")
         out["broker_position_qty_after"] = "0"
