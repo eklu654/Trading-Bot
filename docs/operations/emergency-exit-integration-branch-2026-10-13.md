@@ -40,3 +40,10 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - [Focused integration run 38396537435](https://github.com/eklu654/Trading-Bot/actions/runs/38396537435) compiled all modules; passed **10/10** core tests, **19/19** ledger tests, and **16/16** executor tests. The latch recorder suite passed 5/6 tests.
 - The only remaining failure is `test_trough_moves_down_and_recovery_releases_both_flat_ledgers`: after the test sets QQQ to 99/100, it leaves the report marked as a -4.5% breach. The production validator correctly fails closed on that contradiction.
 - This PR remains draft and must not be merged until the recovery test reports `status="MONITORING"` and `threshold_breached=false` for the 99/100 observation, the focused suite is green, and workflow branch-write behavior is reviewed.
+
+
+## Additional pre-merge race found — 2026-10-13 12:21Z
+
+- The monitor and executor share a concurrency group, which serializes ledger writes, but it does **not** guarantee the monitor runs first when both five-minute schedules are due together. If the executor acquires the lock first, it could stage an ordinary buy from the prior daily signal before the monitor writes the QQQ latch.
+- Before merging, add an independent QQQ -4.5% preflight in the executor's buy path (or an equally strong ordering/permit design) so an active intraday breach prevents buys even if the monitor run is queued behind the executor. This branch is not yet sufficient to guarantee "no buy during a triggered defense" under scheduler ordering.
+- Do not enable paper submission or merge this branch until this race is addressed, the one remaining test fixture is corrected, and all focused tests pass.
