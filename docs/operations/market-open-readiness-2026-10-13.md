@@ -43,3 +43,8 @@ The same run's environment explicitly set `ENABLE_PAPER_ORDER_SUBMISSION=false`.
 ## Audit update
 
 2026-10-13: Confirmed the order-submit implementation exists but is deliberately disabled in the current workflow environment. Emergency exit remains read-only. The immediate implementation gap is not simply “add a POST”: it is to validate the guarded schedule-only enablement, complete a market-hours paper order lifecycle safely, and implement a durable emergency-exit intent/submit/reconcile path with restart and fault tests. **No claim of readiness is made.**
+
+
+## Follow-up source review — 2026-10-13
+
+A read-only source review was committed at [paper-executor-review-2026-10-13.md](paper-executor-review-2026-10-13.md), commit `4d630ff1a212f0cfe7077c4392384f25de68bc4d`. It confirms paper-only endpoint pinning, durable staged/SUBMITTING state, client-order-ID lookup before retry, stale-price checks, and fill-backed ledger guards. It also confirms the executor CLI has no dedicated emergency-exit mode; workflow YAML/monitor integration, cross-process concurrency, complete fill reconciliation, and real market-hours broker lifecycle remain unverified. No broker order was sent in this review.
