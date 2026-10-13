@@ -74,3 +74,13 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Broad research run [38397527759](https://github.com/eklu654/Trading-Bot/actions/runs/38397527759) was cancelled by a subsequent branch update; it did not pass or fail on test results. Do not cite it as successful.
 - Dedicated focused emergency-exit run [38397527644](https://github.com/eklu654/Trading-Bot/actions/runs/38397527644) is green on the prior code head. The audit-only follow-up does not change tested runtime code.
 - Runtime blocker remains unchanged: no executor-side live QQQ preflight yet; no broker order/fill acceptance evidence; keep PR draft and submission gate false.
+
+
+## Executor-side QQQ preflight implementation — 2026-10-13 12:49Z
+
+- Added `qqq_defense_preflight` to the paper executor. It reads broker market clock, recent QQQ daily bars and latest IEX trade, reuses the monitor's threshold/staleness evaluator, and fails closed on stale/malformed QQQ observations.
+- When QQQ breaches -4.5%, the executor persists a per-portfolio latch before planning; the target is forced to zero while latched. Repeated breach observations update the post-trigger trough. Latch digest format now matches the monitor recorder's canonical identity.
+- Added an independent QQQ check before planning and a **second check after broker context/price validation immediately before order payload/POST**. If either check sees an active latch/breach, or the final QQQ observation is stale, an unsubmitted buy intent is retired and no POST is attempted. Defensive sell path remains allowed when an existing latch is active and the QQQ feed is stale; normal buys fail closed.
+- Expanded focused CI to compile the QQQ monitor and run its eight tests. Added tests for preflight breach activation, stale trade rejection, trough tracking, and a breach appearing specifically at the final pre-POST check.
+- An intermediate focused run failed because older executor tests had not yet mocked the newly required preflight; the tests were adapted. Latest focused workflow [run 38399942594](https://github.com/eklu654/Trading-Bot/actions/runs/38399942594) passed before the final-check test was strengthened. A fresh focused run triggered by commit `f8a5cbbbacc37b071fbcee5f4dd29c06c6a248ed` must be checked before considering this work verified.
+- Still no merge and no live order submission. Workflow submission gate remains false. The preflight narrows the monitor/executor scheduling race but is not a tick-by-tick guarantee: a fast market move can occur between the final quote and broker acceptance. Controlled market-open paper acceptance and broker order/fill evidence remain required.
