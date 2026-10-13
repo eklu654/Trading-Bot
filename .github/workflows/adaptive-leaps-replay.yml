@@ -58,6 +58,17 @@ jobs:
               "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/qqq/options_${year}.parquet"
           done
 
+      - name: Download pinned underlying price series for continuity cross-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsSL --retry 3 --retry-delay 2 \
+            -o data/options/spy/underlying_prices.parquet \
+            "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/spy/underlying_prices.parquet"
+          curl -fsSL --retry 3 --retry-delay 2 \
+            -o data/options/qqq/underlying_prices.parquet \
+            "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/qqq/underlying_prices.parquet"
+
       - name: Record source hashes
         shell: bash
         run: |
@@ -75,6 +86,7 @@ jobs:
           python -m py_compile research/adaptive_leaps_replay.py
           python -m py_compile research/run_adaptive_leaps_replay.py
           python -m py_compile research/audit_adaptive_leaps_quote_continuity.py
+          python -m py_compile research/audit_adaptive_leaps_source_discontinuity.py
 
       - name: Replay SPY — theoretical one-contract
         run: |
@@ -117,6 +129,18 @@ jobs:
             --symbol QQQ --source "data/options/qqq/options_*.parquet" \
             --contract-ids "QQQ140920C00077000" \
             --out-dir artifacts/adaptive_leaps_replay/quote_continuity
+
+      - name: Cross-check flagged contract cutoffs against underlying sessions (diagnostic)
+        continue-on-error: true
+        run: |
+          python -m research.audit_adaptive_leaps_source_discontinuity \
+            --symbol SPY --source "data/options/spy/options_*.parquet" \
+            --underlying data/options/spy/underlying_prices.parquet \
+            --out-dir artifacts/adaptive_leaps_replay/source_discontinuity
+          python -m research.audit_adaptive_leaps_source_discontinuity \
+            --symbol QQQ --source "data/options/qqq/options_*.parquet" \
+            --underlying data/options/qqq/underlying_prices.parquet \
+            --out-dir artifacts/adaptive_leaps_replay/source_discontinuity
 
       - name: Upload replay ledgers and source hashes
         if: always()
