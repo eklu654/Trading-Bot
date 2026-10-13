@@ -242,7 +242,7 @@ class PaperOrderPayloadTests(unittest.TestCase):
             state=mark_submission_attempting(state)
             state=activate_emergency_exit_latch(state,trigger_session="2026-10-12",
                 qqq_price="95.5",prior_close="100",trigger_sha256="d"*64)
-            state_path.write_text(state_json(state)+"\\n",encoding="utf-8")
+            state_path.write_text(state_json(state)+"\n",encoding="utf-8")
             a=self.args(root,state_path=state_path)
             Path(a.request).write_text(json.dumps(intent))
             Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
