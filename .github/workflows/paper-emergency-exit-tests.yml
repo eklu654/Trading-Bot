@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Compile emergency exit and ledger components
-        run: python -m py_compile research/paper_emergency_exit.py research/paper_virtual_portfolio.py research/record_emergency_exit_latch.py research/alpaca_paper_order_executor.py
+        run: python -m py_compile research/paper_emergency_exit.py research/paper_virtual_portfolio.py research/record_emergency_exit_latch.py research/qqq_intraday_monitor.py research/alpaca_paper_order_executor.py
       - name: Run emergency-exit core safety tests
         env:
           PYTHONPATH: research
@@ -50,4 +50,5 @@ jobs:
         run: |
           python research/test_paper_virtual_portfolio.py
           python research/test_alpaca_paper_order_executor.py
+          python research/test_qqq_intraday_monitor.py
           python research/test_record_emergency_exit_latch.py
