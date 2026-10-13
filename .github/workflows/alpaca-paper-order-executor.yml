@@ -74,9 +74,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio b0 --state /tmp/paper-state/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --report paper-prepare-b0.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio b0 --state /tmp/paper-state/b0_state.json --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --report paper-prepare-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio f75 --state /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --report paper-prepare-f75.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio f75 --state /tmp/paper-state/b0_state.json --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --report paper-prepare-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Commit staged intents before any POST
@@ -135,9 +135,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Persist broker submission outcomes
