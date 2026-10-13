@@ -90,3 +90,11 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Reconfirmed a critical architectural blocker: both QQQ monitors are intentionally read-only; the streaming monitor's SQLite event store is local to its runner and does not constitute durable shared state for the executor. The five-minute monitor workflow does not dispatch a tested exit executor.
 - Reconfirmed the executor workflow's submission environment is hard-set to `ENABLE_PAPER_ORDER_SUBMISSION=false`. This must not be changed until emergency-exit orchestration, durable cross-workflow state, fill/position reconciliation, idempotency under restart/concurrency, and market-hours paper acceptance are proven.
 - No actual paper order has been sent in this continuation. No emergency exit has been falsely reported as implemented. Readiness remains blocked.
+
+
+## Emergency-exit core tests — 2026-10-13 11:58Z
+
+- Added `research/paper_emergency_exit.py` and `research/test_paper_emergency_exit.py` in commits `f21fbc39fc733a095b15d03752b09e05fa4fba40` and `ce746e4d8989d31af5753ea7753ea72769f83917`.
+- New pure-core checks cover the exact -4.5% QQQ trigger, non-trigger boundary, deterministic B0/F75 exit intent IDs, positive finite quantities, paper endpoint restriction, sell-only intent, broker order identity, and requiring broker position quantity zero before an exit can be called filled.
+- Full repository test workflow [38393749246](https://github.com/eklu654/Trading-Bot/actions/runs/38393749246) passed: **167 tests passed**, one existing pandas FutureWarning; the follow-on event-attribution step also completed successfully.
+- This is not end-to-end emergency exit functionality. The module is currently a pure intent/safety core, not a networked order runner; it is not connected to the monitor or durable shared state branch. The executor workflow still has `ENABLE_PAPER_ORDER_SUBMISSION=false`. No paper order was sent and no readiness claim is made.
