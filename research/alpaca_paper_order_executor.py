@@ -142,8 +142,14 @@ def qqq_defense_preflight(key, secret, now, state):
     try:
         report=evaluate_qqq_monitor(clock,trade,bars,now)
     except MonitorError as exc:
+        if state.get("emergency_exit_latch") is not None:
+            return {"status":"PREFLIGHT_UNAVAILABLE","active":True,"breached":False,
+                    "changed":False,"state":state,"reason":str(exc)}
         raise ExecutorBlocked(f"QQQ defense preflight failed closed: {exc}") from None
     if report.get("status") in ("STALE_TRADE_FAIL_CLOSED","ERROR_FAIL_CLOSED"):
+        if state.get("emergency_exit_latch") is not None:
+            return {"status":report.get("status"),"active":True,"breached":False,
+                    "changed":False,"state":state,"report":report}
         raise ExecutorBlocked("QQQ defense preflight trade is stale or invalid")
     if report.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
         raise ExecutorBlocked("QQQ defense preflight did not produce a valid live observation")
@@ -304,7 +310,7 @@ def prepare(a):
         state=preflight["state"]
         if preflight.get("changed"):
             write_state(sp,state)
-        if preflight.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+        if preflight.get("status") not in ("THRESHOLD_BREACHED","MONITORING") and not state.get("emergency_exit_latch"):
             raise ExecutorBlocked("QQQ defense preflight did not authorize order planning")
     strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
     pending=state.get("pending_intent")
