@@ -38,8 +38,58 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
             self.assertTrue(state["emergency_exit_latch"]["active"])
             self.assertEqual(state["emergency_exit_latch"]["trigger_sha256"], first["trigger_sha256"])
         second = process(str(self.report_path), str(self.root))
-        self.assertEqual(second["status"], "LATCH_ALREADY_ACTIVE")
+        self.assertEqual(second["status"], "LATCH_ACTIVE_NO_CHANGE")
         self.assertEqual(second["trigger_sha256"], first["trigger_sha256"])
+
+
+    def test_trough_moves_down_and_recovery_releases_both_flat_ledgers(self):
+        first = process(str(self.report_path), str(self.root))
+        self.assertEqual(first["status"], "LATCH_ACTIVATED")
+        self.report.update({
+            "status": "MONITORING", "threshold_breached": False,
+            "qqq_price": "90", "prior_close": "100",
+        })
+        now = datetime.now(timezone.utc).isoformat()
+        self.report["observed_at_utc"] = now
+        self.report["trade_timestamp"] = now
+        self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
+        lower = process(str(self.report_path), str(self.root))
+        self.assertEqual(lower["status"], "LATCH_RECOVERY_TRACKED")
+        self.assertEqual(lower["trough_price"], "90")
+        self.assertEqual(lower["recovery_threshold"], "99.0000")
+
+        self.report.update({"qqq_price": "99", "prior_close": "100"})
+        now = datetime.now(timezone.utc).isoformat()
+        self.report["observed_at_utc"] = now
+        self.report["trade_timestamp"] = now
+        self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
+        released = process(str(self.report_path), str(self.root))
+        self.assertEqual(released["status"], "LATCH_RELEASED_AFTER_RECOVERY")
+        self.assertTrue(released["both_portfolios_flat"])
+        for portfolio in ("b0", "f75"):
+            state = json.loads((self.root / f"{portfolio}_state.json").read_text())
+            self.assertIsNone(state["emergency_exit_latch"])
+            self.assertEqual(state["last_emergency_exit_latch"]["reentry_status"], "RECOVERY_CONFIRMED")
+
+    def test_recovery_does_not_release_while_either_portfolio_has_position(self):
+        process(str(self.report_path), str(self.root))
+        f75_path = self.root / "f75_state.json"
+        f75 = json.loads(f75_path.read_text())
+        f75["qty"] = "1.000"
+        f75_path.write_text(json.dumps(f75), encoding="utf-8")
+        self.report.update({
+            "status": "MONITORING", "threshold_breached": False,
+            "qqq_price": "105.05", "prior_close": "100",
+        })
+        now = datetime.now(timezone.utc).isoformat()
+        self.report["observed_at_utc"] = now
+        self.report["trade_timestamp"] = now
+        self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
+        result = process(str(self.report_path), str(self.root))
+        self.assertNotEqual(result["status"], "LATCH_RELEASED_AFTER_RECOVERY")
+        for portfolio in ("b0", "f75"):
+            state = json.loads((self.root / f"{portfolio}_state.json").read_text())
+            self.assertIsNotNone(state["emergency_exit_latch"])
 
     def test_non_trigger_report_does_not_mutate_ledger(self):
         before = {p: (self.root / f"{p}_state.json").read_text() for p in ("b0", "f75")}
