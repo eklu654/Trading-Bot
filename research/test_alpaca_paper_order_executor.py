@@ -119,7 +119,7 @@ class PaperOrderPayloadTests(unittest.TestCase):
             response={"id":"broker-123","client_order_id":intent["client_order_id"],"status":"new"}
             ctx={"price":Decimal(intent["reference_price"]),"trade_age":1,"open_orders":[]}
             with patch.object(executor,"credentials",return_value=("key","secret")), \
-                 patch.object(executor,"get_json",side_effect=[None,[]]), \
+                 patch.object(executor,"get_json",side_effect=[None,[],[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"broker_context",return_value=ctx), \
                  patch.object(executor,"post_order",return_value=response) as post:
