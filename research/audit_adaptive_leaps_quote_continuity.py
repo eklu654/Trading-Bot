@@ -117,8 +117,41 @@ def main() -> int:
     SELECT * FROM enriched ORDER BY specifically_flagged DESC, first_eligible_date, contract_id
     """
     df = con.execute(sql).fetchdf()
+    if not df.empty:
+        df["expiration"] = __import__("pandas").to_datetime(df["expiration"])
+        df["last_valid_bid_date"] = __import__("pandas").to_datetime(df["last_valid_bid_date"])
+        df["last_history_row"] = __import__("pandas").to_datetime(df["last_history_row"])
+        df["expiration_year"] = df["expiration"].dt.year
     csv_path = out / f"{args.symbol.lower()}_quote_continuity_by_contract.csv"
     df.to_csv(csv_path, index=False)
+
+    yearly_rows = []
+    if not df.empty:
+        for year, group in df.groupby("expiration_year", sort=True):
+            mature = group[group["expiration_fully_observed"]]
+            late = mature[mature["dte_at_last_valid_bid"] > 30]
+            bid_modes = late["last_valid_bid_date"].dropna().astype(str).value_counts()
+            row_modes = late["last_history_row"].dropna().astype(str).value_counts()
+            bid_mode_date = bid_modes.index[0] if len(bid_modes) else None
+            row_mode_date = row_modes.index[0] if len(row_modes) else None
+            yearly_rows.append({
+                "expiration_year": int(year),
+                "eligible_contracts": int(len(group)),
+                "fully_observed_to_expiration_contracts": int(len(mature)),
+                "right_censored_contracts": int((~group["expiration_fully_observed"]).sum()),
+                "fully_observed_last_bid_gt30_dte": int(len(late)),
+                "fully_observed_last_bid_gt30_dte_pct": round(100.0 * len(late) / len(mature), 4) if len(mature) else None,
+                "mature_contracts_with_invalid_or_missing_bid_rows": int((mature["invalid_or_missing_bid_rows"] > 0).sum()),
+                "mature_contracts_with_rows_after_last_valid_bid": int((mature["rows_after_last_valid_bid"] > 0).sum()),
+                "late_contracts_modal_last_valid_bid_date": bid_mode_date,
+                "late_contracts_modal_last_valid_bid_date_count": int(bid_modes.iloc[0]) if len(bid_modes) else 0,
+                "late_contracts_modal_last_history_row_date": row_mode_date,
+                "late_contracts_modal_last_history_row_date_count": int(row_modes.iloc[0]) if len(row_modes) else 0,
+                "late_contracts_modal_last_history_row_date_share_pct": round(100.0 * int(row_modes.iloc[0]) / len(late), 4) if len(row_modes) and len(late) else None,
+            })
+    yearly_df = __import__("pandas").DataFrame(yearly_rows)
+    yearly_csv_path = out / f"{args.symbol.lower()}_quote_continuity_by_expiration_year.csv"
+    yearly_df.to_csv(yearly_csv_path, index=False)
 
     flagged_rows = df[df["specifically_flagged"] == True] if not df.empty else df
     report = {
@@ -146,6 +179,7 @@ def main() -> int:
             "median_max_calendar_gap_between_rows": float(df["max_calendar_gap_between_rows"].median()) if not df.empty else None,
         },
         "flagged_contracts": flagged_rows.to_dict(orient="records"),
+        "yearly_summary": yearly_rows,
         "limitations": [
             "Only rows present in the source are counted; a gap between rows is not an observed quote.",
             "A positive historical bid is not proof of executable liquidity or an actual fill.",
@@ -153,11 +187,12 @@ def main() -> int:
             "Contract IDs are grouped as provided by the pinned source; source identity and adjustment conventions still require validation.",
         ],
         "csv": str(csv_path),
+        "yearly_csv": str(yearly_csv_path),
     }
     json_path = out / f"{args.symbol.lower()}_quote_continuity_summary.json"
     json_path.write_text(json.dumps(report, indent=2, default=str) + "\n", encoding="utf-8")
     print(json.dumps(report, indent=2, default=str))
-    print(f"Wrote {csv_path} and {json_path}")
+    print(f"Wrote {csv_path}, {yearly_csv_path}, and {json_path}")
     return 0
 
 
