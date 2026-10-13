@@ -155,6 +155,10 @@ def qqq_defense_preflight(key, secret, now, state):
             state=activate_emergency_exit_latch(state,trigger_session=report["session"],
                 qqq_price=report["qqq_price"],prior_close=report["prior_close"],trigger_sha256=digest)
             changed=True
+        else:
+            before=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+            state=update_emergency_exit_latch(state,current_qqq_price=report["qqq_price"])
+            changed=before!=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
     elif state.get("emergency_exit_latch") is not None:
         before=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
         state=update_emergency_exit_latch(state,current_qqq_price=report["qqq_price"])
