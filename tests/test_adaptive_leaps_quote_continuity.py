@@ -33,7 +33,8 @@ class QuoteContinuityAuditTests(unittest.TestCase):
                 ('2026-12-04', '2027-09-30', 0.80, 1.00, 1.10, 1.05, 10, 100, 'call', 'TEST270C', 100),
                 ('2027-08-01', '2027-09-30', 0.25, 0.20, 0.30, 0.25, 1, 10, 'call', 'TEST270C', 100),
                 ('2027-08-11', '2027-09-30', 0.10, 0.00, 0.00, 0.00, 0, 0, 'call', 'TEST270C', 100),
-                ('2027-09-01', '2027-09-30', 0.01, 0.00, 0.00, 0.00, 0, 0, 'call', 'TEST270C', 100)
+                ('2027-09-01', '2027-09-30', 0.01, 0.00, 0.00, 0.00, 0, 0, 'call', 'TEST270C', 100),
+                ('2027-12-04', '2028-09-30', 0.80, 1.00, 1.10, 1.05, 10, 100, 'call', 'CENSORED', 100)
             """)
             con.execute(f"COPY options TO '{parquet.as_posix()}' (FORMAT PARQUET)")
             con.close()
@@ -49,8 +50,10 @@ class QuoteContinuityAuditTests(unittest.TestCase):
                 self.assertEqual(audit.main(), 0)
 
             report = json.loads((out_dir / "spy_quote_continuity_summary.json").read_text())
-            self.assertEqual(report["cohort"]["eligible_contracts"], 1)
-            self.assertEqual(report["cohort"]["contracts_last_valid_bid_more_than_30_days_before_expiration"], 1)
+            self.assertEqual(report["cohort"]["eligible_contracts"], 2)
+            self.assertEqual(report["cohort"]["fully_observed_to_expiration_contracts"], 1)
+            self.assertEqual(report["cohort"]["right_censored_contracts_expiration_after_source_coverage"], 1)
+            self.assertEqual(report["cohort"]["fully_observed_contracts_last_valid_bid_more_than_30_days_before_expiration"], 1)
             flagged = report["flagged_contracts"]
             self.assertEqual(len(flagged), 1)
             self.assertEqual(flagged[0]["contract_id"], "TEST270C")
