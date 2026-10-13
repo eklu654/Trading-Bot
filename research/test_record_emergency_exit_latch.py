@@ -46,7 +46,7 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
         first = process(str(self.report_path), str(self.root))
         self.assertEqual(first["status"], "LATCH_ACTIVATED")
         self.report.update({
-            "status": "MONITORING", "threshold_breached": False,
+            "status": "THRESHOLD_BREACHED", "threshold_breached": True,
             "qqq_price": "90", "prior_close": "100",
         })
         now = datetime.now(timezone.utc).isoformat()
@@ -93,7 +93,8 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
 
     def test_non_trigger_report_does_not_mutate_ledger(self):
         before = {p: (self.root / f"{p}_state.json").read_text() for p in ("b0", "f75")}
-        self.report.update({"status": "MONITORING", "threshold_breached": False})
+        self.report.update({"status": "MONITORING", "threshold_breached": False,
+                            "qqq_price": "96", "prior_close": "100"})
         self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
         result = process(str(self.report_path), str(self.root))
         self.assertEqual(result["status"], "NO_TRIGGER")
@@ -113,7 +114,7 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
         self.report["threshold_pct"] = "4.5"
         self.report["qqq_price"] = "95.51"
         self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
-        with self.assertRaisesRegex(Exception, "does not satisfy"):
+        with self.assertRaisesRegex(Exception, "threshold flag does not match"):
             process(str(self.report_path), str(self.root))
 
 
