@@ -427,6 +427,13 @@ def submit(a):
             write_state(sp,state)
             emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
                 "client_order_id":cid,"note":"No POST attempted; final defense latch persisted."}); return
+        strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
+        if target!=Decimal(pending.get("target_weight")):
+            state=abort_unsubmitted_intent(state,"target changed after final QQQ defense check")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_STALE_STAGED_INTENT","portfolio":a.portfolio,
+                "client_order_id":cid,"target_weight":str(target),
+                "note":"No POST attempted; intent must be replanned against the active defense target."}); return
     except Exception as exc:
         reason=str(exc) if isinstance(exc,(ExecutorBlocked,LedgerSafetyError)) else f"preflight failure ({type(exc).__name__})"
         state=abort_unsubmitted_intent(state,reason); write_state(sp,state)
