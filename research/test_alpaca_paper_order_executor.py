@@ -1,10 +1,12 @@
 import unittest, os, json, tempfile, argparse
+from datetime import datetime, timezone
 from pathlib import Path
 from decimal import Decimal
 from unittest.mock import patch
 import alpaca_paper_order_executor as executor
 from alpaca_paper_order_executor import (order_payload, account_fingerprint, effective_target, ExecutorBlocked, PaperPostError, PAPER_URL)
-from paper_virtual_portfolio import new_state, mark_to_market, plan_target, stage_intent, mark_submission_attempting, state_json
+from paper_virtual_portfolio import (new_state, mark_to_market, plan_target, stage_intent,
+    mark_submission_attempting, state_json, activate_emergency_exit_latch)
 
 class PaperOrderPayloadTests(unittest.TestCase):
     def intent(self, **changes):
@@ -33,6 +35,65 @@ class PaperOrderPayloadTests(unittest.TestCase):
         self.assertEqual(
             effective_target("f75", Decimal("1"), Decimal("0.75"), {}),
             (Decimal("0.75"), Decimal("0.75"), False))
+
+    def qqq_api_responses(self, price="95.49", trade_time="2026-10-12T13:59:30+00:00"):
+        return [
+            {"is_open": True},
+            {"bars": [
+                {"t": "2026-10-08T00:00:00Z", "c": "100"},
+                {"t": "2026-10-09T00:00:00Z", "c": "100"},
+                {"t": "2026-10-12T00:00:00Z", "c": "99"}]},
+            {"trade": {"t": trade_time, "p": price}},
+        ]
+
+    def test_qqq_preflight_activates_latch_on_intraday_breach(self):
+        now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
+        with patch.object(executor,"get_json",side_effect=self.qqq_api_responses()):
+            result=executor.qqq_defense_preflight("key","secret",now,new_state("b0"))
+        self.assertEqual(result["status"],"THRESHOLD_BREACHED")
+        self.assertTrue(result["active"])
+        self.assertTrue(result["changed"])
+        self.assertEqual(result["state"]["emergency_exit_latch"]["qqq_price"],"95.49")
+
+    def test_qqq_preflight_fails_closed_on_stale_trade(self):
+        now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
+        with patch.object(executor,"get_json",side_effect=self.qqq_api_responses(
+                price="95",trade_time="2026-10-12T13:50:00+00:00")), \
+             self.assertRaisesRegex(ExecutorBlocked,"stale or invalid"):
+            executor.qqq_defense_preflight("key","secret",now,new_state("b0"))
+
+    def test_qqq_preflight_tracks_lower_trough_while_latched(self):
+        now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
+        state=activate_emergency_exit_latch(new_state("b0"),trigger_session="2026-10-12",
+            qqq_price="95.5",prior_close="100",trigger_sha256="a"*64)
+        with patch.object(executor,"get_json",side_effect=self.qqq_api_responses(price="90")):
+            result=executor.qqq_defense_preflight("key","secret",now,state)
+        self.assertTrue(result["active"])
+        self.assertTrue(result["changed"])
+        self.assertEqual(result["state"]["emergency_exit_latch"]["trough_price"],"90")
+
+    def test_submit_aborts_buy_if_last_moment_qqq_check_triggers(self):
+        with tempfile.TemporaryDirectory() as root:
+            state_path,state=self.files(root,submitting=True)
+            intent=state["pending_intent"]
+            a=self.args(root,state_path=state_path)
+            Path(a.request).write_text(json.dumps(intent))
+            Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
+            latched=activate_emergency_exit_latch(state,trigger_session="2026-10-12",
+                qqq_price="95.5",prior_close="100",trigger_sha256="b"*64)
+            preflight={"status":"THRESHOLD_BREACHED","active":True,"breached":True,
+                       "changed":True,"state":latched}
+            with patch.object(executor,"credentials",return_value=("key","secret")), \
+                 patch.object(executor,"get_json",return_value=None), \
+                 patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
+                 patch.object(executor,"qqq_defense_preflight",return_value=preflight), \
+                 patch.object(executor,"post_order") as post:
+                executor.submit(a)
+            post.assert_not_called()
+            final=json.loads(state_path.read_text())
+            self.assertIsNone(final["pending_intent"])
+            self.assertTrue(final["emergency_exit_latch"]["active"])
+            self.assertEqual(json.loads(Path(a.report).read_text())["status"],"ABORTED_BUY_DURING_QQQ_DEFENSE")
 
     def test_account_fingerprint_is_stable_and_not_raw_id(self):
         a=account_fingerprint("account-uuid-b0")
