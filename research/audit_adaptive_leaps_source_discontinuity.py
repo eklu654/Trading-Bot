@@ -87,13 +87,22 @@ def main() -> int:
       SELECT max(obs_date) AS option_source_end_date FROM opt
     ),
     session_stats AS (
-      SELECT count(*) FILTER (WHERE u.price > 0) AS underlying_sessions_after_last_option_row,
-             min(u.obs_date) FILTER (WHERE u.price > 0) AS first_underlying_session_after_last_option_row,
+      SELECT count(*) FILTER (WHERE u.price > 0 AND u.obs_date > c.last_option_row)
+               AS underlying_sessions_after_last_option_row,
+             count(*) FILTER (WHERE u.price > 0) AS underlying_sessions_after_last_valid_bid,
+             min(u.obs_date) FILTER (WHERE u.price > 0 AND u.obs_date > c.last_option_row)
+               AS first_underlying_session_after_last_option_row,
              max(u.obs_date) FILTER (WHERE u.price > 0) AS last_underlying_session_through_expiry,
-             count(*) FILTER (WHERE u.price > 0 AND os.obs_date IS NOT NULL) AS sessions_with_symbol_option_rows,
-             count(*) FILTER (WHERE u.price > 0 AND os.obs_date IS NULL) AS sessions_without_symbol_option_rows
+             count(*) FILTER (WHERE u.price > 0 AND os.obs_date IS NOT NULL)
+               AS sessions_with_symbol_option_rows_after_last_valid_bid,
+             count(*) FILTER (WHERE u.price > 0 AND os.obs_date IS NULL)
+               AS sessions_without_symbol_option_rows_after_last_valid_bid,
+             count(*) FILTER (WHERE u.price > 0 AND u.obs_date > c.last_option_row AND os.obs_date IS NOT NULL)
+               AS sessions_with_symbol_option_rows_after_last_option_row,
+             count(*) FILTER (WHERE u.price > 0 AND u.obs_date > c.last_option_row AND os.obs_date IS NULL)
+               AS sessions_without_symbol_option_rows_after_last_option_row
       FROM contract_stats c
-      JOIN und u ON u.obs_date > c.last_option_row AND u.obs_date <= c.expiration
+      JOIN und u ON u.obs_date > c.last_valid_bid_date AND u.obs_date <= c.expiration
       LEFT JOIN option_sessions os USING (obs_date)
     )
     SELECT {sql_string(symbol)} AS symbol, {sql_string(contract_id)} AS contract_id,
@@ -105,8 +114,11 @@ def main() -> int:
            s.underlying_sessions_after_last_option_row,
            s.first_underlying_session_after_last_option_row,
            s.last_underlying_session_through_expiry,
-           s.sessions_with_symbol_option_rows,
-           s.sessions_without_symbol_option_rows
+           s.underlying_sessions_after_last_valid_bid,
+           s.sessions_with_symbol_option_rows_after_last_valid_bid,
+           s.sessions_without_symbol_option_rows_after_last_valid_bid,
+           s.sessions_with_symbol_option_rows_after_last_option_row,
+           s.sessions_without_symbol_option_rows_after_last_option_row
     FROM contract_stats c CROSS JOIN coverage cv CROSS JOIN session_stats s
     """
     result = con.execute(sql).fetchdf()
