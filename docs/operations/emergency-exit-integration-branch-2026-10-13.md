@@ -33,3 +33,10 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Fixed two production/test-contract issues in commit `5bb876bb37aff4733e8f57bf31721c97aa1e867f`: stale report errors are now preserved as stale rather than rewritten as malformed timestamp errors, and the recorder returns the original `trigger_sha256` for idempotence/audit checks.
 - One test fixture remains incorrect: the +10% recovery test changes QQQ to 99/100 but retains the prior `THRESHOLD_BREACHED` status and `threshold_breached=true`. The production validator correctly rejects that contradiction. The attempted fixture correction was blocked; do not work around the validator. This branch remains draft/unmergeable until that test is corrected and the full focused workflow passes.
 - The monitor workflow now commits state changes whenever `latch_changed=true`, not only when a latch is first activated, so trough updates and eventual recovery release are also durable.
+
+
+## Latest focused CI result — 2026-10-13 12:20Z
+
+- [Focused integration run 38396537435](https://github.com/eklu654/Trading-Bot/actions/runs/38396537435) compiled all modules; passed **10/10** core tests, **19/19** ledger tests, and **16/16** executor tests. The latch recorder suite passed 5/6 tests.
+- The only remaining failure is `test_trough_moves_down_and_recovery_releases_both_flat_ledgers`: after the test sets QQQ to 99/100, it leaves the report marked as a -4.5% breach. The production validator correctly fails closed on that contradiction.
+- This PR remains draft and must not be merged until the recovery test reports `status="MONITORING"` and `threshold_breached=false` for the 99/100 observation, the focused suite is green, and workflow branch-write behavior is reviewed.
