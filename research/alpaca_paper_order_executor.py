@@ -385,7 +385,6 @@ def submit(a):
     try:
         now=datetime.now(timezone.utc)
         session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-        target=b0 if a.portfolio=="b0" else f75
         # Last-moment QQQ guard: the monitor's schedule order is not a safety dependency.
         qqq=qqq_defense_preflight(key,secret,now,state)
         if qqq.get("status")=="MARKET_CLOSED":
@@ -400,6 +399,7 @@ def submit(a):
             write_state(sp,state)
             emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
                 "client_order_id":cid,"note":"No POST attempted; defense latch persisted."}); return
+        strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
         if session!=pending.get("signal_session") or target!=Decimal(pending.get("target_weight")):
             raise ExecutorBlocked("latest signal changed after intent was staged")
         if state.get("mark_date")!=session: raise ExecutorBlocked("virtual ledger mark date no longer matches signal session")
