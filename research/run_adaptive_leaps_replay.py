@@ -7,9 +7,10 @@ Example:
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import math
 from dataclasses import asdict
-from datetime import date
 from pathlib import Path
 
 import duckdb
@@ -33,6 +34,56 @@ def parse_args() -> argparse.Namespace:
 
 def sql_string(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
+
+
+def calculate_diagnostics(result, starting_cash: float) -> dict:
+    """Summarize replay quality without treating incomplete marks as valid equity."""
+    ledger = result.ledger
+    available_equities = [float(row.equity) for row in ledger if row.equity is not None]
+    peak = None
+    max_drawdown = None
+    for equity in available_equities:
+        peak = equity if peak is None else max(peak, equity)
+        if peak > 0:
+            drawdown = equity / peak - 1.0
+            max_drawdown = drawdown if max_drawdown is None else min(max_drawdown, drawdown)
+
+    held_rows = sum(row.contract_id is not None for row in ledger)
+    held_without_mark = sum(
+        row.contract_id is not None and row.bid_mark is None for row in ledger
+    )
+    sell_count = sum(txn.get("action") == "SELL" for txn in result.transactions)
+    cash_from_transactions = starting_cash + sum(
+        float(txn.get("cash_flow", 0.0)) for txn in result.transactions
+    )
+    chronology_ok = all(
+        txn.get("signal_date") is not None
+        and txn.get("date") > txn.get("signal_date")
+        for txn in result.transactions
+    )
+    return {
+        "first_observation_date": ledger[0].date.isoformat() if ledger else None,
+        "last_observation_date": ledger[-1].date.isoformat() if ledger else None,
+        "observation_dates": len(ledger),
+        "observations_held": held_rows,
+        "time_invested_observation_pct": (
+            round(100.0 * held_rows / len(ledger), 4) if ledger else None
+        ),
+        "completed_trades": sell_count,
+        "rejected_orders": result.rejected_orders,
+        "held_observations_without_valid_bid_mark": held_without_mark,
+        "max_drawdown_observed_pct": (
+            round(100.0 * max_drawdown, 4) if max_drawdown is not None else None
+        ),
+        "max_drawdown_is_complete": len(available_equities) == len(ledger),
+        "transaction_cash_reconciliation_difference": round(
+            cash_from_transactions - result.final_cash, 6
+        ),
+        "transaction_cash_reconciles": math.isclose(
+            cash_from_transactions, result.final_cash, rel_tol=0.0, abs_tol=0.01
+        ),
+        "all_fills_after_signal_observation": chronology_ok,
+    }
 
 
 def main() -> int:
@@ -99,7 +150,6 @@ def main() -> int:
     )
     out = Path(args.out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    import csv
     ledger_path = out / "daily_ledger.csv"
     with ledger_path.open("w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(asdict(result.ledger[0]).keys()) if result.ledger else [
@@ -122,9 +172,7 @@ def main() -> int:
         "symbol": args.symbol,
         "source": args.source,
         "candidate_history_rows_loaded": len(quotes),
-        "observation_dates": len(result.ledger),
         "transactions": len(result.transactions),
-        "rejected_orders": result.rejected_orders,
         "starting_cash": args.starting_cash,
         "final_cash": result.final_cash,
         "final_equity": result.final_equity,
@@ -137,6 +185,7 @@ def main() -> int:
         "interpretation": "EOD historical quote-side replay; not proof of executable fills or broker feasibility",
         "ledger_csv": str(ledger_path),
         "transactions_csv": str(transaction_path),
+        "diagnostics": calculate_diagnostics(result, args.starting_cash),
     }
     (out / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(json.dumps(summary, indent=2))
