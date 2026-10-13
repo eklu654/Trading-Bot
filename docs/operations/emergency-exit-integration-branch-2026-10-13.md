@@ -67,3 +67,10 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Latest focused workflow [38397527644](https://github.com/eklu654/Trading-Bot/actions/runs/38397527644) passed again on branch head `a3f466618f245ab702dffa57a908a726c7e4edef`; every step, including all core, ledger, executor, and recorder tests, is green.
 - Broad research workflow [38397527759](https://github.com/eklu654/Trading-Bot/actions/runs/38397527759) remains in progress. Check its final result before closing the CI review.
 - No code has been merged to `main`; PR #27 remains draft. Executor-side QQQ preflight, end-to-end paper order acceptance/fill evidence, and the market-open acceptance test remain required before enabling submission.
+
+
+## Broad research CI disposition — 2026-10-13 12:30Z
+
+- Broad research run [38397527759](https://github.com/eklu654/Trading-Bot/actions/runs/38397527759) was cancelled by a subsequent branch update; it did not pass or fail on test results. Do not cite it as successful.
+- Dedicated focused emergency-exit run [38397527644](https://github.com/eklu654/Trading-Bot/actions/runs/38397527644) is green on the prior code head. The audit-only follow-up does not change tested runtime code.
+- Runtime blocker remains unchanged: no executor-side live QQQ preflight yet; no broker order/fill acceptance evidence; keep PR draft and submission gate false.
