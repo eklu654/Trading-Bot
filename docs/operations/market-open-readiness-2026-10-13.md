@@ -55,3 +55,10 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Extended the executor schedule from `*/5 13-20 * * 1-5` to `*/5 13-21 * * 1-5` (commit `241c9605e4fd8ae16e2354487aa8088e041b5d82`). The previous UTC hour range did not cover the full US regular session year-round: winter standard time closes at 21:00 UTC, while summer daylight time closes at 20:00 UTC. The broker clock continues to gate actual execution, so extra polling outside the session does not authorize orders.
 - Applied the same UTC coverage correction to the QQQ monitor schedule (commit `dc8b4a9b601f6841ecd179ab6c90491801f3c739`).
 - This fixes schedule coverage only. The QQQ workflow remains explicitly read-only; emergency exit submission, shared-state concurrency, durable defensive/recovery state, and broker fill reconciliation are still release blockers. No order was submitted by these source edits.
+
+
+## Fail-closed release gate — 2026-10-13
+
+- Disabled `ENABLE_PAPER_ORDER_SUBMISSION` for every executor workflow event (commit `3c0b2b2c9e7fdc2da4c1aa34897a9750fc8de2c4`). Scheduled runs continue diagnostics/preflight but cannot submit new orders while the release gate is open. This is deliberate risk containment, not completion of readiness.
+- Additional code-review finding: the executor's normal `submit` path reconciles the broker order object by client order ID, but the reviewed implementation does not yet retrieve broker fill activities and apply them through `apply_fills` / `complete_terminal_intent`. The virtual-ledger helper supports these operations, but they are not wired into the executor lifecycle. Thus an accepted order cannot yet be considered fully fill-reconciled by the existing run path.
+- Next engineering gate: implement and test activity pagination/deduplication and order-to-fill matching; reconcile broker position after all relevant activities; only then add the emergency exit flow with the same durable state and idempotency guarantees. Submission must remain disabled until those changes and market-hours paper acceptance are evidenced.
