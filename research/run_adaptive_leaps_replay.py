@@ -51,7 +51,17 @@ def calculate_diagnostics(result, starting_cash: float) -> dict:
     held_without_mark = sum(
         row.contract_id is not None and row.bid_mark is None for row in ledger
     )
+    terminal = ledger[-1] if ledger else None
+    last_valid_mark = next(
+        (row for row in reversed(ledger) if row.contract_id is not None and row.bid_mark is not None),
+        None,
+    )
+    terminal_position_open = bool(terminal and terminal.contract_id is not None)
+    terminal_dte = terminal.dte if terminal_position_open else None
+    unresolved_expired = bool(terminal_position_open and terminal_dte is not None and terminal_dte < 0)
     sell_count = sum(txn.get("action") == "SELL" for txn in result.transactions)
+    exit_rejected_count = sum(row.event == "EXIT_REJECTED" for row in ledger)
+    entry_rejected_count = sum(row.event == "ENTRY_REJECTED" for row in ledger)
     cash_from_transactions = starting_cash + sum(
         float(txn.get("cash_flow", 0.0)) for txn in result.transactions
     )
@@ -70,6 +80,19 @@ def calculate_diagnostics(result, starting_cash: float) -> dict:
         ),
         "completed_trades": sell_count,
         "rejected_orders": result.rejected_orders,
+        "entry_rejected_observations": entry_rejected_count,
+        "exit_rejected_observations": exit_rejected_count,
+        "terminal_position_open": terminal_position_open,
+        "terminal_contract_id": terminal.contract_id if terminal_position_open else None,
+        "terminal_observation_date": terminal.date.isoformat() if terminal else None,
+        "terminal_dte": terminal_dte,
+        "unresolved_expired_position": unresolved_expired,
+        "days_past_expiration": (-terminal_dte if unresolved_expired else 0),
+        "last_valid_bid_mark_date": last_valid_mark.date.isoformat() if last_valid_mark else None,
+        "days_since_last_valid_bid_mark": (
+            (terminal.date - last_valid_mark.date).days
+            if terminal and last_valid_mark else None
+        ),
         "held_observations_without_valid_bid_mark": held_without_mark,
         "max_drawdown_observed_pct": (
             round(100.0 * max_drawdown, 4) if max_drawdown is not None else None
@@ -169,7 +192,7 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(result.transactions)
     summary = {
-        "status": "completed",
+        "status": "completed" if result.final_mark_available else "incomplete_terminal_mark",
         "symbol": args.symbol,
         "source": args.source,
         "candidate_history_rows_loaded": len(quotes),
