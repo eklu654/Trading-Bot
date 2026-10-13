@@ -50,7 +50,9 @@ jobs:
       - name: Compile emergency exit and ledger components
         run: python -m py_compile research/paper_emergency_exit.py research/paper_virtual_portfolio.py research/record_emergency_exit_latch.py research/qqq_intraday_monitor.py research/alpaca_paper_order_executor.py
       - name: Validate executor and QQQ monitor workflow YAML
-        run: ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path, aliases: true) }; puts "Workflow YAML parsed successfully."' .github/workflows/alpaca-paper-order-executor.yml .github/workflows/qqq-intraday-monitor.yml
+        run: |
+          ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path, aliases: true) }; puts "Workflow YAML parsed successfully."' \
+            .github/workflows/alpaca-paper-order-executor.yml .github/workflows/qqq-intraday-monitor.yml
       - name: Run emergency-exit core safety tests
         env:
           PYTHONPATH: research
