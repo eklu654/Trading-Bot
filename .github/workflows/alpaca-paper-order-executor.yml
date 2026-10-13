@@ -18,7 +18,7 @@ on:
     # required position changes/reconciliation, it does not invent intraday strategy signals.
     # Scheduled runs alone can submit paper orders; push/manual runs remain dry-run only.
     # A push-triggered run is also the safe dispatch workaround for immediate dry-run diagnostics.
-    - cron: "2-57/5 13-21 * * 1-5"
+    - cron: "2,7,12,17,22,27,32,37,42,47,52,57 13-21 * * 1-5"
 
 permissions:
   contents: write
