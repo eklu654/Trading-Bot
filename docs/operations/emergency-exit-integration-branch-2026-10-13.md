@@ -47,3 +47,9 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - The monitor and executor share a concurrency group, which serializes ledger writes, but it does **not** guarantee the monitor runs first when both five-minute schedules are due together. If the executor acquires the lock first, it could stage an ordinary buy from the prior daily signal before the monitor writes the QQQ latch.
 - Before merging, add an independent QQQ -4.5% preflight in the executor's buy path (or an equally strong ordering/permit design) so an active intraday breach prevents buys even if the monitor run is queued behind the executor. This branch is not yet sufficient to guarantee "no buy during a triggered defense" under scheduler ordering.
 - Do not enable paper submission or merge this branch until this race is addressed, the one remaining test fixture is corrected, and all focused tests pass.
+
+
+## Fixture correction — 2026-10-13 12:27Z
+
+- Corrected the +10% recovery test fixture so its 99/100 QQQ observation is consistently marked `status="MONITORING"` and `threshold_breached=false`; the production price/status validator remains unchanged.
+- This edit only repairs test data. It does not resolve the executor/monitor scheduling race, establish broker order acceptance, or authorize merging/enabling submissions.
