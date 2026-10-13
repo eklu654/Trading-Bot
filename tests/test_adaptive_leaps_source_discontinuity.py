@@ -64,8 +64,9 @@ class SourceDiscontinuityAuditTests(unittest.TestCase):
             self.assertEqual(report["last_option_row"], "2020-01-03")
             self.assertEqual(report["last_valid_bid_date"], "2020-01-03")
             self.assertEqual(report["underlying_sessions_after_last_option_row"], 5)
-            self.assertEqual(report["sessions_with_symbol_option_rows"], 5)
-            self.assertEqual(report["sessions_without_symbol_option_rows"], 0)
+            self.assertEqual(report["underlying_sessions_after_last_valid_bid"], 5)
+            self.assertEqual(report["sessions_with_symbol_option_rows_after_last_option_row"], 5)
+            self.assertEqual(report["sessions_without_symbol_option_rows_after_last_option_row"], 0)
 
 
 if __name__ == "__main__":
