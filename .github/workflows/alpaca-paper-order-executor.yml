@@ -99,7 +99,7 @@ jobs:
             echo "No staged-intent state changes."
           fi
       - name: Arm each staged intent and create one-run permit
-        if: success()
+        if: success() && github.event_name == 'schedule'
         env:
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
@@ -114,7 +114,7 @@ jobs:
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Commit SUBMITTING state before broker mutation
-        if: success()
+        if: success() && github.event_name == 'schedule'
         shell: bash
         run: |
           set -euo pipefail
@@ -128,7 +128,7 @@ jobs:
             echo "No SUBMITTING state changes."
           fi
       - name: Submit or reconcile existing intents (paper API only)
-        if: success()
+        if: success() && github.event_name == 'schedule'
         env:
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
