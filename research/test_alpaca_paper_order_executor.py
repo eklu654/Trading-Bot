@@ -62,6 +62,17 @@ class PaperOrderPayloadTests(unittest.TestCase):
              self.assertRaisesRegex(ExecutorBlocked,"stale or invalid"):
             executor.qqq_defense_preflight("key","secret",now,new_state("b0"))
 
+    def test_qqq_stale_observation_preserves_existing_defense_latch(self):
+        now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
+        state=activate_emergency_exit_latch(new_state("b0"),trigger_session="2026-10-12",
+            qqq_price="95.5",prior_close="100",trigger_sha256="c"*64)
+        with patch.object(executor,"get_json",side_effect=self.qqq_api_responses(
+                price="95",trade_time="2026-10-12T13:50:00+00:00")):
+            result=executor.qqq_defense_preflight("key","secret",now,state)
+        self.assertEqual(result["status"],"STALE_TRADE_FAIL_CLOSED")
+        self.assertTrue(result["active"])
+        self.assertEqual(result["state"]["emergency_exit_latch"]["trigger_sha256"],"c"*64)
+
     def test_qqq_preflight_tracks_lower_trough_while_latched(self):
         now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
         state=activate_emergency_exit_latch(new_state("b0"),trigger_session="2026-10-12",
@@ -218,6 +229,36 @@ class PaperOrderPayloadTests(unittest.TestCase):
             final=json.loads(state_path.read_text())
             self.assertEqual(final["pending_intent"]["broker_order_id"],"broker-123")
             self.assertEqual(final["pending_intent"]["submission_state"],"NEW")
+            self.assertEqual(json.loads(Path(a.report).read_text())["status"],"SUBMITTED")
+
+    def test_active_latch_allows_defensive_sell_when_qqq_feed_is_stale(self):
+        with tempfile.TemporaryDirectory() as root:
+            state_path,state=self.files(root)
+            state["qty"]="10.000"
+            state["cash"]="4000.00"
+            state["equity"]="5000.00"
+            intent=plan_target(state,signal_session="2026-10-09",target_weight="0",reference_price="100")
+            state=stage_intent(state,intent)
+            state=mark_submission_attempting(state)
+            state=activate_emergency_exit_latch(state,trigger_session="2026-10-12",
+                qqq_price="95.5",prior_close="100",trigger_sha256="d"*64)
+            state_path.write_text(state_json(state)+"\\n",encoding="utf-8")
+            a=self.args(root,state_path=state_path)
+            Path(a.request).write_text(json.dumps(intent))
+            Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
+            stale={"status":"STALE_TRADE_FAIL_CLOSED","active":True,"breached":False,
+                   "changed":False,"state":state}
+            ctx={"price":Decimal("100"),"trade_age":1,"open_orders":[]}
+            response={"id":"broker-sell-123","client_order_id":intent["client_order_id"],"status":"new"}
+            with patch.object(executor,"credentials",return_value=("key","secret")), \\
+                 patch.object(executor,"get_json",side_effect=[None,[]]), \\
+                 patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \\
+                 patch.object(executor,"qqq_defense_preflight",side_effect=[stale,stale]), \\
+                 patch.object(executor,"broker_context",return_value=ctx), \\
+                 patch.object(executor,"reconcile_order_fills",return_value=state), \\
+                 patch.object(executor,"post_order",return_value=response) as post:
+                executor.submit(a)
+            post.assert_called_once_with(order_payload(intent),"key","secret")
             self.assertEqual(json.loads(Path(a.report).read_text())["status"],"SUBMITTED")
 
     def test_unknown_post_outcome_is_recorded_without_retry(self):
