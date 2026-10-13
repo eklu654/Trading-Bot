@@ -158,3 +158,12 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Added static assertions to focused CI so the executor workflow must contain exactly three schedule-only mutation conditions and the scheduled-only submission gate. Focused run [38403798852](https://github.com/eklu654/Trading-Bot/actions/runs/38403798852) passed, including YAML parsing and all safety tests.
 - The earlier post-merge import failure and hotfix are recorded above. The follow-up push run [38403261571](https://github.com/eklu654/Trading-Bot/actions/runs/38403261571) passed through arm and submit/reconcile, with both preparations skipped because the market was closed and no pending intents found.
 - As of 13:17Z, no current-day scheduled executor run had appeared in the GitHub schedule-run listing. Do not infer schedule reliability from successful push-triggered dry runs; the first scheduled run and actual broker acceptance remain the live checkpoints.
+
+
+## Executor-level gate enforcement — 2026-10-13 13:21Z
+
+- Tightened the release gate in code, not only workflow conditions. `submit()` now refuses every new broker POST unless `ENABLE_PAPER_ORDER_SUBMISSION=true`, even if an ephemeral permit exists. Existing-order lookup/cancellation/reconciliation runs before this guard, so push/manual runs can still neutralize an existing bot buy under defense without placing a new order.
+- Updated the workflow so arm and SUBMITTING-state commit remain scheduled-only, while submit/reconcile runs for all events with the event-specific gate passed into the executor. Added a regression test that supplies a permit with the gate false and proves no POST occurs.
+- Focused CI [38404178374](https://github.com/eklu654/Trading-Bot/actions/runs/38404178374) passed after the gate regression test and static workflow assertions.
+- Post-hotfix push run [38404151189](https://github.com/eklu654/Trading-Bot/actions/runs/38404151189) succeeded: account identity verification and preparation succeeded; arm and SUBMITTING commit were skipped for the push event; submit/reconcile ran with `ENABLE_PAPER_ORDER_SUBMISSION=false`, reported `SUBMISSION_GATE_CLOSED_NO_POST` / `NO_PENDING_INTENT`, and did not POST.
+- As of 13:21Z, the current-day scheduled executor still had not appeared in the schedule-run listing. The next checkpoint is the staggered schedule and the 13:30Z market open; until a scheduled run is observed, schedule delivery remains unverified.
