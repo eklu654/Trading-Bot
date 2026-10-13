@@ -158,11 +158,13 @@ class PaperOrderPayloadTests(unittest.TestCase):
 
     def test_prepare_scheduled_run_persists_staged_intent(self):
         with tempfile.TemporaryDirectory() as root:
-            state_path,_=self.files(root)
+            state_path,state=self.files(root)
             a=self.args(root,state_path=state_path)
+            qqq_ok={"status":"MONITORING","active":False,"breached":False,"changed":False,"state":state}
             with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"true"}), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"credentials",return_value=("key","secret")), \
+                 patch.object(executor,"qqq_defense_preflight",return_value=qqq_ok), \
                  patch.object(executor,"broker_context",return_value={"price":Decimal("100"),"trade_age":1}):
                 executor.prepare(a)
             state=json.loads(state_path.read_text())
@@ -204,6 +206,7 @@ class PaperOrderPayloadTests(unittest.TestCase):
             with patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[],[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
+                 patch.object(executor,"qqq_defense_preflight",return_value={"status":"MONITORING","active":False,"breached":False,"changed":False,"state":state}), \
                  patch.object(executor,"broker_context",return_value=ctx), \
                  patch.object(executor,"post_order",return_value=response) as post:
                 executor.submit(a)
@@ -223,6 +226,7 @@ class PaperOrderPayloadTests(unittest.TestCase):
             with patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[],None]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
+                 patch.object(executor,"qqq_defense_preflight",return_value={"status":"MONITORING","active":False,"breached":False,"changed":False,"state":state}), \
                  patch.object(executor,"broker_context",return_value=ctx), \
                  patch.object(executor,"post_order",side_effect=PaperPostError()) as post:
                 executor.submit(a)
