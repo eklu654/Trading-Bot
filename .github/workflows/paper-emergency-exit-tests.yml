@@ -17,6 +17,12 @@ on:
     paths:
       - "research/paper_emergency_exit.py"
       - "research/test_paper_emergency_exit.py"
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+      - "research/record_emergency_exit_latch.py"
+      - "research/test_record_emergency_exit_latch.py"
+      - "research/alpaca_paper_order_executor.py"
+      - "research/test_alpaca_paper_order_executor.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
   workflow_dispatch:
 
