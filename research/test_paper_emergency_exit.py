@@ -62,7 +62,15 @@ class EmergencyExitCoreTests(unittest.TestCase):
         intent = build_exit_intent("b0", "2026-10-12", "1", "a" * 64)
         with self.assertRaises(EmergencyExitBlocked):
             transition_exit(intent, "FILLED", broker_position_qty="1")
-        done = transition_exit(intent, "FILLED", broker_position_qty="0")
+        with self.assertRaises(EmergencyExitBlocked):
+            transition_exit(intent, "FILLED", broker_order={
+                "id": "paper-order-1", "client_order_id": intent["client_order_id"],
+                "symbol": "TQQQ", "side": "sell", "status": "accepted",
+            }, broker_position_qty="0")
+        done = transition_exit(intent, "FILLED", broker_order={
+            "id": "paper-order-1", "client_order_id": intent["client_order_id"],
+            "symbol": "TQQQ", "side": "sell", "status": "filled",
+        }, broker_position_qty="0")
         self.assertEqual(done["status"], "FILLED")
         self.assertEqual(done["broker_position_qty_after"], "0")
 
