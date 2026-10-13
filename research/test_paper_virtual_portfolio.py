@@ -154,7 +154,7 @@ class VirtualPortfolioTests(unittest.TestCase):
         with self.assertRaisesRegex(LedgerSafetyError, "already used"):
             plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
 
-    def test_completed_order_blocks_rebalance_replay_for_same_signal_session(self):
+    def test_completed_order_does_not_block_same_session_risk_reducing_sell(self):
         s = new_state("b0")
         intent = plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100")
         s = stage_intent(s, intent)
@@ -162,8 +162,10 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = reconcile_order(s, {"client_order_id":intent["client_order_id"],"id":"broker-1","status":"filled"})
         s = apply_fills(s, [{"id":"f1","symbol":"TQQQ","side":"buy","qty":intent["qty"],"price":"100"}])
         s = complete_terminal_intent(s, broker_qty=intent["qty"], broker_status="filled")
-        with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
-            plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
+        exit_intent = plan_target(s, signal_session="2026-10-09", target_weight="0", reference_price="99")
+        self.assertIsNotNone(exit_intent)
+        self.assertEqual(exit_intent["side"], "sell")
+        self.assertEqual(exit_intent["target_weight"], "0")
 
     def test_aborted_before_submit_is_safe_and_never_reused_same_session(self):
         s = new_state("f75")
@@ -173,8 +175,8 @@ class VirtualPortfolioTests(unittest.TestCase):
         s = abort_unsubmitted_intent(s, "market closed before POST")
         self.assertIsNone(s["pending_intent"])
         self.assertEqual(s["last_terminal_order"]["status"], "aborted_before_submit")
-        with self.assertRaisesRegex(LedgerSafetyError, "already completed for this signal session"):
-            plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100", baseline_weight="1")
+        # Duplicate-session protection is a safe no-op, not a workflow failure.
+        self.assertIsNone(plan_target(s, signal_session="2026-10-09", target_weight="1", reference_price="100", baseline_weight="1"))
         self.assertIsNotNone(plan_target(s, signal_session="2026-10-12", target_weight="1", reference_price="100", baseline_weight="1"))
 
     def test_state_serialization_is_stable_and_secret_free(self):
