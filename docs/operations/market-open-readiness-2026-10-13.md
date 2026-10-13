@@ -122,3 +122,11 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - The preceding focused run `38395067350` failed because it ran against the intermediate commit before the lifecycle test was updated. Its failure was reproduced from the Actions log; the corrected commit's focused run is green.
 - The latest documentation-only commit is `f13a93a296e6083506d1ed6a60c28170c275d4a8`; it does not change the tested Python code.
 - The broad `research-tests` run for the latest commits was still queued/pending at this check. Focused green tests validate only the pure safety core, not monitor integration, shared durable persistence, broker submission, or fill reconciliation.
+
+
+## Monitor-to-exit signal contract — 2026-10-13 12:09Z
+
+- Updated `research/qqq_intraday_monitor.py` to include normalized `session` and `qqq_price` fields alongside the existing `symbol`, `threshold_pct`, `prior_close`, and `threshold_breached` fields. These are schema preparation only; the monitor still never submits orders.
+- Updated `research/test_qqq_intraday_monitor.py` to assert the normalized trigger fields on the -4.5% breach path.
+- Relevant workflow runs were queued at the time of this note: [read-only monitor run 38395203982](https://github.com/eklu654/Trading-Bot/actions/runs/38395203982) and [repository research-tests 38395204146](https://github.com/eklu654/Trading-Bot/actions/runs/38395204146).
+- Integration warning: the normalized report contract alone is not authorization to trade. An emergency-exit workflow still needs a durable, concurrency-safe state transition on `paper-execution-ledger`, coordination with the regular executor so buys cannot race with an exit, broker-side idempotency/reconciliation, and explicit acceptance for both accounts.
