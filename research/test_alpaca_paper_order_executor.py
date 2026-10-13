@@ -250,12 +250,12 @@ class PaperOrderPayloadTests(unittest.TestCase):
                    "changed":False,"state":state}
             ctx={"price":Decimal("100"),"trade_age":1,"open_orders":[]}
             response={"id":"broker-sell-123","client_order_id":intent["client_order_id"],"status":"new"}
-            with patch.object(executor,"credentials",return_value=("key","secret")), \\
-                 patch.object(executor,"get_json",side_effect=[None,[]]), \\
-                 patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \\
-                 patch.object(executor,"qqq_defense_preflight",side_effect=[stale,stale]), \\
-                 patch.object(executor,"broker_context",return_value=ctx), \\
-                 patch.object(executor,"reconcile_order_fills",return_value=state), \\
+            with patch.object(executor,"credentials",return_value=("key","secret")), \
+                 patch.object(executor,"get_json",side_effect=[None,[]]), \
+                 patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
+                 patch.object(executor,"qqq_defense_preflight",side_effect=[stale,stale]), \
+                 patch.object(executor,"broker_context",return_value=ctx), \
+                 patch.object(executor,"reconcile_order_fills",return_value=state), \
                  patch.object(executor,"post_order",return_value=response) as post:
                 executor.submit(a)
             post.assert_called_once_with(order_payload(intent),"key","secret")
