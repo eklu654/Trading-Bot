@@ -21,3 +21,11 @@
 
 ## Safety / scope
 Paper API endpoint only. Never log raw credentials or account IDs. Never blindly retry an ambiguous POST. Do not declare ready until live-session broker reconciliation is evidenced and the emergency-exit path is implemented and tested. This note records readiness evidence and remaining gaps; it does not claim a successful trade.
+
+## Artifact-level review — 2026-10-13 10:48 UTC
+- Downloaded and inspected artifact `alpaca-paper-order-executor-audit` (run 38383606683; artifact ID 11804348174; SHA-256 digest reported by GitHub: `6a06771694355daebfc8c3f0a6e2dad079f933b3567a19ab3b8887dcb113de4e`).
+- B0 and F75 prepare reports both say `SKIPPED_MARKET_CLOSED`, with signal session `2026-10-12` and target weights B0=1, F75=1.
+- Both arm reports say `NO_ARM_REQUEST`; both order reports say `NO_PENDING_INTENT` and `No POST attempted.` This confirms no order was sent by that diagnostic run.
+- Run job steps all passed, including compilation/tests, account verification, prepare, arm, submission/reconciliation wrapper, and audit upload. This is a successful diagnostic workflow but not a trade test.
+- At review time the latest available executor run was still the push-triggered closed-market diagnostic. No live-session order acceptance/fill has yet been observed in the reviewed run list.
+- Operationally, GitHub cron uses UTC. The current `13-20 UTC` window spans the US session in daylight time, but its first attempts begin before the 09:30 ET open and the last hour is truncated at 20:00 UTC. Alpaca's broker clock is the authoritative gate; expect closed-market skips before 09:30 ET.
