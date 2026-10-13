@@ -221,7 +221,13 @@ def reconcile_order_fills(state, broker_order, key, secret):
             raise ExecutorBlocked("unexpected broker position during fill reconciliation")
         pos = next((p for p in positions if p.get("symbol") == SYMBOL), None)
         broker_qty = Decimal(str(pos.get("qty"))) if pos else Decimal("0")
-        state = complete_terminal_intent(state, broker_qty=broker_qty, broker_status=status)
+        try:
+            state = complete_terminal_intent(state, broker_qty=broker_qty, broker_status=status)
+        except LedgerSafetyError:
+            # Persist any newly observed fill IDs and retain the pending intent.
+            # A later reconciliation can retry the position comparison; it must
+            # never erase an unresolved order merely because quantities disagree.
+            pass
     return state
 
 def prepare(a):
