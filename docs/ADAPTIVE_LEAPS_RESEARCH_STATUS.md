@@ -61,3 +61,10 @@ This document records repository/code inspection only. It does not assert that a
 
 - The runner retains option observations only for DTE 0 through 315. If an exit repeatedly fails and the held contract reaches expiration without a valid bid exit, the current engine deliberately leaves the position unresolved and terminal equity unavailable; it does not simulate exercise, assignment, or expiration settlement.
 - This is fail-closed rather than silently assigning zero value, but it means any replay with unresolved expiry cases is not a fully reconciled portfolio result. The artifact audit must count these cases, and explicit expiration/exercise treatment is a required follow-up before interpreting final equity.
+
+
+### 2026-10-13 22:17Z — CI verification checkpoint
+
+- The updated LEAPS unit tests passed on current follow-up commit `3c707a88cbf1bc78c4c48042eae7c0165ff3ebcd`: [run 38476641482](https://github.com/eklu654/Trading-Bot/actions/runs/38476641482). This verifies compilation and unit-level lifecycle/replay tests, including the newly added synthetic diagnostics checks.
+- Chronological replay run [38476594687](https://github.com/eklu654/Trading-Bot/actions/runs/38476594687) was still `in_progress` when checked at 22:17Z; it had not uploaded artifacts, so no historical performance figures have been independently reconciled. A second replay [38476628056](https://github.com/eklu654/Trading-Bot/actions/runs/38476628056) was pending behind the replay concurrency group on the newer runner commit.
+- This is a test pass, not a strategy result. Do not report profitability or approve paper trading until a replay run completes, the four summaries and ledgers are downloaded, and cash/chronology/mark completeness checks reconcile.
