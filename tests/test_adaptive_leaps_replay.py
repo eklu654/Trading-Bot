@@ -4,6 +4,7 @@ from datetime import date, timedelta
 
 from research.adaptive_leaps_lifecycle import OptionQuote
 from research.adaptive_leaps_replay import replay_long_call
+from research.run_adaptive_leaps_replay import calculate_diagnostics
 
 
 def q(day, *, exp=None, cid="A", bid=10.0, ask=10.5, delta=0.8, volume=10, oi=100):
@@ -93,4 +94,20 @@ class ReplayTests(unittest.TestCase):
         self.assertEqual(result.ledger[1].cash, 3700)
         self.assertEqual(result.ledger[1].market_value, 1200)
         self.assertEqual(result.ledger[1].equity, 4900)
+
+    def test_diagnostics_reconcile_cash_and_report_exposure(self):
+        d1, d2 = date(2020, 1, 2), date(2020, 1, 6)
+        exp = date(2020, 9, 28)
+        result = replay_long_call(
+            [q(d1, exp=exp), q(d2, exp=exp, bid=12, ask=13)],
+            symbol="SPY",
+        )
+        diagnostics = calculate_diagnostics(result, starting_cash=5000)
+        self.assertTrue(diagnostics["transaction_cash_reconciles"])
+        self.assertEqual(diagnostics["transaction_cash_reconciliation_difference"], 0)
+        self.assertTrue(diagnostics["all_fills_after_signal_observation"])
+        self.assertEqual(diagnostics["completed_trades"], 0)
+        self.assertEqual(diagnostics["observations_held"], 1)
+        self.assertEqual(diagnostics["time_invested_observation_pct"], 50.0)
+        self.assertTrue(diagnostics["max_drawdown_is_complete"])
 
