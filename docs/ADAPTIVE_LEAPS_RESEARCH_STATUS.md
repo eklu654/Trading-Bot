@@ -185,3 +185,11 @@ This document records repository/code inspection only. It does not assert that a
 - No full chronological replay was triggered by these PR checks: the replay workflow currently runs on manual dispatch or pushes to main when selected paths change. This PR has not been merged, and no new source-discontinuity artifact has been inspected yet.
 - **Next gate:** trigger the replay workflow after review/merge, then inspect the uploaded source-discontinuity CSV/JSON, the four replay summaries, and the terminal-equity quality gate. Do not merge solely on green unit tests if policy requires the new source audit to be observed first; do not state the audit's real-data finding until the artifact exists.
 - Existing known blocker remains unchanged: the prior full replay failed terminal-equity reconciliation in all four cases because expired positions remained unresolved. The source-date diagnostic is investigation, not a fix to that accounting/contract lifecycle issue.
+
+
+### PR #30 merged and replay gate — 2026-10-13 23:27Z
+
+- PR [#30](https://github.com/eklu654/Trading-Bot/pull/30) merged successfully by squash at `599c61cbc2b05fdbc372718b17aca7ffc753d281`; pre-merge LEAPS unit and broad repository CI both passed on reviewed head `7d110bb01334264c67af64fb14ae61707c38e3c8`.
+- Verified on `main` that `.github/workflows/adaptive-leaps-replay.yml` includes the pinned SPY/QQQ underlying-price downloads, compiles `research/audit_adaptive_leaps_source_discontinuity.py`, and runs the SPY/QQQ diagnostics. The new diagnostic file is present on main.
+- Merge changes the replay workflow path, so the workflow's main-branch path filter should enqueue a replay automatically. The GitHub connector's commit-run listing is PR-only and returned no runs for the merge commit; this is not evidence that no push run exists. A direct Actions API listing must confirm the concrete run ID and status.
+- Research gate remains: inspect the uploaded `adaptive-leaps-chronological-replay` artifact, source discontinuity CSV/JSON, and all four summaries/ledgers. The audit is `continue-on-error` diagnostic by design; its output must be reviewed even if terminal-equity gate fails. Existing unresolved expiration/terminal-equity handling remains a separate issue; no return claims until all four cases reconcile.
