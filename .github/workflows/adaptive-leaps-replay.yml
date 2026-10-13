@@ -8,6 +8,7 @@ on:
       - ".github/workflows/adaptive-leaps-replay.yml"
       - "research/run_adaptive_leaps_replay.py"
       - "research/audit_adaptive_leaps_quote_continuity.py"
+      - "research/audit_adaptive_leaps_source_discontinuity.py"
       - "research/adaptive_leaps_replay.py"
       - "research/adaptive_leaps_lifecycle.py"
 
