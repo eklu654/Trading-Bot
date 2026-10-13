@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 
 import duckdb
+import pandas as pd
 
 
 def parse_args() -> argparse.Namespace:
@@ -118,7 +119,7 @@ def main() -> int:
     """
     df = con.execute(sql).fetchdf()
     if not df.empty:
-        df["expiration"] = __import__("pandas").to_datetime(df["expiration"])
+        df["expiration"] = pd.to_datetime(df["expiration"])
         df["last_valid_bid_date"] = __import__("pandas").to_datetime(df["last_valid_bid_date"])
         df["last_history_row"] = __import__("pandas").to_datetime(df["last_history_row"])
         df["expiration_year"] = df["expiration"].dt.year
@@ -149,7 +150,7 @@ def main() -> int:
                 "late_contracts_modal_last_history_row_date_count": int(row_modes.iloc[0]) if len(row_modes) else 0,
                 "late_contracts_modal_last_history_row_date_share_pct": round(100.0 * int(row_modes.iloc[0]) / len(late), 4) if len(row_modes) and len(late) else None,
             })
-    yearly_df = __import__("pandas").DataFrame(yearly_rows)
+    yearly_df = pd.DataFrame(yearly_rows)
     yearly_csv_path = out / f"{args.symbol.lower()}_quote_continuity_by_expiration_year.csv"
     yearly_df.to_csv(yearly_csv_path, index=False)
 
