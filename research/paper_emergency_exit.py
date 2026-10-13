@@ -92,9 +92,12 @@ def transition_exit(state, status, broker_order=None, broker_position_qty=None):
     current = state.get("status")
     if current not in transitions or status not in transitions[current]:
         raise EmergencyExitBlocked("invalid or terminal emergency-exit state transition")
+    if status == "SUBMITTED":
+        if broker_order is None or not broker_order.get("id"):
+            raise EmergencyExitBlocked("cannot mark exit submitted without a broker order ID")
     if status == "FILLED":
-        if broker_order is None or str(broker_order.get("status", "")).lower() != "filled":
-            raise EmergencyExitBlocked("cannot mark exit filled without a broker-filled order")
+        if broker_order is None or not broker_order.get("id") or str(broker_order.get("status", "")).lower() != "filled":
+            raise EmergencyExitBlocked("cannot mark exit filled without a broker-filled order ID")
         if broker_position_qty is None or _positive_or_zero(broker_position_qty) != 0:
             raise EmergencyExitBlocked("cannot mark exit filled until broker position is zero")
         out["broker_position_qty_after"] = "0"
