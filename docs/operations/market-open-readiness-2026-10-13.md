@@ -114,3 +114,11 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Tightened state transitions in commit `d015c4398c6ffd3c3840180f1d980af4f6e1d287`: terminal `FILLED` and `BLOCKED` states cannot be reopened; transitions must follow the declared lifecycle. Added test coverage in `41c1eebcee2845d48960bd274f99b20568f444e1`.
 - Latest full regression run: [research-tests](https://github.com/eklu654/Trading-Bot/actions/runs/38395084408), queued at the time of this note. Focused run for the latest test changes: [Paper Emergency Exit Core Tests](https://github.com/eklu654/Trading-Bot/actions/runs/38395084508), queued at the time of this note.
 - The QQQ monitor remains explicitly read-only and the executor submission flag remains `false`. The exit core is still not integrated into the shared durable ledger/monitor, and no broker order has been sent.
+
+
+## Focused safety test result — 2026-10-13 12:08Z (verified)
+
+- [Paper Emergency Exit Core Tests run 38395084508](https://github.com/eklu654/Trading-Bot/actions/runs/38395084508) passed on code commit `41c1eebcee2845d48960bd274f99b20568f444e1`: compile succeeded and **10/10 deterministic tests passed**, including monotonic transitions and terminal-state immutability.
+- The preceding focused run `38395067350` failed because it ran against the intermediate commit before the lifecycle test was updated. Its failure was reproduced from the Actions log; the corrected commit's focused run is green.
+- The latest documentation-only commit is `f13a93a296e6083506d1ed6a60c28170c275d4a8`; it does not change the tested Python code.
+- The broad `research-tests` run for the latest commits was still queued/pending at this check. Focused green tests validate only the pure safety core, not monitor integration, shared durable persistence, broker submission, or fill reconciliation.
