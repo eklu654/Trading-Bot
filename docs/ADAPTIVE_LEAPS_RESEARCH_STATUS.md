@@ -44,3 +44,11 @@ The code and workflow definitions are present, but this audit did **not** indepe
 ## Audit note
 
 This document records repository/code inspection only. It does not assert that a workflow run succeeded or that the strategy is profitable. Update this file with actual run IDs, artifact names, reconciliation results, and any defects found after reviewing the generated outputs.
+
+
+### 2026-10-13 — Replay diagnostics added; execution still unverified
+
+- Commit [78b1736993dcc00639e309f6d049d90567d85616](https://github.com/eklu654/Trading-Bot/commit/78b1736993dcc00639e309f6d049d90567d85616) extends the replay summary with observation date range, time invested by observation, completed exits, rejected orders, held observations lacking valid bid marks, observed max drawdown with a completeness flag, transaction-cash reconciliation, and a chronology check that every fill follows its signal observation.
+- These diagnostics are intentionally evidence-quality fields, not a profitability verdict. Max drawdown is explicitly labeled incomplete if any ledger observation lacks equity.
+- The runner was re-fetched from GitHub after commit to verify the new fields are present. The commit has no reported combined status checks; that is not a test pass. No replay run ID or generated replay artifact has yet been independently verified in this checkpoint.
+- Next: verify the fast unit-test workflow actually ran after this runner change; then verify the chronological replay run and inspect all four outputs. If run listing is unavailable, use the repository Actions UI to capture the concrete run IDs rather than infer success from a push or commit.
