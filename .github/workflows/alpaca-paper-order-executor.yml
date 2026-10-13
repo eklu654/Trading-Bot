@@ -24,7 +24,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: alpaca-paper-order-executor
+  # Shared with the QQQ trigger workflow so ledger writes cannot race.
+  group: paper-broker-mutations
   cancel-in-progress: false
 
 jobs:
