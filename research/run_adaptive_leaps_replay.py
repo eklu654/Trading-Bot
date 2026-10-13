@@ -13,7 +13,6 @@ import math
 from dataclasses import asdict
 from pathlib import Path
 
-import duckdb
 
 from research.adaptive_leaps_lifecycle import OptionQuote
 from research.adaptive_leaps_replay import replay_long_call
@@ -90,6 +89,8 @@ def main() -> int:
     args = parse_args()
     source = sql_string(args.source)
     target = args.target_dte
+    import duckdb
+
     con = duckdb.connect()
     # First identify contracts that ever pass the frozen entry-candidate gate.
     # Then retain their full available histories so next-date fills, exit marks,
