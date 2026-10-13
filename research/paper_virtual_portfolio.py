@@ -40,6 +40,7 @@ def new_state(portfolio):
         "mark_price": None, "mark_date": None,
         "processed_fill_ids": [], "used_client_order_ids": [],
         "pending_intent": None, "last_terminal_order": None,
+        "emergency_exit_latch": None,
     }
 
 def validate_state(state):
@@ -58,10 +59,62 @@ def validate_state(state):
         raise LedgerSafetyError("used client order IDs must be unique")
     if state.get("pending_intent") is not None and not isinstance(state["pending_intent"], dict):
         raise LedgerSafetyError("pending intent has invalid shape")
+    latch = state.get("emergency_exit_latch")
+    if latch is not None:
+        if not isinstance(latch, dict) or latch.get("active") is not True:
+            raise LedgerSafetyError("emergency-exit latch has invalid shape or is not active")
+        try:
+            date.fromisoformat(str(latch.get("trigger_session")))
+        except Exception:
+            raise LedgerSafetyError("emergency-exit trigger session must be ISO date") from None
+        digest = latch.get("trigger_sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise LedgerSafetyError("emergency-exit trigger hash is invalid")
+        try:
+            int(digest, 16)
+        except ValueError:
+            raise LedgerSafetyError("emergency-exit trigger hash is not hexadecimal") from None
+        price = dec(latch.get("qqq_price"), "emergency QQQ price")
+        close = dec(latch.get("prior_close"), "emergency prior close")
+        if price <= 0 or close <= 0 or latch.get("reason") != "QQQ_MINUS_4_5_PERCENT":
+            raise LedgerSafetyError("emergency-exit latch trigger data is invalid")
     if state.get("mark_date") is not None:
         try: date.fromisoformat(state["mark_date"])
         except Exception: raise LedgerSafetyError("mark date must be ISO date") from None
     return True
+
+
+def activate_emergency_exit_latch(state, *, trigger_session, qqq_price, prior_close, trigger_sha256):
+    """Persist a fail-closed defense latch. This function never submits orders."""
+    out = deepcopy(state)
+    validate_state(out)
+    try:
+        session = date.fromisoformat(str(trigger_session)).isoformat()
+    except Exception:
+        raise LedgerSafetyError("emergency trigger session must be ISO date") from None
+    price, close = dec(qqq_price, "QQQ trigger price"), dec(prior_close, "QQQ prior close")
+    if price <= 0 or close <= 0 or price / close > Decimal("0.955"):
+        raise LedgerSafetyError("QQQ trigger does not meet the -4.5% breach threshold")
+    digest = str(trigger_sha256 or "")
+    if len(digest) != 64:
+        raise LedgerSafetyError("emergency trigger hash must be SHA-256")
+    try:
+        int(digest, 16)
+    except ValueError:
+        raise LedgerSafetyError("emergency trigger hash must be hexadecimal") from None
+    existing = out.get("emergency_exit_latch")
+    if existing is not None:
+        # Never rewrite the first breach or silently clear/replace a defense latch.
+        return out
+    out["emergency_exit_latch"] = {
+        "active": True, "reason": "QQQ_MINUS_4_5_PERCENT",
+        "trigger_session": session, "qqq_price": str(price),
+        "prior_close": str(close), "trigger_sha256": digest,
+        "activated_at_utc": None, "reentry_status": "BLOCKED_PENDING_RECOVERY_RULE",
+    }
+    validate_state(out)
+    return out
+
 
 def apply_fills(state, fills):
     """Apply unique execution activities once; repeated delivery is idempotent."""
