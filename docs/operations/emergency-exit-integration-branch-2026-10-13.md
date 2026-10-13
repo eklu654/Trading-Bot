@@ -111,3 +111,15 @@ Keep the executor submission gate false until this branch's tests pass and a con
 2. Review branch protection / push permissions through an authorized repository settings view.
 3. In a controlled market-open paper session, verify distinct broker accounts, actual open-buy cancellation under defense, order acceptance, fill activity reconciliation, broker-position match, durable state writes, both portfolios exiting to flat, and +10% recovery release.
 4. Only after those checks should the submission gate be considered for a separate explicit release change. The current preflight is repeated but cannot eliminate a price move between final QQQ observation and broker processing.
+
+
+## Cross-portfolio latch synchronization — 2026-10-13 13:02Z
+
+- Found and fixed an additional race: the executor can persist a latch to one portfolio before the monitor's next poll. If QQQ rebounded before the monitor poll, the other portfolio could otherwise remain unlatch­ed and potentially stage a buy.
+- Added `synchronize_latches_across_ledgers` to the executor and passed both state paths to prepare/submit calls. Any active latch is now propagated to both B0/F75 states before signal planning or order reconciliation, even with the submission gate false. If independently generated latch identities differ, B0's durable trigger identity is canonicalized across both ledgers and the lowest trough is retained. Recovery evidence is reset only when trigger identity/trough changes; repeated sync no longer clears valid recovery evidence.
+- Updated the monitor recorder to propagate a one-sided latch even when the current QQQ observation has rebounded above -4.5%, using the existing trigger identity rather than creating a new one.
+- Added tests for one-sided latch synchronization after rebound, cross-ledger trigger identity, trough merge, recovery-evidence preservation, broker order identity mismatch, open-buy cancellation, stale-feed defensive sells, and final pre-POST breach detection.
+- Latest focused workflow [38401607086](https://github.com/eklu654/Trading-Bot/actions/runs/38401607086) passed **72 tests total**: 10 core, 19 ledger, 25 executor, 3 fill-reconciliation, 8 QQQ monitor, and 7 latch-recorder tests.
+- Latest broad research workflow [38401607110](https://github.com/eklu654/Trading-Bot/actions/runs/38401607110) passed, including full `pytest -q` and TQQQ event attribution.
+- Latest actual TQQQ partial-DMA matrix [38401603814](https://github.com/eklu654/Trading-Bot/actions/runs/38401603814) also passed.
+- These are software/research checks. The paper-order submission gate is still false, PR #27 remains draft/unmerged, and no end-to-end broker order acceptance or fill has been demonstrated. Do not infer actual broker position from virtual ledger balances.
