@@ -55,3 +55,9 @@ This document records repository/code inspection only. It does not assert that a
 
 
 - Follow-up commits [ff4a3a0](https://github.com/eklu654/Trading-Bot/commit/ff4a3a0dc06ae6ade86d1b37cb7e69ed76dbb0ae) and [3c707a8](https://github.com/eklu654/Trading-Bot/commit/3c707a88cbf1bc78c4c48042eae7c0165ff3ebcd) make the diagnostics helper importable without DuckDB installed and add a synthetic unit test for cash reconciliation, next-observation chronology, completed trades, invested observations, and drawdown completeness. The source files were re-fetched to confirm both changes are on main. CI execution and the historical replay are still unconfirmed; do not treat the new test as passing until an actual workflow result is inspected.
+
+
+### Additional code-review limitation — expiration lifecycle
+
+- The runner retains option observations only for DTE 0 through 315. If an exit repeatedly fails and the held contract reaches expiration without a valid bid exit, the current engine deliberately leaves the position unresolved and terminal equity unavailable; it does not simulate exercise, assignment, or expiration settlement.
+- This is fail-closed rather than silently assigning zero value, but it means any replay with unresolved expiry cases is not a fully reconciled portfolio result. The artifact audit must count these cases, and explicit expiration/exercise treatment is a required follow-up before interpreting final equity.
