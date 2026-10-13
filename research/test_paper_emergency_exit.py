@@ -67,12 +67,33 @@ class EmergencyExitCoreTests(unittest.TestCase):
                 "id": "paper-order-1", "client_order_id": intent["client_order_id"],
                 "symbol": "TQQQ", "side": "sell", "status": "accepted",
             }, broker_position_qty="0")
-        done = transition_exit(intent, "FILLED", broker_order={
+        submitting = transition_exit(intent, "SUBMITTING")
+        submitted = transition_exit(submitting, "SUBMITTED", broker_order={
+            "id": "paper-order-1", "client_order_id": intent["client_order_id"],
+            "symbol": "TQQQ", "side": "sell", "status": "filled",
+        })
+        done = transition_exit(submitted, "FILLED", broker_order={
             "id": "paper-order-1", "client_order_id": intent["client_order_id"],
             "symbol": "TQQQ", "side": "sell", "status": "filled",
         }, broker_position_qty="0")
         self.assertEqual(done["status"], "FILLED")
         self.assertEqual(done["broker_position_qty_after"], "0")
+
+
+    def test_terminal_states_cannot_be_reopened(self):
+        intent = build_exit_intent("b0", "2026-10-12", "1", "a" * 64)
+        blocked = transition_exit(intent, "BLOCKED")
+        with self.assertRaises(EmergencyExitBlocked):
+            transition_exit(blocked, "SUBMITTING")
+        submitted = transition_exit(transition_exit(intent, "SUBMITTING"), "SUBMITTED")
+        filled_order = {
+            "id": "paper-order-2", "client_order_id": intent["client_order_id"],
+            "symbol": "TQQQ", "side": "sell", "status": "filled",
+        }
+        done = transition_exit(submitted, "FILLED", broker_order=filled_order,
+                               broker_position_qty="0")
+        with self.assertRaises(EmergencyExitBlocked):
+            transition_exit(done, "STAGED")
 
     def test_unexpected_short_or_negative_position_rejected(self):
         intent = build_exit_intent("b0", "2026-10-12", "1", "a" * 64)
