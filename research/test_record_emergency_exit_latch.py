@@ -4,7 +4,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from paper_virtual_portfolio import new_state, state_json
+from paper_virtual_portfolio import new_state, state_json, activate_emergency_exit_latch
 from record_emergency_exit_latch import process
 
 
@@ -40,6 +40,28 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
         second = process(str(self.report_path), str(self.root))
         self.assertEqual(second["status"], "LATCH_ACTIVE_NO_CHANGE")
         self.assertEqual(second["trigger_sha256"], first["trigger_sha256"])
+
+    def test_one_sided_executor_latch_is_synchronized_even_after_rebound(self):
+        b0_path = self.root / "b0_state.json"
+        b0 = json.loads(b0_path.read_text())
+        b0 = activate_emergency_exit_latch(
+            b0, trigger_session=self.report["session"], qqq_price="95.5",
+            prior_close="100", trigger_sha256="f" * 64)
+        b0_path.write_text(state_json(b0) + "\n", encoding="utf-8")
+        self.report.update({
+            "status": "MONITORING", "threshold_breached": False,
+            "qqq_price": "96", "prior_close": "100",
+        })
+        self.report_path.write_text(json.dumps(self.report), encoding="utf-8")
+        result = process(str(self.report_path), str(self.root))
+        self.assertEqual(result["status"], "LATCH_ACTIVATED")
+        b0 = json.loads(b0_path.read_text())["emergency_exit_latch"]
+        f75 = json.loads((self.root / "f75_state.json").read_text())["emergency_exit_latch"]
+        self.assertTrue(b0["active"] and f75["active"])
+        self.assertEqual(b0["trigger_sha256"], f75["trigger_sha256"])
+        self.assertEqual(b0["trigger_sha256"], "f" * 64)
+        self.assertEqual(b0["trigger_session"], f75["trigger_session"])
+        self.assertEqual(b0["qqq_price"], f75["qqq_price"])
 
     def test_trough_moves_down_and_recovery_releases_both_flat_ledgers(self):
         first = process(str(self.report_path), str(self.root))
