@@ -78,22 +78,47 @@ def process(report_path: str, state_dir: str) -> dict:
         states[portfolio] = state
 
     activated = False
+    # The executor can detect a breach before the scheduled monitor persists both
+    # ledgers. Treat any existing latch as the canonical trigger identity and
+    # propagate it to the missing portfolio even if QQQ has already rebounded
+    # above -4.5% by the time this monitor report is processed.
+    canonical = next((states[p].get("emergency_exit_latch")
+                      for p in ("b0", "f75")
+                      if states[p].get("emergency_exit_latch") is not None), None)
     if breached:
-        identity = {
-            "symbol": "QQQ", "session": session,
-            "trade_timestamp": report.get("trade_timestamp"),
-            "observed_at_utc": report.get("observed_at_utc"),
-            "qqq_price": str(price), "prior_close": str(close),
-            "threshold_pct": "4.5",
-        }
-        digest = sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+        if canonical is None:
+            identity = {
+                "symbol": "QQQ", "session": session,
+                "trade_timestamp": report.get("trade_timestamp"),
+                "observed_at_utc": report.get("observed_at_utc"),
+                "qqq_price": str(price), "prior_close": str(close),
+                "threshold_pct": "4.5",
+            }
+            digest = sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            trigger_session, trigger_price, trigger_close = session, price, close
+        else:
+            digest = canonical["trigger_sha256"]
+            trigger_session = canonical["trigger_session"]
+            trigger_price = canonical["qqq_price"]
+            trigger_close = canonical["prior_close"]
         for portfolio in ("b0", "f75"):
             old_latch = states[portfolio].get("emergency_exit_latch")
             states[portfolio] = activate_emergency_exit_latch(
-                states[portfolio], trigger_session=session, qqq_price=price,
-                prior_close=close, trigger_sha256=digest,
+                states[portfolio], trigger_session=trigger_session, qqq_price=trigger_price,
+                prior_close=trigger_close, trigger_sha256=digest,
             )
             activated = activated or (old_latch is None and states[portfolio].get("emergency_exit_latch") is not None)
+    elif canonical is not None:
+        # Repair a one-sided latch even when the latest report is monitoring.
+        for portfolio in ("b0", "f75"):
+            old_latch = states[portfolio].get("emergency_exit_latch")
+            if old_latch is None:
+                states[portfolio] = activate_emergency_exit_latch(
+                    states[portfolio], trigger_session=canonical["trigger_session"],
+                    qqq_price=canonical["qqq_price"], prior_close=canonical["prior_close"],
+                    trigger_sha256=canonical["trigger_sha256"],
+                )
+                activated = True
 
     # Track the lowest observed QQQ price while defense is active. The recovery
     # threshold follows the trough, and both portfolios must be flat before the
