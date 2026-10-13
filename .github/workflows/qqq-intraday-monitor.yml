@@ -1,4 +1,4 @@
-name: QQQ Intraday -4.5% Monitor (read-only)
+name: QQQ Intraday -4.5% Monitor + Paper Defense Latch
 
 on:
   schedule:
