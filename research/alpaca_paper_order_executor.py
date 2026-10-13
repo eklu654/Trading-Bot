@@ -123,6 +123,14 @@ def read_signal(ledger_path,manifest_path,now):
     if f75>b0 or (b0==0 and f75!=0): raise ExecutorBlocked("F75 target violates B0 eligibility")
     return session,b0,f75,source
 
+def effective_target(portfolio, b0, f75, state):
+    """Apply the durable defense latch after validating the ordinary signal."""
+    strategy_target = b0 if portfolio == "b0" else f75
+    latch = state.get("emergency_exit_latch")
+    active = bool(latch and latch.get("active") is True)
+    return strategy_target, (Decimal("0") if active else strategy_target), active
+
+
 def credentials(portfolio):
     suffix=portfolio.upper()
     key=os.environ.get(f"ALPACA_PAPER_API_KEY_{suffix}","")
@@ -235,12 +243,9 @@ def prepare(a):
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
     if state.get("portfolio")!=a.portfolio: raise ExecutorBlocked("state portfolio mismatch")
     session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-    strategy_target=b0 if a.portfolio=="b0" else f75
-    latch=state.get("emergency_exit_latch")
-    emergency_exit_active=bool(latch and latch.get("active") is True)
     # A persisted QQQ defense latch overrides the daily target to flat. It
     # remains active until a separately validated recovery rule clears it.
-    target=Decimal("0") if emergency_exit_active else strategy_target
+    strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
     enabled=os.environ.get("ENABLE_PAPER_ORDER_SUBMISSION","false").lower()=="true"
     pending=state.get("pending_intent")
     if pending:
