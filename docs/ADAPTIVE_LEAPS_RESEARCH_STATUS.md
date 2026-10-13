@@ -158,3 +158,30 @@ This document records repository/code inspection only. It does not assert that a
 - Artifact now contains per-contract CSV, expiration-year CSV, and summary JSON for SPY and QQQ. Corrected mature-cohort rates remain SPY 133/8,231 (1.62%) and QQQ 335/5,535 (6.05%) with right-censored expirations excluded.
 - Reproducible expiration-year report confirms concentration: SPY 2008: 45/103 mature contracts (43.69%); SPY 2009: 88/187 (47.06%); QQQ 2014: 80/200 (40.00%), with 100% of that year's late-bid contracts sharing last valid bid 2014-03-11 and last source row 2014-03-12; QQQ 2024: 253/750 (33.73%), with 100% sharing last valid bid 2023-12-26 and last source row 2024-01-09. These date clusters reinforce that source-history completeness is the immediate research blocker.
 - No exit-rule change was made. Do not treat the above source gaps as proof of actual untradeability or use a stale mark/zero/expiry settlement as a convenience to force P/L. Next step is to cross-check these specific contract-history cutoffs against the source's underlying trading-date series and dataset methodology; only then decide whether the affected periods can be repaired, excluded under a predeclared data-quality rule, or require a different source.
+
+
+### 2026-10-13 — Underlying-session cross-check added; CI validation pending
+
+- New isolated branch `leaps/underlying-date-discontinuity-audit` adds `research/audit_adaptive_leaps_source_discontinuity.py`. For the two replay-blocking contracts (`SPY080930C00148000`, `QQQ140920C00077000`), it compares the last contract row and last valid bid against the underlying-price trading-session calendar and the dates on which the symbol's option-chain files still contain rows.
+- The replay workflow now downloads the pinned source's underlying-price Parquet files, compiles the diagnostic, runs it for SPY and QQQ, and includes the JSON/CSV output in the existing replay artifact. This diagnostic is non-gating: it cannot make missing quotes executable or turn an unresolved replay into a valid P/L result.
+- Added a synthetic Parquet unit test asserting that five underlying sessions after a contract's last row are reported when symbol-level option rows continue on those dates. Unit workflow paths/compile coverage were updated.
+- Changes are isolated on a PR branch to avoid triggering broad main-branch workflow fan-out. The next gate is actual PR CI and then the replay artifact: record the exact underlying-session counts and whether the option source continues on those dates. No new source-gap result, strategy return, or paper-trading approval is claimed until the run completes and outputs are inspected.
+- Research interpretation remains conservative: an underlying trading session with no row for a specific option contract is evidence of a contract-history gap relative to this source's stated row convention, but it does not establish that the option had a positive or executable bid. No exit threshold or expiration policy was changed.
+
+
+### CI failure and correction — 2026-10-13 22:54Z
+
+- PR #30 CI was inspected directly, not assumed successful. Initial runs: [LEAPS unit tests run 38480676716](https://github.com/eklu654/Trading-Bot/actions/runs/38480676716) failed 1/20 tests; [repository research tests run 38480676732](https://github.com/eklu654/Trading-Bot/actions/runs/38480676732) failed 1 test and passed 170.
+- Root cause was output normalization, not the underlying-session counts: DuckDB returned Pandas `Timestamp` values, and JSON emitted `2020-01-03T00:00:00`, while the test and report contract expected ISO calendar dates (`2020-01-03`). The underlying-session synthetic result itself correctly found 5 sessions after the contract cutoff.
+- Fixed JSON date normalization in `research/audit_adaptive_leaps_source_discontinuity.py` in commit `f44d704c9fa8f7cada7235716109acdc694a2d18`. Await the new commit's CI before calling the fix verified. Do not merge PR #30 while checks are failing.
+- Remaining known caution: CI also surfaces a pre-existing Pandas FutureWarning in `research/backtest_etf001.py:175`; it was not the failure cause and is out of scope for this LEAPS patch.
+
+
+### Latest verification checkpoint — 2026-10-13 23:23Z
+
+- Confirmed PR #30 head is `40e146ec2b32b6f37a3434c13562d471a2bde6df`, PR state is open, and GitHub reports it mergeable with no branch conflict.
+- Confirmed the focused LEAPS unit workflow `38482852634` completed successfully.
+- Confirmed the broad repository `research-tests` workflow `38482852636` completed successfully. The date-normalization fix has therefore cleared both the focused LEAPS suite and the repository suite.
+- No full chronological replay was triggered by these PR checks: the replay workflow currently runs on manual dispatch or pushes to main when selected paths change. This PR has not been merged, and no new source-discontinuity artifact has been inspected yet.
+- **Next gate:** trigger the replay workflow after review/merge, then inspect the uploaded source-discontinuity CSV/JSON, the four replay summaries, and the terminal-equity quality gate. Do not merge solely on green unit tests if policy requires the new source audit to be observed first; do not state the audit's real-data finding until the artifact exists.
+- Existing known blocker remains unchanged: the prior full replay failed terminal-equity reconciliation in all four cases because expired positions remained unresolved. The source-date diagnostic is investigation, not a fix to that accounting/contract lifecycle issue.
