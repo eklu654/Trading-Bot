@@ -77,6 +77,9 @@ def main() -> int:
       SELECT *, lag(obs_date) OVER (PARTITION BY contract_id ORDER BY obs_date) AS prior_obs_date
       FROM history
     ),
+    coverage AS (
+      SELECT max(obs_date) AS source_coverage_end_date FROM source
+    ),
     last_bid AS (
       SELECT contract_id, max(obs_date) AS last_valid_bid_date
       FROM history WHERE bid > 0 AND ask >= bid
@@ -103,12 +106,13 @@ def main() -> int:
       GROUP BY h.contract_id
     ),
     enriched AS (
-      SELECT *,
+      SELECT a.*, coverage.source_coverage_end_date,
+             (a.expiration <= coverage.source_coverage_end_date) AS expiration_fully_observed,
              date_diff('day', last_valid_bid_date, expiration) AS dte_at_last_valid_bid,
              date_diff('day', last_valid_bid_date, last_history_row) AS days_from_last_valid_bid_to_last_row,
              round(100.0 * valid_bid_rows / nullif(history_rows_present, 0), 4) AS valid_bid_pct_of_rows,
              round(100.0 * valid_quote_rows / nullif(history_rows_present, 0), 4) AS valid_quote_pct_of_rows
-      FROM aggregates
+      FROM aggregates a CROSS JOIN coverage
     )
     SELECT * FROM enriched ORDER BY specifically_flagged DESC, first_eligible_date, contract_id
     """
@@ -133,8 +137,11 @@ def main() -> int:
             "eligible_contracts": int(len(df)),
             "contracts_with_any_valid_bid": int(df["last_valid_bid_date"].notna().sum()) if not df.empty else 0,
             "contracts_with_no_valid_bid_after_eligibility": int(df["last_valid_bid_date"].isna().sum()) if not df.empty else 0,
-            "contracts_last_valid_bid_more_than_30_days_before_expiration": int((df["dte_at_last_valid_bid"] > 30).sum()) if not df.empty else 0,
-            "contracts_last_valid_bid_at_or_before_30_dte": int(((df["dte_at_last_valid_bid"] <= 30) & df["dte_at_last_valid_bid"].notna()).sum()) if not df.empty else 0,
+            "source_coverage_end_date": str(df["source_coverage_end_date"].max()) if not df.empty else None,
+            "fully_observed_to_expiration_contracts": int(df["expiration_fully_observed"].sum()) if not df.empty else 0,
+            "right_censored_contracts_expiration_after_source_coverage": int((~df["expiration_fully_observed"]).sum()) if not df.empty else 0,
+            "fully_observed_contracts_last_valid_bid_more_than_30_days_before_expiration": int(((df["expiration_fully_observed"]) & (df["dte_at_last_valid_bid"] > 30)).sum()) if not df.empty else 0,
+            "fully_observed_contracts_last_valid_bid_at_or_before_30_dte": int(((df["expiration_fully_observed"]) & (df["dte_at_last_valid_bid"] <= 30) & df["dte_at_last_valid_bid"].notna()).sum()) if not df.empty else 0,
             "median_valid_bid_pct_of_present_rows": float(df["valid_bid_pct_of_rows"].median()) if not df.empty else None,
             "median_max_calendar_gap_between_rows": float(df["max_calendar_gap_between_rows"].median()) if not df.empty else None,
         },
