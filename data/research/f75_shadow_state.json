@@ -1,12 +1,12 @@
 {
   "canonical_input_sha256": "6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55",
   "frozen_cutoff": "2026-10-07",
-  "last_observation": "2026-10-09",
-  "sessions_appended_this_run": 0,
-  "ledger_rows_total": 2,
-  "return_bearing_sessions_total": 1,
-  "initialization_date": "2026-10-08",
-  "ledger_sha256": "5d649c56b94ebe8aed84f034daee67b95fdafeb74c5e24b62660e531c5697f4e",
+  "last_observation": "2026-10-12",
+  "sessions_appended_this_run": 1,
+  "ledger_rows_total": 3,
+  "return_bearing_sessions_total": 2,
+  "initialization_date": "2026-10-08 00:00:00",
+  "ledger_sha256": "52939aba7230f46a6cc75f6a9f75ba24e9a5ad17b78d651869aee31478d845f4",
   "mode": "SHADOW_ONLY_NO_ORDERS",
   "cost_sensitivity_bps": [
     0,
