@@ -81,9 +81,17 @@ def transition_exit(state, status, broker_order=None, broker_position_qty=None):
     if not isinstance(state, dict) or state.get("mode") != "PAPER_ONLY_EMERGENCY_EXIT":
         raise EmergencyExitBlocked("invalid emergency-exit state")
     out = deepcopy(state)
-    allowed = {"STAGED", "SUBMITTING", "UNKNOWN", "SUBMITTED", "FILLED", "BLOCKED"}
-    if status not in allowed:
-        raise EmergencyExitBlocked("unsupported emergency-exit status")
+    transitions = {
+        "STAGED": {"STAGED", "SUBMITTING", "BLOCKED"},
+        "SUBMITTING": {"SUBMITTING", "UNKNOWN", "SUBMITTED", "BLOCKED"},
+        "UNKNOWN": {"UNKNOWN", "SUBMITTED", "BLOCKED"},
+        "SUBMITTED": {"SUBMITTED", "UNKNOWN", "FILLED", "BLOCKED"},
+        "FILLED": {"FILLED"},
+        "BLOCKED": {"BLOCKED"},
+    }
+    current = state.get("status")
+    if current not in transitions or status not in transitions[current]:
+        raise EmergencyExitBlocked("invalid or terminal emergency-exit state transition")
     if status == "FILLED":
         if broker_order is None or str(broker_order.get("status", "")).lower() != "filled":
             raise EmergencyExitBlocked("cannot mark exit filled without a broker-filled order")
