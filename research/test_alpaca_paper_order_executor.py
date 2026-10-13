@@ -220,6 +220,19 @@ class PaperOrderPayloadTests(unittest.TestCase):
             self.assertTrue(final["emergency_exit_latch"]["active"])
             self.assertEqual(json.loads(Path(a.report).read_text())["status"],"BUY_ORDER_CANCEL_RECONCILED_DURING_QQQ_DEFENSE")
 
+    def test_existing_order_identity_mismatch_blocks_cancellation(self):
+        with tempfile.TemporaryDirectory() as root:
+            state_path,state=self.files(root,submitting=True)
+            a=self.args(root,state_path=state_path)
+            wrong={"id":"broker-wrong","client_order_id":state["pending_intent"]["client_order_id"],
+                   "symbol":"TQQQ","side":"sell","status":"new"}
+            with patch.object(executor,"credentials",return_value=("key","secret")), \
+                 patch.object(executor,"get_json",return_value=wrong), \
+                 patch.object(executor,"cancel_paper_order") as cancel, \
+                 self.assertRaisesRegex(ExecutorBlocked,"identity does not match"):
+                executor.submit(a)
+            cancel.assert_not_called()
+
     def test_submit_without_ephemeral_permit_never_posts(self):
         with tempfile.TemporaryDirectory() as root:
             state_path,state=self.files(root,submitting=True)
