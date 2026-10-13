@@ -105,3 +105,12 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Follow-up change `95fc3f8a807315c49fd7d3308202832f9bae4dea` tightens the emergency-exit core: an exit cannot be marked `FILLED` unless a matching broker order reports `filled` and the broker position quantity is zero.
 - The repository-wide regression run for this change is pending at [research-tests](https://github.com/eklu654/Trading-Bot/actions/runs/38393923050). The prior 167-test success was on commit `ce746e4d8989d31af5753ea7753ea72769f83917`, before this stricter gate, and does not validate this latest change.
 - The test case that exercises the successful terminal transition must be updated to supply a matching filled broker-order record before this commit can be accepted. Keep submission disabled until the updated test passes.
+
+
+## Continued emergency-exit work — 2026-10-13 12:08Z
+
+- Fixed the successful-transition unit test to supply a broker order that matches the intent and reports `filled`; added an explicit rejection case for a merely accepted broker order.
+- Added focused workflow `paper-emergency-exit-tests.yml` so the pure emergency-exit safety tests run separately and quickly on relevant code changes. Initial workflow run `38395043648` passed before the newest lifecycle-hardening patch: [focused test run](https://github.com/eklu654/Trading-Bot/actions/runs/38395043648).
+- Tightened state transitions in commit `d015c4398c6ffd3c3840180f1d980af4f6e1d287`: terminal `FILLED` and `BLOCKED` states cannot be reopened; transitions must follow the declared lifecycle. Added test coverage in `41c1eebcee2845d48960bd274f99b20568f444e1`.
+- Latest full regression run: [research-tests](https://github.com/eklu654/Trading-Bot/actions/runs/38395084408), queued at the time of this note. Focused run for the latest test changes: [Paper Emergency Exit Core Tests](https://github.com/eklu654/Trading-Bot/actions/runs/38395084508), queued at the time of this note.
+- The QQQ monitor remains explicitly read-only and the executor submission flag remains `false`. The exit core is still not integrated into the shared durable ledger/monitor, and no broker order has been sent.
