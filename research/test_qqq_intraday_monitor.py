@@ -18,6 +18,10 @@ class IntradayMonitorTests(unittest.TestCase):
         self.assertEqual(r["status"],"THRESHOLD_BREACHED")
         self.assertTrue(r["threshold_breached"])
         self.assertEqual(r["prior_completed_session"],"2026-10-09")
+        self.assertEqual(r["session"],"2026-10-12")
+        self.assertEqual(r["qqq_price"],"95.49")
+        self.assertEqual(r["prior_close"],"100")
+        self.assertEqual(r["threshold_pct"],"4.5")
         self.assertFalse(r["orders_submitted"])
     def test_no_breach_above_threshold(self):
         trade={"trade":{"t":"2026-10-12T13:59:30+00:00","p":"95.51"}}
