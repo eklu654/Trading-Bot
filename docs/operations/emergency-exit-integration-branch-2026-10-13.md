@@ -123,3 +123,12 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Latest broad research workflow [38401607110](https://github.com/eklu654/Trading-Bot/actions/runs/38401607110) passed, including full `pytest -q` and TQQQ event attribution.
 - Latest actual TQQQ partial-DMA matrix [38401603814](https://github.com/eklu654/Trading-Bot/actions/runs/38401603814) also passed.
 - These are software/research checks. The paper-order submission gate is still false, PR #27 remains draft/unmerged, and no end-to-end broker order acceptance or fill has been demonstrated. Do not infer actual broker position from virtual ledger balances.
+
+
+## Scheduling and account-preflight review — 2026-10-13 13:08Z
+
+- Staggered the PR branch schedules to avoid minute-zero load and exact schedule collisions: QQQ monitor at minutes `1,6,11,...,56` and executor at `2,7,12,...,57` UTC during the configured window. The monitor is scheduled one minute before the executor; the executor's independent preflight remains the safety control if ordering/delivery differs.
+- The latest focused run [38402448261](https://github.com/eklu654/Trading-Bot/actions/runs/38402448261) passed. Its new Ruby/Psych YAML parse step validated both executor and monitor workflow files; all 72 safety tests also passed. Broad research run [38402448270](https://github.com/eklu654/Trading-Bot/actions/runs/38402448270) passed.
+- Inspected the last visible main-branch executor run [38316969245](https://github.com/eklu654/Trading-Bot/actions/runs/38316969245): both distinct paper accounts verified ACTIVE/unblocked in USD and account fingerprints were persisted, but both portfolio preparations returned `SKIPPED_MARKET_CLOSED`, followed by `NO_ARM_REQUEST` and `NO_PENDING_INTENT`. No POST was attempted. This proves credential/account preflight worked at that time, not that order submission or fills work.
+- As of 13:07Z, the newest visible main-branch executor schedule run was still the prior day's [38316969245 at 22:29Z](https://github.com/eklu654/Trading-Bot/actions/runs/38316969245), despite the configured 13:00–21:55Z window. No current-day scheduled executor run was visible. The staggered schedule is a mitigation, not proof that GitHub will deliver each five-minute run; confirm actual run cadence after deployment.
+- Main remains unchanged by this PR and its submission gate is still `false`. PR #27 remains draft/unmerged. Broker order acceptance, cancellation against a real open order, and fill-backed position reconciliation remain unproven.
