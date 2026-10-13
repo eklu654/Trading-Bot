@@ -3,7 +3,7 @@ from pathlib import Path
 from decimal import Decimal
 from unittest.mock import patch
 import alpaca_paper_order_executor as executor
-from alpaca_paper_order_executor import (order_payload, account_fingerprint, ExecutorBlocked, PaperPostError, PAPER_URL)
+from alpaca_paper_order_executor import (order_payload, account_fingerprint, effective_target, ExecutorBlocked, PaperPostError, PAPER_URL)
 from paper_virtual_portfolio import new_state, mark_to_market, plan_target, stage_intent, mark_submission_attempting, state_json
 
 class PaperOrderPayloadTests(unittest.TestCase):
@@ -12,6 +12,28 @@ class PaperOrderPayloadTests(unittest.TestCase):
            "side":"buy","qty":"61.450","client_order_id":"tb-0123456789abcdef0123456789abcdef"}
         x.update(changes)
         return x
+
+    def test_emergency_latch_forces_both_portfolios_flat(self):
+        latch = {"active": True, "reason": "QQQ_MINUS_4_5_PERCENT"}
+        b0_strategy, b0_target, b0_active = effective_target(
+            "b0", Decimal("1"), Decimal("1"), {"emergency_exit_latch": latch})
+        f75_strategy, f75_target, f75_active = effective_target(
+            "f75", Decimal("1"), Decimal("0.75"), {"emergency_exit_latch": latch})
+        self.assertEqual(b0_strategy, Decimal("1"))
+        self.assertEqual(f75_strategy, Decimal("0.75"))
+        self.assertEqual(b0_target, Decimal("0"))
+        self.assertEqual(f75_target, Decimal("0"))
+        self.assertTrue(b0_active)
+        self.assertTrue(f75_active)
+
+    def test_no_emergency_latch_preserves_strategy_targets(self):
+        self.assertEqual(
+            effective_target("b0", Decimal("1"), Decimal("1"), {}),
+            (Decimal("1"), Decimal("1"), False))
+        self.assertEqual(
+            effective_target("f75", Decimal("1"), Decimal("0.75"), {}),
+            (Decimal("0.75"), Decimal("0.75"), False))
+
     def test_account_fingerprint_is_stable_and_not_raw_id(self):
         a=account_fingerprint("account-uuid-b0")
         self.assertEqual(a,account_fingerprint("account-uuid-b0"))
