@@ -101,8 +101,50 @@ jobs:
             --enforce-account-cash
 
       - name: Upload replay ledgers and source hashes
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: adaptive-leaps-chronological-replay
           path: artifacts/adaptive_leaps_replay/
-          if-no-files-found: error
+          if-no-files-found: warn
+
+      - name: Require reconciled terminal equity for all four replay cases
+        if: success()
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          paths = [
+              Path("artifacts/adaptive_leaps_replay/spy_theoretical/summary.json"),
+              Path("artifacts/adaptive_leaps_replay/spy_cash_5000/summary.json"),
+              Path("artifacts/adaptive_leaps_replay/qqq_theoretical/summary.json"),
+              Path("artifacts/adaptive_leaps_replay/qqq_cash_5000/summary.json"),
+          ]
+          failures = []
+          for path in paths:
+              if not path.exists():
+                  failures.append(f"{path}: summary missing")
+                  continue
+              summary = json.loads(path.read_text())
+              diagnostics = summary.get("diagnostics", {})
+              if (summary.get("status") != "completed"
+                      or summary.get("final_equity") is None
+                      or summary.get("final_mark_available") is not True):
+                  failures.append(
+                      f"{path}: status={summary.get('status')} "
+                      f"final_equity={summary.get('final_equity')} "
+                      f"terminal_contract={diagnostics.get('terminal_contract_id')} "
+                      f"terminal_dte={diagnostics.get('terminal_dte')} "
+                      f"unresolved_expired={diagnostics.get('unresolved_expired_position')} "
+                      f"days_past_expiration={diagnostics.get('days_past_expiration')} "
+                      f"exit_rejections={diagnostics.get('exit_rejected_observations')}"
+                  )
+          if failures:
+              print("LEAPS REPLAY QUALITY GATE FAILED:")
+              print("\\n".join(failures))
+              sys.exit(1)
+          print("All four replay cases have reconciled terminal equity.")
+          PY
