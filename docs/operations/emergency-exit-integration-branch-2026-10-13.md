@@ -94,3 +94,20 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Focused workflow [run 38400569989](https://github.com/eklu654/Trading-Bot/actions/runs/38400569989) passed on commit `c11cfeec7102112854281661dee587e74552dd76`: 10 emergency-exit core tests, 19 ledger tests, 23 executor tests, 8 QQQ monitor tests, and 6 recorder tests. An earlier run failed only because the new test fixture contained a double-escaped newline; that fixture was corrected and the follow-up passed.
 - Expanded the focused workflow to include `test_executor_fill_reconciliation.py` and to trigger when QQQ monitor source/tests change. This workflow change has its own new CI run pending.
 - Safety status: the executor now performs independent preflight before planning and again directly before POST, and cancels detected open buys under defense. This reduces scheduler-order risk but cannot guarantee protection against a market move between the final quote and broker processing. The submission gate remains false, PR #27 remains draft, and no end-to-end broker order/fill acceptance has been demonstrated.
+
+
+## Latest end-to-end CI and ledger snapshot — 2026-10-13 12:56Z
+
+- Focused safety workflow [38400856114](https://github.com/eklu654/Trading-Bot/actions/runs/38400856114) passed on code head `26df715aaf7eb5b18743e799b798c4d6a6252336`: **70 tests total** — 10 emergency-exit core, 19 ledger, 24 executor (including preflight, final-check, cancel/reconcile, and identity-mismatch cases), 3 fill-reconciliation, 8 QQQ monitor, and 6 latch-recorder tests.
+- Broad research workflow [38400856132](https://github.com/eklu654/Trading-Bot/actions/runs/38400856132) passed, including `pytest -q` and the TQQQ three-layer event-attribution step.
+- Actual TQQQ partial-DMA matrix workflow [38400850188](https://github.com/eklu654/Trading-Bot/actions/runs/38400850188) also completed successfully. This is research validation, not broker acceptance.
+- Current `paper-execution-ledger` snapshot: both B0 and F75 state files have $5,000 cash/equity, zero TQQQ quantity, no pending intent, and distinct stored account fingerprints. These are virtual ledger values; they do **not** prove current broker positions or a broker order/fill.
+- The focused workflow now includes fill reconciliation and watches QQQ monitor source/tests in its PR path filters. PR #27 remains draft and unmerged; main's `ENABLE_PAPER_ORDER_SUBMISSION` remains false.
+- Branch-protection review is still incomplete: repository rulesets API returned an empty list, while the classic branch-protection endpoint returned HTTP 403 (not accessible to the GitHub integration). Therefore I cannot confirm whether classic branch protection exists or whether Actions can push to the ledger branch under its protection settings.
+
+## Current handoff — do not skip
+
+1. Keep PR #27 draft; do not merge or enable paper submission yet.
+2. Review branch protection / push permissions through an authorized repository settings view.
+3. In a controlled market-open paper session, verify distinct broker accounts, actual open-buy cancellation under defense, order acceptance, fill activity reconciliation, broker-position match, durable state writes, both portfolios exiting to flat, and +10% recovery release.
+4. Only after those checks should the submission gate be considered for a separate explicit release change. The current preflight is repeated but cannot eliminate a price move between final QQQ observation and broker processing.
