@@ -4,6 +4,7 @@ from paper_virtual_portfolio import (
     new_state, validate_state, apply_fills, mark_to_market, plan_target,
     stage_intent, mark_submission_outcome, reconcile_order,
     complete_terminal_intent, mark_submission_attempting, abort_unsubmitted_intent, LedgerSafetyError, state_json,
+    activate_emergency_exit_latch,
 )
 
 class VirtualPortfolioTests(unittest.TestCase):
@@ -12,6 +13,33 @@ class VirtualPortfolioTests(unittest.TestCase):
         self.assertEqual(s["cash"], "5000.00")
         self.assertEqual(s["qty"], "0.000")
         self.assertTrue(validate_state(s))
+
+
+    def test_emergency_exit_latch_requires_exact_threshold_and_is_durable(self):
+        state = new_state("b0")
+        digest = "a" * 64
+        with self.assertRaisesRegex(LedgerSafetyError, "does not meet"):
+            activate_emergency_exit_latch(
+                state, trigger_session="2026-10-12", qqq_price="95.51",
+                prior_close="100", trigger_sha256=digest)
+        latched = activate_emergency_exit_latch(
+            state, trigger_session="2026-10-12", qqq_price="95.5",
+            prior_close="100", trigger_sha256=digest)
+        self.assertTrue(latched["emergency_exit_latch"]["active"])
+        self.assertEqual(latched["emergency_exit_latch"]["reason"], "QQQ_MINUS_4_5_PERCENT")
+        self.assertEqual(latched["emergency_exit_latch"]["trigger_sha256"], digest)
+        self.assertIn('"emergency_exit_latch"', state_json(latched))
+        # A later event cannot silently overwrite the first defense event.
+        second = activate_emergency_exit_latch(
+            latched, trigger_session="2026-10-13", qqq_price="90",
+            prior_close="100", trigger_sha256="b" * 64)
+        self.assertEqual(second, latched)
+
+    def test_emergency_exit_latch_rejects_bad_trigger_hash(self):
+        with self.assertRaisesRegex(LedgerSafetyError, "SHA-256"):
+            activate_emergency_exit_latch(
+                new_state("f75"), trigger_session="2026-10-12",
+                qqq_price="95", prior_close="100", trigger_sha256="bad")
 
     def test_fill_application_is_idempotent(self):
         s = new_state("b0")
