@@ -65,16 +65,6 @@ def main() -> int:
       FROM {option_expr}
       WHERE contract_id IS NOT NULL
     ),
-    target AS (
-      SELECT contract_id, min(expiration) AS expiration,
-             min(obs_date) AS first_option_row,
-             max(obs_date) FILTER (WHERE obs_date <= min_expiration) AS last_option_row
-      FROM (
-        SELECT *, min(expiration) OVER (PARTITION BY contract_id) AS min_expiration
-        FROM opt WHERE contract_id = {sql_string(contract_id)}
-      ) t
-      GROUP BY contract_id
-    ),
     contract_stats AS (
       SELECT min(o.obs_date) AS first_option_row,
              max(o.obs_date) AS last_option_row,
