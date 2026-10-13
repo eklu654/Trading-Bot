@@ -231,16 +231,22 @@ def synchronize_latches_across_ledgers(a, state, current_path):
             existing=states[portfolio]["emergency_exit_latch"]
         # If two executor runs observed the same breach at different instants,
         # use B0's first durable trigger identity and the lowest trough from either
-        # ledger. Requiring a fresh recovery observation after reconciliation is
-        # deliberately conservative.
-        other=states[portfolio].get("emergency_exit_latch")
-        trough=min(Decimal(str(other.get("trough_price",other["qqq_price"]))),
-                   Decimal(str(canonical.get("trough_price",canonical["qqq_price"]))))
+        # ledger. Only reset recovery evidence when identity/trough changes.
+        old_trough=Decimal(str(existing.get("trough_price",existing["qqq_price"])))
+        canonical_trough=Decimal(str(canonical.get("trough_price",canonical["qqq_price"])))
+        trough=min(old_trough,canonical_trough)
+        identity_mismatch=(existing.get("trigger_sha256")!=canonical.get("trigger_sha256")
+            or existing.get("trigger_session")!=canonical.get("trigger_session"))
+        trough_changed=trough<old_trough or trough<canonical_trough
+        recovery_observed=(bool(existing.get("recovery_observed")) and
+                           bool(canonical.get("recovery_observed")) and
+                           not identity_mismatch and not trough_changed)
         threshold=(trough*Decimal("1.10")).quantize(Decimal("0.0001"))
         merged=dict(canonical)
         merged.update({"trough_price":str(trough),"recovery_threshold":str(threshold),
-                       "recovery_observed":False,
-                       "reentry_status":"BLOCKED_PENDING_10_PERCENT_RECOVERY"})
+                       "recovery_observed":recovery_observed,
+                       "reentry_status":("RECOVERY_PRICE_REACHED_WAITING_FOR_BOTH_PORTFOLIOS_FLAT"
+                                         if recovery_observed else "BLOCKED_PENDING_10_PERCENT_RECOVERY")})
         states[portfolio]["emergency_exit_latch"]=merged
         validate_state(states[portfolio])
     changed=False
