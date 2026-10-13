@@ -92,7 +92,8 @@ class EmergencyExitCoreTests(unittest.TestCase):
         }
         with self.assertRaises(EmergencyExitBlocked):
             transition_exit(submitting, "SUBMITTED")
-        submitted = transition_exit(submitting, "SUBMITTED", broker_order=filled_order)
+        accepted_order = {**filled_order, "status": "accepted"}
+        submitted = transition_exit(submitting, "SUBMITTED", broker_order=accepted_order)
         done = transition_exit(submitted, "FILLED", broker_order=filled_order,
                                broker_position_qty="0")
         with self.assertRaises(EmergencyExitBlocked):
