@@ -85,8 +85,11 @@ class FillReconciliationTests(unittest.TestCase):
                 return [{"symbol": "TQQQ", "qty": "1", "side": "long"}]
             raise AssertionError("unexpected URL: " + url)
         with patch.object(executor, "get_json", side_effect=fake_get_json):
-            with self.assertRaises(executor.ExecutorBlocked):
-                executor.reconcile_order_fills(state, order, "key", "secret")
+            result = executor.reconcile_order_fills(state, order, "key", "secret")
+        self.assertEqual(result["qty"], "2.000")
+        self.assertEqual(result["processed_fill_ids"], ["fill-1"])
+        self.assertIsNotNone(result["pending_intent"])
+        self.assertEqual(result["pending_intent"]["submission_state"], "FILLED")
 
 
 if __name__ == "__main__":
