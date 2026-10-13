@@ -201,6 +201,57 @@ def qqq_defense_preflight(key, secret, now, state):
             "report":report,"state":state}
 
 
+def synchronize_latches_across_ledgers(a, state, current_path):
+    """Persist one canonical QQQ defense latch to both portfolio ledgers."""
+    paths={"b0":Path(a.state_b0),"f75":Path(a.state_f75)}
+    if not all(str(paths[p]) and paths[p].is_file() for p in ("b0","f75")):
+        return state,False
+    states={}
+    for portfolio,path in paths.items():
+        candidate=json.loads(path.read_text(encoding="utf-8"))
+        validate_state(candidate)
+        if candidate.get("portfolio")!=portfolio:
+            raise ExecutorBlocked("companion ledger portfolio identity mismatch")
+        states[portfolio]=candidate
+    current_portfolio=state.get("portfolio")
+    if current_portfolio not in ("b0","f75"):
+        raise ExecutorBlocked("current ledger portfolio identity invalid during latch sync")
+    states[current_portfolio]=state
+    canonical=states["b0"].get("emergency_exit_latch") or states["f75"].get("emergency_exit_latch")
+    if canonical is None:
+        return state,False
+    before={p:json.dumps(states[p].get("emergency_exit_latch"),sort_keys=True) for p in ("b0","f75")}
+    for portfolio in ("b0","f75"):
+        existing=states[portfolio].get("emergency_exit_latch")
+        if existing is None:
+            states[portfolio]=activate_emergency_exit_latch(
+                states[portfolio],trigger_session=canonical["trigger_session"],
+                qqq_price=canonical["qqq_price"],prior_close=canonical["prior_close"],
+                trigger_sha256=canonical["trigger_sha256"])
+            existing=states[portfolio]["emergency_exit_latch"]
+        # If two executor runs observed the same breach at different instants,
+        # use B0's first durable trigger identity and the lowest trough from either
+        # ledger. Requiring a fresh recovery observation after reconciliation is
+        # deliberately conservative.
+        other=states[portfolio].get("emergency_exit_latch")
+        trough=min(Decimal(str(other.get("trough_price",other["qqq_price"]))),
+                   Decimal(str(canonical.get("trough_price",canonical["qqq_price"]))))
+        threshold=(trough*Decimal("1.10")).quantize(Decimal("0.0001"))
+        merged=dict(canonical)
+        merged.update({"trough_price":str(trough),"recovery_threshold":str(threshold),
+                       "recovery_observed":False,
+                       "reentry_status":"BLOCKED_PENDING_10_PERCENT_RECOVERY"})
+        states[portfolio]["emergency_exit_latch"]=merged
+        validate_state(states[portfolio])
+    changed=False
+    for portfolio,path in paths.items():
+        after=json.dumps(states[portfolio].get("emergency_exit_latch"),sort_keys=True)
+        if before[portfolio]!=after:
+            write_state(path,states[portfolio])
+            changed=True
+    return states[current_portfolio],changed
+
+
 def effective_target(portfolio, b0, f75, state):
     """Apply the durable defense latch after validating the ordinary signal."""
     strategy_target = b0 if portfolio == "b0" else f75
