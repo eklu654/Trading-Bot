@@ -81,12 +81,16 @@ class PaperOrderPayloadTests(unittest.TestCase):
             Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
             latched=activate_emergency_exit_latch(state,trigger_session="2026-10-12",
                 qqq_price="95.5",prior_close="100",trigger_sha256="b"*64)
+            normal={"status":"MONITORING","active":False,"breached":False,
+                    "changed":False,"state":state}
             preflight={"status":"THRESHOLD_BREACHED","active":True,"breached":True,
                        "changed":True,"state":latched}
+            ctx={"price":Decimal(intent["reference_price"]),"trade_age":1,"open_orders":[]}
             with patch.object(executor,"credentials",return_value=("key","secret")), \
-                 patch.object(executor,"get_json",return_value=None), \
+                 patch.object(executor,"get_json",side_effect=[None,[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
-                 patch.object(executor,"qqq_defense_preflight",return_value=preflight), \
+                 patch.object(executor,"qqq_defense_preflight",side_effect=[normal,preflight]), \
+                 patch.object(executor,"broker_context",return_value=ctx), \
                  patch.object(executor,"post_order") as post:
                 executor.submit(a)
             post.assert_not_called()
