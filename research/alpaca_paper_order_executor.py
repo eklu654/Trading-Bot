@@ -235,7 +235,12 @@ def prepare(a):
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
     if state.get("portfolio")!=a.portfolio: raise ExecutorBlocked("state portfolio mismatch")
     session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-    target=b0 if a.portfolio=="b0" else f75
+    strategy_target=b0 if a.portfolio=="b0" else f75
+    latch=state.get("emergency_exit_latch")
+    emergency_exit_active=bool(latch and latch.get("active") is True)
+    # A persisted QQQ defense latch overrides the daily target to flat. It
+    # remains active until a separately validated recovery rule clears it.
+    target=Decimal("0") if emergency_exit_active else strategy_target
     enabled=os.environ.get("ENABLE_PAPER_ORDER_SUBMISSION","false").lower()=="true"
     pending=state.get("pending_intent")
     if pending:
@@ -264,7 +269,9 @@ def prepare(a):
     if intent is None:
         emit(a.report,{"status":"NO_ORDER_NEEDED","portfolio":a.portfolio,"signal_session":session,"target_weight":str(target),"note":"Position already matches target."}); return
     summary={"portfolio":a.portfolio,"symbol":SYMBOL,"signal_session":session,"source_sha256":source,
-             "target_weight":str(target),"reference_price":str(ctx["price"]),"trade_age_seconds":round(ctx["trade_age"],3),
+             "strategy_target_weight":str(strategy_target),"target_weight":str(target),
+             "emergency_exit_latch_active":emergency_exit_active,
+             "reference_price":str(ctx["price"]),"trade_age_seconds":round(ctx["trade_age"],3),
              "intent":intent,"paper_endpoint":PAPER_URL,"mode":"PAPER_ONLY"}
     if not enabled:
         emit(a.report,{"status":"DRY_RUN_INTENT",**summary,"note":"Push/manual run; order submission is schedule-only."}); return
