@@ -34,6 +34,12 @@ This is an operational safety gate, not a strategy-performance claim. It preserv
 - Any failed or unverified gate leaves the executor in no-new-orders mode and alerts visibly.
 - Evidence includes workflow run IDs, sanitized logs/artifacts, and test outcomes; never record credentials or tokens.
 
+## Source/log inspection — 2026-10-13
+
+Inspected `research/alpaca_paper_order_executor.py`, its unit tests, virtual ledger, and run `38383606683` job log. The executor already has a paper-only POST path, durable staged/SUBMITTING states, deterministic client order IDs, account identity checks, broker reconciliation, and an unknown-outcome no-retry path. The workflow run passed 17 virtual-ledger tests and 14 executor tests. This is meaningful implementation progress, but the tested order submission was not exercised against the broker.
+
+The same run's environment explicitly set `ENABLE_PAPER_ORDER_SUBMISSION=false`. The prepare step reported `SKIPPED_MARKET_CLOSED` for both portfolios; the arm/submit path then reported `NO_ARM_REQUEST` / `NO_PENDING_INTENT`, with **no POST attempted**. Therefore the run cannot establish broker acceptance, fills, or position reconciliation. Existing unit tests mock the POST and broker responses; they do not replace an end-to-end paper order lifecycle.
+
 ## Audit update
 
-2026-10-13: Reviewed the latest available diagnostic evidence and execution contract. No evidence of a successful broker order/fill lifecycle was available in the inspected records. The market-closed run cannot satisfy that gate. Emergency exit remains read-only. **No claim of readiness is made.** Next work must implement and test the blocked lifecycle in the existing executor rather than changing strategy parameters or treating a preflight as execution proof.
+2026-10-13: Confirmed the order-submit implementation exists but is deliberately disabled in the current workflow environment. Emergency exit remains read-only. The immediate implementation gap is not simply “add a POST”: it is to validate the guarded schedule-only enablement, complete a market-hours paper order lifecycle safely, and implement a durable emergency-exit intent/submit/reconcile path with restart and fault tests. **No claim of readiness is made.**
