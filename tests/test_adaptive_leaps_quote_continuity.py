@@ -61,6 +61,12 @@ class QuoteContinuityAuditTests(unittest.TestCase):
             self.assertEqual(flagged[0]["rows_after_last_valid_bid"], 2)
             self.assertEqual(flagged[0]["history_rows_present"], 4)
             self.assertEqual(flagged[0]["valid_bid_rows"], 2)
+            yearly = {row["expiration_year"]: row for row in report["yearly_summary"]}
+            self.assertEqual(yearly[2027]["fully_observed_last_bid_gt30_dte"], 1)
+            self.assertEqual(yearly[2027]["fully_observed_to_expiration_contracts"], 1)
+            self.assertEqual(yearly[2028]["right_censored_contracts"], 1)
+            self.assertEqual(yearly[2028]["fully_observed_last_bid_gt30_dte"], 0)
+            self.assertTrue((out_dir / "spy_quote_continuity_by_expiration_year.csv").exists())
 
 
 if __name__ == "__main__":
