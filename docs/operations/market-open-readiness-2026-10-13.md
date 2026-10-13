@@ -137,3 +137,10 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - [QQQ intraday monitor run 38395194928](https://github.com/eklu654/Trading-Bot/actions/runs/38395194928) completed successfully. Python compilation, all monitor unit tests, Alpaca paper-clock request, and artifact upload succeeded.
 - The live smoke report was `MARKET_CLOSED` at 12:09 UTC / 08:09 ET, with `orders_submitted=false`; therefore this confirms scheduled monitor plumbing and safe closed-market behavior, **not** live-session market-data freshness or order placement.
 - The later run at `317ce417b865faf124227e4d213542312a078900` remained queued at this check. Full `research-tests` at the latest documentation commit was also queued.
+
+
+## Broker-order identity gate — 2026-10-13 12:10Z
+
+- Further hardened `transition_exit`: `SUBMITTED` now requires a broker order ID; `FILLED` requires a broker order ID, broker status `filled`, and zero remaining TQQQ position. Added/updated tests to distinguish broker `accepted` from `filled`.
+- Latest focused workflow [38395314425](https://github.com/eklu654/Trading-Bot/actions/runs/38395314425) is queued for commit `f804509e6e73cafe19c6d54bf68a29abbc13956e`. The preceding focused run passed 10/10 tests at `41c1eebcee2845d48960bd274f99b20568f444e1`; this stricter additional gate still awaits its own result.
+- No broker mutation was performed. The executor release flag remains false pending emergency-exit integration and acceptance.
