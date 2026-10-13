@@ -55,7 +55,7 @@ jobs:
           git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > /tmp/paper-state/b0_state.json
           git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > /tmp/paper-state/f75_state.json
           PYTHONPATH=/tmp python /tmp/record_emergency_exit_latch.py --report /tmp/qqq-intraday-monitor.json --state-dir /tmp/paper-state | tee /tmp/emergency-latch-result.json
-          if grep -q '"latch_activated": true' /tmp/emergency-latch-result.json; then
+          if grep -q '"latch_changed": true' /tmp/emergency-latch-result.json; then
             cp /tmp/paper-state/b0_state.json data/paper_execution/b0_state.json
             cp /tmp/paper-state/f75_state.json data/paper_execution/f75_state.json
             git config user.name "github-actions[bot]"
