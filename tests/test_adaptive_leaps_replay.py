@@ -87,6 +87,27 @@ class ReplayTests(unittest.TestCase):
         self.assertFalse(result.final_mark_available)
         self.assertIsNone(result.final_equity)
 
+    def test_diagnostics_identify_unresolved_expired_contract_and_last_mark(self):
+        d1 = date(2020, 1, 2)
+        expiration = d1 + timedelta(days=2)
+        d2, d3, d4 = d1 + timedelta(days=1), d1 + timedelta(days=2), d1 + timedelta(days=3)
+        result = replay_long_call([
+            q(d1, exp=expiration, cid="A"),
+            q(d2, exp=expiration, cid="A"),
+            q(d3, exp=expiration, cid="A", bid=7, ask=8),
+            q(d4, cid="B"),
+        ], symbol="SPY", target_dte=2, exit_dte=0)
+        diagnostics = calculate_diagnostics(result, starting_cash=5000)
+        self.assertFalse(result.final_mark_available)
+        self.assertTrue(diagnostics["terminal_position_open"])
+        self.assertEqual(diagnostics["terminal_contract_id"], "A")
+        self.assertEqual(diagnostics["terminal_dte"], -1)
+        self.assertTrue(diagnostics["unresolved_expired_position"])
+        self.assertEqual(diagnostics["days_past_expiration"], 1)
+        self.assertEqual(diagnostics["last_valid_bid_mark_date"], d3.isoformat())
+        self.assertEqual(diagnostics["days_since_last_valid_bid_mark"], 1)
+        self.assertEqual(diagnostics["exit_rejected_observations"], 1)
+
     def test_cash_and_bid_mark_accounting(self):
         d1, d2 = date(2020, 1, 2), date(2020, 1, 3)
         exp = date(2020, 9, 28)
