@@ -41,7 +41,6 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
         self.assertEqual(second["status"], "LATCH_ACTIVE_NO_CHANGE")
         self.assertEqual(second["trigger_sha256"], first["trigger_sha256"])
 
-
     def test_trough_moves_down_and_recovery_releases_both_flat_ledgers(self):
         first = process(str(self.report_path), str(self.root))
         self.assertEqual(first["status"], "LATCH_ACTIVATED")
@@ -58,7 +57,10 @@ class RecordEmergencyExitLatchTests(unittest.TestCase):
         self.assertEqual(lower["trough_price"], "90")
         self.assertEqual(lower["recovery_threshold"], "99.0000")
 
-        self.report.update({"qqq_price": "99", "prior_close": "100"})
+        self.report.update({
+            "status": "MONITORING", "threshold_breached": False,
+            "qqq_price": "99", "prior_close": "100",
+        })
         now = datetime.now(timezone.utc).isoformat()
         self.report["observed_at_utc"] = now
         self.report["trade_timestamp"] = now
