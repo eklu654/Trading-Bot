@@ -39,6 +39,8 @@ jobs:
         run: |
           set -euo pipefail
           cp research/alpaca_paper_order_executor.py /tmp/paper-order-executor.py
+          cp research/paper_virtual_portfolio.py /tmp/paper_virtual_portfolio.py
+          cp research/qqq_intraday_monitor.py /tmp/qqq_intraday_monitor.py
           git fetch --no-tags origin +refs/heads/research/qqq-slow-bear-audit:refs/remotes/origin/research/qqq-slow-bear-audit
           git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
           mkdir -p /tmp/paper-state
@@ -52,7 +54,7 @@ jobs:
           python-version: "3.12"
       - name: Compile and test executor guardrails
         run: |
-          python -m py_compile research/paper_virtual_portfolio.py research/alpaca_paper_order_executor.py
+          python -m py_compile research/paper_virtual_portfolio.py research/qqq_intraday_monitor.py research/alpaca_paper_order_executor.py
           PYTHONPATH=research python research/test_paper_virtual_portfolio.py
           PYTHONPATH=research python research/test_alpaca_paper_order_executor.py
           PYTHONPATH=research python research/test_executor_fill_reconciliation.py
@@ -106,9 +108,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode arm --portfolio b0 --state /tmp/paper-state/b0_state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-arm-b0.json
+          PYTHONPATH=/tmp python /tmp/paper-order-executor.py --mode arm --portfolio b0 --state /tmp/paper-state/b0_state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-arm-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode arm --portfolio f75 --state /tmp/paper-state/f75_state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-arm-f75.json
+          PYTHONPATH=/tmp python /tmp/paper-order-executor.py --mode arm --portfolio f75 --state /tmp/paper-state/f75_state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-arm-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Commit SUBMITTING state before broker mutation
@@ -135,9 +137,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
+          PYTHONPATH=/tmp python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
+          PYTHONPATH=/tmp python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Persist broker submission outcomes
