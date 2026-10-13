@@ -6,7 +6,8 @@ from unittest.mock import patch
 import alpaca_paper_order_executor as executor
 from alpaca_paper_order_executor import (order_payload, account_fingerprint, effective_target, ExecutorBlocked, PaperPostError, PAPER_URL)
 from paper_virtual_portfolio import (new_state, mark_to_market, plan_target, stage_intent,
-    mark_submission_attempting, state_json, activate_emergency_exit_latch)
+    mark_submission_attempting, state_json, activate_emergency_exit_latch,
+    update_emergency_exit_latch)
 
 class PaperOrderPayloadTests(unittest.TestCase):
     def intent(self, **changes):
@@ -45,6 +46,36 @@ class PaperOrderPayloadTests(unittest.TestCase):
                 {"t": "2026-10-12T00:00:00Z", "c": "99"}]},
             {"trade": {"t": trade_time, "p": price}},
         ]
+
+    def test_latch_sync_unifies_both_ledgers_and_preserves_valid_recovery(self):
+        with tempfile.TemporaryDirectory() as root:
+            b0_path,b0=self.files(root,"b0")
+            f75_path,f75=self.files(root,"f75")
+            b0=activate_emergency_exit_latch(b0,trigger_session="2026-10-12",
+                qqq_price="95.5",prior_close="100",trigger_sha256="a"*64)
+            b0=update_emergency_exit_latch(b0,current_qqq_price="90")
+            f75=activate_emergency_exit_latch(f75,trigger_session="2026-10-12",
+                qqq_price="95.5",prior_close="100",trigger_sha256="b"*64)
+            b0_path.write_text(state_json(b0)+"\n",encoding="utf-8")
+            f75_path.write_text(state_json(f75)+"\n",encoding="utf-8")
+            a=self.args(root,portfolio="b0",state_path=b0_path)
+            synced,changed=executor.synchronize_latches_across_ledgers(a,b0,b0_path)
+            self.assertTrue(changed)
+            b0=json.loads(b0_path.read_text())["emergency_exit_latch"]
+            f75=json.loads(f75_path.read_text())["emergency_exit_latch"]
+            self.assertEqual(b0["trigger_sha256"],f75["trigger_sha256"])
+            self.assertEqual(b0["trigger_sha256"],"a"*64)
+            self.assertEqual(b0["trough_price"],"90")
+            self.assertEqual(f75["trough_price"],"90")
+            for path in (b0_path,f75_path):
+                state=json.loads(path.read_text())
+                state=update_emergency_exit_latch(state,current_qqq_price="99")
+                path.write_text(state_json(state)+"\n",encoding="utf-8")
+            states_b0=json.loads(b0_path.read_text())
+            synced,changed=executor.synchronize_latches_across_ledgers(a,states_b0,b0_path)
+            self.assertFalse(changed)
+            self.assertTrue(json.loads(b0_path.read_text())["emergency_exit_latch"]["recovery_observed"])
+            self.assertTrue(json.loads(f75_path.read_text())["emergency_exit_latch"]["recovery_observed"])
 
     def test_qqq_preflight_activates_latch_on_intraday_breach(self):
         now=datetime.fromisoformat("2026-10-12T14:00:00+00:00")
