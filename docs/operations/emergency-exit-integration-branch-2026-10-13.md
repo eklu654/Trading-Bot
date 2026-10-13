@@ -60,3 +60,10 @@ Keep the executor submission gate false until this branch's tests pass and a con
 - Dedicated workflow run [38397435777](https://github.com/eklu654/Trading-Bot/actions/runs/38397435777) completed successfully after the fixture correction. Compile, 10 core emergency-exit tests, 19 ledger/latch tests, 16 executor tests, and the six latch-recorder tests all passed in the workflow's final step.
 - Broad research run [38397435788](https://github.com/eklu654/Trading-Bot/actions/runs/38397435788) was still in progress at the time of this note; do not mark it passed until its final conclusion is checked.
 - The scheduling race remains an independent, unresolved safety blocker. CI green does not prove monitor-first ordering, live market quote freshness, broker acceptance, fills, or end-to-end exit behavior. Submission gate remains false; PR remains draft.
+
+
+## Re-run on latest branch head — 2026-10-13 12:29Z
+
+- Latest focused workflow [38397527644](https://github.com/eklu654/Trading-Bot/actions/runs/38397527644) passed again on branch head `a3f466618f245ab702dffa57a908a726c7e4edef`; every step, including all core, ledger, executor, and recorder tests, is green.
+- Broad research workflow [38397527759](https://github.com/eklu654/Trading-Bot/actions/runs/38397527759) remains in progress. Check its final result before closing the CI review.
+- No code has been merged to `main`; PR #27 remains draft. Executor-side QQQ preflight, end-to-end paper order acceptance/fill evidence, and the market-open acceptance test remain required before enabling submission.
