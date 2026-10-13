@@ -506,6 +506,12 @@ def submit(a):
         if pending.get("submission_state") not in ("STAGED","REJECTED"):
             state=reconcile_order(state,None); write_state(sp,state)
         emit(a.report,{"status":"NO_RETRY_WITHOUT_EPHEMERAL_PERMIT","portfolio":a.portfolio,"client_order_id":cid,"submission_state":(state.get("pending_intent") or {}).get("submission_state"),"note":"Order lookup found nothing; no POST without same-run permit."}); return
+    if os.environ.get("ENABLE_PAPER_ORDER_SUBMISSION","false").lower()!="true":
+        if pending.get("submission_state") not in ("STAGED","REJECTED"):
+            state=reconcile_order(state,None); write_state(sp,state)
+        emit(a.report,{"status":"SUBMISSION_GATE_CLOSED_NO_POST","portfolio":a.portfolio,
+            "client_order_id":cid,"submission_state":(state.get("pending_intent") or {}).get("submission_state"),
+            "note":"No broker POST: this event is not authorized for paper submission. Existing-order cancellation/reconciliation was handled before this gate."}); return
     try:
         now=datetime.now(timezone.utc)
         session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
