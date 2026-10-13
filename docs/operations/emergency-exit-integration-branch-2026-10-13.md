@@ -53,3 +53,10 @@ Keep the executor submission gate false until this branch's tests pass and a con
 
 - Corrected the +10% recovery test fixture so its 99/100 QQQ observation is consistently marked `status="MONITORING"` and `threshold_breached=false`; the production price/status validator remains unchanged.
 - This edit only repairs test data. It does not resolve the executor/monitor scheduling race, establish broker order acceptance, or authorize merging/enabling submissions.
+
+
+## Focused CI after fixture correction — 2026-10-13 12:28Z
+
+- Dedicated workflow run [38397435777](https://github.com/eklu654/Trading-Bot/actions/runs/38397435777) completed successfully after the fixture correction. Compile, 10 core emergency-exit tests, 19 ledger/latch tests, 16 executor tests, and the six latch-recorder tests all passed in the workflow's final step.
+- Broad research run [38397435788](https://github.com/eklu654/Trading-Bot/actions/runs/38397435788) was still in progress at the time of this note; do not mark it passed until its final conclusion is checked.
+- The scheduling race remains an independent, unresolved safety blocker. CI green does not prove monitor-first ordering, live market quote freshness, broker acceptance, fills, or end-to-end exit behavior. Submission gate remains false; PR remains draft.
