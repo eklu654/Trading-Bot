@@ -175,3 +175,13 @@ This document records repository/code inspection only. It does not assert that a
 - Root cause was output normalization, not the underlying-session counts: DuckDB returned Pandas `Timestamp` values, and JSON emitted `2020-01-03T00:00:00`, while the test and report contract expected ISO calendar dates (`2020-01-03`). The underlying-session synthetic result itself correctly found 5 sessions after the contract cutoff.
 - Fixed JSON date normalization in `research/audit_adaptive_leaps_source_discontinuity.py` in commit `f44d704c9fa8f7cada7235716109acdc694a2d18`. Await the new commit's CI before calling the fix verified. Do not merge PR #30 while checks are failing.
 - Remaining known caution: CI also surfaces a pre-existing Pandas FutureWarning in `research/backtest_etf001.py:175`; it was not the failure cause and is out of scope for this LEAPS patch.
+
+
+### Latest verification checkpoint — 2026-10-13 23:23Z
+
+- Confirmed PR #30 head is `40e146ec2b32b6f37a3434c13562d471a2bde6df`, PR state is open, and GitHub reports it mergeable with no branch conflict.
+- Confirmed the focused LEAPS unit workflow `38482852634` completed successfully.
+- Confirmed the broad repository `research-tests` workflow `38482852636` completed successfully. The date-normalization fix has therefore cleared both the focused LEAPS suite and the repository suite.
+- No full chronological replay was triggered by these PR checks: the replay workflow currently runs on manual dispatch or pushes to main when selected paths change. This PR has not been merged, and no new source-discontinuity artifact has been inspected yet.
+- **Next gate:** trigger the replay workflow after review/merge, then inspect the uploaded source-discontinuity CSV/JSON, the four replay summaries, and the terminal-equity quality gate. Do not merge solely on green unit tests if policy requires the new source audit to be observed first; do not state the audit's real-data finding until the artifact exists.
+- Existing known blocker remains unchanged: the prior full replay failed terminal-equity reconciliation in all four cases because expired positions remained unresolved. The source-date diagnostic is investigation, not a fix to that accounting/contract lifecycle issue.
