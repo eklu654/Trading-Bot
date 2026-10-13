@@ -68,7 +68,7 @@ jobs:
           PYTHONPATH=research python /tmp/paper-order-executor.py --mode verify-accounts --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --report paper-account-identity.json
       - name: Prepare B0/F75 intents (schedule-only order enable)
         env:
-          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }} # Scheduled runs only; push and manual runs remain dry-run.
+          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[paper-acceptance-once]')) }} # Scheduled runs, or the explicit one-time paper-acceptance marker.
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
           ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
@@ -99,7 +99,7 @@ jobs:
             echo "No staged-intent state changes."
           fi
       - name: Arm each staged intent and create one-run permit
-        if: success() && github.event_name == 'schedule'
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[paper-acceptance-once]')))
         env:
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
@@ -114,7 +114,7 @@ jobs:
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Commit SUBMITTING state before broker mutation
-        if: success() && github.event_name == 'schedule'
+        if: success() && (github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[paper-acceptance-once]')))
         shell: bash
         run: |
           set -euo pipefail
@@ -130,7 +130,7 @@ jobs:
       - name: Submit or reconcile existing intents (paper API only)
         if: success()
         env:
-          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }}
+          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[paper-acceptance-once]')) }}
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
           ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}

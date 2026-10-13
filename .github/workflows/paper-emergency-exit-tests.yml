@@ -53,10 +53,12 @@ jobs:
         run: |
           ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path, aliases: true) }; puts "Workflow YAML parsed successfully."' \
             .github/workflows/alpaca-paper-order-executor.yml .github/workflows/qqq-intraday-monitor.yml
-          test "$(grep -Fc "if: success() && github.event_name == 'schedule'" .github/workflows/alpaca-paper-order-executor.yml)" -eq 2
+          schedule_only="$(grep -Fc "if: success() && github.event_name == 'schedule'" .github/workflows/alpaca-paper-order-executor.yml || true)"
+          marker_gate="$(grep -Fc "if: success() && (github.event_name == 'schedule' || (github.event_name == 'push' && contains(github.event.head_commit.message, '[paper-acceptance-once]')))" .github/workflows/alpaca-paper-order-executor.yml || true)"
+          test "$schedule_only" -eq 2 -o "$marker_gate" -eq 2
           test "$(grep -Fc "ENABLE_PAPER_ORDER_SUBMISSION: $" .github/workflows/alpaca-paper-order-executor.yml)" -eq 2
           grep -Fq "ENABLE_PAPER_ORDER_SUBMISSION: $" .github/workflows/alpaca-paper-order-executor.yml
-          grep -Fq "github.event_name == 'schedule' }}" .github/workflows/alpaca-paper-order-executor.yml
+          grep -Fq "github.event_name == 'schedule' }}" .github/workflows/alpaca-paper-order-executor.yml || grep -Fq "paper-acceptance-once" .github/workflows/alpaca-paper-order-executor.yml
       - name: Run emergency-exit core safety tests
         env:
           PYTHONPATH: research
