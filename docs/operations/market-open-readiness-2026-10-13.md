@@ -130,3 +130,10 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Updated `research/test_qqq_intraday_monitor.py` to assert the normalized trigger fields on the -4.5% breach path.
 - Relevant workflow runs were queued at the time of this note: [read-only monitor run 38395203982](https://github.com/eklu654/Trading-Bot/actions/runs/38395203982) and [repository research-tests 38395204146](https://github.com/eklu654/Trading-Bot/actions/runs/38395204146).
 - Integration warning: the normalized report contract alone is not authorization to trade. An emergency-exit workflow still needs a durable, concurrency-safe state transition on `paper-execution-ledger`, coordination with the regular executor so buys cannot race with an exit, broker-side idempotency/reconciliation, and explicit acceptance for both accounts.
+
+
+## Read-only monitor smoke check — 2026-10-13 12:09Z
+
+- [QQQ intraday monitor run 38395194928](https://github.com/eklu654/Trading-Bot/actions/runs/38395194928) completed successfully. Python compilation, all monitor unit tests, Alpaca paper-clock request, and artifact upload succeeded.
+- The live smoke report was `MARKET_CLOSED` at 12:09 UTC / 08:09 ET, with `orders_submitted=false`; therefore this confirms scheduled monitor plumbing and safe closed-market behavior, **not** live-session market-data freshness or order placement.
+- The later run at `317ce417b865faf124227e4d213542312a078900` remained queued at this check. Full `research-tests` at the latest documentation commit was also queued.
