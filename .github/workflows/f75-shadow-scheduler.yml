@@ -1,4 +1,5 @@
 name: F75 Shadow Scheduler (research branch)
+# Keep this workflow push-triggerable so a ledger refresh can be kicked off immediately.
 
 on:
   push:
