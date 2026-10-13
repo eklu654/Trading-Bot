@@ -72,3 +72,12 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Relevant commits: executor reconciliation `3026167c78b97c4bac905ec8e4efe4b7f9a7d262`; tests `4b617effd68157619fee25cd0f11775a6186548c`; workflow test integration `0fd70d636aaa3ce05541c02b4f7360620f1a0667`; mock fix `7467485748df69b25dddf4ea2a1d17d148a48247`; preserve fill state on mismatch `29fad49e9922a063c08fe6e525b573f239983f8c`; mismatch assertion `5ae772751e83a1e6909018d1bed7c0de21800a20`.
 - First executor run after the initial change failed in the pre-existing mocked submit test because the mock had not supplied the newly required activity response. That test mock was updated. New executor workflow run `38392485728` and research test run `38392486046` were pending at the time of this note; results must be inspected before accepting this change.
 - The emergency monitor remains read-only. No emergency exit submission path has been implemented or proven. Paper order submission remains disabled by the workflow. No claim of operational readiness is made.
+
+
+## Validation result — 2026-10-13 11:47Z
+
+- Executor workflow run [38392485728](https://github.com/eklu654/Trading-Bot/actions/runs/38392485728) completed successfully at code commit `5ae772751e83a1e6909018d1bed7c0de21800a20`.
+- Verified test counts in the job log: 17 virtual-ledger tests, 14 existing executor tests, and 3 new fill-reconciliation tests passed; compile step also passed.
+- The same run explicitly had `ENABLE_PAPER_ORDER_SUBMISSION=false`; both portfolios reported `SKIPPED_MARKET_CLOSED`, then `NO_ARM_REQUEST` and `NO_PENDING_INTENT`. The log explicitly says **no POST attempted**. This is successful test/preflight evidence, not broker order-lifecycle evidence.
+- The separate broad `research-tests` run `38392517515` was still running when recorded; no result is inferred.
+- Release blockers unchanged: emergency exit is read-only/no submission path; no real market-hours broker fill lifecycle has been demonstrated; shared monitor/executor durable defensive state and restart/concurrency behavior remain unproven. Keep all paper submission disabled until these gates pass.
