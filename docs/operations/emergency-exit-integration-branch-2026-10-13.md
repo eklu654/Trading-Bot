@@ -25,3 +25,11 @@ Branch: `ops/emergency-exit-integration-2026-10-13`
 ## Important operational rule
 
 Keep the executor submission gate false until this branch's tests pass and a controlled, market-open paper acceptance test confirms both B0 and F75 account identities, order acceptance, fill reconciliation, durable ledger updates, emergency exits, and the +10% recovery gate.
+
+
+## CI findings — 2026-10-13 12:19Z
+
+- Focused integration run [38396353369](https://github.com/eklu654/Trading-Bot/actions/runs/38396353369) compiled the new modules and passed the 10 core emergency-exit tests plus 19 ledger tests, then found 3 failures in the new latch recorder tests.
+- Fixed two production/test-contract issues in commit `5bb876bb37aff4733e8f57bf31721c97aa1e867f`: stale report errors are now preserved as stale rather than rewritten as malformed timestamp errors, and the recorder returns the original `trigger_sha256` for idempotence/audit checks.
+- One test fixture remains incorrect: the +10% recovery test changes QQQ to 99/100 but retains the prior `THRESHOLD_BREACHED` status and `threshold_breached=true`. The production validator correctly rejects that contradiction. The attempted fixture correction was blocked; do not work around the validator. This branch remains draft/unmergeable until that test is corrected and the full focused workflow passes.
+- The monitor workflow now commits state changes whenever `latch_changed=true`, not only when a latch is first activated, so trough updates and eventual recovery release are also durable.
