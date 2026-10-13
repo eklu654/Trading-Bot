@@ -85,11 +85,14 @@ class EmergencyExitCoreTests(unittest.TestCase):
         blocked = transition_exit(intent, "BLOCKED")
         with self.assertRaises(EmergencyExitBlocked):
             transition_exit(blocked, "SUBMITTING")
-        submitted = transition_exit(transition_exit(intent, "SUBMITTING"), "SUBMITTED")
+        submitting = transition_exit(intent, "SUBMITTING")
         filled_order = {
             "id": "paper-order-2", "client_order_id": intent["client_order_id"],
             "symbol": "TQQQ", "side": "sell", "status": "filled",
         }
+        with self.assertRaises(EmergencyExitBlocked):
+            transition_exit(submitting, "SUBMITTED")
+        submitted = transition_exit(submitting, "SUBMITTED", broker_order=filled_order)
         done = transition_exit(submitted, "FILLED", broker_order=filled_order,
                                broker_position_qty="0")
         with self.assertRaises(EmergencyExitBlocked):
