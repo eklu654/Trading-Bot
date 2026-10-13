@@ -128,7 +128,8 @@ class PaperOrderPayloadTests(unittest.TestCase):
             preflight={"status":"THRESHOLD_BREACHED","active":True,"breached":True,
                        "changed":True,"state":latched}
             ctx={"price":Decimal(intent["reference_price"]),"trade_age":1,"open_orders":[]}
-            with patch.object(executor,"credentials",return_value=("key","secret")), \
+            with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"true"}), \
+                 patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"qqq_defense_preflight",side_effect=[normal,preflight]), \
@@ -275,6 +276,22 @@ class PaperOrderPayloadTests(unittest.TestCase):
             post.assert_not_called()
             self.assertEqual(json.loads(state_path.read_text())["pending_intent"]["submission_state"],"UNKNOWN")
 
+    def test_closed_submission_gate_blocks_post_even_with_ephemeral_permit(self):
+        with tempfile.TemporaryDirectory() as root:
+            state_path,state=self.files(root,submitting=True)
+            intent=state["pending_intent"]
+            a=self.args(root,state_path=state_path)
+            Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
+            with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"false"}), \
+                 patch.object(executor,"credentials",return_value=("key","secret")), \
+                 patch.object(executor,"get_json",return_value=None), \
+                 patch.object(executor,"post_order") as post:
+                executor.submit(a)
+            post.assert_not_called()
+            final=json.loads(state_path.read_text())
+            self.assertEqual(final["pending_intent"]["submission_state"],"UNKNOWN")
+            self.assertEqual(json.loads(Path(a.report).read_text())["status"],"SUBMISSION_GATE_CLOSED_NO_POST")
+
     def test_submit_with_permit_posts_once_and_persists_broker_id(self):
         with tempfile.TemporaryDirectory() as root:
             state_path,state=self.files(root,submitting=True)
@@ -284,7 +301,8 @@ class PaperOrderPayloadTests(unittest.TestCase):
             Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
             response={"id":"broker-123","client_order_id":intent["client_order_id"],"status":"new"}
             ctx={"price":Decimal(intent["reference_price"]),"trade_age":1,"open_orders":[]}
-            with patch.object(executor,"credentials",return_value=("key","secret")), \
+            with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"true"}), \
+                 patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[],[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"qqq_defense_preflight",return_value={"status":"MONITORING","active":False,"breached":False,"changed":False,"state":state}), \
@@ -316,7 +334,8 @@ class PaperOrderPayloadTests(unittest.TestCase):
                    "changed":False,"state":state}
             ctx={"price":Decimal("100"),"trade_age":1,"open_orders":[]}
             response={"id":"broker-sell-123","client_order_id":intent["client_order_id"],"status":"new"}
-            with patch.object(executor,"credentials",return_value=("key","secret")), \
+            with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"true"}), \
+                 patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[]]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"qqq_defense_preflight",side_effect=[stale,stale]), \
@@ -334,7 +353,8 @@ class PaperOrderPayloadTests(unittest.TestCase):
             a=self.args(root,state_path=state_path)
             Path(a.permit).write_text(json.dumps({"client_order_id":intent["client_order_id"],"permit":"single-run-only"}))
             ctx={"price":Decimal(intent["reference_price"]),"trade_age":1,"open_orders":[]}
-            with patch.object(executor,"credentials",return_value=("key","secret")), \
+            with patch.dict(os.environ,{"ENABLE_PAPER_ORDER_SUBMISSION":"true"}), \
+                 patch.object(executor,"credentials",return_value=("key","secret")), \
                  patch.object(executor,"get_json",side_effect=[None,[],None]), \
                  patch.object(executor,"read_signal",return_value=("2026-10-09",Decimal("1"),Decimal("1"),"hash")), \
                  patch.object(executor,"qqq_defense_preflight",return_value={"status":"MONITORING","active":False,"breached":False,"changed":False,"state":state}), \
