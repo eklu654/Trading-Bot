@@ -204,7 +204,7 @@ class PaperOrderPayloadTests(unittest.TestCase):
             intent=state["pending_intent"]
             state=activate_emergency_exit_latch(state,trigger_session="2026-10-12",
                 qqq_price="95.5",prior_close="100",trigger_sha256="e"*64)
-            state_path.write_text(state_json(state)+"\\n",encoding="utf-8")
+            state_path.write_text(state_json(state)+"\n",encoding="utf-8")
             a=self.args(root,state_path=state_path)
             opened={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"status":"new"}
             cancelled={"id":"broker-buy-123","client_order_id":intent["client_order_id"],"status":"canceled"}
