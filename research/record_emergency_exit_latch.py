@@ -32,6 +32,8 @@ def _fresh_report(report):
         report_age = (now - observed_dt.astimezone(timezone.utc)).total_seconds()
         if age < -30 or age > 180 or report_age < -30 or report_age > 180:
             raise LedgerSafetyError("monitor report is stale")
+    except LedgerSafetyError:
+        raise
     except (TypeError, ValueError):
         raise LedgerSafetyError("monitor timestamps are invalid") from None
 
@@ -133,6 +135,7 @@ def process(report_path: str, state_dir: str) -> dict:
         "status": result_status, "latch_changed": changed,
         "orders_submitted": False, "portfolios": ["b0", "f75"],
         "trigger_session": latch.get("trigger_session") if latch else session,
+        "trigger_sha256": latch.get("trigger_sha256") if latch else None,
         "trough_price": latch.get("trough_price") if latch else None,
         "recovery_threshold": latch.get("recovery_threshold") if latch else None,
         "both_portfolios_flat": all(
