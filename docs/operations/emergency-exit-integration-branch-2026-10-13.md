@@ -1,0 +1,27 @@
+# Emergency-exit integration branch — 2026-10-13
+
+Branch: `ops/emergency-exit-integration-2026-10-13`
+
+## Changes made on this branch
+
+- Added `emergency_exit_latch` to the virtual portfolio ledger schema and validation.
+- Added `activate_emergency_exit_latch`: accepts only a QQQ price at or below 95.5% of the prior close, stores a SHA-256 trigger identity, and never replaces an already-active latch.
+- Added `update_emergency_exit_latch` to track the lowest QQQ price after the trigger and calculate the re-entry threshold at 110% of that trough.
+- Added `release_emergency_exit_latches`, which only clears both B0 and F75 latches when both ledgers have zero shares, neither has a pending order, and QQQ has recovered at least 10% from the tracked trough.
+- Added `research/record_emergency_exit_latch.py` to validate fresh monitor reports, persist the latch to both shared ledger files, track troughs, and record recovery. It never calls a trading endpoint or submits orders.
+- Updated the executor to override its daily target to zero while a durable latch is active. It continues using the existing two-phase paper executor and fill reconciliation rather than adding a second order-submission implementation.
+- Changed the monitor and executor workflow concurrency group to `paper-broker-mutations` so they cannot race while writing the shared `paper-execution-ledger` branch.
+- Updated the monitor workflow to persist trigger/recovery state to `paper-execution-ledger`. Broker submission remains controlled by the existing `ENABLE_PAPER_ORDER_SUBMISSION=false` release gate.
+
+## Test and review status
+
+- Added latch validation tests to `research/test_paper_virtual_portfolio.py`.
+- Added `research/test_record_emergency_exit_latch.py` for fresh-report checks, idempotent activation, trough tracking, +10% recovery, and requiring both portfolios to be flat before release.
+- Added executor target-override tests for B0 and F75.
+- **Do not merge or enable this integration yet.** The final edit to the recovery test did not apply, leaving a known test-fixture mismatch: the recovery test updates QQQ price to 99 but must also set the report status to `MONITORING` and `threshold_breached=false`. The production validator correctly rejects a report whose status/flag contradicts its prices.
+- This branch has not yet passed CI. Review workflow YAML, test results, shared-branch push permissions, and concurrency behavior before merging.
+- No paper order has been submitted by this branch. No end-to-end broker acceptance has been established.
+
+## Important operational rule
+
+Keep the executor submission gate false until this branch's tests pass and a controlled, market-open paper acceptance test confirms both B0 and F75 account identities, order acceptance, fill reconciliation, durable ledger updates, emergency exits, and the +10% recovery gate.
