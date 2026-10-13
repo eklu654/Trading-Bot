@@ -10,6 +10,7 @@ on:
       - "research/paper_virtual_portfolio.py"
       - "research/test_paper_virtual_portfolio.py"
       - "research/test_alpaca_paper_order_executor.py"
+      - "research/test_executor_fill_reconciliation.py"
   schedule:
     # Re-evaluate both paper portfolios every five minutes across the broad US regular-session
     # window. The broker clock and fresh-trade checks fail closed outside the actual session.
@@ -53,6 +54,7 @@ jobs:
           python -m py_compile research/paper_virtual_portfolio.py research/alpaca_paper_order_executor.py
           PYTHONPATH=research python research/test_paper_virtual_portfolio.py
           PYTHONPATH=research python research/test_alpaca_paper_order_executor.py
+          PYTHONPATH=research python research/test_executor_fill_reconciliation.py
       - name: Verify distinct paper account identities and persist fingerprints
         env:
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
