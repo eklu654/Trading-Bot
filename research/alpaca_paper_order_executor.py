@@ -396,6 +396,10 @@ def submit(a):
     cid=pending["client_order_id"]
     existing=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
     if existing is not None:
+        if (existing.get("client_order_id")!=cid or existing.get("symbol")!=SYMBOL
+                or str(existing.get("side") or "").lower()!=str(pending.get("side") or "").lower()
+                or not existing.get("id")):
+            raise ExecutorBlocked("broker order identity does not match the durable intent; manual reconciliation required")
         broker_status=str(existing.get("status") or "").lower()
         terminal=broker_status in ("filled","rejected","canceled","expired")
         if pending.get("side")=="buy" and not terminal:
@@ -420,6 +424,10 @@ def submit(a):
                     pass
                 refreshed=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
                 if refreshed is not None:
+                    if (refreshed.get("client_order_id")!=cid or refreshed.get("symbol")!=SYMBOL
+                            or str(refreshed.get("side") or "").lower()!=str(pending.get("side") or "").lower()
+                            or not refreshed.get("id")):
+                        raise ExecutorBlocked("refetched order identity mismatch after cancel request")
                     state=reconcile_order_fills(state,refreshed,key,secret)
                     write_state(sp,state)
                 emit(a.report,{"status":"BUY_ORDER_CANCEL_RECONCILED_DURING_QQQ_DEFENSE" if refreshed and str(refreshed.get("status","")).lower() in ("canceled","filled","rejected","expired") else "BUY_ORDER_CANCEL_PENDING_RECONCILIATION",
