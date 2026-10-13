@@ -144,3 +144,11 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - Further hardened `transition_exit`: `SUBMITTED` now requires a broker order ID; `FILLED` requires a broker order ID, broker status `filled`, and zero remaining TQQQ position. Added/updated tests to distinguish broker `accepted` from `filled`.
 - Latest focused workflow [38395314425](https://github.com/eklu654/Trading-Bot/actions/runs/38395314425) is queued for commit `f804509e6e73cafe19c6d54bf68a29abbc13956e`. The preceding focused run passed 10/10 tests at `41c1eebcee2845d48960bd274f99b20568f444e1`; this stricter additional gate still awaits its own result.
 - No broker mutation was performed. The executor release flag remains false pending emergency-exit integration and acceptance.
+
+
+## Latest regression results — 2026-10-13 12:11Z
+
+- Full repository regression [run 38395351745](https://github.com/eklu654/Trading-Bot/actions/runs/38395351745) passed at commit `6b56fd8e12ee0e7d0ff82c824ca031c63ec5d6b4`: **167 passed**, one existing pandas FutureWarning; the follow-on event-attribution script also succeeded.
+- The focused emergency-exit test suite [run 38395314425](https://github.com/eklu654/Trading-Bot/actions/runs/38395314425) passed **10/10** tests on code commit `f804509e6e73cafe19c6d54bf68a29abbc13956e`; later changes before the full regression only updated audit text.
+- The updated read-only QQQ monitor [run 38395203982](https://github.com/eklu654/Trading-Bot/actions/runs/38395203982) passed its 8 unit tests, compiled, called the Alpaca paper clock, and uploaded a report showing `MARKET_CLOSED` with no order submitted. This was before market open and does not validate live-session quote freshness.
+- Operational status is still **not ready for unattended trading**: no exit order runner is integrated, the emergency state is not coordinated with the shared portfolio ledger, and the regular executor remains fail-closed. No broker order/fill has been proven.
