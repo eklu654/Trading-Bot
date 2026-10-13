@@ -167,3 +167,11 @@ This document records repository/code inspection only. It does not assert that a
 - Added a synthetic Parquet unit test asserting that five underlying sessions after a contract's last row are reported when symbol-level option rows continue on those dates. Unit workflow paths/compile coverage were updated.
 - Changes are isolated on a PR branch to avoid triggering broad main-branch workflow fan-out. The next gate is actual PR CI and then the replay artifact: record the exact underlying-session counts and whether the option source continues on those dates. No new source-gap result, strategy return, or paper-trading approval is claimed until the run completes and outputs are inspected.
 - Research interpretation remains conservative: an underlying trading session with no row for a specific option contract is evidence of a contract-history gap relative to this source's stated row convention, but it does not establish that the option had a positive or executable bid. No exit threshold or expiration policy was changed.
+
+
+### CI failure and correction — 2026-10-13 22:54Z
+
+- PR #30 CI was inspected directly, not assumed successful. Initial runs: [LEAPS unit tests run 38480676716](https://github.com/eklu654/Trading-Bot/actions/runs/38480676716) failed 1/20 tests; [repository research tests run 38480676732](https://github.com/eklu654/Trading-Bot/actions/runs/38480676732) failed 1 test and passed 170.
+- Root cause was output normalization, not the underlying-session counts: DuckDB returned Pandas `Timestamp` values, and JSON emitted `2020-01-03T00:00:00`, while the test and report contract expected ISO calendar dates (`2020-01-03`). The underlying-session synthetic result itself correctly found 5 sessions after the contract cutoff.
+- Fixed JSON date normalization in `research/audit_adaptive_leaps_source_discontinuity.py` in commit `f44d704c9fa8f7cada7235716109acdc694a2d18`. Await the new commit's CI before calling the fix verified. Do not merge PR #30 while checks are failing.
+- Remaining known caution: CI also surfaces a pre-existing Pandas FutureWarning in `research/backtest_etf001.py:175`; it was not the failure cause and is out of scope for this LEAPS patch.
