@@ -17,7 +17,7 @@ from zoneinfo import ZoneInfo
 
 from paper_virtual_portfolio import (
     validate_state, state_json, plan_target, stage_intent, mark_submission_attempting,
-    abort_unsubmitted_intent, mark_submission_outcome, reconcile_order, LedgerSafetyError,
+    abort_unsubmitted_intent, mark_submission_outcome, reconcile_order, apply_fills, complete_terminal_intent, LedgerSafetyError,
 )
 
 PAPER_URL = "https://paper-api.alpaca.markets"
@@ -172,6 +172,58 @@ def emit(path,data):
     Path(path).write_text(json.dumps(data,indent=2)+"\n",encoding="utf-8")
     print(json.dumps(data,indent=2))
 
+
+def reconcile_order_fills(state, broker_order, key, secret):
+    """Apply Alpaca FILL activities idempotently; only clear terminal intent after position reconciliation."""
+    state = reconcile_order(state, broker_order)
+    order_id = str(broker_order.get("id") or "")
+    if not order_id:
+        raise ExecutorBlocked("broker order has no ID; fill reconciliation blocked")
+    activities = []
+    page_token = None
+    # Alpaca account activities are paginated. Bound the walk to avoid an
+    # unbounded job; hitting the bound fails closed rather than clearing intent.
+    for _ in range(100):
+        params = {"direction": "asc", "page_size": "100"}
+        if page_token:
+            params["page_token"] = page_token
+        url = PAPER_URL + "/v2/account/activities/FILL?" + urlencode(params)
+        batch = get_json(url, key, secret)
+        if not isinstance(batch, list):
+            raise ExecutorBlocked("fill activity response has unexpected shape")
+        for activity in batch:
+            if str(activity.get("order_id") or "") != order_id:
+                continue
+            activities.append({
+                "id": activity.get("id"),
+                "symbol": activity.get("symbol"),
+                "side": activity.get("side"),
+                "qty": activity.get("qty"),
+                "price": activity.get("price"),
+            })
+        if len(batch) < 100:
+            break
+        # Alpaca activity pagination uses the last activity ID as page_token.
+        page_token = str(batch[-1].get("id") or "")
+        if not page_token:
+            raise ExecutorBlocked("fill activity pagination token missing")
+    else:
+        raise ExecutorBlocked("fill activity pagination safety limit reached")
+    state = apply_fills(state, activities)
+    status = str(broker_order.get("status") or "").lower()
+    if status in ("filled", "rejected", "canceled", "expired"):
+        # Never infer terminal completion from order status alone. The broker's
+        # current position must match the fill-backed ledger first.
+        positions = get_json(PAPER_URL + "/v2/positions", key, secret)
+        if not isinstance(positions, list):
+            raise ExecutorBlocked("broker positions response has unexpected shape during fill reconciliation")
+        if any(p.get("symbol") != SYMBOL for p in positions):
+            raise ExecutorBlocked("unexpected broker position during fill reconciliation")
+        pos = next((p for p in positions if p.get("symbol") == SYMBOL), None)
+        broker_qty = Decimal(str(pos.get("qty"))) if pos else Decimal("0")
+        state = complete_terminal_intent(state, broker_qty=broker_qty, broker_status=status)
+    return state
+
 def prepare(a):
     now=datetime.now(timezone.utc)
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
@@ -237,7 +289,7 @@ def submit(a):
     cid=pending["client_order_id"]
     existing=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
     if existing is not None:
-        state=reconcile_order(state,existing); write_state(sp,state)
+        state=reconcile_order_fills(state,existing,key,secret); write_state(sp,state)
         emit(a.report,{"status":"EXISTING_ORDER_RECONCILED","portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":existing.get("id"),"broker_status":existing.get("status"),"note":"No POST sent."}); return
     permit_path=Path(a.permit)
     permit=json.loads(permit_path.read_text(encoding="utf-8")) if permit_path.exists() else None
@@ -257,7 +309,7 @@ def submit(a):
         if not isinstance(opens,list): raise ExecutorBlocked("open-order response has unexpected shape")
         same_open=next((o for o in opens if o.get("client_order_id")==cid),None)
         if same_open is not None:
-            state=reconcile_order(state,same_open); write_state(sp,state)
+            state=reconcile_order_fills(state,same_open,key,secret); write_state(sp,state)
             emit(a.report,{"status":"EXISTING_OPEN_ORDER_RECONCILED","portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":same_open.get("id"),"note":"No POST sent."}); return
         ctx=broker_context(a.portfolio,state,key,secret,now,allow_pending_client_id=cid)
         if ctx is None: raise ExecutorBlocked("market closed before POST")
@@ -271,14 +323,14 @@ def submit(a):
     try:
         result=post_order(payload,key,secret)
         if isinstance(result,dict) and result.get("client_order_id")==cid and result.get("id"):
-            state=reconcile_order(state,result); status="SUBMITTED"; broker_id=result.get("id")
+            state=reconcile_order_fills(state,result,key,secret); status="SUBMITTED"; broker_id=result.get("id")
         else:
             found=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
-            if found: state=reconcile_order(state,found); status="RECONCILED_AFTER_RESPONSE"; broker_id=found.get("id")
+            if found: state=reconcile_order_fills(state,found,key,secret); status="RECONCILED_AFTER_RESPONSE"; broker_id=found.get("id")
             else: state=mark_submission_outcome(state,"unknown"); status="SUBMISSION_UNKNOWN"; broker_id=None
     except PaperPostError as exc:
         found=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
-        if found: state=reconcile_order(state,found); status="RECONCILED_AFTER_POST_ERROR"; broker_id=found.get("id")
+        if found: state=reconcile_order_fills(state,found,key,secret); status="RECONCILED_AFTER_POST_ERROR"; broker_id=found.get("id")
         elif exc.status_code in (400,401,403,422):
             state=mark_submission_outcome(state,"rejected"); status="ORDER_REJECTED"; broker_id=None
         else: state=mark_submission_outcome(state,"unknown"); status="SUBMISSION_UNKNOWN"; broker_id=None
