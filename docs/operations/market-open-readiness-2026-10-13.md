@@ -98,3 +98,10 @@ A read-only source review was committed at [paper-executor-review-2026-10-13.md]
 - New pure-core checks cover the exact -4.5% QQQ trigger, non-trigger boundary, deterministic B0/F75 exit intent IDs, positive finite quantities, paper endpoint restriction, sell-only intent, broker order identity, and requiring broker position quantity zero before an exit can be called filled.
 - Full repository test workflow [38393749246](https://github.com/eklu654/Trading-Bot/actions/runs/38393749246) passed: **167 tests passed**, one existing pandas FutureWarning; the follow-on event-attribution step also completed successfully.
 - This is not end-to-end emergency exit functionality. The module is currently a pure intent/safety core, not a networked order runner; it is not connected to the monitor or durable shared state branch. The executor workflow still has `ENABLE_PAPER_ORDER_SUBMISSION=false`. No paper order was sent and no readiness claim is made.
+
+
+## Additional terminal-state hardening — 2026-10-13 11:58Z
+
+- Follow-up change `95fc3f8a807315c49fd7d3308202832f9bae4dea` tightens the emergency-exit core: an exit cannot be marked `FILLED` unless a matching broker order reports `filled` and the broker position quantity is zero.
+- The repository-wide regression run for this change is pending at [research-tests](https://github.com/eklu654/Trading-Bot/actions/runs/38393923050). The prior 167-test success was on commit `ce746e4d8989d31af5753ea7753ea72769f83917`, before this stricter gate, and does not validate this latest change.
+- The test case that exercises the successful terminal transition must be updated to supply a matching filled broker-order record before this commit can be accepted. Keep submission disabled until the updated test passes.
