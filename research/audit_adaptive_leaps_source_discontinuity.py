@@ -127,7 +127,7 @@ def main() -> int:
     record = result.iloc[0].to_dict()
     for key, value in list(record.items()):
         if hasattr(value, "isoformat"):
-            record[key] = value.isoformat()
+            record[key] = value.date().isoformat() if hasattr(value, "hour") else value.isoformat()
         elif value != value:
             record[key] = None
         elif hasattr(value, "item"):
