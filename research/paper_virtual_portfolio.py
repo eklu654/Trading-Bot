@@ -6,7 +6,7 @@ reconciled by client order ID and broker position.
 """
 from __future__ import annotations
 from copy import deepcopy
-from datetime import date
+from datetime import date, datetime
 from decimal import Decimal, ROUND_DOWN
 import hashlib
 import json
@@ -40,6 +40,7 @@ def new_state(portfolio):
         "mark_price": None, "mark_date": None,
         "processed_fill_ids": [], "used_client_order_ids": [],
         "pending_intent": None, "last_terminal_order": None,
+        "emergency_exit_latch": None, "last_emergency_exit_latch": None,
     }
 
 def validate_state(state):
@@ -58,10 +59,135 @@ def validate_state(state):
         raise LedgerSafetyError("used client order IDs must be unique")
     if state.get("pending_intent") is not None and not isinstance(state["pending_intent"], dict):
         raise LedgerSafetyError("pending intent has invalid shape")
+    history = state.get("last_emergency_exit_latch")
+    if history is not None and not isinstance(history, dict):
+        raise LedgerSafetyError("last emergency-exit latch history has invalid shape")
+    latch = state.get("emergency_exit_latch")
+    if latch is not None:
+        if not isinstance(latch, dict) or latch.get("active") is not True:
+            raise LedgerSafetyError("emergency-exit latch has invalid shape or is not active")
+        try:
+            date.fromisoformat(str(latch.get("trigger_session")))
+        except Exception:
+            raise LedgerSafetyError("emergency-exit trigger session must be ISO date") from None
+        digest = latch.get("trigger_sha256")
+        if not isinstance(digest, str) or len(digest) != 64:
+            raise LedgerSafetyError("emergency-exit trigger hash is invalid")
+        try:
+            int(digest, 16)
+        except ValueError:
+            raise LedgerSafetyError("emergency-exit trigger hash is not hexadecimal") from None
+        price = dec(latch.get("qqq_price"), "emergency QQQ price")
+        close = dec(latch.get("prior_close"), "emergency prior close")
+        trough = dec(latch.get("trough_price", price), "emergency QQQ trough")
+        recovery = dec(latch.get("recovery_threshold", trough * Decimal("1.10")), "emergency recovery threshold")
+        if (price <= 0 or close <= 0 or trough <= 0 or recovery <= trough
+                or latch.get("reason") != "QQQ_MINUS_4_5_PERCENT"
+                or not isinstance(latch.get("recovery_observed", False), bool)):
+            raise LedgerSafetyError("emergency-exit latch trigger data is invalid")
     if state.get("mark_date") is not None:
         try: date.fromisoformat(state["mark_date"])
         except Exception: raise LedgerSafetyError("mark date must be ISO date") from None
     return True
+
+
+def activate_emergency_exit_latch(state, *, trigger_session, qqq_price, prior_close, trigger_sha256):
+    """Persist a fail-closed defense latch. This function never submits orders."""
+    out = deepcopy(state)
+    validate_state(out)
+    try:
+        session = date.fromisoformat(str(trigger_session)).isoformat()
+    except Exception:
+        raise LedgerSafetyError("emergency trigger session must be ISO date") from None
+    price, close = dec(qqq_price, "QQQ trigger price"), dec(prior_close, "QQQ prior close")
+    if price <= 0 or close <= 0 or price / close > Decimal("0.955"):
+        raise LedgerSafetyError("QQQ trigger does not meet the -4.5% breach threshold")
+    digest = str(trigger_sha256 or "")
+    if len(digest) != 64:
+        raise LedgerSafetyError("emergency trigger hash must be SHA-256")
+    try:
+        int(digest, 16)
+    except ValueError:
+        raise LedgerSafetyError("emergency trigger hash must be hexadecimal") from None
+    existing = out.get("emergency_exit_latch")
+    if existing is not None:
+        # Never rewrite the first breach or silently clear/replace a defense latch.
+        return out
+    out["emergency_exit_latch"] = {
+        "active": True, "reason": "QQQ_MINUS_4_5_PERCENT",
+        "trigger_session": session, "qqq_price": str(price),
+        "prior_close": str(close), "trigger_sha256": digest,
+        "trough_price": str(price),
+        "recovery_threshold": str((price * Decimal("1.10")).quantize(Decimal("0.0001"))),
+        "recovery_observed": False, "activated_at_utc": None,
+        "reentry_status": "BLOCKED_PENDING_10_PERCENT_RECOVERY",
+    }
+    validate_state(out)
+    return out
+
+
+def update_emergency_exit_latch(state, *, current_qqq_price):
+    """Track the post-trigger trough and +10% recovery threshold; never releases alone."""
+    out = deepcopy(state)
+    validate_state(out)
+    latch = out.get("emergency_exit_latch")
+    if latch is None:
+        return out
+    price = dec(current_qqq_price, "current QQQ price")
+    if price <= 0:
+        raise LedgerSafetyError("current QQQ price must be positive")
+    trough = dec(latch.get("trough_price", latch["qqq_price"]), "QQQ trough")
+    if price < trough:
+        trough = price
+        latch["trough_price"] = str(trough)
+        latch["recovery_threshold"] = str((trough * Decimal("1.10")).quantize(Decimal("0.0001")))
+        latch["recovery_observed"] = False
+    threshold = dec(latch.get("recovery_threshold"), "recovery threshold")
+    if price >= threshold:
+        latch["recovery_observed"] = True
+    if latch.get("recovery_observed"):
+        latch["reentry_status"] = "RECOVERY_PRICE_REACHED_WAITING_FOR_BOTH_PORTFOLIOS_FLAT"
+    validate_state(out)
+    return out
+
+
+def release_emergency_exit_latches(states, *, current_qqq_price, recovered_at_utc):
+    """Clear both portfolio latches only after +10% recovery and both ledgers are flat."""
+    if not isinstance(states, dict) or set(states) != {"b0", "f75"}:
+        raise LedgerSafetyError("both B0 and F75 states are required for recovery release")
+    out = {portfolio: deepcopy(state) for portfolio, state in states.items()}
+    for portfolio, state in out.items():
+        validate_state(state)
+        if state.get("portfolio") != portfolio:
+            raise LedgerSafetyError("portfolio identity mismatch during recovery release")
+        latch = state.get("emergency_exit_latch")
+        if latch is None or latch.get("active") is not True:
+            return out
+        if state.get("pending_intent") is not None or dec(state.get("qty"), "ledger quantity") != 0:
+            return out
+    price = dec(current_qqq_price, "current QQQ price")
+    if price <= 0:
+        raise LedgerSafetyError("current QQQ price must be positive")
+    threshold = max(dec(out[p]["emergency_exit_latch"]["recovery_threshold"], "recovery threshold")
+                    for p in ("b0", "f75"))
+    if price < threshold or not all(out[p]["emergency_exit_latch"].get("recovery_observed") for p in ("b0", "f75")):
+        return out
+    try:
+        recovered_at = datetime.fromisoformat(str(recovered_at_utc).replace("Z", "+00:00"))
+        if recovered_at.tzinfo is None:
+            raise ValueError()
+    except Exception:
+        raise LedgerSafetyError("recovery timestamp must be timezone-aware ISO datetime") from None
+    for portfolio, state in out.items():
+        latch = state["emergency_exit_latch"]
+        history = dict(latch)
+        history.update({"active": False, "reentry_status": "RECOVERY_CONFIRMED",
+                        "recovery_price": str(price), "recovered_at_utc": recovered_at.isoformat()})
+        state["last_emergency_exit_latch"] = history
+        state["emergency_exit_latch"] = None
+        validate_state(state)
+    return out
+
 
 def apply_fills(state, fills):
     """Apply unique execution activities once; repeated delivery is idempotent."""

@@ -6,12 +6,33 @@ on:
     paths:
       - "research/paper_emergency_exit.py"
       - "research/test_paper_emergency_exit.py"
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+      - "research/record_emergency_exit_latch.py"
+      - "research/test_record_emergency_exit_latch.py"
+      - "research/alpaca_paper_order_executor.py"
+      - "research/qqq_intraday_monitor.py"
+      - "research/test_qqq_intraday_monitor.py"
+      - "research/test_alpaca_paper_order_executor.py"
+      - "research/test_executor_fill_reconciliation.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
+      - ".github/workflows/alpaca-paper-order-executor.yml"
+      - ".github/workflows/qqq-intraday-monitor.yml"
   pull_request:
     paths:
       - "research/paper_emergency_exit.py"
       - "research/test_paper_emergency_exit.py"
+      - "research/paper_virtual_portfolio.py"
+      - "research/test_paper_virtual_portfolio.py"
+      - "research/record_emergency_exit_latch.py"
+      - "research/test_record_emergency_exit_latch.py"
+      - "research/alpaca_paper_order_executor.py"
+      - "research/qqq_intraday_monitor.py"
+      - "research/test_qqq_intraday_monitor.py"
+      - "research/test_alpaca_paper_order_executor.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
+      - ".github/workflows/alpaca-paper-order-executor.yml"
+      - ".github/workflows/qqq-intraday-monitor.yml"
   workflow_dispatch:
 
 permissions:
@@ -26,9 +47,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Compile paper-only emergency exit core
-        run: python -m py_compile research/paper_emergency_exit.py
-      - name: Run deterministic safety tests
+      - name: Compile emergency exit and ledger components
+        run: python -m py_compile research/paper_emergency_exit.py research/paper_virtual_portfolio.py research/record_emergency_exit_latch.py research/qqq_intraday_monitor.py research/alpaca_paper_order_executor.py
+      - name: Validate executor and QQQ monitor workflow YAML
+        run: |
+          ruby -e 'require "yaml"; ARGV.each { |path| YAML.load_file(path, aliases: true) }; puts "Workflow YAML parsed successfully."' \
+            .github/workflows/alpaca-paper-order-executor.yml .github/workflows/qqq-intraday-monitor.yml
+      - name: Run emergency-exit core safety tests
         env:
           PYTHONPATH: research
         run: python -m unittest -v test_paper_emergency_exit
+      - name: Run durable ledger and latch tests
+        env:
+          PYTHONPATH: research
+        run: |
+          python research/test_paper_virtual_portfolio.py
+          python research/test_alpaca_paper_order_executor.py
+          python research/test_executor_fill_reconciliation.py
+          python research/test_qqq_intraday_monitor.py
+          python research/test_record_emergency_exit_latch.py

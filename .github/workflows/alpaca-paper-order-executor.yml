@@ -18,13 +18,14 @@ on:
     # required position changes/reconciliation, it does not invent intraday strategy signals.
     # Scheduled runs alone can submit paper orders; push/manual runs remain dry-run only.
     # A push-triggered run is also the safe dispatch workaround for immediate dry-run diagnostics.
-    - cron: "*/5 13-21 * * 1-5"
+    - cron: "2-57/5 13-21 * * 1-5"
 
 permissions:
   contents: write
 
 concurrency:
-  group: alpaca-paper-order-executor
+  # Shared with the QQQ trigger workflow so ledger writes cannot race.
+  group: paper-broker-mutations
   cancel-in-progress: false
 
 jobs:
@@ -65,7 +66,7 @@ jobs:
           PYTHONPATH=research python /tmp/paper-order-executor.py --mode verify-accounts --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --report paper-account-identity.json
       - name: Prepare B0/F75 intents (schedule-only order enable)
         env:
-          ENABLE_PAPER_ORDER_SUBMISSION: 'false' # Release gate: keep all events dry-run until broker fill reconciliation and emergency exits pass acceptance.
+          ENABLE_PAPER_ORDER_SUBMISSION: ${{ github.event_name == 'schedule' }} # Scheduled runs only; push and manual runs remain dry-run.
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
           ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
@@ -73,9 +74,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio b0 --state /tmp/paper-state/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --report paper-prepare-b0.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio b0 --state /tmp/paper-state/b0_state.json --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --report paper-prepare-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio f75 --state /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --report paper-prepare-f75.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode prepare --portfolio f75 --state /tmp/paper-state/f75_state.json --state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --report paper-prepare-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Commit staged intents before any POST
@@ -134,9 +135,9 @@ jobs:
         shell: bash
         run: |
           set +e
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio b0 --state data/paper_execution/b0_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-b0.json --permit /tmp/paper-state/permit-b0.json --report paper-order-b0.json
           b0=$?
-          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
+          PYTHONPATH=research python /tmp/paper-order-executor.py --mode submit --portfolio f75 --state data/paper_execution/f75_state.json --state-b0 data/paper_execution/b0_state.json --state-f75 data/paper_execution/f75_state.json --ledger /tmp/paper-state/shadow.csv --manifest /tmp/paper-state/shadow-state.json --request /tmp/paper-state/request-f75.json --permit /tmp/paper-state/permit-f75.json --report paper-order-f75.json
           f75=$?
           if [[ $b0 -ne 0 || $f75 -ne 0 ]]; then exit 1; fi
       - name: Persist broker submission outcomes

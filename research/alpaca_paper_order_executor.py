@@ -6,18 +6,20 @@ by client_order_id and never automatically retry an ambiguous submission.
 """
 from __future__ import annotations
 import argparse, csv, json, os
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone, date, timedelta
 from decimal import Decimal
 from hashlib import sha256
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, quote
 from urllib.request import Request, urlopen
 from zoneinfo import ZoneInfo
+from qqq_intraday_monitor import evaluate as evaluate_qqq_monitor, MonitorError
 
 from paper_virtual_portfolio import (
     validate_state, state_json, plan_target, stage_intent, mark_submission_attempting,
     abort_unsubmitted_intent, mark_submission_outcome, reconcile_order, apply_fills, complete_terminal_intent, LedgerSafetyError,
+    activate_emergency_exit_latch, update_emergency_exit_latch,
 )
 
 PAPER_URL = "https://paper-api.alpaca.markets"
@@ -43,6 +45,29 @@ def get_json(url, key, secret, allow_404=False):
         raise ExecutorBlocked(f"Alpaca GET returned HTTP {exc.code}") from None
     except (URLError,TimeoutError,json.JSONDecodeError,UnicodeDecodeError):
         raise ExecutorBlocked("Alpaca GET failed, timed out, or returned invalid JSON") from None
+
+def cancel_paper_order(order_id,key,secret):
+    """Cancel an existing order only on the hard-pinned Alpaca paper endpoint."""
+    value=str(order_id or "").strip()
+    if not value:
+        raise ExecutorBlocked("cannot cancel broker order without an ID")
+    req=Request(PAPER_URL+"/v2/orders/"+quote(value,safe=""),
+        headers={"APCA-API-KEY-ID":key,"APCA-API-SECRET-KEY":secret,
+                 "Accept":"application/json","User-Agent":"Trading-Bot-paper-executor/1.0"},
+        method="DELETE")
+    try:
+        with urlopen(req,timeout=15) as response:
+            body=response.read().decode("utf-8")
+            return json.loads(body) if body.strip() else {"status_code":response.status}
+    except HTTPError as exc:
+        # A concurrent fill/cancel can make DELETE return a conflict; caller
+        # must re-fetch by client ID and reconcile, never assume cancellation.
+        if exc.code in (404,409,422):
+            return {"status_code":exc.code,"cancel_unconfirmed":True}
+        raise ExecutorBlocked(f"Alpaca paper cancel returned HTTP {exc.code}") from None
+    except (URLError,TimeoutError,UnicodeDecodeError,json.JSONDecodeError):
+        raise ExecutorBlocked("Alpaca paper cancel outcome unknown; reconcile by client order ID") from None
+
 
 def post_order(payload,key,secret):
     """The only broker mutation; endpoint is hard-pinned to Alpaca paper."""
@@ -122,6 +147,124 @@ def read_signal(ledger_path,manifest_path,now):
         raise ExecutorBlocked("latest B0/F75 target weights are invalid")
     if f75>b0 or (b0==0 and f75!=0): raise ExecutorBlocked("F75 target violates B0 eligibility")
     return session,b0,f75,source
+
+def qqq_defense_preflight(key, secret, now, state):
+    """Fresh QQQ defense check for executor ordering safety; no order mutation."""
+    clock=get_json(PAPER_URL+"/v2/clock",key,secret)
+    if not isinstance(clock,dict):
+        raise ExecutorBlocked("QQQ defense preflight returned invalid broker clock")
+    if clock.get("is_open") is not True:
+        return {"status":"MARKET_CLOSED","active":bool(state.get("emergency_exit_latch")),"breached":False}
+    start=(now.astimezone(NY).date()-timedelta(days=10)).isoformat()
+    params=urlencode({"timeframe":"1Day","start":start,"limit":"20","feed":"iex","sort":"asc"})
+    data=get_json(DATA_URL+"/v2/stocks/QQQ/bars?"+params,key,secret)
+    bars=data.get("bars",[]) if isinstance(data,dict) else None
+    if not isinstance(bars,list):
+        raise ExecutorBlocked("QQQ defense preflight daily bars response is invalid")
+    trade=get_json(DATA_URL+"/v2/stocks/QQQ/trades/latest?"+urlencode({"feed":"iex"}),key,secret)
+    try:
+        report=evaluate_qqq_monitor(clock,trade,bars,now)
+    except MonitorError as exc:
+        if state.get("emergency_exit_latch") is not None:
+            return {"status":"PREFLIGHT_UNAVAILABLE","active":True,"breached":False,
+                    "changed":False,"state":state,"reason":str(exc)}
+        raise ExecutorBlocked(f"QQQ defense preflight failed closed: {exc}") from None
+    if report.get("status") in ("STALE_TRADE_FAIL_CLOSED","ERROR_FAIL_CLOSED"):
+        if state.get("emergency_exit_latch") is not None:
+            return {"status":report.get("status"),"active":True,"breached":False,
+                    "changed":False,"state":state,"report":report}
+        raise ExecutorBlocked("QQQ defense preflight trade is stale or invalid")
+    if report.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+        raise ExecutorBlocked("QQQ defense preflight did not produce a valid live observation")
+    changed=False
+    if report.get("status")=="THRESHOLD_BREACHED":
+        identity={"symbol":"QQQ","session":report["session"],
+                  "trade_timestamp":report["trade_timestamp"],
+                  "observed_at_utc":report["observed_at_utc"],
+                  "qqq_price":str(report["qqq_price"]),"prior_close":str(report["prior_close"]),
+                  "threshold_pct":"4.5"}
+        digest=sha256(json.dumps(identity,sort_keys=True,separators=(",",":")).encode()).hexdigest()
+        if state.get("emergency_exit_latch") is None:
+            state=activate_emergency_exit_latch(state,trigger_session=report["session"],
+                qqq_price=report["qqq_price"],prior_close=report["prior_close"],trigger_sha256=digest)
+            changed=True
+        else:
+            before=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+            state=update_emergency_exit_latch(state,current_qqq_price=report["qqq_price"])
+            changed=before!=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+    elif state.get("emergency_exit_latch") is not None:
+        before=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+        state=update_emergency_exit_latch(state,current_qqq_price=report["qqq_price"])
+        changed=before!=json.dumps(state.get("emergency_exit_latch"),sort_keys=True)
+    return {"status":report["status"],"active":bool(state.get("emergency_exit_latch")),
+            "breached":report.get("status")=="THRESHOLD_BREACHED","changed":changed,
+            "report":report,"state":state}
+
+
+def synchronize_latches_across_ledgers(a, state, current_path):
+    """Persist one canonical QQQ defense latch to both portfolio ledgers."""
+    paths={"b0":Path(a.state_b0),"f75":Path(a.state_f75)}
+    if not all(str(paths[p]) and paths[p].is_file() for p in ("b0","f75")):
+        return state,False
+    states={}
+    for portfolio,path in paths.items():
+        candidate=json.loads(path.read_text(encoding="utf-8"))
+        validate_state(candidate)
+        if candidate.get("portfolio")!=portfolio:
+            raise ExecutorBlocked("companion ledger portfolio identity mismatch")
+        states[portfolio]=candidate
+    current_portfolio=state.get("portfolio")
+    if current_portfolio not in ("b0","f75"):
+        raise ExecutorBlocked("current ledger portfolio identity invalid during latch sync")
+    states[current_portfolio]=state
+    canonical=states["b0"].get("emergency_exit_latch") or states["f75"].get("emergency_exit_latch")
+    if canonical is None:
+        return state,False
+    before={p:json.dumps(states[p].get("emergency_exit_latch"),sort_keys=True) for p in ("b0","f75")}
+    for portfolio in ("b0","f75"):
+        existing=states[portfolio].get("emergency_exit_latch")
+        if existing is None:
+            states[portfolio]=activate_emergency_exit_latch(
+                states[portfolio],trigger_session=canonical["trigger_session"],
+                qqq_price=canonical["qqq_price"],prior_close=canonical["prior_close"],
+                trigger_sha256=canonical["trigger_sha256"])
+            existing=states[portfolio]["emergency_exit_latch"]
+        # If two executor runs observed the same breach at different instants,
+        # use B0's first durable trigger identity and the lowest trough from either
+        # ledger. Only reset recovery evidence when identity/trough changes.
+        old_trough=Decimal(str(existing.get("trough_price",existing["qqq_price"])))
+        canonical_trough=Decimal(str(canonical.get("trough_price",canonical["qqq_price"])))
+        trough=min(old_trough,canonical_trough)
+        identity_mismatch=(existing.get("trigger_sha256")!=canonical.get("trigger_sha256")
+            or existing.get("trigger_session")!=canonical.get("trigger_session"))
+        trough_changed=trough<old_trough or trough<canonical_trough
+        recovery_observed=(bool(existing.get("recovery_observed")) and
+                           bool(canonical.get("recovery_observed")) and
+                           not identity_mismatch and not trough_changed)
+        threshold=(trough*Decimal("1.10")).quantize(Decimal("0.0001"))
+        merged=dict(canonical)
+        merged.update({"trough_price":str(trough),"recovery_threshold":str(threshold),
+                       "recovery_observed":recovery_observed,
+                       "reentry_status":("RECOVERY_PRICE_REACHED_WAITING_FOR_BOTH_PORTFOLIOS_FLAT"
+                                         if recovery_observed else "BLOCKED_PENDING_10_PERCENT_RECOVERY")})
+        states[portfolio]["emergency_exit_latch"]=merged
+        validate_state(states[portfolio])
+    changed=False
+    for portfolio,path in paths.items():
+        after=json.dumps(states[portfolio].get("emergency_exit_latch"),sort_keys=True)
+        if before[portfolio]!=after:
+            write_state(path,states[portfolio])
+            changed=True
+    return states[current_portfolio],changed
+
+
+def effective_target(portfolio, b0, f75, state):
+    """Apply the durable defense latch after validating the ordinary signal."""
+    strategy_target = b0 if portfolio == "b0" else f75
+    latch = state.get("emergency_exit_latch")
+    active = bool(latch and latch.get("active") is True)
+    return strategy_target, (Decimal("0") if active else strategy_target), active
+
 
 def credentials(portfolio):
     suffix=portfolio.upper()
@@ -234,9 +377,25 @@ def prepare(a):
     now=datetime.now(timezone.utc)
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
     if state.get("portfolio")!=a.portfolio: raise ExecutorBlocked("state portfolio mismatch")
+    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+    if sync_changed: write_state(sp,state)
     session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-    target=b0 if a.portfolio=="b0" else f75
+    # A persisted latch overrides the daily target. Submission-enabled runs independently
+    # check QQQ before planning so monitor ordering is not required to block new buys.
     enabled=os.environ.get("ENABLE_PAPER_ORDER_SUBMISSION","false").lower()=="true"
+    if enabled:
+        key,secret=credentials(a.portfolio)
+        preflight=qqq_defense_preflight(key,secret,now,state)
+        if preflight.get("status")=="MARKET_CLOSED":
+            emit(a.report,{"status":"SKIPPED_MARKET_CLOSED","portfolio":a.portfolio,
+                "signal_session":session,"note":"No intent staged; QQQ preflight confirmed market closed."}); return
+        state=preflight["state"]
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if preflight.get("changed") or sync_changed:
+            write_state(sp,state)
+        if preflight.get("status") not in ("THRESHOLD_BREACHED","MONITORING") and not state.get("emergency_exit_latch"):
+            raise ExecutorBlocked("QQQ defense preflight did not authorize order planning")
+    strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
     pending=state.get("pending_intent")
     if pending:
         if pending.get("submission_state")=="STAGED" and enabled:
@@ -264,7 +423,9 @@ def prepare(a):
     if intent is None:
         emit(a.report,{"status":"NO_ORDER_NEEDED","portfolio":a.portfolio,"signal_session":session,"target_weight":str(target),"note":"Position already matches target."}); return
     summary={"portfolio":a.portfolio,"symbol":SYMBOL,"signal_session":session,"source_sha256":source,
-             "target_weight":str(target),"reference_price":str(ctx["price"]),"trade_age_seconds":round(ctx["trade_age"],3),
+             "strategy_target_weight":str(strategy_target),"target_weight":str(target),
+             "emergency_exit_latch_active":emergency_exit_active,
+             "reference_price":str(ctx["price"]),"trade_age_seconds":round(ctx["trade_age"],3),
              "intent":intent,"paper_endpoint":PAPER_URL,"mode":"PAPER_ONLY"}
     if not enabled:
         emit(a.report,{"status":"DRY_RUN_INTENT",**summary,"note":"Push/manual run; order submission is schedule-only."}); return
@@ -288,6 +449,8 @@ def arm(a):
 
 def submit(a):
     sp=Path(a.state); state=json.loads(sp.read_text(encoding="utf-8")); validate_state(state)
+    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+    if sync_changed: write_state(sp,state)
     pending=state.get("pending_intent")
     if not pending:
         emit(a.report,{"status":"NO_PENDING_INTENT","portfolio":a.portfolio,"note":"No POST attempted."}); return
@@ -295,6 +458,45 @@ def submit(a):
     cid=pending["client_order_id"]
     existing=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
     if existing is not None:
+        if (existing.get("client_order_id")!=cid or existing.get("symbol")!=SYMBOL
+                or str(existing.get("side") or "").lower()!=str(pending.get("side") or "").lower()
+                or not existing.get("id")):
+            raise ExecutorBlocked("broker order identity does not match the durable intent; manual reconciliation required")
+        broker_status=str(existing.get("status") or "").lower()
+        terminal=broker_status in ("filled","rejected","canceled","expired")
+        if pending.get("side")=="buy" and not terminal:
+            defense_active=bool(state.get("emergency_exit_latch"))
+            if not defense_active:
+                # Existing orders are reconciled even if the QQQ feed is stale;
+                # only a fresh breach authorizes a new cancellation request.
+                try:
+                    qqq=qqq_defense_preflight(key,secret,datetime.now(timezone.utc),state)
+                    state=qqq.get("state",state)
+                    state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+                    if qqq.get("changed") or sync_changed:
+                        write_state(sp,state)
+                    defense_active=bool(qqq.get("active") or qqq.get("breached"))
+                except ExecutorBlocked:
+                    defense_active=False
+            if defense_active:
+                try:
+                    cancel_paper_order(existing.get("id"),key,secret)
+                except ExecutorBlocked:
+                    # Do not infer cancellation. Reconcile the currently observed
+                    # order and let a later run verify its terminal state.
+                    pass
+                refreshed=get_json(PAPER_URL+"/v2/orders:by_client_order_id?"+urlencode({"client_order_id":cid}),key,secret,allow_404=True)
+                if refreshed is not None:
+                    if (refreshed.get("client_order_id")!=cid or refreshed.get("symbol")!=SYMBOL
+                            or str(refreshed.get("side") or "").lower()!=str(pending.get("side") or "").lower()
+                            or not refreshed.get("id")):
+                        raise ExecutorBlocked("refetched order identity mismatch after cancel request")
+                    state=reconcile_order_fills(state,refreshed,key,secret)
+                    write_state(sp,state)
+                emit(a.report,{"status":"BUY_ORDER_CANCEL_RECONCILED_DURING_QQQ_DEFENSE" if refreshed and str(refreshed.get("status","")).lower() in ("canceled","filled","rejected","expired") else "BUY_ORDER_CANCEL_PENDING_RECONCILIATION",
+                    "portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":(refreshed or existing).get("id"),
+                    "broker_status":(refreshed or existing).get("status"),
+                    "note":"Cancellation was requested only on the Alpaca paper endpoint; verify terminal order and fill-backed position before staging an exit."}); return
         state=reconcile_order_fills(state,existing,key,secret); write_state(sp,state)
         emit(a.report,{"status":"EXISTING_ORDER_RECONCILED","portfolio":a.portfolio,"client_order_id":cid,"broker_order_id":existing.get("id"),"broker_status":existing.get("status"),"note":"No POST sent."}); return
     permit_path=Path(a.permit)
@@ -307,7 +509,22 @@ def submit(a):
     try:
         now=datetime.now(timezone.utc)
         session,b0,f75,source=read_signal(a.ledger,a.manifest,now)
-        target=b0 if a.portfolio=="b0" else f75
+        # Last-moment QQQ guard: the monitor's schedule order is not a safety dependency.
+        qqq=qqq_defense_preflight(key,secret,now,state)
+        if qqq.get("status")=="MARKET_CLOSED":
+            raise ExecutorBlocked("market closed during QQQ preflight before POST")
+        state=qqq.get("state",state)
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if qqq.get("changed") or sync_changed:
+            write_state(sp,state)
+        if pending.get("side")=="buy" and qqq.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+            raise ExecutorBlocked("QQQ preflight failed closed; refusing buy POST")
+        if pending.get("side")=="buy" and (qqq.get("breached") or qqq.get("active")):
+            state=abort_unsubmitted_intent(state,"QQQ emergency defense active at pre-POST preflight")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
+                "client_order_id":cid,"note":"No POST attempted; defense latch persisted."}); return
+        strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
         if session!=pending.get("signal_session") or target!=Decimal(pending.get("target_weight")):
             raise ExecutorBlocked("latest signal changed after intent was staged")
         if state.get("mark_date")!=session: raise ExecutorBlocked("virtual ledger mark date no longer matches signal session")
@@ -321,6 +538,28 @@ def submit(a):
         if ctx is None: raise ExecutorBlocked("market closed before POST")
         ref=Decimal(pending["reference_price"])
         if abs(ctx["price"]-ref)/ref>Decimal("0.0025"): raise ExecutorBlocked("reference price moved over 0.25% before POST")
+        # Final independent QQQ check directly before payload creation / POST.
+        qqq_final=qqq_defense_preflight(key,secret,datetime.now(timezone.utc),state)
+        if qqq_final.get("status")=="MARKET_CLOSED":
+            raise ExecutorBlocked("market closed at final QQQ pre-POST check")
+        state=qqq_final.get("state",state)
+        state,sync_changed=synchronize_latches_across_ledgers(a,state,sp)
+        if qqq_final.get("changed") or sync_changed:
+            write_state(sp,state)
+        if pending.get("side")=="buy" and qqq_final.get("status") not in ("THRESHOLD_BREACHED","MONITORING"):
+            raise ExecutorBlocked("final QQQ preflight failed closed; refusing buy POST")
+        if pending.get("side")=="buy" and (qqq_final.get("breached") or qqq_final.get("active")):
+            state=abort_unsubmitted_intent(state,"QQQ emergency defense active at final pre-POST check")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_BUY_DURING_QQQ_DEFENSE","portfolio":a.portfolio,
+                "client_order_id":cid,"note":"No POST attempted; final defense latch persisted."}); return
+        strategy_target,target,emergency_exit_active=effective_target(a.portfolio,b0,f75,state)
+        if target!=Decimal(pending.get("target_weight")):
+            state=abort_unsubmitted_intent(state,"target changed after final QQQ defense check")
+            write_state(sp,state)
+            emit(a.report,{"status":"ABORTED_STALE_STAGED_INTENT","portfolio":a.portfolio,
+                "client_order_id":cid,"target_weight":str(target),
+                "note":"No POST attempted; intent must be replanned against the active defense target."}); return
     except Exception as exc:
         reason=str(exc) if isinstance(exc,(ExecutorBlocked,LedgerSafetyError)) else f"preflight failure ({type(exc).__name__})"
         state=abort_unsubmitted_intent(state,reason); write_state(sp,state)
