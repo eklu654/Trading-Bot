@@ -19,7 +19,7 @@ FLAGGED = {
 }
 
 ALIASES = {
-    "contract": ("contract_id", "contract_symbol", "option_symbol", "occ_symbol", "option_ticker", "symbol"),
+    "contract": ("contract_id", "contract_symbol", "option_symbol", "occ_symbol", "option_ticker"),
     "date": ("date", "observation_date", "quote_date", "quotedate", "trade_date"),
     "expiration": ("expiration", "expiration_date", "expiry", "expirationdate"),
     "bid": ("bid", "bid_price"),
