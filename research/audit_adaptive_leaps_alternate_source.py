@@ -53,7 +53,7 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
     con = duckdb.connect()
     try:
         description = con.execute(
-            f"DESCRIBE SELECT * FROM read_parquet({sql_string(source)})"
+            f"DESCRIBE SELECT * FROM read_parquet({sql_string(source)}, union_by_name=true)"
         ).fetchall()
         columns = [row[0] for row in description]
         selected = {key: choose_column(columns, aliases) for key, aliases in ALIASES.items()}
@@ -78,7 +78,7 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
               TRY_CAST({ident(selected['expiration'])} AS DATE) AS expiration,
               TRY_CAST({ident(selected['bid'])} AS DOUBLE) AS bid,
               TRY_CAST({ident(selected['ask'])} AS DOUBLE) AS ask
-            FROM read_parquet({sql_string(source)})
+            FROM read_parquet({sql_string(source)}, union_by_name=true)
             WHERE CAST({ident(selected['contract'])} AS VARCHAR) = ?
             ORDER BY observation_date
             """,
@@ -147,7 +147,7 @@ def _quote_rows(source: str | Path, contract_id: str):
     con = duckdb.connect()
     try:
         description = con.execute(
-            f"DESCRIBE SELECT * FROM read_parquet({sql_string(source)})"
+            f"DESCRIBE SELECT * FROM read_parquet({sql_string(source)}, union_by_name=true)"
         ).fetchall()
         columns = [row[0] for row in description]
         selected = {key: choose_column(columns, aliases) for key, aliases in ALIASES.items()}
@@ -161,7 +161,7 @@ def _quote_rows(source: str | Path, contract_id: str):
               TRY_CAST({ident(selected['expiration'])} AS DATE) AS expiration,
               TRY_CAST({ident(selected['bid'])} AS DOUBLE) AS bid,
               TRY_CAST({ident(selected['ask'])} AS DOUBLE) AS ask
-            FROM read_parquet({sql_string(source)})
+            FROM read_parquet({sql_string(source)}, union_by_name=true)
             WHERE CAST({ident(selected['contract'])} AS VARCHAR) = ?
             ORDER BY observation_date
             """,
