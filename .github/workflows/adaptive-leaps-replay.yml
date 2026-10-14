@@ -230,4 +230,8 @@ jobs:
             echo "No manifest change to commit"
             exit 0
           }
+          # Another workflow or audit-note commit may update main while this replay runs.
+          # Rebase the receipt commit onto the latest main before pushing to avoid a non-fast-forward race.
+          git fetch origin main
+          git rebase origin/main
           git push origin HEAD:main
