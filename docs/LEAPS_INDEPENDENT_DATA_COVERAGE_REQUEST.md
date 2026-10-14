@@ -77,3 +77,10 @@ OptionsDX publicly lists QQQ EOD option-chain files for 2014 and shows a display
 - https://www.optionsdx.com/faq/
 
 This is a possible low-cost QQQ cross-check, but the selected 2014 EOD variation's actual price, exact contract presence, handling of absent/zero-bid rows, and source provenance have not been confirmed. Do not treat the dataset as independent market-data validation until provenance is clarified. No account was created, no checkout was submitted, and no data was purchased or downloaded.
+
+
+## Additional QQQ price-basis verification request
+
+Please confirm that historical QQQ option bid/ask values are raw, as-traded premiums and that strike values are the original listed strike, not dividend-adjusted or otherwise rescaled. For `QQQ140920C00077000` on 2014-03-11, the preserved dataset reports bid $6.70 / ask $7.67; public QQQ unadjusted close is $90.22, making the standard $77 call's intrinsic value $13.22. The source's separate adjusted close is $82.135, which would make the quote appear above intrinsic if incorrectly compared against the raw strike. The provider should confirm the correct contemporaneous underlying close, contract deliverable/strike, and NBBO bid/ask basis for both 2013-12-23 and 2014-03-11.
+
+This is a targeted data-integrity check in addition to confirming the missing post-2014-03-12 contract rows. No price adjustment should be assumed from the request alone.
