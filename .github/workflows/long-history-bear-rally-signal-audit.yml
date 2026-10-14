@@ -2,6 +2,10 @@ name: Long-history bear-rally signal audit
 on:
   push:
     branches: [main]
+    paths:
+      - "research/long_history_bear_rally_signal_audit.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   audit:
