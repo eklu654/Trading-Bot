@@ -200,3 +200,12 @@ This document records repository/code inspection only. It does not assert that a
 - Follow-up review found the replay workflow's `push.paths` filter listed the quote-continuity audit but omitted `research/audit_adaptive_leaps_source_discontinuity.py`. The source audit is invoked by the workflow, but a future edit to that script alone would not trigger a replay.
 - Added the missing source-audit path to the workflow filter on branch `leaps/replay-workflow-path-filter` (commit `c6d7777486f98539e1f20e2667b409e1dc61b93f`). This is a trigger-maintenance fix only; no strategy logic or historical results changed.
 - Post-merge replay run/artifact status is still not confirmed by the available GitHub connector calls. The prior conclusion that a run was automatically enqueued was an expectation from path-filter behavior, not a verified run ID. Do not report that replay ran until a concrete Actions run and artifact are inspected.
+
+
+### PR #31 merged; trigger fix validated — 2026-10-14 00:00Z
+
+- PR [#31](https://github.com/eklu654/Trading-Bot/pull/31) merged by squash at `1f4702accc3172304fad5c68628ce4dc2cc4a31b`.
+- Repository research test run `38485097629` (workflow `research-tests`, run number 1959) completed successfully on PR head `504134509f94207c8793a4da6bfeaa7ed7be1b65`.
+- Confirmed on `main` that the replay workflow push path filter now includes both `research/audit_adaptive_leaps_quote_continuity.py` and `research/audit_adaptive_leaps_source_discontinuity.py`. PR #31 changed only the replay workflow trigger list and this audit document.
+- Checked the merge commit's workflow-run listing; it returned no runs. This connector result is inconclusive (not a repository-wide Actions listing) and does not establish that a post-merge replay ran or did not run. The concrete post-merge replay run ID and artifact remain unverified.
+- Next step is still to obtain a concrete run ID for `Adaptive LEAPS Chronological Replay`, inspect `adaptive-leaps-chronological-replay` artifact contents and source-discontinuity CSV/JSON, then reconcile all four replay summaries. Existing unresolved expiration/terminal-equity handling remains a hard stop for profitability conclusions and paper trading.
