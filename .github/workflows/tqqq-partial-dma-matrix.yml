@@ -3,10 +3,9 @@ on:
   push:
     branches: [main]
     paths:
-      - "research/*.py"
-      - "research/**/*.py"
-      - "research/requirements.txt"
-      - ".github/workflows/tqqq-partial-dma-matrix.yml"
+      - "research/tqqq_partial_dma_matrix.py"
+      - "research/causal_execution.py"
+      - "research/reentry_isolation.py"
   workflow_dispatch:
 jobs:
   matrix:
