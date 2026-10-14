@@ -173,6 +173,29 @@ def audit_one(
     }
 
 
+def quantiles(values: list[float]) -> dict[str, float | int | None]:
+    if not values:
+        return {"count": 0, "p10": None, "p25": None, "p50": None, "p75": None, "p90": None}
+
+    ordered = sorted(values)
+
+    def at(p: float) -> float:
+        position = (len(ordered) - 1) * p
+        lower = int(position)
+        upper = min(lower + 1, len(ordered) - 1)
+        fraction = position - lower
+        return ordered[lower] * (1 - fraction) + ordered[upper] * fraction
+
+    return {
+        "count": len(ordered),
+        "p10": at(0.10),
+        "p25": at(0.25),
+        "p50": at(0.50),
+        "p75": at(0.75),
+        "p90": at(0.90),
+    }
+
+
 def audit_cohort(
     con: duckdb.DuckDBPyConnection,
     symbol: str,
@@ -232,37 +255,74 @@ def audit_cohort(
             "positive_bid_rows": 0,
             "ask_below_intrinsic_rows": 0,
             "bid_below_intrinsic_rows": 0,
+            "ask_to_intrinsic_ratios_for_itm_quotes": [],
+            "by_option_type": {
+                kind: {
+                    "positive_ask_rows": 0,
+                    "positive_bid_rows": 0,
+                    "ask_below_intrinsic_rows": 0,
+                    "bid_below_intrinsic_rows": 0,
+                    "ask_to_intrinsic_ratios_for_itm_quotes": [],
+                    "sample_ask_violations": [],
+                }
+                for kind in ("call", "put")
+            },
             "sample_ask_violations": [],
         }
         for field in spots
     }
     for _, row in option_rows.iterrows():
         option_type = str(row["option_type"]).strip().lower()
-        if option_type not in ("c", "call", "p", "put"):
+        if option_type in ("c", "call"):
+            kind = "call"
+        elif option_type in ("p", "put"):
+            kind = "put"
+        else:
             continue
         strike = float(row["strike"])
         bid = float(row["bid"]) if row["bid"] is not None else 0.0
         ask = float(row["ask"]) if row["ask"] is not None else 0.0
         for field, spot in spots.items():
-            intrinsic = max(spot - strike, 0.0) if option_type in ("c", "call") else max(strike - spot, 0.0)
+            intrinsic = max(spot - strike, 0.0) if kind == "call" else max(strike - spot, 0.0)
             result = counts[field]
+            type_result = result["by_option_type"][kind]
             result["positive_ask_rows"] += int(ask > 0)
             result["positive_bid_rows"] += int(bid > 0)
+            type_result["positive_ask_rows"] += int(ask > 0)
+            type_result["positive_bid_rows"] += int(bid > 0)
             ask_violation = ask > 0 and ask + 0.01 < intrinsic
             bid_violation = bid > 0 and bid + 0.01 < intrinsic
             result["ask_below_intrinsic_rows"] += int(ask_violation)
             result["bid_below_intrinsic_rows"] += int(bid_violation)
+            type_result["ask_below_intrinsic_rows"] += int(ask_violation)
+            type_result["bid_below_intrinsic_rows"] += int(bid_violation)
+            if ask > 0 and intrinsic > 0:
+                ratio = ask / intrinsic
+                result["ask_to_intrinsic_ratios_for_itm_quotes"].append(ratio)
+                type_result["ask_to_intrinsic_ratios_for_itm_quotes"].append(ratio)
+            violation = {
+                "contract_id": str(row["contract_id"]),
+                "expiration": row["expiration"].date().isoformat() if hasattr(row["expiration"], "date") else str(row["expiration"]),
+                "strike": strike,
+                "option_type": kind,
+                "bid": bid,
+                "ask": ask,
+                "underlying_price": spot,
+                "intrinsic_value": intrinsic,
+            }
             if ask_violation and len(result["sample_ask_violations"]) < 10:
-                result["sample_ask_violations"].append({
-                    "contract_id": str(row["contract_id"]),
-                    "expiration": row["expiration"].date().isoformat() if hasattr(row["expiration"], "date") else str(row["expiration"]),
-                    "strike": strike,
-                    "option_type": option_type,
-                    "bid": bid,
-                    "ask": ask,
-                    "underlying_price": spot,
-                    "intrinsic_value": intrinsic,
-                })
+                result["sample_ask_violations"].append(violation)
+            if ask_violation and len(type_result["sample_ask_violations"]) < 10:
+                type_result["sample_ask_violations"].append(violation)
+
+    for field, result in counts.items():
+        result["ask_to_intrinsic_ratio_quantiles_for_itm_quotes"] = quantiles(
+            result.pop("ask_to_intrinsic_ratios_for_itm_quotes")
+        )
+        for type_result in result["by_option_type"].values():
+            type_result["ask_to_intrinsic_ratio_quantiles_for_itm_quotes"] = quantiles(
+                type_result.pop("ask_to_intrinsic_ratios_for_itm_quotes")
+            )
     return {
         "symbol": symbol,
         "check_date": check_date,
