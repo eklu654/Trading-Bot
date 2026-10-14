@@ -1,0 +1,68 @@
+name: Adaptive LEAPS Alternate-Source Contract Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/adaptive-leaps-alternate-source-audit.yml"
+      - "research/audit_adaptive_leaps_alternate_source.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: adaptive-leaps-alternate-source-audit
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: research/requirements.txt
+
+      - name: Install research dependencies
+        run: python -m pip install -r research/requirements.txt
+
+      - name: Download pinned preserved SPY/QQQ option chains
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p data/options/alternate artifacts/adaptive_leaps_alternate_source
+          curl -fL --retry 3 --retry-delay 2 \
+            -o data/options/alternate/SPY_options.parquet \
+            "https://github.com/lambdaclass/options_portfolio_backtester/releases/download/data-v1/SPY_options.parquet"
+          curl -fL --retry 3 --retry-delay 2 \
+            -o data/options/alternate/QQQ_options.parquet \
+            "https://github.com/lambdaclass/options_portfolio_backtester/releases/download/data-v1/QQQ_options.parquet"
+          {
+            echo "source_release=https://github.com/lambdaclass/options_portfolio_backtester/releases/tag/data-v1"
+            echo "SPY_options.parquet expected_sha256=a7152991b45b81f090f970e945bf88def8093b8ecb9b250e9891cb6d88041f0a"
+            echo "QQQ_options.parquet expected_sha256=1f831556cd87ec9d7af43d3b47a69a829ffb2fb199cfcef4ff55d289badf8734"
+            sha256sum data/options/alternate/SPY_options.parquet data/options/alternate/QQQ_options.parquet
+          } > artifacts/adaptive_leaps_alternate_source/source_sha256.txt
+          echo "a7152991b45b81f090f970e945bf88def8093b8ecb9b250e9891cb6d88041f0a  data/options/alternate/SPY_options.parquet" | sha256sum -c -
+          echo "1f831556cd87ec9d7af43d3b47a69a829ffb2fb199cfcef4ff55d289badf8734  data/options/alternate/QQQ_options.parquet" | sha256sum -c -
+
+      - name: Run flagged-contract continuity cross-check
+        run: |
+          python -m research.audit_adaptive_leaps_alternate_source \
+            --spy-source data/options/alternate/SPY_options.parquet \
+            --qqq-source data/options/alternate/QQQ_options.parquet \
+            --out-dir artifacts/adaptive_leaps_alternate_source
+
+      - name: Upload alternate-source audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: adaptive-leaps-alternate-source-contract-audit
+          path: artifacts/adaptive_leaps_alternate_source/
+          if-no-files-found: warn
