@@ -56,3 +56,13 @@ Its public documentation says its end-of-day records come from OPRA/NBBO and inc
 - File structure: https://historicaloptiondata.com/data-structure/
 
 This may be a better targeted inquiry than buying HistoricalData.net's full archive because it explicitly describes OPRA NBBO as the data source and offers an SPY-specific product. Still ask for exact contract coverage, a minimum-scope price, and a sample row before paying. Public documentation does not prove the two flagged contract histories are present or that missing/zero-bid rows are retained. No purchase or contact has occurred.
+
+
+### Preferred low-cost route: ONESYMBOL monthly archive
+
+HistoricalOptionData.com also publishes an ONESYMBOL order assistant for selected symbols/date ranges. Its public pricing formula is **$4.95 × (symbol-months)^0.846**, with a partial month counted as a full month. For full contract-lifecycle coverage, a rough planning count is 9 SPY months (January–September 2008) plus 11 QQQ months (November 2013–September 2014), or 20 symbol-months. Applying the posted formula gives an indicative estimate of **$62.41**, before any special-order/labor charges or changes in actual coverage/pricing. This is not a quote and does not confirm that either contract's rows are present.
+
+- ONESYMBOL order assistant: https://preorder.dnfilevault.com/
+- Public pricing explanation: https://historicaloptiondata.com/product-category/level-1-bare-bones-data/
+
+Request a quote/coverage confirmation first. If the provider can supply the two exact contracts for the relevant periods at close to this price, that is preferable to buying a $455 SPY-specific archive or a $1,150 full-market archive. Keep all quote rows from the first available contract observation through nominal expiration so absent rows can be distinguished from rows with blank/zero bids.
