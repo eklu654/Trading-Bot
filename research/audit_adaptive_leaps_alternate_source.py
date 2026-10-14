@@ -155,6 +155,9 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
             "positive_bid_rows_on_or_after_exit_threshold_through_expiration": int(
                 (exit_window["valid_bid"]).sum()
             ),
+            "valid_sell_quote_rows_on_or_after_exit_threshold_through_expiration": int(
+                (exit_window["valid_quote"]).sum()
+            ),
             "last_observation_to_expiration_days": last_observation_to_expiration_days,
             "interpretation": (
                 "A matching history is an alternate preserved copy, not independent exchange-data validation. "
