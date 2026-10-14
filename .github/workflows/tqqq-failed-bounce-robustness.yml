@@ -2,6 +2,11 @@ name: TQQQ failed-bounce robustness
 on:
   push:
     branches: [main]
+    paths:
+      - "research/failed_bounce_robustness.py"
+      - "research/causal_execution.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   audit:
