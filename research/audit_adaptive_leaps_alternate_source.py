@@ -140,18 +140,131 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
         con.close()
 
 
+def _quote_rows(source: str | Path, contract_id: str):
+    import pandas as pd
+
+    source = str(source)
+    con = duckdb.connect()
+    try:
+        description = con.execute(
+            f"DESCRIBE SELECT * FROM read_parquet({sql_string(source)})"
+        ).fetchall()
+        columns = [row[0] for row in description]
+        selected = {key: choose_column(columns, aliases) for key, aliases in ALIASES.items()}
+        missing = [key for key in ("contract", "date", "expiration", "bid", "ask") if selected[key] is None]
+        if missing:
+            return None, {"status": "schema_missing_required_columns", "missing_required_columns": missing, "source_columns": columns}
+        rows = con.execute(
+            f"""
+            SELECT
+              TRY_CAST({ident(selected['date'])} AS DATE) AS observation_date,
+              TRY_CAST({ident(selected['expiration'])} AS DATE) AS expiration,
+              TRY_CAST({ident(selected['bid'])} AS DOUBLE) AS bid,
+              TRY_CAST({ident(selected['ask'])} AS DOUBLE) AS ask
+            FROM read_parquet({sql_string(source)})
+            WHERE CAST({ident(selected['contract'])} AS VARCHAR) = ?
+            ORDER BY observation_date
+            """,
+            [contract_id],
+        ).fetchdf()
+        if rows.empty:
+            return {}, {"status": "not_found", "source_columns": columns}
+        result = {}
+        duplicates = []
+        for row in rows.itertuples(index=False):
+            day = iso_date(row.observation_date)
+            if day in result:
+                duplicates.append(day)
+            result[day] = {
+                "bid": None if pd.isna(row.bid) else float(row.bid),
+                "ask": None if pd.isna(row.ask) else float(row.ask),
+                "expiration": iso_date(row.expiration),
+            }
+        return result, {"status": "completed", "rows": len(rows), "duplicate_dates": sorted(set(duplicates)), "source_columns": columns}
+    finally:
+        con.close()
+
+
+def compare_contract_rows(primary_source: str | Path, alternate_source: str | Path, contract_id: str) -> dict:
+    primary, primary_meta = _quote_rows(primary_source, contract_id)
+    alternate, alternate_meta = _quote_rows(alternate_source, contract_id)
+    report = {
+        "status": "completed" if primary_meta["status"] == alternate_meta["status"] == "completed" else "comparison_incomplete",
+        "contract_id": contract_id,
+        "primary_source": str(primary_source),
+        "alternate_source": str(alternate_source),
+        "primary": primary_meta,
+        "alternate": alternate_meta,
+    }
+    if report["status"] != "completed":
+        return report
+
+    primary_dates, alternate_dates = set(primary), set(alternate)
+    shared = sorted(primary_dates & alternate_dates)
+    bid_validity_disagreements = []
+    bid_value_differences = []
+    ask_value_differences = []
+    expiration_differences = []
+    for day in shared:
+        p, a = primary[day], alternate[day]
+        p_valid = p["bid"] is not None and p["bid"] > 0
+        a_valid = a["bid"] is not None and a["bid"] > 0
+        if p_valid != a_valid:
+            bid_validity_disagreements.append(day)
+        if p["bid"] != a["bid"]:
+            bid_value_differences.append(day)
+        if p["ask"] != a["ask"]:
+            ask_value_differences.append(day)
+        if p["expiration"] != a["expiration"]:
+            expiration_differences.append(day)
+    report.update({
+        "primary_row_count": len(primary),
+        "alternate_row_count": len(alternate),
+        "shared_date_count": len(shared),
+        "primary_only_date_count": len(primary_dates - alternate_dates),
+        "alternate_only_date_count": len(alternate_dates - primary_dates),
+        "primary_only_dates_sample": sorted(primary_dates - alternate_dates)[:10],
+        "alternate_only_dates_sample": sorted(alternate_dates - primary_dates)[:10],
+        "bid_validity_disagreement_count": len(bid_validity_disagreements),
+        "bid_validity_disagreement_dates_sample": bid_validity_disagreements[:10],
+        "bid_value_difference_count": len(bid_value_differences),
+        "bid_value_difference_dates_sample": bid_value_differences[:10],
+        "ask_value_difference_count": len(ask_value_differences),
+        "ask_value_difference_dates_sample": ask_value_differences[:10],
+        "expiration_difference_count": len(expiration_differences),
+        "exact_core_quote_history_match": (
+            not (primary_dates - alternate_dates)
+            and not (alternate_dates - primary_dates)
+            and not bid_value_differences
+            and not ask_value_differences
+            and not expiration_differences
+        ),
+        "interpretation": "This compares preserved datasets only; exact agreement is not independent exchange-data validation.",
+    })
+    return report
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--spy-source", required=True)
     parser.add_argument("--qqq-source", required=True)
+    parser.add_argument("--spy-primary-source", required=True)
+    parser.add_argument("--qqq-primary-source", required=True)
     parser.add_argument("--out-dir", default="artifacts/adaptive_leaps_alternate_source")
     args = parser.parse_args()
 
     out_dir = Path(args.out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     reports = []
-    for symbol, source in (("SPY", args.spy_source), ("QQQ", args.qqq_source)):
+    sources = {
+        "SPY": (args.spy_source, args.spy_primary_source),
+        "QQQ": (args.qqq_source, args.qqq_primary_source),
+    }
+    for symbol, (source, primary_source) in sources.items():
         report = inspect_contract_history(source, symbol, FLAGGED[symbol])
+        report["primary_source_comparison"] = compare_contract_rows(
+            primary_source, source, FLAGGED[symbol]
+        )
         reports.append(report)
         (out_dir / f"{symbol.lower()}_alternate_source_contract.json").write_text(
             json.dumps(report, indent=2) + "\n"
@@ -159,7 +272,7 @@ def main() -> int:
         print(json.dumps(report, indent=2))
     summary = {
         "report_type": "adaptive_leaps_alternate_source_contract_audit",
-        "status": "completed" if all(r["status"] in {"completed", "not_found"} for r in reports) else "schema_error",
+        "status": "completed" if all(r["status"] == "completed" and r.get("primary_source_comparison", {}).get("status") == "completed" for r in reports) else "audit_incomplete",
         "source_release": "lambdaclass/options_portfolio_backtester data-v1",
         "source_provenance_warning": (
             "The release notice says its original upstream disappeared and that upstream sourcing was undocumented; "
