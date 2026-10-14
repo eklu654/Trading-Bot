@@ -298,3 +298,11 @@ This document records repository/code inspection only. It does not assert that a
 - Added [docs/LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md](LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md) with exact SPY/QQQ contract identifiers, required date windows, questions about blank/zero bids versus absent rows, quote timestamps/sizes, source provenance, licensing, and a pre-purchase acceptance checklist.
 - The request is deliberately scoped to two contracts; it does not authorize a purchase. HistoricalData.net remains only a candidate until it confirms both exact histories and can establish that its records are independent of the pinned data-v1 mirror.
 - This converts the vague next step into a concrete, auditable coverage request. No email was sent and no paid data was accessed.
+
+
+### 2026-10-14 06:14Z — Prioritize an OPRA-stated source for the narrow contract check
+
+- Further public-source screening found HistoricalOptionData.com / DeltaNeutral LLC, whose documentation says its EOD option records come from OPRA/NBBO and include bid/ask, quote date, expiration, strike, and option symbol. Its product pages list an SPY-specific archive beginning in 2005 at $455 and a 2002-present full-market Level 1 archive at $1,150. These are advertised product prices, not a quote for the minimum records needed.
+- This is a stronger candidate for a narrowly scoped inquiry than purchasing HistoricalData.net's $590 full archive immediately, but the exact SPY 2008 and QQQ 2014 contract rows and their missing/zero-bid handling remain unconfirmed. The vendor's public claims are not treated as validation evidence. See the updated request at [docs/LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md](LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md).
+- HistoricalData.net's published methodology says the historical options archive combines archived records with a separate daily capture begun 2026-08-06; its public independent quote reconciliation covers recent sessions and selected 2022 samples, not these target 2008/2014 rows. Thus its archive is a candidate source but not yet proven independent for the specific old records.
+- Decision unchanged: no purchase and no strategy change until written exact-contract coverage and a small sample are available. If the vendor cannot supply the relevant rows or identify source provenance, do not spend on it for this audit.
