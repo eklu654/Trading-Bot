@@ -47,6 +47,9 @@ jobs:
             -o data/options/alternate/SPY_primary_2008.parquet \
             "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/spy/options_2008.parquet"
           curl -fL --retry 3 --retry-delay 2 \
+            -o data/options/alternate/QQQ_primary_2013.parquet \
+            "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/qqq/options_2013.parquet"
+          curl -fL --retry 3 --retry-delay 2 \
             -o data/options/alternate/QQQ_primary_2014.parquet \
             "https://raw.githubusercontent.com/anahatsingh-ui/options-dataset-hist/37f6c456fe1a4775c875673fb8ef907d5cd2fd66/qqq/options_2014.parquet"
           {
@@ -54,11 +57,13 @@ jobs:
             echo "SPY_options.parquet expected_sha256=a7152991b45b81f090f970e945bf88def8093b8ecb9b250e9891cb6d88041f0a"
             echo "QQQ_options.parquet expected_sha256=1f831556cd87ec9d7af43d3b47a69a829ffb2fb199cfcef4ff55d289badf8734"
             echo "primary_source_commit=37f6c456fe1a4775c875673fb8ef907d5cd2fd66"
-            sha256sum data/options/alternate/SPY_options.parquet data/options/alternate/QQQ_options.parquet data/options/alternate/SPY_primary_2008.parquet data/options/alternate/QQQ_primary_2014.parquet
+            echo "QQQ_primary_2013.parquet expected_sha256=1e992c9430243c46eb7b37c3298876bfe77ed0bb3af634a0d380c7cfd825de08"
+            sha256sum data/options/alternate/SPY_options.parquet data/options/alternate/QQQ_options.parquet data/options/alternate/SPY_primary_2008.parquet data/options/alternate/QQQ_primary_2013.parquet data/options/alternate/QQQ_primary_2014.parquet
           } > artifacts/adaptive_leaps_alternate_source/source_sha256.txt
           echo "a7152991b45b81f090f970e945bf88def8093b8ecb9b250e9891cb6d88041f0a  data/options/alternate/SPY_options.parquet" | sha256sum -c -
           echo "1f831556cd87ec9d7af43d3b47a69a829ffb2fb199cfcef4ff55d289badf8734  data/options/alternate/QQQ_options.parquet" | sha256sum -c -
           echo "78acbfa15264b197b4bf77dca5f8f03d218a440249259d9d6d28f1f7a1f21194  data/options/alternate/SPY_primary_2008.parquet" | sha256sum -c -
+          echo "1e992c9430243c46eb7b37c3298876bfe77ed0bb3af634a0d380c7cfd825de08  data/options/alternate/QQQ_primary_2013.parquet" | sha256sum -c -
           echo "1d576b3db1d60a840e695f668bd899e794c92022a4380b755890d95a05865386  data/options/alternate/QQQ_primary_2014.parquet" | sha256sum -c -
 
       - name: Run flagged-contract continuity cross-check
@@ -67,7 +72,7 @@ jobs:
             --spy-source data/options/alternate/SPY_options.parquet \
             --qqq-source data/options/alternate/QQQ_options.parquet \
             --spy-primary-source data/options/alternate/SPY_primary_2008.parquet \
-            --qqq-primary-source data/options/alternate/QQQ_primary_2014.parquet \
+            --qqq-primary-source data/options/alternate/QQQ_primary_*.parquet \
             --out-dir artifacts/adaptive_leaps_alternate_source
 
       - name: Upload alternate-source audit
