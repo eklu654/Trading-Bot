@@ -6,7 +6,6 @@ on:
       - "research/tqqq_actual_partial_dma_matrix.py"
       - "research/causal_execution.py"
       - "research/reentry_isolation.py"
-      - ".github/workflows/tqqq-actual-partial-dma-matrix.yml"
   workflow_dispatch:
 jobs:
   matrix:
