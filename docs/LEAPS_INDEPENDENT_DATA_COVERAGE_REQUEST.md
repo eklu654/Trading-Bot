@@ -45,3 +45,14 @@ HistoricalData.net documents an end-of-day US options archive beginning in Febru
 - https://historicaldata.net/api.html
 
 **Current status:** coverage not confirmed; no external dataset downloaded; no purchase authorized or made.
+
+
+## Second candidate screened: HistoricalOptionData.com / DeltaNeutral LLC
+
+Its public documentation says its end-of-day records come from OPRA/NBBO and include bid, ask, expiration, strike, and quote date. It advertises monthly/yearly archive files going back to 2002 and an SPY-specific archive beginning in 2005. Published product pages list the SPY archive at $455 and the full-market 2002-present Level 1 archive at $1,150; these prices are not a quote for the minimum data needed here.
+
+- Overview / stated OPRA provenance: https://historicaloptiondata.com/overview-of-our-historical-option-prices-data/
+- SPY-specific and full-market product list: https://historicaloptiondata.com/product-category/level-2-csv-option-data-including-greeks-stocks-and-option-statistics/
+- File structure: https://historicaloptiondata.com/data-structure/
+
+This may be a better targeted inquiry than buying HistoricalData.net's full archive because it explicitly describes OPRA NBBO as the data source and offers an SPY-specific product. Still ask for exact contract coverage, a minimum-scope price, and a sample row before paying. Public documentation does not prove the two flagged contract histories are present or that missing/zero-bid rows are retained. No purchase or contact has occurred.
