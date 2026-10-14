@@ -13,7 +13,7 @@ on:
       - "research/adaptive_leaps_lifecycle.py"
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: adaptive-leaps-replay
@@ -191,3 +191,43 @@ jobs:
               sys.exit(1)
           print("All four replay cases have reconciled terminal equity.")
           PY
+
+      - name: Persist replay run receipt for connector-independent discovery
+        if: always()
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+          RUN_SHA: ${{ github.sha }}
+          RUN_REF: ${{ github.ref }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          mkdir -p docs
+          cat > docs/LEAPS_REPLAY_LATEST_RUN.md <<EOF
+          # Latest Adaptive LEAPS Replay Run
+
+          - Run ID: ${RUN_ID}
+          - Run number: ${RUN_NUMBER}
+          - Attempt: ${RUN_ATTEMPT}
+          - Workflow: Adaptive LEAPS Chronological Replay
+          - Commit: ${RUN_SHA}
+          - Ref: ${RUN_REF}
+          - Job status at receipt step: ${JOB_STATUS}
+          - Run URL: ${SERVER_URL}/${REPOSITORY}/actions/runs/${RUN_ID}
+          - Artifact name: adaptive-leaps-chronological-replay
+
+          This file is written by the workflow itself after the replay/quality-gate steps, including failed runs. Treat the run page and artifact as authoritative for final job conclusions and data.
+          EOF
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/LEAPS_REPLAY_LATEST_RUN.md
+          git commit -m "Record Adaptive LEAPS replay run ${RUN_ID}" || {
+            echo "No manifest change to commit"
+            exit 0
+          }
+          git push origin HEAD:main
