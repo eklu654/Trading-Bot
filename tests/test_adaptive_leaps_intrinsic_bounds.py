@@ -97,6 +97,8 @@ class IntrinsicBoundDiagnosticTests(unittest.TestCase):
             self.assertEqual(raw["bid_below_intrinsic_rows"], 1)
             self.assertEqual(adjusted["ask_below_intrinsic_rows"], 0)
             self.assertEqual(adjusted["bid_below_intrinsic_rows"], 0)
+            self.assertLess(raw["ask_to_intrinsic_ratio_quantiles_for_itm_quotes"]["p50"], 0.75)
+            self.assertGreater(adjusted["ask_to_intrinsic_ratio_quantiles_for_itm_quotes"]["p50"], 1.0)
             self.assertEqual(raw["sample_ask_violations"][0]["contract_id"], "QQQ140920C00077000")
 
 
