@@ -51,7 +51,7 @@ jobs:
               "",
               "This receipt is published at workflow start so the active run is discoverable. The final step updates the status after replay and quality-gate completion; the run page and artifact remain authoritative.",
               ""
-            ].join("\\n");
+            ].join("\n");
             for (let attempt = 0; attempt < 3; attempt++) {
               let sha;
               try {
@@ -263,7 +263,7 @@ jobs:
               "",
               "This receipt is updated after replay and quality-gate completion, including failed runs. Treat the run page and artifact as authoritative for final job conclusions and data.",
               ""
-            ].join("\\n");
+            ].join("\n");
             for (let attempt = 0; attempt < 3; attempt++) {
               let sha;
               try {
