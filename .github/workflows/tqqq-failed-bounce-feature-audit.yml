@@ -2,6 +2,10 @@ name: TQQQ failed-bounce feature audit
 on:
   push:
     branches: [main]
+    paths:
+      - "research/failed_bounce_feature_audit.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   audit:

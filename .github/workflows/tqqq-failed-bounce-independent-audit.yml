@@ -2,6 +2,10 @@ name: TQQQ failed-bounce independent audit
 on:
   push:
     branches: [main]
+    paths:
+      - "research/audit_failed_bounce_canonical_independent.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   audit:
