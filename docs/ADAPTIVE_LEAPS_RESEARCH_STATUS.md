@@ -193,3 +193,10 @@ This document records repository/code inspection only. It does not assert that a
 - Verified on `main` that `.github/workflows/adaptive-leaps-replay.yml` includes the pinned SPY/QQQ underlying-price downloads, compiles `research/audit_adaptive_leaps_source_discontinuity.py`, and runs the SPY/QQQ diagnostics. The new diagnostic file is present on main.
 - Merge changes the replay workflow path, so the workflow's main-branch path filter should enqueue a replay automatically. The GitHub connector's commit-run listing is PR-only and returned no runs for the merge commit; this is not evidence that no push run exists. A direct Actions API listing must confirm the concrete run ID and status.
 - Research gate remains: inspect the uploaded `adaptive-leaps-chronological-replay` artifact, source discontinuity CSV/JSON, and all four summaries/ledgers. The audit is `continue-on-error` diagnostic by design; its output must be reviewed even if terminal-equity gate fails. Existing unresolved expiration/terminal-equity handling remains a separate issue; no return claims until all four cases reconcile.
+
+
+### Workflow trigger audit — 2026-10-13 23:34Z
+
+- Follow-up review found the replay workflow's `push.paths` filter listed the quote-continuity audit but omitted `research/audit_adaptive_leaps_source_discontinuity.py`. The source audit is invoked by the workflow, but a future edit to that script alone would not trigger a replay.
+- Added the missing source-audit path to the workflow filter on branch `leaps/replay-workflow-path-filter` (commit `c6d7777486f98539e1f20e2667b409e1dc61b93f`). This is a trigger-maintenance fix only; no strategy logic or historical results changed.
+- Post-merge replay run/artifact status is still not confirmed by the available GitHub connector calls. The prior conclusion that a run was automatically enqueued was an expectation from path-filter behavior, not a verified run ID. Do not report that replay ran until a concrete Actions run and artifact are inspected.
