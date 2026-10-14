@@ -392,3 +392,10 @@ This document records repository/code inspection only. It does not assert that a
 - SPY's flagged contract does not violate the lower bound on either checked date using raw close: it is out of the money at entry (close $144.86 vs strike $148) and at its last positive bid (close $130.71).
 - Interpretation: this does not prove whether the QQQ option quote is wrong or premium adjustment methodology differs; the public dataset documentation does not specify the option-premium adjustment basis. But a standard listed option's executable ask cannot be accepted below raw-spot intrinsic. Until a vendor or data-methodology source establishes the correct basis, the QQQ history must be treated as **price-integrity unresolved**, in addition to the March 2014 contract-row cutoff. Do not use adjusted close to legitimize the option quote, and do not use either value as a replay fallback.
 - The independent data request should now explicitly ask the provider to confirm raw, as-traded bid/ask and strike conventions for `QQQ140920C00077000` on 2013-12-23 and 2014-03-11, including the matching unadjusted underlying close. The frozen baseline and all terminal-equity gates remain unchanged.
+
+
+### 2026-10-14 06:48Z — Cohort-wide intrinsic-bound audit added
+
+- PR [#47](https://github.com/eklu654/Trading-Bot/pull/47) merged as `871d326e6776aad55dc0bb1ec1bdc5f9cf6ba9b8` after focused tests [38524274255](https://github.com/eklu654/Trading-Bot/actions/runs/38524274255) and full research-tests [38524274195](https://github.com/eklu654/Trading-Bot/actions/runs/38524274195) passed.
+- The diagnostic now counts bid/ask-below-intrinsic warnings across all options expiring in the same calendar year on the flagged quote dates, separately for each available underlying price field. It reports counts and samples but does not gate, alter, or impute any quote.
+- New audit [run 38524356807](https://github.com/eklu654/Trading-Bot/actions/runs/38524356807) is queued. Its cohort counts will determine whether the QQQ price-basis warning is isolated or affects a broader slice of the preserved option dataset.
