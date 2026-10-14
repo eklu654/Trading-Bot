@@ -272,7 +272,7 @@ def main() -> int:
         print(json.dumps(report, indent=2))
     summary = {
         "report_type": "adaptive_leaps_alternate_source_contract_audit",
-        "status": "completed" if all(r["status"] in {"completed", "not_found"} for r in reports) else "schema_error",
+        "status": "completed" if all(r["status"] == "completed" and r.get("primary_source_comparison", {}).get("status") == "completed" for r in reports) else "audit_incomplete",
         "source_release": "lambdaclass/options_portfolio_backtester data-v1",
         "source_provenance_warning": (
             "The release notice says its original upstream disappeared and that upstream sourcing was undocumented; "
