@@ -2,6 +2,10 @@ name: TQQQ canonical same-input reconciliation
 on:
   push:
     branches: [main]
+    paths:
+      - "research/tqqq_canonical_same_input_reconciliation.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   reconcile:
