@@ -72,7 +72,7 @@ jobs:
             --spy-source data/options/alternate/SPY_options.parquet \
             --qqq-source data/options/alternate/QQQ_options.parquet \
             --spy-primary-source data/options/alternate/SPY_primary_2008.parquet \
-            --qqq-primary-source data/options/alternate/QQQ_primary_*.parquet \
+            --qqq-primary-source "data/options/alternate/QQQ_primary_*.parquet" \
             --out-dir artifacts/adaptive_leaps_alternate_source
 
       - name: Upload alternate-source audit
