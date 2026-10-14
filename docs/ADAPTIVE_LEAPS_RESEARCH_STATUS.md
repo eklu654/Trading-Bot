@@ -291,3 +291,10 @@ This document records repository/code inspection only. It does not assert that a
 - Purchase decision: **do not buy the $590 archive yet**. First request written confirmation from the provider for both exact contract symbols/date windows and whether daily bid/ask rows are retained for expired contracts with zero/blank bids. This is a narrow coverage question; a broad archive purchase is not justified until the provider confirms it can answer it.
 - No new source has been downloaded or represented as independent evidence. The two pinned copies remain byte/row consistent for the flagged contracts, and this independent-provider path is only a candidate pending confirmation.
 - Research remains frozen: do not adjust DTE, invent quotes, apply intrinsic value as a missing-exit substitute, or claim a valid return until terminal positions reconcile from supported market data and an explicit expiry policy.
+
+
+### 2026-10-14 06:11Z — Prepared a bounded independent-data coverage request
+
+- Added [docs/LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md](LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md) with exact SPY/QQQ contract identifiers, required date windows, questions about blank/zero bids versus absent rows, quote timestamps/sizes, source provenance, licensing, and a pre-purchase acceptance checklist.
+- The request is deliberately scoped to two contracts; it does not authorize a purchase. HistoricalData.net remains only a candidate until it confirms both exact histories and can establish that its records are independent of the pinned data-v1 mirror.
+- This converts the vague next step into a concrete, auditable coverage request. No email was sent and no paid data was accessed.
