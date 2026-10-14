@@ -27,6 +27,7 @@ class AlternateSourceContractAuditTests(unittest.TestCase):
                   ('SPY080930C00148000','2008-08-11','2008-09-30',2.0,2.2),
                   ('SPY080930C00148000','2008-08-12','2008-09-30',NULL,NULL),
                   ('SPY080930C00148000','2008-08-13','2008-09-30',0,0),
+                  ('SPY080930C00148000','2008-09-02','2008-09-30',NULL,NULL),
                   ('OTHER','2008-08-13','2008-09-30',1,2)
             """)
             con.execute(f"COPY options TO '{path.as_posix()}' (FORMAT PARQUET)")
@@ -35,13 +36,17 @@ class AlternateSourceContractAuditTests(unittest.TestCase):
             report = inspect_contract_history(path, "SPY", "SPY080930C00148000")
 
             self.assertEqual(report["status"], "completed")
-            self.assertEqual(report["rows"], 4)
+            self.assertEqual(report["rows"], 5)
             self.assertEqual(report["first_row_date"], "2008-08-08")
-            self.assertEqual(report["last_row_date"], "2008-08-13")
+            self.assertEqual(report["last_row_date"], "2008-09-02")
             self.assertEqual(report["last_positive_bid_date"], "2008-08-11")
             self.assertEqual(report["last_fully_valid_quote_date"], "2008-08-11")
-            self.assertEqual(report["rows_after_last_positive_bid"], 2)
+            self.assertEqual(report["rows_after_last_positive_bid"], 3)
             self.assertEqual(report["days_from_last_positive_bid_to_expiration"], 50)
+            self.assertEqual(report["exit_threshold_date"], "2008-08-31")
+            self.assertEqual(report["rows_on_or_after_exit_threshold_through_expiration"], 1)
+            self.assertEqual(report["positive_bid_rows_on_or_after_exit_threshold_through_expiration"], 0)
+            self.assertEqual(report["last_observation_to_expiration_days"], 28)
 
 
     def test_compares_primary_and_alternate_bid_validity_by_date(self) -> None:
