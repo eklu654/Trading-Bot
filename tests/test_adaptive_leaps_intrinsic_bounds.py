@@ -74,8 +74,8 @@ class IntrinsicBoundDiagnosticTests(unittest.TestCase):
                 SELECT 'QQQ140920C00095000', DATE '2014-03-11', DATE '2014-09-20',
                        95.0, 'call', 1.00, 2.00
                 UNION ALL
-                SELECT 'QQQ140920P00100000', DATE '2014-03-11', DATE '2014-09-20',
-                       100.0, 'put', 10.00, 12.00
+                SELECT 'QQQ140920P00080000', DATE '2014-03-11', DATE '2014-09-20',
+                       80.0, 'put', 10.00, 12.00
                 """
             )
             con.execute(f"COPY options TO '{options_path}' (FORMAT PARQUET)")
