@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import unittest
 from pathlib import Path
 
@@ -11,9 +10,6 @@ from research.audit_adaptive_leaps_intrinsic_bounds import audit_one
 
 class IntrinsicBoundDiagnosticTests(unittest.TestCase):
     def test_reports_raw_and_adjusted_price_basis_without_imputing(self) -> None:
-        with unittest.mock.patch("pathlib.Path.mkdir"):
-            pass
-        # Use a temporary directory supplied by unittest's temporary helper.
         import tempfile
 
         with tempfile.TemporaryDirectory() as temp:
