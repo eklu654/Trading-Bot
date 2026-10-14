@@ -46,6 +46,7 @@ class AlternateSourceContractAuditTests(unittest.TestCase):
             self.assertEqual(report["exit_threshold_date"], "2008-08-31")
             self.assertEqual(report["rows_on_or_after_exit_threshold_through_expiration"], 1)
             self.assertEqual(report["positive_bid_rows_on_or_after_exit_threshold_through_expiration"], 0)
+            self.assertEqual(report["valid_sell_quote_rows_on_or_after_exit_threshold_through_expiration"], 0)
             self.assertEqual(report["last_observation_to_expiration_days"], 28)
 
 
