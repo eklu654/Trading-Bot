@@ -35,6 +35,14 @@ def sql_string(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def iso_date(value) -> str | None:
+    if value is None:
+        return None
+    if hasattr(value, "date"):
+        value = value.date()
+    return value.isoformat()
+
+
 def choose_column(columns: list[str], candidates: tuple[str, ...]) -> str | None:
     by_lower = {column.lower(): column for column in columns}
     return next((by_lower[name] for name in candidates if name in by_lower), None)
@@ -111,15 +119,15 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
         base.update({
             "status": "completed",
             "rows": int(len(rows)),
-            "first_row_date": rows["observation_date"].min().isoformat(),
-            "last_row_date": last_row_date.isoformat(),
-            "expiration": expiration.isoformat() if expiration is not None else None,
+            "first_row_date": iso_date(rows["observation_date"].min()),
+            "last_row_date": iso_date(last_row_date),
+            "expiration": iso_date(expiration),
             "valid_bid_rows": int(rows["valid_bid"].sum()),
             "fully_valid_quote_rows": int(rows["valid_quote"].sum()),
             "rows_after_last_positive_bid": rows_after_last_bid,
-            "last_positive_bid_date": last_bid_date.isoformat() if last_bid_date is not None else None,
+            "last_positive_bid_date": iso_date(last_bid_date),
             "last_positive_bid": last_bid_price,
-            "last_fully_valid_quote_date": last_quote_date.isoformat() if last_quote_date is not None else None,
+            "last_fully_valid_quote_date": iso_date(last_quote_date),
             "last_fully_valid_quote_ask": last_ask_price,
             "days_from_last_positive_bid_to_expiration": days_from_bid_to_expiration,
             "interpretation": (
