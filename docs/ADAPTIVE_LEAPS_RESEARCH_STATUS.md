@@ -306,3 +306,11 @@ This document records repository/code inspection only. It does not assert that a
 - This is a stronger candidate for a narrowly scoped inquiry than purchasing HistoricalData.net's $590 full archive immediately, but the exact SPY 2008 and QQQ 2014 contract rows and their missing/zero-bid handling remain unconfirmed. The vendor's public claims are not treated as validation evidence. See the updated request at [docs/LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md](LEAPS_INDEPENDENT_DATA_COVERAGE_REQUEST.md).
 - HistoricalData.net's published methodology says the historical options archive combines archived records with a separate daily capture begun 2026-08-06; its public independent quote reconciliation covers recent sessions and selected 2022 samples, not these target 2008/2014 rows. Thus its archive is a candidate source but not yet proven independent for the specific old records.
 - Decision unchanged: no purchase and no strategy change until written exact-contract coverage and a small sample are available. If the vendor cannot supply the relevant rows or identify source provenance, do not spend on it for this audit.
+
+
+### 2026-10-14 06:12Z — Fix the broader main-push workflow fan-out
+
+- PR [#39](https://github.com/eklu654/Trading-Bot/pull/39) merged as `007e46ef2f46259d285e966538b3fcb27096316e` after repository test run [38520664339](https://github.com/eklu654/Trading-Bot/actions/runs/38520664339) passed.
+- Root cause confirmed: 10 long-running TQQQ/failed-bounce workflows had only `push.branches: [main]` and no `paths` filter. A LEAPS documentation-only commit therefore launched all 10 jobs. Each now has exact entrypoint/shared-helper and dependency-file path filters; explicit `workflow_dispatch` remains. The broad `research-tests` workflow remains unchanged.
+- This is broader than PR #38's branch-only fix. It prevents documentation-only updates and unrelated LEAPS code from starting those particular jobs, while changes to each workflow's listed research inputs still trigger it. No trading logic or result calculations changed.
+- The batch started by the prior docs-only push was not a LEAPS replay; it was unrelated ETF/TQQQ work. No conclusion from those runs is used in the LEAPS strategy assessment.
