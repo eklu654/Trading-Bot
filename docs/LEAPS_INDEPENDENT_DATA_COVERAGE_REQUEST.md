@@ -66,3 +66,14 @@ HistoricalOptionData.com also publishes an ONESYMBOL order assistant for selecte
 - Public pricing explanation: https://historicaloptiondata.com/product-category/level-1-bare-bones-data/
 
 Request a quote/coverage confirmation first. If the provider can supply the two exact contracts for the relevant periods at close to this price, that is preferable to buying a $455 SPY-specific archive or a $1,150 full-market archive. Keep all quote rows from the first available contract observation through nominal expiration so absent rows can be distinguished from rows with blank/zero bids.
+
+
+## Third candidate screened: OptionsDX (potentially low-cost QQQ-only cross-check)
+
+OptionsDX publicly lists QQQ EOD option-chain files for 2014 and shows a displayed product range of $0–$20; files are monthly CSVs with bid/ask/last and underlying price. Its SPY archive starts in 2010, so it cannot cover the flagged 2008 SPY contract. Public product pages:
+
+- https://www.optionsdx.com/product/qqq-option-chains/
+- https://www.optionsdx.com/product/spy-option-chains/
+- https://www.optionsdx.com/faq/
+
+This is a possible low-cost QQQ cross-check, but the selected 2014 EOD variation's actual price, exact contract presence, handling of absent/zero-bid rows, and source provenance have not been confirmed. Do not treat the dataset as independent market-data validation until provenance is clarified. No account was created, no checkout was submitted, and no data was purchased or downloaded.
