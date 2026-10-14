@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import timedelta
 from pathlib import Path
 
 import duckdb
@@ -116,6 +117,24 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
             if last_bid_date is not None
             else None
         )
+        exit_threshold_date = (
+            expiration - timedelta(days=30)
+            if expiration is not None
+            else None
+        )
+        exit_window = (
+            rows.loc[
+                (rows["observation_date"] >= exit_threshold_date)
+                & (rows["observation_date"] <= expiration)
+            ]
+            if exit_threshold_date is not None and expiration is not None
+            else rows.iloc[0:0]
+        )
+        last_observation_to_expiration_days = (
+            int((expiration - last_row_date).days)
+            if expiration is not None and last_row_date is not None
+            else None
+        )
         base.update({
             "status": "completed",
             "rows": int(len(rows)),
@@ -130,6 +149,13 @@ def inspect_contract_history(source: str | Path, symbol: str, contract_id: str) 
             "last_fully_valid_quote_date": iso_date(last_quote_date),
             "last_fully_valid_quote_ask": last_ask_price,
             "days_from_last_positive_bid_to_expiration": days_from_bid_to_expiration,
+            "exit_threshold_dte_calendar_days": 30,
+            "exit_threshold_date": iso_date(exit_threshold_date),
+            "rows_on_or_after_exit_threshold_through_expiration": int(len(exit_window)),
+            "positive_bid_rows_on_or_after_exit_threshold_through_expiration": int(
+                (exit_window["valid_bid"]).sum()
+            ),
+            "last_observation_to_expiration_days": last_observation_to_expiration_days,
             "interpretation": (
                 "A matching history is an alternate preserved copy, not independent exchange-data validation. "
                 "A missing or invalid bid is not replaced or imputed."
