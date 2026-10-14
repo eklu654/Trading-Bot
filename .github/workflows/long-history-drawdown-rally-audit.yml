@@ -2,6 +2,10 @@ name: Long-history drawdown rally audit
 on:
   push:
     branches: [main]
+    paths:
+      - "research/long_history_drawdown_rally_audit.py"
+      - "requirements-dev.txt"
+      - "research/requirements.txt"
   workflow_dispatch:
 jobs:
   audit:
