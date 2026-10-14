@@ -209,3 +209,11 @@ This document records repository/code inspection only. It does not assert that a
 - Confirmed on `main` that the replay workflow push path filter now includes both `research/audit_adaptive_leaps_quote_continuity.py` and `research/audit_adaptive_leaps_source_discontinuity.py`. PR #31 changed only the replay workflow trigger list and this audit document.
 - Checked the merge commit's workflow-run listing; it returned no runs. This connector result is inconclusive (not a repository-wide Actions listing) and does not establish that a post-merge replay ran or did not run. The concrete post-merge replay run ID and artifact remain unverified.
 - Next step is still to obtain a concrete run ID for `Adaptive LEAPS Chronological Replay`, inspect `adaptive-leaps-chronological-replay` artifact contents and source-discontinuity CSV/JSON, then reconcile all four replay summaries. Existing unresolved expiration/terminal-equity handling remains a hard stop for profitability conclusions and paper trading.
+
+
+### Follow-up continuation checkpoint — 2026-10-13
+
+- Re-read the current main workflow and source-discontinuity diagnostic. The workflow invokes SPY and QQQ checks against the pinned underlying Parquet files and uploads the full replay artifact even when diagnostic/replay steps fail.
+- Reviewed the diagnostic SQL: it compares the flagged contract's last row and last valid bid against underlying trading dates through expiration, and separately counts dates with/without symbol-level option rows. It explicitly does not claim missing quotes were executable.
+- Re-attempted to establish the post-merge replay run/artifact from available connector calls. The connector's permitted public-fetch endpoint does not expose the Actions run listing needed here; no verified run ID or artifact contents were obtained in this checkpoint. Do not interpret this as evidence that the workflow did not run.
+- No historical return or terminal-equity figures were changed or newly validated. Outstanding gates remain: concrete replay run + artifact inspection, all four summary/ledger reconciliations, and correct expired-position terminal handling.
