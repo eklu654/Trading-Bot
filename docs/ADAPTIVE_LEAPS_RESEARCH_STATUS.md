@@ -274,3 +274,10 @@ This document records repository/code inspection only. It does not assert that a
 - Consequently, marking an expired call at `max(underlying close - strike, 0) × 100` is only a contractual expiration payoff under a defined settlement/position-liquidation assumption. It is not evidence that the strategy's scheduled DTE-30 sale could have been executed. The QQQ strike obligation may also exceed the $5,000 account's available cash; actual exercise/forced liquidation cannot be assumed without an explicit account policy.
 - Decision: keep the current quality gate and frozen baseline unchanged. Do **not** patch terminal equity with intrinsic value or automatic exercise just to make the run pass. Resolve the missing pre-expiry exit quotes with independent historical data, or separately predeclare and test an expiry-fallback policy as a different strategy variant. Until then, the baseline has no valid terminal return and is not eligible for paper trading.
 - Repository-wide research-tests run [38515124150](https://github.com/eklu654/Trading-Bot/actions/runs/38515124150) passed after the documentation update.
+
+
+### 2026-10-14 05:13Z — Reduce unrelated TQQQ matrix fan-out from LEAPS feature branches
+
+- PR [#38](https://github.com/eklu654/Trading-Bot/pull/38) merged as `07d735ba5ca2e057ce7ba5ac3e4b622c16ed7ad7` after repository CI [38515402664](https://github.com/eklu654/Trading-Bot/actions/runs/38515402664) passed.
+- The `Actual TQQQ partial DMA matrix` workflow previously filtered by research-file paths but had no `push.branches` restriction, so every LEAPS feature-branch edit to `research/*.py` launched an unrelated matrix run. Automatic push runs are now restricted to `main`; the existing path filter and explicit manual `workflow_dispatch` remain intact.
+- This is CI hygiene only and does not change ETF results or LEAPS logic.
