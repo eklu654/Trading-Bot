@@ -84,3 +84,10 @@ This is a possible low-cost QQQ cross-check, but the selected 2014 EOD variation
 Please confirm that historical QQQ option bid/ask values are raw, as-traded premiums and that strike values are the original listed strike, not dividend-adjusted or otherwise rescaled. For `QQQ140920C00077000` on 2014-03-11, the preserved dataset reports bid $6.70 / ask $7.67; public QQQ unadjusted close is $90.22, making the standard $77 call's intrinsic value $13.22. The source's separate adjusted close is $82.135, which would make the quote appear above intrinsic if incorrectly compared against the raw strike. The provider should confirm the correct contemporaneous underlying close, contract deliverable/strike, and NBBO bid/ask basis for both 2013-12-23 and 2014-03-11.
 
 This is a targeted data-integrity check in addition to confirming the missing post-2014-03-12 contract rows. No price adjustment should be assumed from the request alone.
+
+
+## Cohort-level integrity finding (not just one contract)
+
+On 2014-03-11, across QQQ options expiring in 2014, 377 of 1,006 in-the-money calls with positive asks (37.5%) have ask prices below raw-close intrinsic. The ask/intrinsic ratio p25 is 0.537 and median is 1.003; the lower quartile is clustered near half intrinsic. On the same date, 781 positive QQQ call bids are below raw-close intrinsic. In contrast, the SPY 2008 cohort's raw-close call asks clear intrinsic bounds.
+
+Please confirm whether the QQQ historical bid/ask and Greeks are raw, as-traded values or have been split-/dividend-adjusted or otherwise rescaled. If adjusted, please provide the adjustment factor and strike/deliverable transformation needed to reconstruct executable historical prices. We will not apply a guessed factor to the preserved data.
