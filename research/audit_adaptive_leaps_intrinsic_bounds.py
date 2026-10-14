@@ -173,6 +173,111 @@ def audit_one(
     }
 
 
+def audit_cohort(
+    con: duckdb.DuckDBPyConnection,
+    symbol: str,
+    option_source: str,
+    underlying_source: str,
+) -> dict:
+    """Count quote/intrinsic lower-bound warnings across same-year expiries."""
+    check_date = "2008-08-11" if symbol == "SPY" else "2014-03-11"
+    option_expr = "read_parquet(" + sql_string(option_source) + ", union_by_name=true)"
+    underlying_expr = "read_parquet(" + sql_string(underlying_source) + ", union_by_name=true)"
+    option_cols = resolve_columns(con, option_source)
+    required = ("contract", "date", "expiration", "strike", "type", "bid", "ask")
+    missing = sorted(set(required) - set(option_cols))
+    if missing:
+        raise ValueError(f"{symbol} option source lacks required columns {missing}")
+    underlying_schema = con.execute(f"DESCRIBE SELECT * FROM {underlying_expr} LIMIT 0").fetchdf()
+    underlying_columns = [str(c) for c in underlying_schema["column_name"]]
+    lower_to_actual = {c.lower(): c for c in underlying_columns}
+    date_col = next((lower_to_actual[c] for c in ("date", "observation_date", "trading_date", "time") if c in lower_to_actual), None)
+    symbol_col = lower_to_actual.get("symbol")
+    price_cols = [
+        lower_to_actual[c] for c in
+        ("close", "close_price", "underlying_close", "adj_close", "adjclose", "adjusted_close", "underlying_price", "price")
+        if c in lower_to_actual
+    ]
+    if date_col is None or not price_cols:
+        raise ValueError(f"{symbol} underlying source has unrecognized schema: {underlying_columns}")
+    year = int(check_date[:4])
+    oc = {key: ident(value) for key, value in option_cols.items()}
+    option_rows = con.execute(f"""
+        SELECT CAST({oc['contract']} AS VARCHAR) AS contract_id,
+               CAST({oc['expiration']} AS DATE) AS expiration,
+               CAST({oc['strike']} AS DOUBLE) AS strike,
+               lower(trim(CAST({oc['type']} AS VARCHAR))) AS option_type,
+               CAST({oc['bid']} AS DOUBLE) AS bid,
+               CAST({oc['ask']} AS DOUBLE) AS ask
+        FROM {option_expr}
+        WHERE CAST({oc['date']} AS DATE) = DATE {sql_string(check_date)}
+          AND year(CAST({oc['expiration']} AS DATE)) = {year}
+    """).fetchdf()
+    symbol_filter = f" AND CAST({ident(symbol_col)} AS VARCHAR) = {sql_string(symbol)}" if symbol_col else ""
+    price_select = ", ".join(f"CAST({ident(col)} AS DOUBLE) AS {ident(col)}" for col in price_cols)
+    underlying_rows = con.execute(f"""
+        SELECT {price_select}
+        FROM {underlying_expr}
+        WHERE CAST({ident(date_col)} AS DATE) = DATE {sql_string(check_date)}{symbol_filter}
+        LIMIT 1
+    """).fetchdf()
+    spots = {
+        str(col): float(underlying_rows.iloc[0][col])
+        for col in price_cols
+        if not underlying_rows.empty and underlying_rows.iloc[0][col] is not None
+    }
+    counts = {
+        field: {
+            "positive_ask_rows": 0,
+            "positive_bid_rows": 0,
+            "ask_below_intrinsic_rows": 0,
+            "bid_below_intrinsic_rows": 0,
+            "sample_ask_violations": [],
+        }
+        for field in spots
+    }
+    for _, row in option_rows.iterrows():
+        option_type = str(row["option_type"]).strip().lower()
+        if option_type not in ("c", "call", "p", "put"):
+            continue
+        strike = float(row["strike"])
+        bid = float(row["bid"]) if row["bid"] is not None else 0.0
+        ask = float(row["ask"]) if row["ask"] is not None else 0.0
+        for field, spot in spots.items():
+            intrinsic = max(spot - strike, 0.0) if option_type in ("c", "call") else max(strike - spot, 0.0)
+            result = counts[field]
+            result["positive_ask_rows"] += int(ask > 0)
+            result["positive_bid_rows"] += int(bid > 0)
+            ask_violation = ask > 0 and ask + 0.01 < intrinsic
+            bid_violation = bid > 0 and bid + 0.01 < intrinsic
+            result["ask_below_intrinsic_rows"] += int(ask_violation)
+            result["bid_below_intrinsic_rows"] += int(bid_violation)
+            if ask_violation and len(result["sample_ask_violations"]) < 10:
+                result["sample_ask_violations"].append({
+                    "contract_id": str(row["contract_id"]),
+                    "expiration": row["expiration"].date().isoformat() if hasattr(row["expiration"], "date") else str(row["expiration"]),
+                    "strike": strike,
+                    "option_type": option_type,
+                    "bid": bid,
+                    "ask": ask,
+                    "underlying_price": spot,
+                    "intrinsic_value": intrinsic,
+                })
+    return {
+        "symbol": symbol,
+        "check_date": check_date,
+        "expiration_year_filter": year,
+        "underlying_rows_found": int(len(underlying_rows)),
+        "option_rows_in_expiration_year": int(len(option_rows)),
+        "underlying_price_fields_checked": list(spots),
+        "counts_by_underlying_field": counts,
+        "interpretation_guardrail": (
+            "Counts are lower-bound diagnostics only. A violation against one candidate spot field "
+            "does not establish bad market data until option-premium and underlying adjustment bases are verified."
+        ),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spy-source", required=True)
@@ -189,7 +294,12 @@ def main() -> None:
         "SPY": audit_one(con, "SPY", args.spy_source, args.spy_underlying),
         "QQQ": audit_one(con, "QQQ", args.qqq_source, args.qqq_underlying),
     }
+    cohorts = {
+        "SPY": audit_cohort(con, "SPY", args.spy_source, args.spy_underlying),
+        "QQQ": audit_cohort(con, "QQQ", args.qqq_source, args.qqq_underlying),
+    }
     for symbol, report in reports.items():
+        report["same_expiration_year_cohort"] = cohorts[symbol]
         path = out / f"{symbol.lower()}_intrinsic_bound_diagnostic.json"
         path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     (out / "intrinsic_bound_diagnostic_summary.json").write_text(
@@ -201,6 +311,7 @@ def main() -> None:
                     "contract_id": report["contract_id"],
                     "underlying_columns": report["underlying_columns"],
                     "underlying_price_fields_checked": report["underlying_price_fields_checked"],
+                    "same_expiration_year_cohort": cohorts[symbol],
                     "check_dates": [
                         {
                             "date": day["date"],
