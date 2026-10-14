@@ -191,7 +191,7 @@ def main() -> None:
     }
     for symbol, report in reports.items():
         path = out / f"{symbol.lower()}_intrinsic_bound_diagnostic.json"
-        path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str) + "\\n", encoding="utf-8")
+        path.write_text(json.dumps(report, indent=2, sort_keys=True, default=str) + "\n", encoding="utf-8")
     (out / "intrinsic_bound_diagnostic_summary.json").write_text(
         json.dumps({
             "report_type": "adaptive_leaps_intrinsic_bound_diagnostic",
@@ -214,7 +214,7 @@ def main() -> None:
                 for symbol, report in reports.items()
             },
             "interpretation_guardrail": "Price-basis warning only; no price is imputed and no strategy result is approved.",
-        }, indent=2, sort_keys=True, default=str) + "\\n",
+        }, indent=2, sort_keys=True, default=str) + "\n",
         encoding="utf-8",
     )
 
