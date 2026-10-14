@@ -1,6 +1,7 @@
 name: Actual TQQQ partial DMA matrix
 on:
   push:
+    branches: ["main"]
     paths:
       - "research/*.py"
       - "research/**/*.py"
