@@ -14,7 +14,7 @@ Send a short report to `eklu654@gmail.com` each trading weekday around 8:30 a.m.
 - It reads the **Alpaca paper accounts B0/F75**, not any separate real-money brokerage portfolio.
 - Virtual ledger numbers are labeled as not broker-confirmed.
 - If market data, headlines, account data, or executor status cannot be retrieved, the report labels that section unavailable rather than inventing values.
-- No email has been sent and the schedule is not operational until SMTP sender secrets are configured and the workflow/tests are verified.
+- User correction on 2026-10-15: SMTP credentials/keys were already added and the email delivery setup had already been working. The earlier statement that SMTP secrets were missing was not verified and must not be treated as an established blocker. Do not ask the user to add the same keys again.
 
 ## Required GitHub Actions secrets
 Configure these in repository Settings → Secrets and variables → Actions:
@@ -29,5 +29,10 @@ Configure these in repository Settings → Secrets and variables → Actions:
 - Source, tests, schedule workflow, and this audit note are committed directly to `main`; the initial implementation began at `7742ba8d6f4ae5128f5a306f1605213113ec9a4a`.
 - A standalone test-workflow experiment was invalid because an inline Ruby command contained YAML-sensitive colon syntax. It was removed; the established `research-tests` workflow now runs the report tests and validates the email workflow YAML.
 - CI run [38663157512](https://github.com/eklu654/Trading-Bot/actions/runs/38663157512) passed the report safety unit tests, parsed the email workflow YAML successfully, and passed the full existing `pytest -q` suite.
-- No email has been sent yet. The schedule cannot authenticate until SMTP secrets are configured. Add the secrets below, then verify a controlled run with `REPORT_FORCE_SEND` unset (manual dispatch should produce `MANUAL_RUN_NO_SEND` and send nothing); observe the first scheduled email before treating delivery as operational.
+- The report tests and workflow YAML passed in [CI run 38663157512](https://github.com/eklu654/Trading-Bot/actions/runs/38663157512). User confirms the mail keys were already configured and delivery was working before the earlier mistaken blocker claim. This GitHub Actions workflow is intended to run independently of ChatGPT; ChatGPT does not need to remain open. The remaining verification is the latest run/delivery evidence for this specific workflow, not re-entering secrets.
 - The initial implementation uses public market quote/news feeds, which can be delayed or unavailable; the email includes quote timestamps and source links. It is an informational report, not a trading signal.
+
+
+## Context correction — 2026-10-15
+
+The user clarified that the email delivery credentials had already been added and the system was already working. The prior note's claim that SMTP setup was blocking delivery was unsupported; retain the implementation and do not ask for keys again. Focus future work on checking this workflow's scheduled execution and delivery outcome, while preserving the read-only report behavior.
