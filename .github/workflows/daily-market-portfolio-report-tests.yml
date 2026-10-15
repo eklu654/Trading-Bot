@@ -1,0 +1,38 @@
+name: Daily Market Portfolio Report Tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "research/daily_market_portfolio_report.py"
+      - "research/test_daily_market_portfolio_report.py"
+      - ".github/workflows/daily-market-portfolio-email.yml"
+      - ".github/workflows/daily-market-portfolio-report-tests.yml"
+  pull_request:
+    paths:
+      - "research/daily_market_portfolio_report.py"
+      - "research/test_daily_market_portfolio_report.py"
+      - ".github/workflows/daily-market-portfolio-email.yml"
+      - ".github/workflows/daily-market-portfolio-report-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  report-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile report
+        run: python -m py_compile research/daily_market_portfolio_report.py
+      - name: Run report safety tests
+        env:
+          PYTHONPATH: research
+        run: python -m unittest -v test_daily_market_portfolio_report
+      - name: Validate email workflow YAML
+        run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/daily-market-portfolio-email.yml", aliases: true); puts "Daily report workflow YAML parsed successfully."'
