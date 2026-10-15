@@ -54,7 +54,7 @@ def get_slot(now: dt.datetime) -> str | None:
     targets = {"open": (8, 35), "midday": (12, 0), "close": (15, 5)}
     for slot, (hour, minute) in targets.items():
         delta = abs((local.hour * 60 + local.minute) - (hour * 60 + minute))
-        if delta <= 20:
+        if delta <= 40:
             return slot
     return None
 
@@ -322,9 +322,8 @@ def main() -> int:
             portfolios.append(fetch_portfolio(label, suffix))
         except DataError as exc:
             errors.append(str(exc))
-    if not portfolios:
-        print(json.dumps({"status": "BLOCKED_NO_BROKER_DATA", "errors": errors}))
-        return 1
+    # Still send a report if both broker snapshots fail: the email must disclose
+    # missing account data rather than silently disappearing.
     primary_key = os.environ.get("ALPACA_PAPER_API_KEY_B0", "").strip()
     primary_secret = os.environ.get("ALPACA_PAPER_API_SECRET_B0", "").strip()
     market = {"symbols": {}, "news": [], "errors": []}
