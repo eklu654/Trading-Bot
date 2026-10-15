@@ -205,7 +205,9 @@ def latest_executor_run() -> str:
 
 def build_report(now: datetime | None = None) -> tuple[str, str]:
     now = now or datetime.now(CT)
-    title = next((v for (h, m), v in TARGETS.items() if (h, m) == (now.hour, now.minute)), "Market update")
+    minute_now = now.hour * 60 + now.minute
+    nearest = min(TARGETS.items(), key=lambda item: abs(minute_now - (item[0][0] * 60 + item[0][1])))
+    title = nearest[1] if abs(minute_now - (nearest[0][0] * 60 + nearest[0][1])) <= 20 else "Market update"
     subject = f"Trading Bot {title} Report — {now.strftime('%a %b %d, %Y %I:%M %p CT')}"
     market, market_errors = market_section()
     headlines, news_errors = fetch_headlines()
@@ -229,7 +231,7 @@ def build_report(now: datetime | None = None) -> tuple[str, str]:
 
 def send_email(subject: str, body: str) -> None:
     host = os.environ.get("REPORT_SMTP_HOST", "")
-    port = int(os.environ.get("REPORT_SMTP_PORT", "587"))
+    port = int(os.environ.get("REPORT_SMTP_PORT") or "587")
     username = os.environ.get("REPORT_SMTP_USERNAME", "")
     password = os.environ.get("REPORT_SMTP_PASSWORD", "")
     sender = os.environ.get("REPORT_EMAIL_FROM", username)
@@ -251,9 +253,14 @@ def send_email(subject: str, body: str) -> None:
 
 def main() -> int:
     now = datetime.now(CT)
+    if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch" and os.environ.get("REPORT_FORCE_SEND", "false").lower() != "true":
+        print("MANUAL_RUN_NO_SEND: workflow_dispatch never sends an email unless REPORT_FORCE_SEND=true.")
+        return 0
     if os.environ.get("REPORT_FORCE_SEND", "false").lower() != "true":
-        if (now.hour, now.minute) not in TARGETS:
-            print(f"NO_REPORT_SLOT: local Central time is {now:%H:%M}; expected one of {sorted(TARGETS)}.")
+        minute_now = now.hour * 60 + now.minute
+        distance = min(abs(minute_now - (h * 60 + m)) for h, m in TARGETS)
+        if distance > 20:
+            print(f"NO_REPORT_SLOT: local Central time is {now:%H:%M}; not within 20 minutes of a target.")
             return 0
     try:
         subject, body = build_report(now)
