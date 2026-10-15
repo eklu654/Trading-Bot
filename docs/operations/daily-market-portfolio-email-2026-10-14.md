@@ -26,7 +26,8 @@ Configure these in repository Settings → Secrets and variables → Actions:
 `REPORT_SMTP_PORT` is optional and defaults to 587. Recipient is configured as `eklu654@gmail.com`. Existing `ALPACA_PAPER_API_KEY_B0`, `ALPACA_PAPER_API_SECRET_B0`, `ALPACA_PAPER_API_KEY_F75`, and `ALPACA_PAPER_API_SECRET_F75` secrets are reused.
 
 ## Verification state / next steps
-- Source, test, and workflow files were committed directly to `main` in a sequence of commits beginning with `7742ba8d6f4ae5128f5a306f1605213113ec9a4a`.
-- The focused workflow began reporting failure records with no job entries after its test steps were extended; broad research-test runs were repeatedly cancelled by the rapid commit sequence. Therefore the new workflow is **not yet CI-verified**.
-- Before relying on it: diagnose the focused workflow validation failure, get the report tests and YAML check green on a stable commit, add the SMTP secrets, then run a controlled manual dry run with no-send behavior verified and observe the next scheduled email.
+- Source, tests, schedule workflow, and this audit note are committed directly to `main`; the initial implementation began at `7742ba8d6f4ae5128f5a306f1605213113ec9a4a`.
+- A standalone test-workflow experiment was invalid because an inline Ruby command contained YAML-sensitive colon syntax. It was removed; the established `research-tests` workflow now runs the report tests and validates the email workflow YAML.
+- CI run [38663157512](https://github.com/eklu654/Trading-Bot/actions/runs/38663157512) passed the report safety unit tests, parsed the email workflow YAML successfully, and passed the full existing `pytest -q` suite.
+- No email has been sent yet. The schedule cannot authenticate until SMTP secrets are configured. Add the secrets below, then verify a controlled run with `REPORT_FORCE_SEND` unset (manual dispatch should produce `MANUAL_RUN_NO_SEND` and send nothing); observe the first scheduled email before treating delivery as operational.
 - The initial implementation uses public market quote/news feeds, which can be delayed or unavailable; the email includes quote timestamps and source links. It is an informational report, not a trading signal.
