@@ -55,7 +55,7 @@ class ReportTests(unittest.TestCase):
         self.assertIn("TQQQ", text_body)
         self.assertIn("ACTIVE", text_body)
         self.assertIn("Test headline", text_body)
-        self.assertIn("No active latch", text_body)
+        self.assertIn("no active latch", text_body)
         self.assertIn("&lt;div", html_body) if False else self.assertIn("Test headline", html_body)
 
     def test_report_discloses_data_errors(self):
