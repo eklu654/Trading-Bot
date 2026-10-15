@@ -1,0 +1,74 @@
+name: Market and Portfolio Email Digest
+
+on:
+  # UTC alternatives let the Python sender choose the correct Central-time
+  # window across daylight-saving changes; the wrong seasonal twin is skipped.
+  schedule:
+    - cron: "35 13,14 * * 1-5"
+    - cron: "0 17,18 * * 1-5"
+    - cron: "5 20,21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      send_test_email:
+        description: "Send a clearly labeled test email now (requires Resend secrets)."
+        required: true
+        type: boolean
+        default: false
+  push:
+    branches: [main, ops/resend-market-portfolio-digest]
+    paths:
+      - ".github/workflows/market-portfolio-email-digest.yml"
+      - "research/market_portfolio_digest.py"
+      - "research/test_market_portfolio_digest.py"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: market-portfolio-email-digest
+  cancel-in-progress: false
+
+jobs:
+  test-and-send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout main code
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Compile and test report generation
+        env:
+          PYTHONPATH: research
+        run: |
+          python -m py_compile research/market_portfolio_digest.py
+          python -m unittest -v research/test_market_portfolio_digest.py
+      - name: Fetch latest shared paper ledger snapshots
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.send_test_email)
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
+          mkdir -p /tmp/paper-state
+          git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > /tmp/paper-state/b0_state.json
+          git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > /tmp/paper-state/f75_state.json
+      - name: Send scheduled report or explicitly requested test email
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.send_test_email)
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          RESEND_FROM_EMAIL: ${{ secrets.RESEND_FROM_EMAIL }}
+          ALERT_EMAIL: ${{ secrets.ALERT_EMAIL }}
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(--state-b0 /tmp/paper-state/b0_state.json --state-f75 /tmp/paper-state/f75_state.json)
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            args+=(--test-send)
+          fi
+          PYTHONPATH=research python research/market_portfolio_digest.py "${args[@]}"
