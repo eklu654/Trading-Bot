@@ -41,5 +41,6 @@ jobs:
           PYTHONPATH: research
         run: python -m unittest -v test_daily_market_portfolio_report
       - name: Validate daily email workflow YAML
-        run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/daily-market-portfolio-email.yml", aliases: true); puts "Daily report workflow YAML parsed successfully."'
+        run: |
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/daily-market-portfolio-email.yml", aliases: true); puts "Daily report workflow YAML parsed successfully."'
       - run: PYTHONPATH=. pytest -q
