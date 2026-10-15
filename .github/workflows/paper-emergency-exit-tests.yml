@@ -15,9 +15,12 @@ on:
       - "research/test_qqq_intraday_monitor.py"
       - "research/test_alpaca_paper_order_executor.py"
       - "research/test_executor_fill_reconciliation.py"
+      - "research/daily_market_portfolio_report.py"
+      - "research/test_daily_market_portfolio_report.py"
       - ".github/workflows/paper-emergency-exit-tests.yml"
       - ".github/workflows/alpaca-paper-order-executor.yml"
       - ".github/workflows/qqq-intraday-monitor.yml"
+      - ".github/workflows/daily-market-portfolio-email.yml"
   pull_request:
     paths:
       - "research/paper_emergency_exit.py"
@@ -33,6 +36,7 @@ on:
       - ".github/workflows/paper-emergency-exit-tests.yml"
       - ".github/workflows/alpaca-paper-order-executor.yml"
       - ".github/workflows/qqq-intraday-monitor.yml"
+      - ".github/workflows/daily-market-portfolio-email.yml"
   workflow_dispatch:
 
 permissions:
@@ -57,6 +61,14 @@ jobs:
           test "$(grep -Fc "ENABLE_PAPER_ORDER_SUBMISSION: $" .github/workflows/alpaca-paper-order-executor.yml)" -eq 2
           grep -Fq "ENABLE_PAPER_ORDER_SUBMISSION: $" .github/workflows/alpaca-paper-order-executor.yml
           grep -Fq "github.event_name == 'schedule' }}" .github/workflows/alpaca-paper-order-executor.yml
+      - name: Compile and test daily report (read-only)
+        env:
+          PYTHONPATH: research
+        run: |
+          python -m py_compile research/daily_market_portfolio_report.py
+          python -m unittest -v research/test_daily_market_portfolio_report.py
+      - name: Validate daily report workflow YAML
+        run: ruby -e 'require "yaml"; YAML.load_file(".github/workflows/daily-market-portfolio-email.yml", aliases: true); puts "Daily report workflow YAML parsed successfully."'
       - name: Run emergency-exit core safety tests
         env:
           PYTHONPATH: research
