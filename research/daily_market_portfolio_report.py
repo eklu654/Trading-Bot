@@ -85,8 +85,13 @@ def fetch_quote(symbol: str, label: str) -> dict:
     else:
         chosen, chosen_label, asof = regular, "regular/latest", meta.get("regularMarketTime")
     change = (float(chosen) / float(prev) - 1) * 100 if chosen and prev else None
+    try:
+        asof_text = datetime.fromtimestamp(int(asof), CT).strftime("%I:%M %p CT") if asof else "timestamp unavailable"
+    except (TypeError, ValueError, OSError):
+        asof_text = "timestamp unavailable"
     return {"symbol": symbol, "label": label, "price": chosen, "previous": prev,
-            "change_pct": change, "quote_type": chosen_label, "asof": asof}
+            "change_pct": change, "quote_type": chosen_label, "asof": asof,
+            "asof_text": asof_text}
 
 
 def market_section() -> tuple[list[str], list[str]]:
@@ -95,7 +100,7 @@ def market_section() -> tuple[list[str], list[str]]:
         try:
             q = fetch_quote(symbol, label)
             pct = signed_pct(q["change_pct"])
-            lines.append(f"- {q['symbol']} ({q['label']}): {money(q['price'])}; {pct} vs previous close ({q['quote_type']}).")
+            lines.append(f"- {q['symbol']} ({q['label']}): {money(q['price'])}; {pct} vs previous close ({q['quote_type']}, as of {q['asof_text']}).")
         except Exception as exc:
             errors.append(f"{symbol}: {type(exc).__name__}: {exc}")
             lines.append(f"- {symbol} ({label}): quote unavailable.")
