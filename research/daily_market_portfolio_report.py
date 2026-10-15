@@ -75,15 +75,18 @@ def fetch_quote(symbol: str, label: str) -> dict:
     regular = meta.get("regularMarketPrice")
     pre = meta.get("preMarketPrice")
     post = meta.get("postMarketPrice")
-    chosen = pre if pre is not None and pre > 0 else regular
-    chosen_label = "pre-market" if chosen == pre and pre is not None else "regular/latest"
     now_ct = datetime.now(CT)
-    if now_ct.hour >= 15 and post is not None and post > 0:
-        chosen, chosen_label = post, "after-hours"
+    before_open = (now_ct.hour, now_ct.minute) < (8, 30)
+    after_close = (now_ct.hour, now_ct.minute) >= (15, 0)
+    if before_open and pre is not None and pre > 0:
+        chosen, chosen_label, asof = pre, "pre-market", meta.get("preMarketTime")
+    elif after_close and post is not None and post > 0:
+        chosen, chosen_label, asof = post, "after-hours", meta.get("postMarketTime")
+    else:
+        chosen, chosen_label, asof = regular, "regular/latest", meta.get("regularMarketTime")
     change = (float(chosen) / float(prev) - 1) * 100 if chosen and prev else None
     return {"symbol": symbol, "label": label, "price": chosen, "previous": prev,
-            "change_pct": change, "quote_type": chosen_label,
-            "asof": meta.get("regularMarketTime")}
+            "change_pct": change, "quote_type": chosen_label, "asof": asof}
 
 
 def market_section() -> tuple[list[str], list[str]]:
