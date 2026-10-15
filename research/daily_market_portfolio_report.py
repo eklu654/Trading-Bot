@@ -178,7 +178,7 @@ def ledger_lines() -> list[str]:
             latch = state.get("emergency_exit_latch")
             lines.append(
                 f"- {label} virtual ledger (not broker-confirmed): cash {money(state.get('cash'))}; "
-                f"equity {money(state.get('equity'))}; TQQQ qty {state.get('quantity', state.get('shares', 'unknown'))}; "
+                f"equity {money(state.get('equity'))}; {state.get('symbol', 'asset')} qty {state.get('qty', state.get('quantity', state.get('shares', 'unknown')))}; mark date {state.get('mark_date', 'unknown')} at {money(state.get('mark_price'))}; "
                 f"pending intent {'yes' if pending else 'no'}; defense latch {'ACTIVE' if latch else 'inactive'}."
             )
         except Exception:
