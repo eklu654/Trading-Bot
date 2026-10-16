@@ -79,3 +79,19 @@ The executor now passes its dry-run date guard, but this does not prove a new sc
 1. Allow the next scheduled GET-only reconciliation to run and verify broker position, fill activities, and virtual state remain aligned.
 2. Design an isolated paper-only emergency-exit test before any order mutation; explicitly verify sell fill, position zero, ledger quantity zero, and no duplicate sell on rerun.
 3. Keep B0 frozen and F75 shadow-only; do not promote a defense on drawdown reduction alone. A defense must improve terminal balance versus its matched control while avoiding near-ruin.
+
+## Follow-up audit — latest workflow snapshot, 2026-10-16 00:06 Central
+
+Checked current GitHub Actions runs and downloaded the sanitized artifact from executor run [38853334301](https://github.com/eklu654/Trading-Bot/actions/runs/38853334301). The artifact confirms:
+
+- B0 prepare: `SKIPPED_MARKET_CLOSED`, signal session `2026-10-15`, no intent staged.
+- F75 prepare: `SKIPPED_MARKET_CLOSED`, signal session `2026-10-15`, no intent staged.
+- B0 submit/reconcile: `NO_PENDING_INTENT`, no POST attempted.
+- F75 submit/reconcile: `NO_PENDING_INTENT`, no POST attempted.
+
+The run passed its compile/test and distinct-paper-account identity checks. It was a push-triggered diagnostic run, so the schedule-only arm/submit gate remained closed. This validates the corrected date path in a market-closed dry-run only; it does not demonstrate behavior during a live market session or successful scheduled order submission.
+
+Latest workflow inventory showed the three checks at commit `fce3bc7e0397152d73460664927e58bde9fad6a9` completed successfully: executor, emergency-exit core tests, and research tests. Earlier test runs at commit `0df8c697d97bff034bf1b56e39a5f2bcca9f9e69` failed during the first test revision; corrected revision passed at `fce3bc7e0397152d73460664927e58bde9fad6a9`.
+
+No new broker mutation was made during this audit. Keep the real emergency-sell integration test and next scheduled-session reconciliation as open operational tasks.
+
