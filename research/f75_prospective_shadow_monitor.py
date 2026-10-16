@@ -60,6 +60,33 @@ def compose_f75_signal(b0, overlay_state, partial_exposure=0.75):
     return np.minimum(baseline, overlay_weight)
 
 
+def build_return_components(adj_open, adj_close, first_new_index=None, prior_close=None):
+    """Build returns, anchoring the first appended overnight move to the ledger tail.
+
+    Historical vendor data can be revised between scheduled runs. Existing ledger
+    rows are immutable, so the first new session must use the persisted prior close
+    rather than a refreshed historical close from the newly downloaded price series.
+    """
+    adj_open = np.asarray(adj_open, dtype=float)
+    adj_close = np.asarray(adj_close, dtype=float)
+    if adj_open.shape != adj_close.shape or adj_open.ndim != 1:
+        raise ValueError("adjusted open and close arrays must be equal-length one-dimensional arrays")
+    if not np.isfinite(adj_open).all() or not np.isfinite(adj_close).all():
+        raise ValueError("adjusted prices must be finite")
+    if np.any(adj_open <= 0.0) or np.any(adj_close <= 0.0):
+        raise ValueError("adjusted prices must be positive")
+    overnight = np.zeros(len(adj_open), dtype=float)
+    overnight[1:] = adj_open[1:] / adj_close[:-1] - 1.0
+    intraday = adj_close / adj_open - 1.0
+    if prior_close is not None:
+        if first_new_index is None or not 0 <= int(first_new_index) < len(adj_open):
+            raise ValueError("a valid first_new_index is required when prior_close is supplied")
+        if not np.isfinite(prior_close) or float(prior_close) <= 0.0:
+            raise ValueError("persisted prior close must be finite and positive")
+        overnight[int(first_new_index)] = adj_open[int(first_new_index)] / float(prior_close) - 1.0
+    return overnight, intraday
+
+
 def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_HASH):
     """Fail closed if an existing append-only ledger or its state manifest is stale."""
     required = {
@@ -254,8 +281,11 @@ def main():
     # Each new session's close signal is recorded today; exposure is the prior close's signal.
     adj_open = prices["tqqq_adj_open"].to_numpy(float)
     adj_close = prices["tqqq_adj_close"].to_numpy(float)
-    overnight = np.zeros(len(prices)); overnight[1:] = adj_open[1:] / adj_close[:-1] - 1
-    intraday = adj_close / adj_open - 1
+    first_new = prices.index.get_loc(fresh.index[0])
+    persisted_prior_close = float(prior.sort_values("date").iloc[-1]["tqqq_adj_close"]) if not prior.empty else None
+    overnight, intraday = build_return_components(
+        adj_open, adj_close, first_new_index=first_new, prior_close=persisted_prior_close
+    )
     # Existing ledger carries shadow account state forward. Never rewrite past rows.
     if not prior.empty:
         if prior["date"].max() >= fresh.index.min(): raise RuntimeError("New sessions overlap or precede ledger tail")
@@ -268,7 +298,6 @@ def main():
         previous_exposure = {"B0": 0.0, "F75": 0.0}
     rows=[]
     ix = prices.index
-    first_new = ix.get_loc(fresh.index[0])
     for i in range(first_new, len(ix)):
         d=ix[i]
         initializing = (i == first_new and prior.empty)
