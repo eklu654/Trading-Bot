@@ -18,9 +18,18 @@ Commit `2b3e328125a6c51171f8e403688aa08214127f44` on `main` updates `.github/wor
 
 into the executor's existing local shadow input paths. This changes only the source files read by the paper executor; it does not change B0/F75 strategy rules, broker credentials, or order payload logic.
 
-## Verification
+## Verification result — v2 input loaded, but preparation safely blocked
 
-The push-triggered workflow run [38851008693](https://github.com/eklu654/Trading-Bot/actions/runs/38851008693) was started by this workflow edit. Push-triggered runs are configured as dry-run/no-submission events. The initial status showed the compile/test guardrail step succeeded, and distinct paper account identity verification was in progress. Final workflow success and the prepare/submit reports must be checked before calling the change fully verified.
+The push-triggered workflow [38851008693](https://github.com/eklu654/Trading-Bot/actions/runs/38851008693) completed with failure during preparation. The sanitized artifact reports for both B0 and F75 were:
+
+- `status: BLOCKED`
+- `reason: fill-backed virtual ledger is not marked through latest signal session`
+
+The compile/test guardrail and distinct-paper-account identity verification steps passed. Both prepare commands were blocked before staging a new intent; the arm and submit steps were skipped. The event was a push event, and the workflow is configured so push/manual runs cannot submit orders. No broker POST was attempted in this run.
+
+The underlying date mismatch is now explicit: the v2 shadow signal ends on 2026-10-14, while both fill-backed virtual ledgers are marked through 2026-10-15. The executor correctly refuses to trade when the portfolio mark date and latest signal session disagree. This is a fail-closed safety result, not a reason to weaken the date guard.
+
+A fresh F75 shadow-monitor run [38851092847](https://github.com/eklu654/Trading-Bot/actions/runs/38851092847) was triggered by an audit-only docstring clarification and is in progress to see whether the monitor can append the latest completed session. Its final result and the next executor dry-run must be checked before considering this issue resolved.
 
 ## Existing execution safety model
 
