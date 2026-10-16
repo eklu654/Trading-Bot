@@ -20,6 +20,34 @@ class ReportTests(unittest.TestCase):
         self.assertIn("headline", body)
         self.assertIn("workflow ok", body)
 
+    def test_schedule_slot_is_identified_from_cron_not_start_time(self):
+        tz = ZoneInfo("America/Chicago")
+        now = datetime(2026, 10, 16, 12, 33, tzinfo=tz)
+        title, reason = report.resolve_scheduled_slot(now, "schedule", "0 17 * * 1-5")
+        self.assertEqual(title, "Midday")
+        self.assertIn("33 minutes", reason)
+
+    def test_wrong_dst_candidate_is_rejected(self):
+        tz = ZoneInfo("America/Chicago")
+        now = datetime(2026, 10, 16, 12, 5, tzinfo=tz)
+        title, reason = report.resolve_scheduled_slot(now, "schedule", "0 18 * * 1-5")
+        self.assertIsNone(title)
+        self.assertIn("daylight-saving-time", reason)
+
+    def test_overdue_slot_is_suppressed_instead_of_mislabelled(self):
+        tz = ZoneInfo("America/Chicago")
+        now = datetime(2026, 10, 16, 14, 49, tzinfo=tz)
+        title, reason = report.resolve_scheduled_slot(now, "schedule", "0 17 * * 1-5")
+        self.assertIsNone(title)
+        self.assertIn("late", reason)
+
+    def test_html_email_has_structured_headings_and_plain_text_fallback(self):
+        body = "Trading Bot — Market open\\nGenerated now\\n\\nMARKET SNAPSHOT\\n- SPY: $1.00"
+        html_body = report.render_html(body)
+        self.assertIn("<h1", html_body)
+        self.assertIn("MARKET SNAPSHOT", html_body)
+        self.assertIn("<li", html_body)
+
     def test_email_fails_closed_without_credentials(self):
         with patch.dict(os.environ, {}, clear=True):
             with self.assertRaises(report.ReportError):
