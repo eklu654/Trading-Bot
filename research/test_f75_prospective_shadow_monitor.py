@@ -3,7 +3,7 @@ import hashlib
 import numpy as np
 import pandas as pd
 from f75_prospective_shadow_monitor import (
-    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, only_unrecorded_sessions, exclude_current_session, EXPECTED_HASH,
+    reconcile_canonical_signal, compose_f75_signal, validate_existing_ledger, only_unrecorded_sessions, exclude_current_session, build_return_components, EXPECTED_HASH,
 )
 
 class ShadowMonitorGuardrails(unittest.TestCase):
@@ -109,6 +109,19 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         prior.loc[0, "date"] = "2026-10-08 00:00:00"
         prior.loc[1, "date"] = "2026-10-09"
         self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
+
+
+    def test_first_appended_overnight_return_anchors_to_persisted_prior_close(self):
+        # Refreshed vendor history can revise a previously recorded close.
+        # The first new session must continue from the immutable ledger tail,
+        # not from that refreshed historical close.
+        opens = [82.33, 80.78]
+        refreshed_closes = [80.23, 83.62]
+        overnight, intraday = build_return_components(
+            opens, refreshed_closes, first_new_index=1, prior_close=81.28
+        )
+        self.assertAlmostEqual(overnight[1], 80.78 / 81.28 - 1.0, places=12)
+        self.assertAlmostEqual(intraday[1], 83.62 / 80.78 - 1.0, places=12)
 
     def test_ledger_rejects_overnight_return_price_mismatch(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
