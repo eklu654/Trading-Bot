@@ -55,3 +55,18 @@ To make this visible rather than green-but-stale, commit [82be8a70991414b17fe1a5
 ### Feed entitlement check
 
 A follow-up read-only query of historical QQQ trades on the IEX feed for 2026-10-15 16:50–17:35Z returned IEX prints only through 16:55:32Z, consistent with the stale timestamp in the workflow log. A request for recent SIP data was rejected with HTTP 403: `subscription does not permit querying recent SIP data`. Therefore, switching the workflow to SIP is not currently a verified available fix under this account's market-data entitlement. Do not simply change `feed=iex` to `feed=sip`; first obtain an authorized, real-time source or a supported quote source and test its freshness end-to-end.
+
+
+## Continuation checkpoint — 2026-10-16 08:55Z
+
+- Latest Actions history checked again: the newest monitor run remains push-triggered run [38871234196](https://github.com/eklu654/Trading-Bot/actions/runs/38871234196), successful after the stale-report visibility guard. There is still no newer scheduled market-hours run in the inspected history, so fresh-feed and schedule-cadence recovery are not yet demonstrated.
+- Repository already contains a persistent WebSocket candidate: `research/qqq_stream_monitor.py`, tests in `research/test_qqq_stream_monitor.py`, and `Dockerfile.qqq-stream-monitor`. Its tests cover threshold/staleness/idempotency, but design notes say it has not been deployed or validated against a live stream.
+- Follow-up commit [69f832c12bc4925c72f06e9cdba78c9968494d69](https://github.com/eklu654/Trading-Bot/commit/69f832c12bc4925c72f06e9cdba78c9968494d69) records this candidate's readiness boundary and a per-session event-journal limitation: only one threshold and one recovery event are stored per session, so a second breach after recovery is deduplicated. This is acceptable only as a one-way daily observational latch; do not treat it as a re-armable downstream trigger.
+- No order-writing tool was called. No broker, strategy, or account state was modified.
+
+### Immediate queue
+
+1. Validate the IEX WebSocket in read-only mode during actual market hours and record timestamps/ages across repeated trades.
+2. Investigate the schedule history/configuration mismatch; do not infer cadence from cron text.
+3. If the stream proves fresh, deploy it as a monitored read-only service with durable SQLite storage and restart/health alerts.
+4. Only after signal freshness and service uptime are demonstrated, plan a separately reviewed paper-only order/fill/position/ledger integration test.
