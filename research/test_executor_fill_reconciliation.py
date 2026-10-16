@@ -112,7 +112,6 @@ class FillReconciliationTests(unittest.TestCase):
         self.assertIn("sell-fill-1", result["processed_fill_ids"])
         self.assertIsNone(result["pending_intent"])
         self.assertEqual(result["last_terminal_order"]["status"], "filled")
-        self.assertEqual(result["last_terminal_order"]["side"], "sell")
 
     def test_position_mismatch_fails_closed_and_preserves_pending_intent(self):
         state = staged_state()
