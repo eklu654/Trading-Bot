@@ -1,5 +1,8 @@
 """Append-only, shadow-only B0 vs F75 daily monitor (v2 ledger).
 
+Operational note (2026-10-16): the paper executor consumes the v2 ledger and
+manifest; the legacy v1 pair is retained only as immutable audit evidence.
+
 No broker connectivity or order submission. Frozen historical rows are verified
 against the canonical matrix artifact; only observations after its final date
 are appended. The legacy v1 ledger is preserved as-is for audit; v2 starts from a
