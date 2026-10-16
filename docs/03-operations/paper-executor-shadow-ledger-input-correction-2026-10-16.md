@@ -95,3 +95,20 @@ Latest workflow inventory showed the three checks at commit `fce3bc7e0397152d734
 
 No new broker mutation was made during this audit. Keep the real emergency-sell integration test and next scheduled-session reconciliation as open operational tasks.
 
+## Follow-up code-path audit — 2026-10-16 00:38 Central
+
+Reviewed the committed executor workflow, QQQ monitor, executor implementation, virtual ledger, and offline fill-reconciliation tests.
+
+### Confirmed implementation details
+- The executor workflow schedules every five minutes during its configured weekday UTC window and explicitly says completed daily shadow rows remain the strategy signal source; cadence does not invent intraday strategy signals.
+- Only scheduled events set `ENABLE_PAPER_ORDER_SUBMISSION=true`; push and manual dispatch remain dry-run.
+- The QQQ monitor is explicitly read-only: it polls the latest Alpaca IEX QQQ trade against the most recent completed daily close, uses a 4.5% threshold, rejects stale trades, and emits `THRESHOLD_BREACHED` with `orders_submitted=false`. It does not itself place an exit order.
+- The executor has a hard-pinned paper API URL and separate B0/F75 account fingerprint verification. The virtual ledger rejects duplicate fill IDs and has an emergency latch intended to block buys.
+- The sell-fill reconciliation regression test is mocked/offline; its passing result is not broker-side sell execution evidence.
+
+### Critical open integration question
+The repository must demonstrate how a `THRESHOLD_BREACHED` monitor report is durably passed to the executor's latch/exit path. The monitor source itself only warns and writes a report. Do not assume an alert equals an emergency exit. Before unattended reliance, inspect the dedicated trigger workflow and prove that the signal is validated, durably latched for both separate paper portfolios, and leads to a controlled paper sell without duplicate submissions or buy re-entry.
+
+### Status / no mutation
+This code-path audit made no broker API write and did not change strategy rules. B0 remains frozen; F75 remains shadow-only. Next verification is the monitor-to-latch-to-sell wiring and a market-hours, paper-only end-to-end test with explicit human oversight.
+
