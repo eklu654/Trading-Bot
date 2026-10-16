@@ -1,3 +1,4 @@
+# Regression coverage for the paper-only executor; push-triggered runs remain dry-run only.
 import unittest, os, json, tempfile, argparse
 from datetime import datetime, timezone
 from pathlib import Path
