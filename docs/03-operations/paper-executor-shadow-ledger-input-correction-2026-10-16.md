@@ -2,54 +2,54 @@
 
 ## Finding
 
-During continuation of the Alpaca paper execution audit, code review found that the executor workflow still fetched the legacy F75 shadow ledger and manifest:
-
-- `data/research/f75_shadow_daily_ledger.csv`
-- `data/research/f75_shadow_state.json`
-
-The F75 monitor had already been migrated to a validated v2 pair because the legacy ledger's persisted return did not reconcile to the persisted prices. Keeping the executor pointed at v1 meant its signal input was not aligned with the currently validated shadow-monitor output.
+The executor workflow had been reading the legacy F75 shadow ledger and manifest. The F75 monitor had already moved to a validated v2 pair because the legacy ledger's persisted return did not reconcile to persisted prices.
 
 ## Change made
 
-Commit `2b3e328125a6c51171f8e403688aa08214127f44` on `main` updates `.github/workflows/alpaca-paper-order-executor.yml` to fetch:
+Commit `2b3e328125a6c51171f8e403688aa08214127f44` on `main` updates `.github/workflows/alpaca-paper-order-executor.yml` to fetch the v2 ledger and manifest from `research/qqq-slow-bear-audit`:
 
 - `data/research/f75_shadow_daily_ledger_v2.csv`
 - `data/research/f75_shadow_state_v2.json`
 
-into the executor's existing local shadow input paths. This changes only the source files read by the paper executor; it does not change B0/F75 strategy rules, broker credentials, or order payload logic.
+No strategy rules, credentials, or order payload logic were changed.
 
-## Verification result — v2 input loaded, but preparation safely blocked
+## Verification timeline
 
-The push-triggered workflow [38851008693](https://github.com/eklu654/Trading-Bot/actions/runs/38851008693) completed with failure during preparation. The sanitized artifact reports for both B0 and F75 were:
+### First dry-run — correctly blocked
 
-- `status: BLOCKED`
-- `reason: fill-backed virtual ledger is not marked through latest signal session`
+Push-triggered executor run [38851008693](https://github.com/eklu654/Trading-Bot/actions/runs/38851008693) passed compile/tests and distinct-account verification, then safely blocked both B0 and F75 in preparation. The reason was `fill-backed virtual ledger is not marked through latest signal session`: the v2 signal ended on 2026-10-14 while the virtual ledgers were marked through 2026-10-15. Intent commit, arm, and submit steps were skipped; no broker POST was attempted.
 
-The compile/test guardrail and distinct-paper-account identity verification steps passed. Both prepare commands were blocked before staging a new intent; the arm and submit steps were skipped. The event was a push event, and the workflow is configured so push/manual runs cannot submit orders. No broker POST was attempted in this run.
+### Shadow ledger refresh — successful
 
-The underlying date mismatch is now explicit: the v2 shadow signal ends on 2026-10-14, while both fill-backed virtual ledgers are marked through 2026-10-15. The executor correctly refuses to trade when the portfolio mark date and latest signal session disagree. This is a fail-closed safety result, not a reason to weaken the date guard.
+Monitor run [38851092847](https://github.com/eklu654/Trading-Bot/actions/runs/38851092847) succeeded. It passed all 34 monitor tests, appended one completed session (2026-10-15), and committed the append-only v2 ledger/manifest on `research/qqq-slow-bear-audit`.
 
-A fresh F75 shadow-monitor run [38851092847](https://github.com/eklu654/Trading-Bot/actions/runs/38851092847) was triggered by an audit-only docstring clarification and is in progress to see whether the monitor can append the latest completed session. Its final result and the next executor dry-run must be checked before considering this issue resolved.
+Verified manifest summary:
+- Last observation: `2026-10-15`
+- Rows: 6 total (1 initialization + 5 return-bearing sessions)
+- Mode: `SHADOW_ONLY_NO_ORDERS`
+- Ledger SHA-256: `44c414b438f6d99f3ef4ccf444ef208edfb69c23103b1ad4220f68a6745a7a64`
+- Frozen cutoff remains `2026-10-07`
+
+This resolves the *signal-ledger freshness* side of the earlier mismatch. The executor still needs a fresh dry-run against the updated research branch to prove both signal and fill-backed state now align; no successful prepare result is claimed yet.
 
 ## Existing execution safety model
 
 Code review confirms:
-
-- The broker endpoint is hard-pinned to `https://paper-api.alpaca.markets`.
-- B0 and F75 account fingerprints are checked to ensure distinct accounts.
-- Staged intent and `SUBMITTING` state are persisted before a scheduled-run POST.
-- Only scheduled events receive the ephemeral one-run permit; manual and push events are dry-run.
-- Existing orders are looked up by client order ID before any new submission.
-- An ambiguous POST outcome is reconciled; automatic retry is not allowed without the same-run permit.
-- Fresh QQQ checks run before a buy POST, and an active emergency latch prevents a new buy.
+- Broker endpoint hard-pinned to `https://paper-api.alpaca.markets`.
+- B0/F75 account fingerprints checked for distinct identities.
+- Staged intent and `SUBMITTING` state persisted before scheduled-run POST.
+- Only scheduled events receive the ephemeral one-run permit; push/manual events are dry-run.
+- Existing orders are looked up by client order ID before a new submission.
+- Ambiguous POST outcomes are reconciled; no automatic retry without the same-run permit.
+- Fresh QQQ checks run before a buy POST, and an active emergency latch blocks a new buy.
 
 ## Remaining gap
 
-The historical TQQQ buys prove that paper orders have filled, and the GET-only reconciliation workflow has reported both accounts synced. They do not prove that the current executor has successfully executed an emergency sell. Emergency-exit validation remains open until a controlled paper-only sell/exit path is demonstrated and the resulting order, fill activity, position, and virtual ledger reconcile. Do not create a synthetic emergency trigger in a live unattended schedule merely to test it.
+Historical TQQQ buys and GET-only reconciliation do not prove that the current executor can execute and reconcile an emergency sell. Keep emergency-exit validation open until a controlled paper-only test demonstrates the sell order, filled activity, resulting broker position, virtual-ledger update, and duplicate-order prevention. Do not trigger a synthetic emergency in an unattended scheduled run.
 
-## Next verification
+## Next steps
 
-1. Confirm run 38851008693 completes successfully.
-2. Inspect its sanitized prepare and submit reports for B0 and F75 and verify the v2 signal/manifest passed integrity checks.
-3. Re-run read-only account reconciliation after the executor change.
-4. Design an isolated, explicitly paper-only emergency-exit test with clear position and duplicate-order assertions before any order mutation.
+1. Run a fresh push/manual dry-run after the v2 monitor commit and inspect both sanitized prepare reports.
+2. If prepare is still blocked, identify the remaining date/state invariant and fix its root cause without weakening fail-closed guards.
+3. Run read-only reconciliation and record its state.
+4. Design an isolated paper-only emergency-exit test before any order mutation.
