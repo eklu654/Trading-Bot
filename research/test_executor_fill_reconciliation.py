@@ -3,7 +3,9 @@ import unittest
 from unittest.mock import patch
 
 import alpaca_paper_order_executor as executor
-from paper_virtual_portfolio import new_state, stage_intent, mark_submission_attempting
+from paper_virtual_portfolio import (
+    new_state, stage_intent, mark_submission_attempting, apply_fills, plan_target,
+)
 
 
 def staged_state():
@@ -29,12 +31,14 @@ class FillReconciliationTests(unittest.TestCase):
             "id": "fill-1", "order_id": "broker-order-1", "symbol": "TQQQ",
             "side": "buy", "qty": "2", "price": "50",
         }]
+
         def fake_get_json(url, key, secret, allow_404=False):
             if "/account/activities/FILL?" in url:
                 return activities
             if url.endswith("/v2/positions"):
                 return [{"symbol": "TQQQ", "qty": "2", "side": "long"}]
             raise AssertionError("unexpected URL: " + url)
+
         with patch.object(executor, "get_json", side_effect=fake_get_json):
             result = executor.reconcile_order_fills(state, order, "key", "secret")
         self.assertEqual(result["qty"], "2.000")
@@ -56,17 +60,59 @@ class FillReconciliationTests(unittest.TestCase):
             "id": "fill-1", "order_id": "broker-order-1", "symbol": "TQQQ",
             "side": "buy", "qty": "2", "price": "50",
         }]
+
         def fake_get_json(url, key, secret, allow_404=False):
             if "/account/activities/FILL?" in url:
                 return activities
             if url.endswith("/v2/positions"):
                 return [{"symbol": "TQQQ", "qty": "2", "side": "long"}]
             raise AssertionError("unexpected URL: " + url)
+
         with patch.object(executor, "get_json", side_effect=fake_get_json):
             result = executor.reconcile_order_fills(state, order, "key", "secret")
         self.assertEqual(result["qty"], "2.000")
         self.assertEqual(result["processed_fill_ids"], ["fill-1"])
         self.assertIsNone(result["pending_intent"])
+
+    def test_filled_emergency_sell_reconciles_to_zero_position(self):
+        # Offline integration test: exercise a real sell fill through the ledger
+        # reconciliation function, with broker GET responses stubbed and no POST/network.
+        state = new_state("b0")
+        state = apply_fills(state, [{
+            "id": "seed-buy-fill", "symbol": "TQQQ", "side": "buy",
+            "qty": "10", "price": "50",
+        }])
+        intent = plan_target(state, signal_session="2026-10-12",
+                             target_weight="0", reference_price="49")
+        self.assertEqual(intent["side"], "sell")
+        self.assertEqual(intent["qty"], "10.000")
+        state = mark_submission_attempting(stage_intent(state, intent))
+        order = {
+            "id": "broker-emergency-sell-1",
+            "client_order_id": intent["client_order_id"],
+            "status": "filled",
+        }
+        activities = [{
+            "id": "sell-fill-1", "order_id": "broker-emergency-sell-1",
+            "symbol": "TQQQ", "side": "sell", "qty": "10", "price": "49",
+        }]
+
+        def fake_get_json(url, key, secret, allow_404=False):
+            if "/account/activities/FILL?" in url:
+                return activities
+            if url.endswith("/v2/positions"):
+                return []
+            raise AssertionError("unexpected URL: " + url)
+
+        with patch.object(executor, "get_json", side_effect=fake_get_json):
+            result = executor.reconcile_order_fills(state, order, "key", "secret")
+
+        self.assertEqual(result["qty"], "0.000")
+        self.assertEqual(result["cash"], "4990.000000")
+        self.assertIn("sell-fill-1", result["processed_fill_ids"])
+        self.assertIsNone(result["pending_intent"])
+        self.assertEqual(result["last_terminal_order"]["status"], "filled")
+        self.assertEqual(result["last_terminal_order"]["side"], "sell")
 
     def test_position_mismatch_fails_closed_and_preserves_pending_intent(self):
         state = staged_state()
@@ -78,12 +124,14 @@ class FillReconciliationTests(unittest.TestCase):
             "id": "fill-1", "order_id": "broker-order-1", "symbol": "TQQQ",
             "side": "buy", "qty": "2", "price": "50",
         }]
+
         def fake_get_json(url, key, secret, allow_404=False):
             if "/account/activities/FILL?" in url:
                 return activities
             if url.endswith("/v2/positions"):
                 return [{"symbol": "TQQQ", "qty": "1", "side": "long"}]
             raise AssertionError("unexpected URL: " + url)
+
         with patch.object(executor, "get_json", side_effect=fake_get_json):
             result = executor.reconcile_order_fills(state, order, "key", "secret")
         self.assertEqual(result["qty"], "2.000")
