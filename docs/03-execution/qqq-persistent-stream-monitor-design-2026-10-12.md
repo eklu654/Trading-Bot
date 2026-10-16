@@ -32,3 +32,22 @@ PYTHONPATH=research python research/test_qqq_stream_monitor.py
 5. Verify auth/subscription acknowledgements, trade freshness, baseline session/close, timestamp behavior, and end-to-end event recording with a controlled test harness (do not wait for or fabricate a live market breach).
 6. Keep the GitHub Actions five-minute monitor enabled as fallback.
 7. Do not authorize automated defensive orders until a separate rule specification and review is complete.
+
+
+## Follow-up audit — 2026-10-16
+
+### Why this matters after the polling feed incident
+
+The repository already contains a more appropriate candidate for continuous observation than the GitHub cron poller: `research/qqq_stream_monitor.py`, packaged by `Dockerfile.qqq-stream-monitor`. It subscribes to Alpaca's IEX QQQ trade WebSocket and processes each received trade with a 180-second freshness guard. This avoids relying exclusively on the REST `trades/latest` response that was observed to be about 38.7 minutes stale on 2026-10-15.
+
+However, source inspection and unit tests are **not** proof that a deployed socket receives fresh QQQ trades under the currently connected account's data entitlement. The persistent monitor remains undeployed and unverified against a live WebSocket session. Do not describe it as an operational fix until a host is configured, authentication/subscription acknowledgements are observed, and multiple market-hours trade timestamps are checked.
+
+### Newly noted journal semantics
+
+The SQLite journal uses a unique key of `session:kind`. This intentionally suppresses duplicate threshold/recovery records in a session, including across reconnects. Consequence: it records at most one `THRESHOLD_BREACHED` event and one `RECOVERED_ABOVE_THRESHOLD` event per session. If price crosses below the threshold, recovers, then crosses below again, the second threshold event is suppressed. That is acceptable only while this component remains an observational journal or when downstream policy explicitly treats the first breach as a one-way daily latch. It must not be wired as a re-armable trigger without redesigning episode identity and adding repeat-crossing tests.
+
+### Safe next action
+
+Deploy only in read-only observation mode on an always-on host with persistent `/data`, restart-on-failure, and health/error alerts. Record auth, subscription, last-trade timestamp/age, baseline session/close, and event journal growth. Do not connect the event journal to the executor or change the emergency latch from this monitor until the exact episode/recovery semantics are approved and a supervised paper-only end-to-end test is designed.
+
+No deployment, credential change, broker mutation, or strategy-rule change was performed for this audit.
