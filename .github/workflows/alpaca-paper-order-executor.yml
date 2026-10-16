@@ -44,8 +44,8 @@ jobs:
           git fetch --no-tags origin +refs/heads/research/qqq-slow-bear-audit:refs/remotes/origin/research/qqq-slow-bear-audit
           git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
           mkdir -p /tmp/paper-state
-          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_daily_ledger.csv > /tmp/paper-state/shadow.csv
-          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_state.json > /tmp/paper-state/shadow-state.json
+          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_daily_ledger_v2.csv > /tmp/paper-state/shadow.csv
+          git show origin/research/qqq-slow-bear-audit:data/research/f75_shadow_state_v2.json > /tmp/paper-state/shadow-state.json
           git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > /tmp/paper-state/b0_state.json
           git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > /tmp/paper-state/f75_state.json
       - name: Set up Python
