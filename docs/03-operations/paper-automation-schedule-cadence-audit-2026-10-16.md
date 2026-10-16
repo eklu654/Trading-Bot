@@ -70,3 +70,8 @@ A follow-up read-only query of historical QQQ trades on the IEX feed for 2026-10
 2. Investigate the schedule history/configuration mismatch; do not infer cadence from cron text.
 3. If the stream proves fresh, deploy it as a monitored read-only service with durable SQLite storage and restart/health alerts.
 4. Only after signal freshness and service uptime are demonstrated, plan a separately reviewed paper-only order/fill/position/ledger integration test.
+
+
+### Concurrency is another cadence constraint
+
+Both workflows use the same GitHub Actions concurrency group, `paper-broker-mutations`, with `cancel-in-progress: false`; the monitor job timeout is 3 minutes and executor timeout is 6 minutes, while both cron expressions request five-minute intervals. Sharing the group is intentional to protect shared ledger writes, but it serializes monitor and executor work. GitHub concurrency is not a durable FIFO queue for every scheduled tick: when work overlaps or the runner queue backs up, do not assume every five-minute occurrence will eventually execute in order. This is a plausible contributing risk, not a proven root cause for the observed multi-hour gaps. Confirm with per-run queue/start timestamps and cancellation/suppression evidence before changing the mutual-exclusion design; do not remove the shared guard without replacing ledger-write coordination.
