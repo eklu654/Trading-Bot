@@ -8,7 +8,9 @@ Missing/stale data is reported as unavailable, never inferred.
 from __future__ import annotations
 
 import email.utils
+import html
 import json
+import re
 import os
 import smtplib
 import sys
@@ -17,13 +19,23 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from email.message import EmailMessage
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
 CT = ZoneInfo("America/Chicago")
 TARGETS = {(8, 30): "Market open", (12, 0): "Midday", (15, 0): "Market close"}
+SCHEDULE_SLOTS = {
+    "30 13 * * 1-5": ("Market open", (8, 30)),
+    "30 14 * * 1-5": ("Market open", (8, 30)),
+    "0 17 * * 1-5": ("Midday", (12, 0)),
+    "0 18 * * 1-5": ("Midday", (12, 0)),
+    "0 20 * * 1-5": ("Market close", (15, 0)),
+    "0 21 * * 1-5": ("Market close", (15, 0)),
+}
+MAX_EARLY_MINUTES = 15
+MAX_LATE_MINUTES = 55
 DEFAULT_TO = "eklu654@gmail.com"
 SYMBOLS = [
     ("SPY", "S&P 500 ETF"), ("QQQ", "Nasdaq-100 ETF"),
@@ -211,30 +223,121 @@ def latest_executor_run() -> str:
         return f"Latest executor workflow unavailable ({type(exc).__name__}); do not infer bot health."
 
 
-def build_report(now: datetime | None = None) -> tuple[str, str]:
+def build_report(now: datetime | None = None, title_override: str | None = None) -> tuple[str, str]:
     now = now or datetime.now(CT)
     minute_now = now.hour * 60 + now.minute
     nearest = min(TARGETS.items(), key=lambda item: abs(minute_now - (item[0][0] * 60 + item[0][1])))
-    title = nearest[1] if abs(minute_now - (nearest[0][0] * 60 + nearest[0][1])) <= 20 else "Market update"
+    title = title_override or (nearest[1] if abs(minute_now - (nearest[0][0] * 60 + nearest[0][1])) <= 20 else "Market update")
     subject = f"Trading Bot {title} Report — {now.strftime('%a %b %d, %Y %I:%M %p CT')}"
     market, market_errors = market_section()
     headlines, news_errors = fetch_headlines()
     portfolios, portfolio_errors = portfolio_lines()
     ledger = ledger_lines()
     status = latest_executor_run()
+    all_errors = market_errors + news_errors + portfolio_errors
     body = [
-        f"Trading Bot — {title}", f"Generated: {now.strftime('%Y-%m-%d %I:%M:%S %p %Z')}",
-        "", "MARKET SNAPSHOT (indicative public quotes; delayed/stale values are not treated as live broker data)",
-        *market, "", "OVERNIGHT / RECENT HEADLINES", *headlines, "",
-        "LIVE ALPACA PAPER ACCOUNTS (read-only snapshot)", *portfolios, "",
-        "SHARED VIRTUAL LEDGERS (separate from broker-confirmed positions)", *ledger, "",
-        "BOT WORKFLOW", status, "",
-        "DATA QUALITY", 
-        *(["- One or more data sources failed; affected sections are explicitly marked unavailable."] if market_errors or news_errors or portfolio_errors else ["- All queried data sources responded; timestamps/market-hours still matter."]),
-        *([f"- Diagnostic: {e}" for e in (market_errors + news_errors + portfolio_errors)]),
-        "", "This report is informational. It does not place, cancel, or modify orders.",
+        f"Trading Bot — {title}",
+        f"Generated {now.strftime('%a, %b %d, %Y at %I:%M:%S %p %Z')}",
+        "",
+        "MARKET SNAPSHOT",
+        "Public market quotes are indicative; use each quote's timestamp to judge freshness.",
+        *market,
+        "",
+        "TOP HEADLINES",
+        *headlines,
+        "",
+        "PAPER ACCOUNTS — READ ONLY",
+        *portfolios,
+        "",
+        "VIRTUAL LEDGERS — NOT BROKER-CONFIRMED",
+        *ledger,
+        "",
+        "AUTOMATION STATUS",
+        status,
+        "",
+        "DATA QUALITY",
+        *(["- Some sources failed; affected fields are marked unavailable below."] if all_errors else ["- All queried sources responded. Quote timestamps and market hours still matter."]),
+        *([f"- {e}" for e in all_errors]),
+        "",
+        "No orders are placed, canceled, or modified by this report.",
     ]
     return subject, "\n".join(body)
+
+
+def render_html(body: str) -> str:
+    lines = body.splitlines()
+    out = ['<html><body style="font-family:Arial,Helvetica,sans-serif;color:#202124;line-height:1.45;max-width:760px;margin:0 auto;">',
+           '<div style="border-bottom:3px solid #24476b;padding:4px 0 12px;margin-bottom:18px;">']
+    in_list = False
+    for i, line in enumerate(lines):
+        safe = html.escape(line)
+        if i == 0:
+            out.append(f'<h1 style="font-size:23px;margin:0;color:#24476b;">{safe}</h1>')
+            continue
+        if i == 1:
+            out.append(f'<p style="margin:5px 0 0;color:#5f6368;font-size:13px;">{safe}</p></div>')
+            continue
+        if not line:
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            continue
+        if re.fullmatch(r"[A-Z][A-Z0-9 —–-]{2,}", line):
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            out.append(f'<h2 style="font-size:15px;margin:20px 0 7px;padding-bottom:4px;border-bottom:1px solid #dadce0;color:#24476b;">{safe}</h2>')
+        elif line.startswith("- "):
+            if not in_list:
+                out.append('<ul style="padding-left:22px;margin:5px 0 10px;">')
+                in_list = True
+            out.append(f'<li style="margin:4px 0;">{safe[2:]}</li>')
+        elif line.startswith("  - "):
+            if not in_list:
+                out.append('<ul style="padding-left:22px;margin:5px 0 10px;">')
+                in_list = True
+            out.append(f'<li style="margin:4px 0;color:#3c4043;">{safe[4:]}</li>')
+        elif line.strip().startswith(("https://", "http://")):
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            url = html.escape(line.strip(), quote=True)
+            out.append(f'<p style="margin:0 0 8px 16px;font-size:12px;"><a href="{url}" style="color:#1a73e8;">Open source</a></p>')
+        else:
+            if in_list:
+                out.append("</ul>")
+                in_list = False
+            safe = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", safe)
+            out.append(f'<p style="margin:5px 0;">{safe}</p>')
+    if in_list:
+        out.append("</ul>")
+    out.append('<p style="margin-top:22px;padding-top:10px;border-top:1px solid #dadce0;color:#5f6368;font-size:12px;">Automated informational report. It does not trade or change orders.</p></body></html>')
+    return "".join(out)
+
+
+def resolve_scheduled_slot(now: datetime, event_name: str, event_schedule: str) -> tuple[str | None, str]:
+    if event_name != "schedule":
+        return None, "not a scheduled event"
+    candidate = SCHEDULE_SLOTS.get(event_schedule.strip())
+    if not candidate:
+        return None, "unrecognized schedule expression"
+    label, (hour, minute) = candidate
+    local_now = now.astimezone(CT)
+    target = datetime(local_now.year, local_now.month, local_now.day, hour, minute, tzinfo=CT)
+    expected_utc = target.astimezone(timezone.utc)
+    try:
+        fields = event_schedule.split()
+        cron_minute, cron_hour = int(fields[0]), int(fields[1])
+    except (ValueError, IndexError):
+        return None, "invalid schedule expression"
+    if (cron_hour, cron_minute) != (expected_utc.hour, expected_utc.minute):
+        return None, "schedule expression is for the other daylight-saving-time offset"
+    delta_minutes = (local_now - target).total_seconds() / 60
+    if delta_minutes < -MAX_EARLY_MINUTES:
+        return None, f"scheduled run started {abs(delta_minutes):.0f} minutes before its intended slot"
+    if delta_minutes > MAX_LATE_MINUTES:
+        return None, f"scheduled run started {delta_minutes:.0f} minutes late; stale report suppressed"
+    return label, f"scheduled slot accepted ({delta_minutes:+.0f} minutes from target)"
 
 
 def send_email(subject: str, body: str) -> None:
@@ -251,6 +354,7 @@ def send_email(subject: str, body: str) -> None:
     msg["From"] = email.utils.formataddr(("Trading Bot Daily Report", sender))
     msg["To"] = recipient
     msg.set_content(body)
+    msg.add_alternative(render_html(body), subtype="html")
     with smtplib.SMTP(host, port, timeout=20) as smtp:
         smtp.ehlo()
         smtp.starttls()
@@ -261,19 +365,25 @@ def send_email(subject: str, body: str) -> None:
 
 def main() -> int:
     now = datetime.now(CT)
-    if os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch" and os.environ.get("REPORT_FORCE_SEND", "false").lower() != "true":
-        print("MANUAL_RUN_NO_SEND: workflow_dispatch never sends an email unless REPORT_FORCE_SEND=true.")
-        return 0
-    if os.environ.get("REPORT_FORCE_SEND", "false").lower() != "true":
+    event_name = os.environ.get("GITHUB_EVENT_NAME", "")
+    force_send = os.environ.get("REPORT_FORCE_SEND", "false").lower() == "true"
+    if force_send:
         minute_now = now.hour * 60 + now.minute
-        distance = min(abs(minute_now - (h * 60 + m)) for h, m in TARGETS)
-        if distance > 20:
-            print(f"NO_REPORT_SLOT: local Central time is {now:%H:%M}; not within 20 minutes of a target.")
+        nearest = min(TARGETS.items(), key=lambda item: abs(minute_now - (item[0][0] * 60 + item[0][1])))
+        title = nearest[1] if abs(minute_now - (nearest[0][0] * 60 + nearest[0][1])) <= 20 else "Manual market update"
+        reason = "explicit force-send override"
+    elif event_name == "workflow_dispatch":
+        print("MANUAL_RUN_NO_SEND: manual runs never send email unless REPORT_FORCE_SEND=true.")
+        return 0
+    else:
+        title, reason = resolve_scheduled_slot(now, event_name, os.environ.get("GITHUB_EVENT_SCHEDULE", ""))
+        if title is None:
+            print(f"REPORT_SKIPPED: {reason}; current Central time {now:%Y-%m-%d %H:%M %Z}.")
             return 0
     try:
-        subject, body = build_report(now)
+        subject, body = build_report(now, title_override=title)
         send_email(subject, body)
-        print(f"REPORT_SENT: slot={now:%H:%M %Z}; recipient={os.environ.get('REPORT_EMAIL_TO', DEFAULT_TO)}")
+        print(f"REPORT_SENT: intended_slot={title}; {reason}; generated_at={now:%H:%M %Z}; recipient={os.environ.get('REPORT_EMAIL_TO', DEFAULT_TO)}")
         return 0
     except Exception as exc:
         print(f"REPORT_FAILED_CLOSED: {type(exc).__name__}: {exc}", file=sys.stderr)
