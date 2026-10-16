@@ -1,8 +1,9 @@
-"""Append-only, shadow-only B0 vs F75 daily monitor.
+"""Append-only, shadow-only B0 vs F75 daily monitor (v2 ledger).
 
 No broker connectivity or order submission. Frozen historical rows are verified
 against the canonical matrix artifact; only observations after its final date
-are appended. The ledger is committed by the scheduled workflow.
+are appended. The legacy v1 ledger is preserved as-is for audit; v2 starts from a
+consistent current price snapshot after a detected legacy return mismatch.
 """
 from __future__ import annotations
 import hashlib, json, os
@@ -21,8 +22,8 @@ from fed_dma_chronological_robustness import terminal_unrecovered_shock_start, b
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "research"
 CANON = DATA / "canonical_b0" / "tqqq_actual_partial_dma_frozen_input.csv"
-LEDGER = DATA / "f75_shadow_daily_ledger.csv"
-STATE = DATA / "f75_shadow_state.json"
+LEDGER = DATA / "f75_shadow_daily_ledger_v2.csv"
+STATE = DATA / "f75_shadow_state_v2.json"
 EXPECTED_HASH = "6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55"
 INITIAL = 5000.0
 COSTS = (0, 25, 50)
