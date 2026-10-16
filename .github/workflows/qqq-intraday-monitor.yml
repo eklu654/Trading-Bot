@@ -41,6 +41,17 @@ jobs:
           ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
           ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
         run: PYTHONPATH=research python research/qqq_intraday_monitor.py --report qqq-intraday-monitor.json
+      - name: Fail visibly if QQQ trade observation is stale
+        if: success()
+        run: |
+          python - <<'PY'
+          import json, sys
+          with open("qqq-intraday-monitor.json", encoding="utf-8") as stream:
+              report = json.load(stream)
+          if report.get("status") == "STALE_TRADE_FAIL_CLOSED":
+              print("::error::QQQ latest-trade observation is stale; no fresh emergency signal was accepted.")
+              sys.exit(1)
+          PY
       - name: Persist QQQ emergency-exit latch to shared paper ledger
         if: success()
         shell: bash
