@@ -73,7 +73,7 @@ def validate_existing_ledger(prior, state, ledger_bytes, expected_hash=EXPECTED_
     missing = required - set(prior.columns)
     if missing:
         raise RuntimeError(f"Existing shadow ledger columns missing: {sorted(missing)}")
-    dates = pd.to_datetime(prior["date"], errors="coerce")
+    dates = pd.to_datetime(prior["date"], errors="coerce", format="mixed")
     if dates.isna().any() or dates.duplicated().any() or not dates.is_monotonic_increasing:
         raise RuntimeError("Existing shadow ledger dates invalid")
     if prior["source_canonical_sha256"].astype(str).ne(expected_hash).any():
