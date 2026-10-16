@@ -42,7 +42,7 @@ class ReportTests(unittest.TestCase):
         self.assertIn("late", reason)
 
     def test_html_email_has_structured_headings_and_plain_text_fallback(self):
-        body = "Trading Bot — Market open\\nGenerated now\\n\\nMARKET SNAPSHOT\\n- SPY: $1.00"
+        body = "Trading Bot — Market open\nGenerated now\n\nMARKET SNAPSHOT\n- SPY: $1.00"
         html_body = report.render_html(body)
         self.assertIn("<h1", html_body)
         self.assertIn("MARKET SNAPSHOT", html_body)
