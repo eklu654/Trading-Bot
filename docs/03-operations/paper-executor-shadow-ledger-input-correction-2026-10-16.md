@@ -62,6 +62,14 @@ Code review confirms:
 - Ambiguous POST outcomes are reconciled; no automatic retry without the same-run permit.
 - Fresh QQQ checks run before a buy POST, and an active emergency latch blocks a new buy.
 
+### 6. Added offline emergency-sell fill regression test
+
+The existing fill reconciliation suite only exercised buy fills. Added `test_filled_emergency_sell_reconciles_to_zero_position` in `research/test_executor_fill_reconciliation.py`: it starts from a filled long position, applies a mocked TQQQ sell fill, returns an empty broker-position response, and asserts virtual quantity zero, proceeds/cash updated, the fill ID processed, and terminal intent cleared only after position reconciliation. No network call or broker mutation is made by this test.
+
+The first test revision failed because the test assumed `last_terminal_order` stored a `side` field that the schema does not include. Removed that unsupported assertion while retaining the core sell-fill/zero-position assertions. Corrected run [38853334318](https://github.com/eklu654/Trading-Bot/actions/runs/38853334318) passed the emergency-exit core tests and durable ledger/latch tests. Executor run [38853334301](https://github.com/eklu654/Trading-Bot/actions/runs/38853334301) also passed; both prepare reports were `SKIPPED_MARKET_CLOSED`, and both submit reports were `NO_PENDING_INTENT` with no POST attempted.
+
+This improves offline sell-fill reconciliation coverage, but it is not evidence of an actual Alpaca emergency sell.
+
 ## Remaining gap
 
 The executor now passes its dry-run date guard, but this does not prove a new scheduled order can be placed, nor that an emergency sell is filled and reconciled end-to-end. Emergency-exit validation remains open until a controlled paper-only test demonstrates the sell order, filled activity, resulting broker position, virtual-ledger update, and duplicate-order prevention. Do not trigger a synthetic emergency in an unattended scheduled run.
