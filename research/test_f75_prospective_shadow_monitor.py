@@ -104,6 +104,12 @@ class ShadowMonitorGuardrails(unittest.TestCase):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
 
+    def test_existing_ledger_accepts_mixed_date_formats(self):
+        prior, state, ledger_bytes = self._valid_ledger_fixture()
+        prior.loc[0, "date"] = "2026-10-08 00:00:00"
+        prior.loc[1, "date"] = "2026-10-09"
+        self.assertTrue(validate_existing_ledger(prior, state, ledger_bytes))
+
     def test_ledger_rejects_overnight_return_price_mismatch(self):
         prior, state, ledger_bytes = self._valid_ledger_fixture()
         prior.loc[1, "overnight_return"] = 0.01
