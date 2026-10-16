@@ -75,3 +75,29 @@ A follow-up read-only query of historical QQQ trades on the IEX feed for 2026-10
 ### Concurrency is another cadence constraint
 
 Both workflows use the same GitHub Actions concurrency group, `paper-broker-mutations`, with `cancel-in-progress: false`; the monitor job timeout is 3 minutes and executor timeout is 6 minutes, while both cron expressions request five-minute intervals. Sharing the group is intentional to protect shared ledger writes, but it serializes monitor and executor work. GitHub concurrency is not a durable FIFO queue for every scheduled tick: when work overlaps or the runner queue backs up, do not assume every five-minute occurrence will eventually execute in order. This is a plausible contributing risk, not a proven root cause for the observed multi-hour gaps. Confirm with per-run queue/start timestamps and cancellation/suppression evidence before changing the mutual-exclusion design; do not remove the shared guard without replacing ledger-write coordination.
+
+
+## Continuation checkpoint — 2026-10-16 09:10Z: Actions API cadence cross-check
+
+Read-only query of the repository's most recent 100 Actions runs returned 11,015 total runs but only a small number of runs for these two workflows. The observed scheduled runs remain:
+
+| Workflow | Run | Created (UTC) | Event/result |
+|---|---:|---|---|
+| QQQ monitor | [38822279465](https://github.com/eklu654/Trading-Bot/actions/runs/38822279465) | 2026-10-15 23:13:36Z | schedule / success |
+| Executor | [38822643862](https://github.com/eklu654/Trading-Bot/actions/runs/38822643862) | 2026-10-15 23:17:05Z | schedule / success |
+| QQQ monitor | [38802556778](https://github.com/eklu654/Trading-Bot/actions/runs/38802556778) | 2026-10-15 20:30:51Z | schedule / success |
+| Executor | [38802975499](https://github.com/eklu654/Trading-Bot/actions/runs/38802975499) | 2026-10-15 20:33:55Z | schedule / success |
+| QQQ monitor | [38778425279](https://github.com/eklu654/Trading-Bot/actions/runs/38778425279) | 2026-10-15 17:34:08Z | schedule / success |
+| Executor | [38779676063](https://github.com/eklu654/Trading-Bot/actions/runs/38779676063) | 2026-10-15 17:43:17Z | schedule / failure |
+
+The workflow-specific run numbers and repository-wide recent history do not show the dozens of scheduled invocations expected during the approximately 6.5-hour regular market session. The 2026-10-16 08:04Z successful run [38871234196](https://github.com/eklu654/Trading-Bot/actions/runs/38871234196) is explicitly a `push` event, not schedule evidence. This cross-check strengthens the conclusion that five-minute cadence is not being demonstrated; it does not establish why. The available fetch wrapper rejected workflow-specific run-list endpoints, so queue-time/cancellation/suppression details could not be exhaustively recovered from that endpoint.
+
+### Cron-window and concurrency interpretation
+
+Both schedules are UTC-based and request five-minute invocations across 13:00–21:59Z weekdays. In mid-October, the regular US equity session is approximately 13:30–20:00Z. The broker-clock gate is therefore necessary because the configured cron window intentionally includes pre-open and post-close intervals. The monitor's minute offsets are 1,6,11,... and executor offsets 2,7,12,...; if both schedules fired normally, they should be staggered rather than intentionally simultaneous.
+
+The jobs normally complete in roughly 11–20 seconds in the observed runs, while their timeouts are 3 and 6 minutes. That makes ordinary runtime overlap alone an insufficient explanation for multi-hour gaps. The shared concurrency group can still serialize delayed/overlapping jobs, but no evidence presently proves it caused the gaps. Treat scheduler delivery/enablement/visibility as unresolved; do not change concurrency or remove the ledger coordination based on speculation.
+
+### Current readiness decision
+
+As of this checkpoint, neither reliable five-minute polling nor fresh market-hours IEX trade data is established. The monitor has a fail-closed stale-data guard, which is appropriate; do not disable it to create green workflow runs. No workflow dispatch, order submission, ledger write, or broker mutation was performed during this audit update. Next useful evidence must come from multiple consecutive market-hours scheduled runs with timestamps and fresh observation ages, plus a permitted independent real-time data source comparison.
