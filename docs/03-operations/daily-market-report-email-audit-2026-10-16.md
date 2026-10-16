@@ -35,3 +35,12 @@ The old sender selected the report title from the time the runner happened to st
 ## Remaining operational caveat
 
 The new guard makes slot identity more reliable but cannot guarantee that GitHub Actions will start every scheduled job. Monitor the next open, midday, and close runs and confirm each log contains `REPORT_SENT: intended_slot=...`; a green workflow that logs `REPORT_SKIPPED` is not a delivered report.
+
+
+## Implementation and CI checkpoint
+
+- Sender formatting and slot-routing fix: [`17713e57`](https://github.com/eklu654/Trading-Bot/commit/17713e57d026b9170b72bee0029f2fc48a858bc1)
+- Six separate cron candidates plus scheduled-expression environment: [workflow commit `59758c4e`](https://github.com/eklu654/Trading-Bot/commit/59758c4e2751e1849af848baffcb9be0d42bee1e)
+- Slot-routing and HTML-layout tests: [`6ce7299b`](https://github.com/eklu654/Trading-Bot/commit/6ce7299b5e51c3dd47d70ce8b43938c57f7a0363); follow-up test-fixture cleanup: [`47d55388`](https://github.com/eklu654/Trading-Bot/commit/47d55388f022d3f29f4333443bb49da3cb78e4f9)
+- [CI run 38969315202](https://github.com/eklu654/Trading-Bot/actions/runs/38969315202) reports the focused daily-report tests and workflow-YAML validation passed. The repository-wide pytest step was still running at the last status check.
+- [CI run 38969384226](https://github.com/eklu654/Trading-Bot/actions/runs/38969384226) was queued for the latest test-fixture-only commit at the last status check. It must not be called passed until completed.
