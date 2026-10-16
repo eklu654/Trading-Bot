@@ -39,3 +39,14 @@ Do not describe the paper executor as proven ready for unattended emergency exit
 ## Safety statement
 
 This audit was read-only. No workflow, code, strategy, ledger, account configuration, or broker order was changed.
+
+
+## Additional live-session feed finding and observability correction
+
+Inspection of market-hours run [38778425279](https://github.com/eklu654/Trading-Bot/actions/runs/38778425279) found that the monitor returned `STALE_TRADE_FAIL_CLOSED` at 2026-10-15 17:34:16Z: the latest QQQ IEX trade was timestamped 16:55:32Z, about **2,323 seconds (38.7 minutes) old** while the broker clock was open. The monitor workflow nevertheless completed successfully and the latch persistence script returned `NO_FRESH_SIGNAL`. The executor run [38779676063](https://github.com/eklu654/Trading-Bot/actions/runs/38779676063), roughly nine minutes later, failed both portfolio preparations with `QQQ defense preflight trade is stale or invalid`. No new order was submitted by that failed run.
+
+This means the issue is not only cadence: the configured IEX latest-trade source was stale during a market-hours observation. The fail-closed behavior prevented unverified planning, but also meant no new breach could be established from that observation.
+
+To make this visible rather than green-but-stale, commit [82be8a70991414b17fe1a5ee45fdac3ce0cd07bf](https://github.com/eklu654/Trading-Bot/commit/82be8a70991414b17fe1a5ee45fdac3ce0cd07bf) adds a workflow guard after report generation: a `STALE_TRADE_FAIL_CLOSED` report now fails the monitor workflow visibly before latch persistence. The artifact upload remains `if: always()`, preserving the stale report for diagnosis. This is an observability improvement only; it does not repair the data feed or create an emergency sell.
+
+**Next blocker to resolve:** establish why the IEX latest-trade endpoint was nearly 39 minutes stale for QQQ while the market clock was open. Validate repeated timestamps against an independent permitted real-time feed/quote source and confirm subscription/feed semantics before changing the trigger price source. Do not relax the 180-second freshness guard merely to make the workflow green. Until fresh market-hours observations and reliable schedule cadence are demonstrated, do not rely on this as unattended emergency protection.
