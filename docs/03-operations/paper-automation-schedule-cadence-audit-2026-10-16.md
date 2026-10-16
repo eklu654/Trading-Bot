@@ -50,3 +50,8 @@ This means the issue is not only cadence: the configured IEX latest-trade source
 To make this visible rather than green-but-stale, commit [82be8a70991414b17fe1a5ee45fdac3ce0cd07bf](https://github.com/eklu654/Trading-Bot/commit/82be8a70991414b17fe1a5ee45fdac3ce0cd07bf) adds a workflow guard after report generation: a `STALE_TRADE_FAIL_CLOSED` report now fails the monitor workflow visibly before latch persistence. The artifact upload remains `if: always()`, preserving the stale report for diagnosis. This is an observability improvement only; it does not repair the data feed or create an emergency sell.
 
 **Next blocker to resolve:** establish why the IEX latest-trade endpoint was nearly 39 minutes stale for QQQ while the market clock was open. Validate repeated timestamps against an independent permitted real-time feed/quote source and confirm subscription/feed semantics before changing the trigger price source. Do not relax the 180-second freshness guard merely to make the workflow green. Until fresh market-hours observations and reliable schedule cadence are demonstrated, do not rely on this as unattended emergency protection.
+
+
+### Feed entitlement check
+
+A follow-up read-only query of historical QQQ trades on the IEX feed for 2026-10-15 16:50–17:35Z returned IEX prints only through 16:55:32Z, consistent with the stale timestamp in the workflow log. A request for recent SIP data was rejected with HTTP 403: `subscription does not permit querying recent SIP data`. Therefore, switching the workflow to SIP is not currently a verified available fix under this account's market-data entitlement. Do not simply change `feed=iex` to `feed=sip`; first obtain an authorized, real-time source or a supported quote source and test its freshness end-to-end.
