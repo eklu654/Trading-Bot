@@ -56,3 +56,20 @@ At 25 bp, previously verified aggregate figures were B0 $3,852,657 / -73.80% max
 ## Audit trail
 - 2026-10-11: User approved testing mechanism repeatability rather than optimizing thresholds; B0 remains control and F75 rules remain frozen.
 - 2026-10-11: Protocol written before new episode-level results are inspected.
+
+## Latest fixed-attribution run — 2026-10-16
+
+Workflow [38851092843](https://github.com/eklu654/Trading-Bot/actions/runs/38851092843) completed successfully. The report covers the fixed 2010-02-11 through 2026-10-07 common period (4,189 sessions), with the canonical B0 artifact and F75 rules held fixed. Episode coverage: 5 of 7 defined episodes measured and accounting-validated; 2 marked unavailable. At 25 bp, F75 had higher terminal return in 3/5 measured episodes and improved episode max drawdown in 3/5. This is mixed, not universal, episode repeatability.
+
+Full-period paired terminal equity from $5,000 initial equity:
+
+| Modeled costs | B0 terminal equity | F75 terminal equity | F75 increment |
+|---|---:|---:|---:|
+| 0 bp | $4,040,315 | $4,124,681 | +$84,366 |
+| 25 bp | $3,852,657 | $3,898,853 | +$46,195 |
+| 50 bp | $3,673,277 | $3,684,972 | +$11,695 |
+
+At 25 bp, full-period maximum drawdown was approximately -73.80% for B0 and -67.99% for F75, a 5.80 percentage-point improvement. At 50 bp, the terminal-equity advantage narrows to about $11.7k on a ~$3.67M ending balance, so the result is materially cost-sensitive.
+
+**Decision remains unchanged:** do not promote F75 from this aggregate result. The fixed episode test has only 5 measurable episodes, and 2/5 measured episodes did not show both a return win and drawdown improvement. Inspect per-episode attribution, recovery participation, and concentration of incremental P/L before any promotion. Keep B0 frozen and F75 prospective-shadow-only. The report's own interpretation is attribution, not a promotion decision.
+
