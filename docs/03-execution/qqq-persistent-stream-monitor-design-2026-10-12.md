@@ -51,3 +51,17 @@ The SQLite journal uses a unique key of `session:kind`. This intentionally suppr
 Deploy only in read-only observation mode on an always-on host with persistent `/data`, restart-on-failure, and health/error alerts. Record auth, subscription, last-trade timestamp/age, baseline session/close, and event journal growth. Do not connect the event journal to the executor or change the emergency latch from this monitor until the exact episode/recovery semantics are approved and a supervised paper-only end-to-end test is designed.
 
 No deployment, credential change, broker mutation, or strategy-rule change was performed for this audit.
+
+
+### Readiness review — 2026-10-16 09:10Z: idle-stream observability gap
+
+A source-level review of `research/qqq_stream_monitor.py`, its unit tests, and `Dockerfile.qqq-stream-monitor` found a further production-readiness gap:
+
+- The 180-second age check runs only when a QQQ trade message is received. It rejects a stale timestamp in a received trade, but it does not independently evaluate the age of the last received trade/message while the socket is idle or the subscription is silently broken.
+- The container has no Docker `HEALTHCHECK`, heartbeat file, external heartbeat, or last-message-age alert. The process can therefore remain running without proving that it is authenticated, subscribed, and receiving fresh data.
+- Unit tests exercise the pure detector and SQLite event idempotency; they do not test a silent socket, lost subscription, idle timeout, reconnect recovery, or deployment health signals.
+- The code resets reconnect backoff after a valid non-stale regular-session trade (and on subscription acknowledgement), but it does not expose a machine-readable service-health state separate from its logs.
+
+**Required before deployment is considered operational:** add an independent last-message/last-trade watchdog and a health signal that becomes unhealthy when authentication/subscription is missing or the stream has no valid regular-session trade for a documented interval; ensure the host can alert on that state. Test disconnect, silent socket, authentication failure, reconnect, and restored fresh trade. Keep this read-only and do not connect it to the order executor as part of this change.
+
+The Dockerfile does create a persistent `/data` volume and runs as a non-root user, which are useful foundations, but those features do not substitute for runtime health checks. No code, Dockerfile, workflow, service, credentials, or broker state was changed during this review.
