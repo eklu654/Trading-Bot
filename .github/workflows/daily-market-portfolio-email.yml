@@ -3,11 +3,15 @@ name: Daily Market + Portfolio Email
 on:
   workflow_dispatch:
   schedule:
-    # UTC candidates cover both daylight-saving and standard time in America/Chicago.
-    # The Python entry point sends only when Central time is exactly 08:30, 12:00, or 15:00.
-    - cron: "30 13,14 * * 1-5"
-    - cron: "0 17,18 * * 1-5"
-    - cron: "0 20,21 * * 1-5"
+    # Keep each UTC candidate separate so the script can identify the intended slot.
+    # America/Chicago daylight time: 13:30, 17:00, 20:00 UTC.
+    # America/Chicago standard time: 14:30, 18:00, 21:00 UTC.
+    - cron: "30 13 * * 1-5"
+    - cron: "30 14 * * 1-5"
+    - cron: "0 17 * * 1-5"
+    - cron: "0 18 * * 1-5"
+    - cron: "0 20 * * 1-5"
+    - cron: "0 21 * * 1-5"
 
 permissions:
   contents: read
@@ -51,5 +55,6 @@ jobs:
           REPORT_EMAIL_FROM: ${{ secrets.REPORT_EMAIL_FROM }}
           REPORT_EMAIL_TO: eklu654@gmail.com
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
           GITHUB_TOKEN: ${{ github.token }}
         run: python research/daily_market_portfolio_report.py
