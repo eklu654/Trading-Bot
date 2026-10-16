@@ -1,0 +1,16 @@
+{
+  "canonical_input_sha256": "6aa4088b7210a139da84553933778847cdffb4356c7751e7aa6fae2065214f55",
+  "frozen_cutoff": "2026-10-07",
+  "last_observation": "2026-10-14",
+  "sessions_appended_this_run": 5,
+  "ledger_rows_total": 5,
+  "return_bearing_sessions_total": 4,
+  "initialization_date": "2026-10-08",
+  "ledger_sha256": "b83f1fc7c2f426ee7c92b2b1b845660d81f0d4458ef14cfc4843ef5b828d2620",
+  "mode": "SHADOW_ONLY_NO_ORDERS",
+  "cost_sensitivity_bps": [
+    0,
+    25,
+    50
+  ]
+}
