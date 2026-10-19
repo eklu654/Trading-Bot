@@ -1,0 +1,60 @@
+name: Daily Market + Portfolio Email (Schedule Recovery)
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Keep each UTC candidate separate so the script can identify the intended slot.
+    # America/Chicago daylight time: 13:30, 17:00, 20:00 UTC.
+    # America/Chicago standard time: 14:30, 18:00, 21:00 UTC.
+    - cron: "30 13 * * 1-5"
+    - cron: "30 14 * * 1-5"
+    - cron: "0 17 * * 1-5"
+    - cron: "0 18 * * 1-5"
+    - cron: "0 20 * * 1-5"
+    - cron: "0 21 * * 1-5"
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: daily-market-portfolio-email
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout main and shared ledger
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Fetch latest virtual ledger states
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin +refs/heads/paper-execution-ledger:refs/remotes/origin/paper-execution-ledger
+          mkdir -p data/paper_execution
+          git show origin/paper-execution-ledger:data/paper_execution/b0_state.json > data/paper_execution/b0_state.json
+          git show origin/paper-execution-ledger:data/paper_execution/f75_state.json > data/paper_execution/f75_state.json
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build and send read-only report
+        env:
+          ALPACA_PAPER_API_KEY_B0: ${{ secrets.ALPACA_PAPER_API_KEY_B0 }}
+          ALPACA_PAPER_API_SECRET_B0: ${{ secrets.ALPACA_PAPER_API_SECRET_B0 }}
+          ALPACA_PAPER_API_KEY_F75: ${{ secrets.ALPACA_PAPER_API_KEY_F75 }}
+          ALPACA_PAPER_API_SECRET_F75: ${{ secrets.ALPACA_PAPER_API_SECRET_F75 }}
+          REPORT_SMTP_HOST: ${{ secrets.REPORT_SMTP_HOST }}
+          REPORT_SMTP_PORT: ${{ secrets.REPORT_SMTP_PORT }}
+          REPORT_SMTP_USERNAME: ${{ secrets.REPORT_SMTP_USERNAME }}
+          REPORT_SMTP_PASSWORD: ${{ secrets.REPORT_SMTP_PASSWORD }}
+          REPORT_EMAIL_FROM: ${{ secrets.REPORT_EMAIL_FROM }}
+          REPORT_EMAIL_TO: eklu654@gmail.com
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python research/daily_market_portfolio_report.py
