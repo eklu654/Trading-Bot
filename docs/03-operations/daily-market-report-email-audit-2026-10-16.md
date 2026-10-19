@@ -41,8 +41,16 @@ The original sender selected the report title from runner wall-clock time and re
 - Focused report tests and YAML validation passed in [run 38969315202](https://github.com/eklu654/Trading-Bot/actions/runs/38969315202), but the repository-wide pytest step was canceled/superseded. Do not label the entire suite passed without a completed passing run.
 - No email was manually sent during this audit. No broker orders or account state were changed.
 
+## Recovery change (2026-10-19)
+
+- Added a replacement scheduled workflow at [daily-market-portfolio-email-recovery.yml](https://github.com/eklu654/Trading-Bot/blob/main/.github/workflows/daily-market-portfolio-email-recovery.yml), retaining the same six weekday cron candidates, read-only report sender, and paper-account read-only snapshots.
+- Removed the original workflow file in the next commit so only one scheduled report workflow remains defined in the repository; this avoids long-term duplicate sends.
+- Replacement workflow file was read back from `main` and verified to contain all six cron expressions and the same sender invocation.
+- This is a recovery attempt, not proof of delivery: the connected GitHub integration cannot inspect workflow enabled status or list runs by workflow ID. Confirm the next scheduled run contains `REPORT_SENT: intended_slot=...`; do not infer successful email delivery from a commit alone.
+- No email was manually sent. No broker orders or account state were changed.
+
 ## Operational follow-up
 
-1. In GitHub, open the [market-report workflow](https://github.com/eklu654/Trading-Bot/actions/workflows/daily-market-portfolio-email.yml) and confirm it is enabled.
-2. Check whether GitHub recorded the 2026-10-19 scheduled trigger. If it is disabled, re-enable it; if enabled but no run was created, investigate GitHub schedule delivery and consider an independently observable watchdog/alert.
-3. For the next open, midday, and close slots, verify the job log contains `REPORT_SENT: intended_slot=...`. A green workflow that logs a skip is not proof of delivery.
+1. Open the [replacement workflow](https://github.com/eklu654/Trading-Bot/actions/workflows/daily-market-portfolio-email-recovery.yml) in GitHub Actions and check whether GitHub has enabled it and created scheduled runs.
+2. For the next open, midday, and close slots, verify the job log contains `REPORT_SENT: intended_slot=...`. A green workflow that logs a skip is not proof of delivery.
+3. If no scheduled run appears, check repository Actions permissions and workflow schedule status, then add an independent alert/watchdog rather than relying only on cron.
