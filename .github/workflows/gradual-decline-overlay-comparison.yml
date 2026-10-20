@@ -1,0 +1,38 @@
+name: Gradual Decline Overlay Comparison
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "research/backtests/gradual_decline_overlay_comparison.py"
+      - ".github/workflows/gradual-decline-overlay-comparison.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gradual-decline-overlay-comparison
+  cancel-in-progress: false
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Syntax-check research script
+        run: python -m py_compile research/backtests/gradual_decline_overlay_comparison.py
+      - name: Run historical comparison
+        run: python research/backtests/gradual_decline_overlay_comparison.py | tee gradual-decline-results.json
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradual-decline-overlay-results
+          path: gradual-decline-results.json
+          if-no-files-found: error
+          retention-days: 30
