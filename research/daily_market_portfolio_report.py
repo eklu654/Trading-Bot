@@ -35,7 +35,7 @@ SCHEDULE_SLOTS = {
     "0 21 * * 1-5": ("Market close", (15, 0)),
 }
 MAX_EARLY_MINUTES = 15
-MAX_LATE_MINUTES = 55
+MAX_LATE_MINUTES = 360  # GitHub scheduled workflows can be delayed; still suppress runs delayed beyond six hours.
 DEFAULT_TO = "eklu654@gmail.com"
 SYMBOLS = [
     ("SPY", "S&P 500 ETF"), ("QQQ", "Nasdaq-100 ETF"),
