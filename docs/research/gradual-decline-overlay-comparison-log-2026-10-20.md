@@ -1,6 +1,6 @@
 # Gradual-decline overlay comparison — research log
 
-Updated: 2026-10-20 UTC
+Updated: 2026-10-20 UTC (review pass 2)
 Status: implementation committed; historical run result not yet verified in this note.
 
 ## Goal
@@ -8,6 +8,7 @@ Test whether simple trend overlays improve terminal account value versus the fro
 
 ## Artifacts
 - Script: `research/backtests/gradual_decline_overlay_comparison.py`
+- Deterministic tests: `research/backtests/test_gradual_decline_overlay_comparison.py`
 - Workflow: `.github/workflows/gradual-decline-overlay-comparison.yml`
 - Workflow runs on a relevant push and can also be manually dispatched. It syntax-checks the script, downloads daily bars, runs the comparison, and uploads a 30-day JSON artifact.
 
@@ -24,7 +25,7 @@ For each variant the JSON records terminal equity, return, maximum drawdown, per
 
 ## Important limitations / interpretation guardrails
 1. This is a reconstruction of the documented B0 shock/recovery concept, not a verified reproduction of the earlier ~$4.04M result. The prior frozen-input/daily-curve reconciliation remains outstanding.
-2. Yahoo Finance adjusted OHLC is reconstructed using adjusted-close/raw-close factors. Independently validate data and corporate-action handling before trusting absolute balances.
+2. Yahoo Finance adjusted OHLC is reconstructed using adjusted-close/raw-close factors. Independently validate data and corporate-action handling before trusting absolute balances. The latest review added QQQ pre-start history (from 2009-01-01) so 100/200-session indicators are warmed up at the 2010-10-07 trading start; this removes an avoidable initial-period blind spot but does not validate the adjusted-price reconstruction.
 3. The 60-session negative-return rule and simple MA rules are deliberately unoptimized first-pass candidates. Do not tune them on the full sample and then present the same sample as out-of-sample evidence.
 4. The test begins in the TQQQ era; it does not fabricate pre-inception leveraged ETF returns. Separate QQQ/SPY regime studies are needed for 2000–02 and 2007–09.
 5. A single full-period result is not enough. Next, report regime-specific performance for the 2011/2015–16/2018/2020/2022 declines and run walk-forward checks (fit/design decisions on earlier periods, evaluate later periods).
@@ -34,4 +35,7 @@ For each variant the JSON records terminal equity, return, maximum drawdown, per
 - `142ed34`: initial comparison script added.
 - `2e49980`: corrected execution timing so close-generated signals execute at the next session's open.
 - `b922287`: added CI workflow to syntax-check, run, and upload the result artifact.
-- Next required evidence: successful Actions run, JSON artifact, and independent sanity checks of B0's terminal value and the data adjustment/execution assumptions. Until then, no numeric result or winning defense is claimed.
+- `fd0832e`: added QQQ indicator warm-up history and clarified that the placeholder cost is 10 bps per transaction (each buy/sell), not a round-trip total.
+- `ffa825c`: added deterministic unit tests for SMA window behavior and pre-trade indicator warm-up.
+- `03c422c`: wired unit tests into the workflow before downloading/running the historical sample.
+- Next required evidence: successful Actions run, passing unit-test output, JSON artifact, and independent sanity checks of B0's terminal value and the data adjustment/execution assumptions. Until then, no numeric result or winning defense is claimed.
