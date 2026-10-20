@@ -55,3 +55,30 @@ The broader `research-tests` workflow run https://github.com/eklu654/Trading-Bot
 - This script is research-only: no Alpaca or order endpoints, no production strategy changes, no automatic promotion.
 - B0 remains frozen; F75 remains shadow-research-only.
 - No candidate is promoted based on this run.
+
+
+## Reconciliation finding — 2026-10-20
+
+The ~$4.040M canonical B0 and ~$2.418M first-pass control are **not comparable outputs from a controlled same-input replay**. The difference is not evidence that B0 changed or that a defense failed; the first-pass script is a new reconstruction with different boundaries and a fresh data source.
+
+### Confirmed mismatches
+- Canonical frozen replay: 2010-02-11 through 2026-10-07, 4,189 aligned sessions, initial $5,000, frozen input SHA-256 `fa28ea933475d843cb8daf6bdd8d7aeca3c4ed20b9a0e55f8bec5eaaf68f7d00`. Canonical final $4,040,311.69 and max drawdown -73.53%.
+- New comparison: 2010-10-07 through 2026-10-19, 4,032 overlapping sessions, downloaded afresh from Yahoo Finance at run time. Control final $2,418,101.46 and max drawdown -73.64%.
+- Therefore the reconstruction omits the canonical period from 2010-02-11 through 2010-10-06 and adds 9 calendar days beyond the canonical endpoint (through 2026-10-19). It also does not use the canonical frozen input/hash.
+- Canonical evidence explicitly used one immutable shared dataset, two independent event builders, and two independent execution engines; all event signals, daily returns, and equity curves matched. The new comparison uses a single script and a fresh Yahoo download, so it has not passed that standard.
+- The new script reconstructs adjusted OHLC by multiplying raw open by adjusted-close/raw-close. That assumption has not been reconciled row-by-row against the canonical frozen adjusted OHLC series.
+- The new script implements the written shock/recovery rule, but rule text alone is insufficient: exact signal dates, event ledger, next-open execution prices, costs, initial fill, and daily account curve must match the frozen canonical implementation before calling it B0.
+
+### What is and is not concluded
+- The prior ~$4.04M result remains the canonical frozen-snapshot benchmark; the first-pass ~$2.418M is a separate, noncanonical reconstruction.
+- The difference is not yet numerically attributed among start-date omission, price-data/adjustment differences, and implementation/execution differences. Do not claim any one of these fully explains the $1.622M gap without a same-input replay.
+- The moving-average comparison's current control is not an acceptable baseline for deciding whether a defense improves frozen B0. Its overlay rankings are exploratory only and must not be used for promotion decisions.
+
+### Required reconciliation sequence
+1. Recover canonical frozen input and daily curve from run 37883989658 / artifact 11594464513; retain SHA-256 `fa28ea933475d843cb8daf6bdd8d7aeca3c4ed20b9a0e55f8bec5eaaf68f7d00`.
+2. Adapt the comparison harness to consume that frozen dataset, not a live Yahoo download, and exactly match the canonical start/end dates.
+3. Compare row-level QQQ signal inputs, the nine shock/recovery events, TQQQ adjusted next-open prices, position state, transaction costs, and daily equity against the canonical ledger.
+4. Require zero signal/equity differences on the control before adding each overlay. Keep any post-2026-10-07 extension as a separate sensitivity run.
+5. Re-run overlays on the same frozen data and only compare terminal values to that exact same-input B0 control.
+
+No production or paper-trading strategy is changed. B0 remains frozen; F75 remains shadow-only.
