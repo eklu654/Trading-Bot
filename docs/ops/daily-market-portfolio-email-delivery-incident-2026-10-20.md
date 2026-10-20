@@ -7,6 +7,7 @@ Updated: 2026-10-20 UTC
 - Report script: `research/daily_market_portfolio_report.py`
 - The workflow's GitHub Actions runs showed `success`, but that did **not** mean an email was sent: the script deliberately exited successfully on `REPORT_SKIPPED`.
 - Run [39333001879](https://github.com/eklu654/Trading-Bot/actions/runs/39333001879) started at 2026-10-19 22:10 UTC and logged `GITHUB_EVENT_SCHEDULE: 0 18 * * 1-5`, then skipped because that cron belongs to the other daylight-saving offset. At that point Central time was 17:10 CDT.
+- Run [39339948517](https://github.com/eklu654/Trading-Bot/actions/runs/39339948517) used the correct CDT close candidate `0 20 * * 1-5`, but GitHub started it 191 minutes late; the old 55-minute cutoff suppressed it. The six-hour allowance directly addresses this observed failure.
 - Run [39345321017](https://github.com/eklu654/Trading-Bot/actions/runs/39345321017) logged `GITHUB_EVENT_SCHEDULE: 0 21 * * 1-5` and skipped for the same DST-offset reason at 19:03 CDT.
 - The schedule recovery workflow has six UTC cron candidates to cover CDT/CST, but delayed or mismatched candidates can complete as green runs without sending an email.
 
