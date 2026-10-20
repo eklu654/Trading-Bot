@@ -13,10 +13,11 @@ import urllib.request
 from datetime import datetime, timezone
 
 START = "2010-10-07"
+SIGNAL_HISTORY_START = "2009-01-01"  # warm up 100/200-session signals before trading begins
 INITIAL_CASH = 5000.0
 SHOCK_PCT = -0.045
 RECOVERY_PCT = 0.10
-ROUND_TRIP_COST_BPS_PER_SIDE = 10.0  # conservative placeholder; report prominently
+COST_BPS_PER_TRANSACTION = 10.0  # placeholder per buy or sell; report prominently
 UA = "TradingBot-Research/1.0"
 
 
@@ -64,11 +65,13 @@ def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
     shock_latched = False
     shock_trough = math.inf
     prev_qqq = None
-    qclose = [qqq[d]["close"] for d in days]
+    qqq_history_days = sorted(qqq)
+    qclose = [qqq[d]["close"] for d in qqq_history_days]
+    qqq_index = {d: j for j, d in enumerate(qqq_history_days)}
     equity_curve = []
     trades = 0
     invested_days = 0
-    cost = ROUND_TRIP_COST_BPS_PER_SIDE / 10000.0
+    cost = COST_BPS_PER_TRANSACTION / 10000.0
     pending_desired = None
     for i, day in enumerate(days):
         # Execute only the signal generated at the prior close, at today's open.
@@ -97,8 +100,9 @@ def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
             if close_q >= shock_trough * (1 + RECOVERY_PCT):
                 shock_latched = False
                 shock_trough = math.inf
-        ma100, ma200 = sma(qclose, i, 100), sma(qclose, i, 200)
-        ret60 = close_q / qclose[i - 60] - 1 if i >= 60 else None
+        qi = qqq_index[day]
+        ma100, ma200 = sma(qclose, qi, 100), sma(qclose, qi, 200)
+        ret60 = close_q / qclose[qi - 60] - 1 if qi >= 60 else None
         if variant == "B0 shock/recovery":
             trend_off = False
         elif variant == "B0 + QQQ 100-DMA":
@@ -127,14 +131,14 @@ def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
         "max_drawdown_pct": round(max_dd * 100, 2),
         "positioned_days_pct": round(invested_days / len(days) * 100, 2),
         "position_changes": trades,
-        "estimated_one_way_cost_bps": ROUND_TRIP_COST_BPS_PER_SIDE,
+        "estimated_cost_bps_per_transaction": COST_BPS_PER_TRANSACTION,
         "note": "QQQ close signals execute next TQQQ open; daily close marks. Results are indicative; validate corporate-action adjustment and execution assumptions before decisions."
     }
 
 
 def main() -> int:
     print("Downloading QQQ and TQQQ daily bars from Yahoo Finance…", flush=True)
-    qqq = fetch("QQQ", START)
+    qqq = fetch("QQQ", SIGNAL_HISTORY_START)
     tqqq = fetch("TQQQ", START)
     days = sorted(set(qqq) & set(tqqq))
     days = [d for d in days if d >= START]
@@ -148,11 +152,11 @@ def main() -> int:
     ]
     results = [run_variant(days, qqq, tqqq, v) for v in variants]
     print(json.dumps({
-        "method": "Daily QQQ close signal, next TQQQ adjusted-open execution; adjusted close marking; cash earns zero; no dividends beyond adjusted-price series; no tax; 10 bps estimated cost per transaction.",
+        "method": "Daily QQQ close signal, next TQQQ adjusted-open execution; adjusted close marking; QQQ indicators warmed up from 2009-01-01 before the 2010-10-07 trading start; cash earns zero; no tax; 10 bps estimated cost per transaction.",
         "start": days[0], "end": days[-1], "sessions": len(days),
         "results": results,
         "limitations": [
-            "Yahoo adjusted OHLC reconstruction uses adjusted-close/raw-close factor; validate against an independent source.",
+            "Yahoo adjusted OHLC reconstruction uses adjusted-close/raw-close factor; validate against an independent source. QQQ indicators use pre-start history from 2009-01-01.",
             "B0 rule implemented here is the documented QQQ -4.5% daily shock exit and re-entry after a 10% rebound from post-shock low; this is a research reconstruction, not proof of the prior ~$4.04M result.",
             "A trend overlay exits while its signal is off and re-enters once its condition clears; no extra confirmation or optimization.",
             "A defense is not successful unless terminal equity exceeds the same-period B0 control after realistic costs."
