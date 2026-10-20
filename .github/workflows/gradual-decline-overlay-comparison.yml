@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - "research/backtests/gradual_decline_overlay_comparison.py"
+      - "research/backtests/test_gradual_decline_overlay_comparison.py"
       - ".github/workflows/gradual-decline-overlay-comparison.yml"
 
 permissions:
