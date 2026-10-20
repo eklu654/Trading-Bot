@@ -223,6 +223,60 @@ def latest_executor_run() -> str:
         return f"Latest executor workflow unavailable ({type(exc).__name__}); do not infer bot health."
 
 
+def market_assessment(market_lines: list[str], headlines: list[str]) -> list[str]:
+    """Produce a cautious, evidence-based assessment from the live quote snapshot.
+
+    This is intentionally rules-based (no external LLM/API dependency). It does not
+    infer a multi-week trend from one session or treat headlines as verified facts.
+    """
+    changes: dict[str, float] = {}
+    for line in market_lines:
+        match = re.search(r"- (SPY|QQQ|DIA|IWM|\\^VIX|TLT|GLD) \\([^)]*\\): .*?; ([+-]?\\d+(?:\\.\\d+)?)%", line)
+        if match:
+            changes[match.group(1)] = float(match.group(2))
+    equity_keys = ["SPY", "QQQ", "DIA", "IWM"]
+    available = [changes[k] for k in equity_keys if k in changes]
+    if len(available) < 2:
+        return [
+            "A reliable market read is unavailable because too few major-index quotes were returned.",
+            "Treat the outlook as uncertain until fresh, timestamped index data are available; this snapshot alone cannot establish a durable trend or confirm that a defense trigger is active."
+        ]
+    avg = sum(available) / len(available)
+    qqq = changes.get("QQQ")
+    spy = changes.get("SPY")
+    vix = changes.get("^VIX")
+    if avg <= -1.0 and (vix is None or vix >= 3.0):
+        tone = "risk-off"
+        evidence = "Major equity indexes are broadly lower"
+    elif avg >= 0.75 and (vix is None or vix <= 0):
+        tone = "risk-on"
+        evidence = "Major equity indexes are broadly higher"
+    elif avg < -0.15:
+        tone = "mildly defensive"
+        evidence = "The major-index picture leans negative"
+    elif avg > 0.15:
+        tone = "constructive"
+        evidence = "The major-index picture leans positive"
+    else:
+        tone = "mixed / range-bound"
+        evidence = "Major equity indexes are showing limited net direction"
+    details = []
+    if qqq is not None and spy is not None:
+        relative = "underperforming" if qqq < spy - 0.25 else "outperforming" if qqq > spy + 0.25 else "roughly in line with"
+        details.append(f"QQQ is {relative} SPY on the session ({qqq:+.2f}% vs. {spy:+.2f}%).")
+    if vix is not None:
+        details.append(f"VIX is {vix:+.2f}% versus its previous close.")
+    if "TLT" in changes:
+        details.append(f"TLT, a Treasury-bond ETF proxy, is {changes['TLT']:+.2f}%; that is a price move, not a direct yield reading.")
+    first = f"**Assessment: {tone}.** {evidence} (average change {avg:+.2f}% across the available major indexes). " + " ".join(details)
+    if headlines and headlines[0].startswith("- "):
+        first += " Headlines below provide context, but their titles alone are not enough to establish causation."
+    second = ("For leveraged-equity exposure, today's tape is a short-horizon risk read—not proof of a new bull or bear regime. "
+              "A string of modest losses can still create substantial cumulative damage even when QQQ never falls 4.5% in one day; "
+              "that risk requires a separate trend/regime defense, not just a daily-shock trigger.")
+    return [first, second]
+
+
 def build_report(now: datetime | None = None, title_override: str | None = None) -> tuple[str, str]:
     now = now or datetime.now(CT)
     minute_now = now.hour * 60 + now.minute
@@ -231,6 +285,7 @@ def build_report(now: datetime | None = None, title_override: str | None = None)
     subject = f"Trading Bot {title} Report — {now.strftime('%a %b %d, %Y %I:%M %p CT')}"
     market, market_errors = market_section()
     headlines, news_errors = fetch_headlines()
+    assessment = market_assessment(market, headlines)
     portfolios, portfolio_errors = portfolio_lines()
     ledger = ledger_lines()
     status = latest_executor_run()
@@ -238,6 +293,9 @@ def build_report(now: datetime | None = None, title_override: str | None = None)
     body = [
         f"Trading Bot — {title}",
         f"Generated {now.strftime('%a, %b %d, %Y at %I:%M:%S %p %Z')}",
+        "",
+        "MARKET ASSESSMENT",
+        *assessment,
         "",
         "MARKET SNAPSHOT",
         "Public market quotes are indicative; use each quote's timestamp to judge freshness.",
