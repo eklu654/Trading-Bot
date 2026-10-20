@@ -27,6 +27,8 @@ jobs:
           python-version: "3.12"
       - name: Syntax-check research script
         run: python -m py_compile research/backtests/gradual_decline_overlay_comparison.py
+      - name: Run deterministic unit tests
+        run: python -m unittest research.backtests.test_gradual_decline_overlay_comparison -v
       - name: Run historical comparison
         run: python research/backtests/gradual_decline_overlay_comparison.py | tee gradual-decline-results.json
       - name: Upload results
