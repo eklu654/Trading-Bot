@@ -56,8 +56,10 @@ def sma(values: list[float], i: int, n: int) -> float | None:
 
 
 def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
-    cash = INITIAL_CASH
-    shares = 0.0
+    # Start fully invested at the first available TQQQ open.
+    first_px = tqqq[days[0]]["open"]
+    cash = 0.0
+    shares = INITIAL_CASH / first_px
     invested = True
     shock_latched = False
     shock_trough = math.inf
@@ -66,11 +68,26 @@ def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
     equity_curve = []
     trades = 0
     invested_days = 0
-    signals = 0
     cost = ROUND_TRIP_COST_BPS_PER_SIDE / 10000.0
+    pending_desired = None
     for i, day in enumerate(days):
-        # Signals are evaluated on today's close and executed at next session's open.
-        # The final date is marked to close; no impossible next-open trade is assumed.
+        # Execute only the signal generated at the prior close, at today's open.
+        if i > 0 and pending_desired is not None and pending_desired != invested:
+            px = tqqq[day]["open"]
+            if pending_desired:
+                shares = (cash * (1 - cost)) / px
+                cash = 0.0
+            else:
+                cash = shares * px * (1 - cost)
+                shares = 0.0
+            invested = pending_desired
+            trades += 1
+        equity = shares * tqqq[day]["close"] + cash
+        equity_curve.append(equity)
+        if invested:
+            invested_days += 1
+
+        # Today's close creates a decision for the next session's open.
         close_q = qqq[day]["close"]
         if prev_qqq is not None and close_q / prev_qqq - 1 <= SHOCK_PCT:
             shock_latched = True
@@ -92,27 +109,7 @@ def run_variant(days: list[str], qqq: dict, tqqq: dict, variant: str) -> dict:
             trend_off = ret60 is not None and ret60 < 0
         else:
             raise ValueError(variant)
-        desired = not (shock_latched or trend_off)
-        if i < len(days) - 1 and desired != invested:
-            next_day = days[i + 1]
-            px = tqqq.get(next_day, {}).get("open")
-            if px is not None and px > 0:
-                if desired:
-                    spend = cash * (1 - cost)
-                    shares = spend / px
-                    cash = 0.0
-                else:
-                    cash = shares * px * (1 - cost)
-                    shares = 0.0
-                invested = desired
-                trades += 1
-                signals += 1
-        if invested:
-            invested_days += 1
-            equity = shares * tqqq[day]["close"] if shares else cash
-        else:
-            equity = cash
-        equity_curve.append(equity)
+        pending_desired = not (shock_latched or trend_off)
         prev_qqq = close_q
     peak = -math.inf
     max_dd = 0.0
