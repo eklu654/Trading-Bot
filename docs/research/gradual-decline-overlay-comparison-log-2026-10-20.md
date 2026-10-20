@@ -1,7 +1,7 @@
 # Gradual-decline overlay comparison — research log
 
-Updated: 2026-10-20 UTC (review pass 2)
-Status: implementation committed; historical run result not yet verified in this note.
+Updated: 2026-10-20 UTC (review pass 3)
+Status: first-pass historical comparison completed; results are preliminary and NOT promotion-ready.
 
 ## Goal
 Test whether simple trend overlays improve terminal account value versus the frozen B0 shock/recovery control, especially in slow declines where QQQ never falls 4.5% in one session. B0 and F75 production/paper rules remain unchanged. This is a separate, read-only research experiment.
@@ -10,33 +10,48 @@ Test whether simple trend overlays improve terminal account value versus the fro
 - Script: `research/backtests/gradual_decline_overlay_comparison.py`
 - Deterministic tests: `research/backtests/test_gradual_decline_overlay_comparison.py`
 - Workflow: `.github/workflows/gradual-decline-overlay-comparison.yml`
-- Workflow runs on a relevant push and can also be manually dispatched. It syntax-checks the script, downloads daily bars, runs the comparison, and uploads a 30-day JSON artifact.
+- Completed run: https://github.com/eklu654/Trading-Bot/actions/runs/39371734489
+- Results artifact: https://github.com/eklu654/Trading-Bot/actions/runs/39371734489/artifacts/12242020453 (30-day retention)
+- Research workflow run succeeded: syntax check, both deterministic tests, historical comparison, and artifact upload all passed.
 
-## Rules compared
-Starting capital: $5,000; start date: 2010-10-07; end: latest overlapping daily data returned by Yahoo Finance.
-- Control: B0 shock/recovery reconstruction. QQQ close-to-close loss of 4.5% or worse latches an exit; re-entry is signaled after QQQ closes 10% above the post-trigger low.
+## First-pass results (run 39371734489)
+Period: 2010-10-07 through 2026-10-19, 4,032 overlapping daily sessions. Initial capital $5,000.
+
+| Variant | Final equity | Return | Max drawdown | Invested days | Position changes |
+|---|---:|---:|---:|---:|---:|
+| B0 shock/recovery reconstruction | $2,418,101.46 | 48,262.03% | -73.64% | 93.20% | 18 |
+| B0 + QQQ 100-DMA | $66,444.30 | 1,228.89% | -57.97% | 76.64% | 179 |
+| B0 + QQQ 200-DMA | $408,893.70 | 8,077.87% | -60.07% | 82.61% | 84 |
+| B0 + QQQ 60-session return | $84,079.83 | 1,581.60% | -49.32% | 73.78% | 174 |
+
+## Interpretation
+- None of the three trend overlays beats this reconstructed control on terminal equity. By the user's required criterion, none qualifies as a successful defense in this run.
+- The 60-session rule has the lowest reported drawdown, but terminal equity is dramatically lower; this is explicitly NOT success under the project's promotion rule.
+- The 100-DMA and 60-session rules generate many more position changes, indicating meaningful whipsaw/re-entry risk.
+- The control ends at ~$2.418M, not the earlier reported ~$4.04M B0 figure. This is a major reconciliation gap. These results cannot be described as validated B0 comparisons until the frozen B0 rules, data series, adjustments, execution assumptions, and daily equity curve are reconciled.
+- These are first-pass full-period numbers only. Do not select or tune parameters on this entire sample and then claim out-of-sample validation.
+
+## Rules and assumptions
+- Control reconstruction: QQQ close-to-close loss of 4.5% or worse latches an exit; re-entry is signaled after QQQ closes 10% above the post-trigger low.
 - Candidate A: control plus QQQ close below its 100-session simple moving average.
 - Candidate B: control plus QQQ close below its 200-session simple moving average.
 - Candidate C: control plus negative QQQ 60-session return.
-- Signals are computed at QQQ close and trades occur at the next TQQQ open. Daily equity is marked at adjusted close. The script assumes cash earns zero and applies a placeholder 10 bps cost per transaction.
+- Signals are computed at QQQ close and trades occur at the next TQQQ open. Daily equity is marked at adjusted close. Cash earns zero. Placeholder transaction cost is 10 bps per buy or sell.
+- QQQ indicator history begins 2009-01-01 to warm up 100/200-session indicators before the 2010-10-07 strategy start.
+- Yahoo Finance adjusted OHLC is reconstructed with adjusted-close/raw-close factors; independently validate corporate-action handling and adjusted-open assumptions before trusting absolute balances.
 
-## Metrics
-For each variant the JSON records terminal equity, return, maximum drawdown, percentage of days invested, and number of position changes. The required promotion criterion remains strict: terminal equity must exceed the same-period B0 control after realistic costs. Drawdown improvement by itself is not sufficient.
+## Separate CI failure observed during this check
+The broader `research-tests` workflow run https://github.com/eklu654/Trading-Bot/actions/runs/39371734539 failed in `test_overdue_slot_is_suppressed_instead_of_mislabelled`: expected no title but got `Midday`. The gradual-decline comparison workflow itself passed. This unrelated daily-email test failure is recorded for follow-up and should not be conflated with backtest status.
 
-## Important limitations / interpretation guardrails
-1. This is a reconstruction of the documented B0 shock/recovery concept, not a verified reproduction of the earlier ~$4.04M result. The prior frozen-input/daily-curve reconciliation remains outstanding.
-2. Yahoo Finance adjusted OHLC is reconstructed using adjusted-close/raw-close factors. Independently validate data and corporate-action handling before trusting absolute balances. The latest review added QQQ pre-start history (from 2009-01-01) so 100/200-session indicators are warmed up at the 2010-10-07 trading start; this removes an avoidable initial-period blind spot but does not validate the adjusted-price reconstruction.
-3. The 60-session negative-return rule and simple MA rules are deliberately unoptimized first-pass candidates. Do not tune them on the full sample and then present the same sample as out-of-sample evidence.
-4. The test begins in the TQQQ era; it does not fabricate pre-inception leveraged ETF returns. Separate QQQ/SPY regime studies are needed for 2000–02 and 2007–09.
-5. A single full-period result is not enough. Next, report regime-specific performance for the 2011/2015–16/2018/2020/2022 declines and run walk-forward checks (fit/design decisions on earlier periods, evaluate later periods).
-6. The script is research-only: no Alpaca or order endpoints, no production strategy changes, no automatic promotion.
+## Next actions
+1. Reconcile this reconstructed control with the prior frozen B0 result (~$4.04M) before making strategy conclusions.
+2. Validate adjusted open/close price construction against an independent source or trusted frozen dataset.
+3. Add a daily equity/trade ledger and targeted tests for shock latching, trough tracking, rebound re-entry, signal timing, and end-of-period marking.
+4. Only after reconciliation, run regime-specific analysis for 2011, 2015–16, 2018, 2020, and 2022, plus walk-forward evaluation.
+5. Separate QQQ/SPY regime analysis for 2000–02 and 2007–09; do not fabricate pre-inception TQQQ returns.
 
-## Audit trail
-- `142ed34`: initial comparison script added.
-- `2e49980`: corrected execution timing so close-generated signals execute at the next session's open.
-- `b922287`: added CI workflow to syntax-check, run, and upload the result artifact.
-- `fd0832e`: added QQQ indicator warm-up history and clarified that the placeholder cost is 10 bps per transaction (each buy/sell), not a round-trip total.
-- `ffa825c`: added deterministic unit tests for SMA window behavior and pre-trade indicator warm-up.
-- `03c422c`: wired unit tests into the workflow before downloading/running the historical sample.
-- `3f4dd80`: ensured edits to the test file also trigger the workflow.
-- Next required evidence: successful Actions run, passing unit-test output, JSON artifact, and independent sanity checks of B0's terminal value and the data adjustment/execution assumptions. Until then, no numeric result or winning defense is claimed.
+## Guardrails
+- A defense is successful only if terminal equity exceeds the same-period frozen B0 control after realistic costs; drawdown improvement alone is not enough.
+- This script is research-only: no Alpaca or order endpoints, no production strategy changes, no automatic promotion.
+- B0 remains frozen; F75 remains shadow-research-only.
+- No candidate is promoted based on this run.
