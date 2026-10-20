@@ -373,8 +373,7 @@ def main() -> int:
         title = nearest[1] if abs(minute_now - (nearest[0][0] * 60 + nearest[0][1])) <= 20 else "Manual market update"
         reason = "explicit force-send override"
     elif event_name == "workflow_dispatch":
-        print("MANUAL_RUN_NO_SEND: manual runs never send email unless REPORT_FORCE_SEND=true.")
-        return 0
+        title, reason = "Manual market update", "explicit manual workflow dispatch"
     else:
         title, reason = resolve_scheduled_slot(now, event_name, os.environ.get("GITHUB_EVENT_SCHEDULE", ""))
         if title is None:
