@@ -38,4 +38,5 @@ For each variant the JSON records terminal equity, return, maximum drawdown, per
 - `fd0832e`: added QQQ indicator warm-up history and clarified that the placeholder cost is 10 bps per transaction (each buy/sell), not a round-trip total.
 - `ffa825c`: added deterministic unit tests for SMA window behavior and pre-trade indicator warm-up.
 - `03c422c`: wired unit tests into the workflow before downloading/running the historical sample.
+- `3f4dd80`: ensured edits to the test file also trigger the workflow.
 - Next required evidence: successful Actions run, passing unit-test output, JSON artifact, and independent sanity checks of B0's terminal value and the data adjustment/execution assumptions. Until then, no numeric result or winning defense is claimed.
