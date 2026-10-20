@@ -231,7 +231,7 @@ def market_assessment(market_lines: list[str], headlines: list[str]) -> list[str
     """
     changes: dict[str, float] = {}
     for line in market_lines:
-        match = re.search(r"- (SPY|QQQ|DIA|IWM|\\^VIX|TLT|GLD) \\([^)]*\\): .*?; ([+-]?\\d+(?:\\.\\d+)?)%", line)
+        match = re.search(r"- (SPY|QQQ|DIA|IWM|\^VIX|TLT|GLD) \([^)]*\): .*?; ([+-]?\d+(?:\.\d+)?)%", line)
         if match:
             changes[match.group(1)] = float(match.group(2))
     equity_keys = ["SPY", "QQQ", "DIA", "IWM"]
